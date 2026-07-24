@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<!-- ESUHAI Group 20 năm · Landing RSVP (chỉ Gala tối) · Xuất bản lúc: 2026-07-24 17:32 · CL1 – Hương Ly -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESUHAI Group · 20 Năm · Thư mời Dạ tiệc tối · 08.08.2026</title>
+<style>
+  :root{
+    --ink:#050d18; --navy:#0b1e38; --jade-deep:#0c3b37; --jade:#14584e;
+    --gold:#d8b876; --gold-bright:#f4e2b0; --gold-deep:#a6873f;
+    --crimson:#e23a2e; --crimson-deep:#b01e17;
+    --cream:#f5efe1; --muted:#b9b096; --muted-2:#8f886f;
+    --line:rgba(216,184,118,.20);
+    --line-strong:rgba(216,184,118,.4);
+    --card:rgba(255,255,255,.035);
+    --glass:rgba(9,22,40,.55);
+    --serif:"Playfair Display","Cormorant Garamond","Cambria","Constantia",Georgia,"Times New Roman",serif;
+    --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --maxw:1000px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;font-family:var(--sans);color:var(--cream);background:var(--ink);
+    line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-3;
+    background:
+      radial-gradient(1300px 760px at 80% -10%, rgba(20,88,78,.5), transparent 60%),
+      radial-gradient(1000px 640px at 5% 110%, rgba(12,59,55,.5), transparent 55%),
+      linear-gradient(160deg,#050d18 0%,#0a1a30 40%,#0b2b2f 76%,#0c3b37 100%);
+  }
+  #dust{position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.55}
+  body::after{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background-image:radial-gradient(rgba(216,184,118,.045) 1px,transparent 1px);
+    background-size:30px 30px;
+    -webkit-mask-image:radial-gradient(130% 95% at 50% 15%,#000,transparent 78%);
+            mask-image:radial-gradient(130% 95% at 50% 15%,#000,transparent 78%);
+  }
+  ::selection{background:rgba(216,184,118,.28);color:#fff}
+  a{color:var(--gold-bright);text-decoration:none}
+  a:hover{text-decoration:underline;text-underline-offset:3px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 clamp(18px,5vw,40px)}
+  .eyebrow{font-family:var(--sans);text-transform:uppercase;letter-spacing:.44em;font-size:.64rem;font-weight:600;color:var(--gold);display:inline-block}
+  h1,h2,h3,h4{font-family:var(--serif);font-weight:600;text-wrap:balance;margin:0}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* topbar */
+  .topbar{position:sticky;top:0;z-index:40;backdrop-filter:blur(10px);
+    background:linear-gradient(180deg,rgba(5,13,24,.9),rgba(5,13,24,.45));
+    border-bottom:1px solid var(--line);}
+  .topbar .in{max-width:var(--maxw);margin:0 auto;padding:12px clamp(18px,5vw,40px);display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .seal{
+    width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none;
+    border:1px solid var(--line-strong);color:var(--crimson);font-family:var(--serif);font-size:1.2rem;
+    box-shadow:inset 0 0 12px rgba(226,58,46,.25),0 0 14px rgba(226,58,46,.15);
+  }
+  .brand-name{font-weight:700;letter-spacing:.22em;font-size:.86rem}
+  .brand-name span{color:var(--gold);font-weight:400}
+  .topbar .rlink{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+  /* ===== HERO ===== */
+  .hero{position:relative;text-align:center;padding:clamp(52px,9vw,96px) 20px clamp(30px,5vw,52px)}
+  .hero .kicker{opacity:0;animation:fadeUp 1s .1s ease forwards}
+  .mono{
+    margin:20px auto 6px;width:104px;height:104px;border-radius:50%;position:relative;display:grid;place-items:center;
+    border:1px solid var(--line-strong);opacity:0;animation:fadeUp 1s .25s ease forwards;
+  }
+  .mono::before{content:"";position:absolute;inset:7px;border-radius:50%;border:1px solid var(--line)}
+  .mono b{font-family:var(--serif);font-size:2.9rem;line-height:1;
+    background:linear-gradient(180deg,#f3e6c0,#d8b876 55%,#a6873f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .mono .inf{position:absolute;bottom:12px;font-size:.8rem;color:var(--crimson)}
+  .hero h1{font-size:clamp(2rem,6vw,3.5rem);line-height:1.06;margin:16px 0 8px;opacity:0;animation:fadeUp 1s .4s ease forwards}
+  .hero h1 .grad{background:linear-gradient(90deg,#f4e2b0,#d8b876 55%,#c79a3e);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-style:italic}
+  .hero .sub{color:var(--muted);max-width:52ch;margin:0 auto;font-size:1.06rem;line-height:1.78;opacity:0;animation:fadeUp 1s .55s ease forwards;position:relative;padding-top:26px}
+  .hero .sub::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:52px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+  .hero .meta{display:flex;flex-wrap:wrap;gap:10px 22px;justify-content:center;margin-top:22px;opacity:0;animation:fadeUp 1s .7s ease forwards}
+  .hero .meta span{display:inline-flex;align-items:center;gap:8px;color:var(--cream);font-size:.9rem}
+  .hero .meta i{color:var(--gold);font-style:normal}
+  .hero .meta .sep{color:var(--line-strong)}
+
+  /* ===== FORM CARD ===== */
+  .panel{
+    max-width:860px;margin:8px auto 0;position:relative;
+    border:1px solid var(--line);border-radius:6px;
+    background:linear-gradient(180deg,rgba(11,30,56,.62),rgba(5,13,24,.6));
+    box-shadow:0 40px 100px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.04);
+    overflow:hidden;
+  }
+  .panel::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:6px;
+    box-shadow:inset 0 0 0 1px rgba(216,184,118,.07)}
+  .panel-in{padding:clamp(22px,4vw,46px)}
+
+  .step{margin-bottom:34px}
+  .step:last-child{margin-bottom:0}
+  .step-head{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+  .step-no{font-family:var(--serif);font-size:.95rem;color:var(--ink);background:var(--gold);
+    width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:700;translate:0 3px}
+  .step-head h3{font-size:1.24rem;color:var(--cream)}
+  .step-head p{margin:2px 0 0;color:var(--muted);font-size:.86rem}
+  .hairline{height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);margin:0 0 30px}
+
+  /* attend choice — big cards */
+  .attend{display:grid;grid-template-columns:1fr;gap:14px}
+  @media(min-width:560px){.attend{grid-template-columns:1fr 1fr}}
+  .opt{position:relative;cursor:pointer}
+  .opt input{position:absolute;opacity:0;inset:0;cursor:pointer}
+  .opt .box{
+    border:1px solid var(--line);border-radius:5px;padding:22px 22px;background:rgba(5,13,24,.4);
+    display:flex;gap:15px;align-items:flex-start;transition:.22s;height:100%;
+  }
+  .opt .ic{width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:1.3rem;
+    border:1px solid var(--line);color:var(--gold);transition:.22s}
+  .opt .t b{display:block;font-family:var(--serif);font-size:1.16rem;color:var(--cream)}
+  .opt .t small{color:var(--muted);font-size:.84rem}
+  .opt input:checked + .box{border-color:var(--gold);background:rgba(216,184,118,.1);box-shadow:inset 0 0 0 1px var(--gold),0 10px 30px rgba(216,184,118,.12)}
+  .opt input:checked + .box .ic{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+  .opt.decline input:checked + .box{border-color:var(--crimson);box-shadow:inset 0 0 0 1px var(--crimson);background:rgba(226,58,46,.08)}
+  .opt.decline input:checked + .box .ic{background:var(--crimson);color:#fff;border-color:var(--crimson)}
+  .opt input:focus-visible + .box{outline:2px solid var(--gold-bright);outline-offset:2px}
+
+  /* generic labels/inputs */
+  label.lab{display:block;text-transform:uppercase;letter-spacing:.14em;font-size:.64rem;color:var(--gold);margin-bottom:8px;font-weight:600}
+  .req{color:var(--crimson)}
+  input[type=text],input[type=tel],input[type=email],textarea,select{
+    width:100%;font-family:var(--sans);font-size:.96rem;color:var(--cream);
+    background:rgba(5,13,24,.6);border:1px solid var(--line);border-radius:4px;padding:12px 14px;transition:.2s;
+  }
+  input::placeholder,textarea::placeholder{color:rgba(185,176,150,.5)}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(216,184,118,.14)}
+  textarea{resize:vertical;min-height:74px}
+  .two{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:560px){.two{grid-template-columns:1fr 1fr}}
+  .field{margin-bottom:18px}
+  .field:last-child{margin-bottom:0}
+
+  /* session chips */
+  .chips{display:flex;gap:12px;flex-wrap:wrap}
+  .chip{position:relative;flex:1;min-width:200px}
+  .chip input{position:absolute;opacity:0;inset:0;cursor:pointer}
+  .chip .b{display:flex;flex-direction:column;gap:3px;padding:15px 18px;border:1px solid var(--line);border-radius:5px;cursor:pointer;transition:.2s;background:rgba(5,13,24,.4)}
+  .chip .b strong{font-family:var(--serif);font-size:1.05rem;color:var(--cream)}
+  .chip .b span{color:var(--muted);font-size:.82rem}
+  .chip .b em{color:var(--gold);font-style:normal;font-size:.76rem;letter-spacing:.1em;text-transform:uppercase}
+  .chip input:checked + .b{border-color:var(--gold);background:rgba(216,184,118,.1);box-shadow:inset 0 0 0 1px var(--gold)}
+  .chip input:focus-visible + .b{outline:2px solid var(--gold-bright);outline-offset:2px}
+
+  /* stepper */
+  .stepper{display:inline-flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:rgba(5,13,24,.5)}
+  .stepper button{width:52px;height:52px;background:transparent;border:0;color:var(--gold);font-size:1.5rem;cursor:pointer;transition:.2s;line-height:1}
+  .stepper button:hover{background:rgba(216,184,118,.12);color:var(--gold-bright)}
+  .stepper button:disabled{opacity:.3;cursor:not-allowed}
+  .stepper .val{width:64px;text-align:center;font-family:var(--serif);font-size:1.6rem;color:var(--cream);font-variant-numeric:tabular-nums;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+  .party-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .party-row .hint{color:var(--muted);font-size:.86rem;max-width:34ch}
+
+  /* person cards */
+  .people{display:flex;flex-direction:column;gap:16px;margin-top:22px}
+  .person{border:1px solid var(--line);border-radius:6px;background:var(--card);overflow:hidden;animation:fadeUp .4s ease}
+  .person-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;background:rgba(216,184,118,.06);border-bottom:1px solid var(--line)}
+  .person-head .who{display:flex;align-items:center;gap:11px}
+  .person-head .n{width:26px;height:26px;border-radius:50%;background:var(--ink);border:1px solid var(--gold);color:var(--gold);display:grid;place-items:center;font-family:var(--serif);font-size:.9rem;font-variant-numeric:tabular-nums}
+  .person-head .lbl{font-family:var(--serif);font-size:1.02rem;color:var(--cream)}
+  .person-head .lbl small{display:block;font-family:var(--sans);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+  .person-head .rm{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:4px;padding:6px 12px;font-size:.78rem;cursor:pointer;transition:.2s}
+  .person-head .rm:hover{border-color:var(--crimson);color:var(--crimson)}
+  .person-body{padding:18px}
+  .grid-2{display:grid;grid-template-columns:1fr;gap:14px}
+  @media(min-width:560px){.grid-2{grid-template-columns:1fr 1fr}}
+
+  /* gender segmented */
+  .seg{display:flex;gap:8px}
+  .seg label{flex:1;position:relative;cursor:pointer}
+  .seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+  .seg span{display:block;text-align:center;padding:11px 6px;border:1px solid var(--line);border-radius:4px;font-size:.88rem;color:var(--cream);transition:.2s;background:rgba(5,13,24,.4)}
+  .seg input:checked + span{border-color:var(--gold);background:rgba(216,184,118,.12);color:var(--gold-bright);box-shadow:inset 0 0 0 1px var(--gold)}
+  .seg input:focus-visible + span{outline:2px solid var(--gold-bright);outline-offset:2px}
+
+  .add-btn{margin-top:16px;border:1px dashed var(--line);background:transparent;color:var(--gold);border-radius:5px;
+    padding:13px 20px;cursor:pointer;font-family:var(--sans);font-size:.86rem;font-weight:600;letter-spacing:.03em;transition:.2s;width:100%}
+  .add-btn:hover{border-color:var(--gold);background:rgba(216,184,118,.08)}
+
+  .btn{font-family:var(--sans);font-size:.9rem;font-weight:600;letter-spacing:.04em;padding:15px 30px;border-radius:5px;cursor:pointer;border:1px solid transparent;
+    transition:transform .18s,box-shadow .25s,background .25s,color .2s;display:inline-flex;align-items:center;gap:9px}
+  .btn-primary{background:linear-gradient(180deg,#f0d999,#cfa758);color:#2a1e05;box-shadow:0 10px 30px rgba(216,184,118,.26)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(216,184,118,.36);text-decoration:none}
+  .btn-primary:disabled{opacity:.6;cursor:wait;transform:none}
+  .btn-ghost{border-color:var(--line);color:var(--cream);background:transparent}
+  .btn-ghost:hover{border-color:var(--gold);color:var(--gold-bright);text-decoration:none}
+
+  .submit-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  .submit-row .note{color:var(--muted);font-size:.8rem;flex:1;min-width:200px}
+  .err{color:#ff9a8f;font-size:.85rem;margin:14px 0 0;display:none;padding:11px 14px;border:1px solid rgba(226,58,46,.4);border-radius:5px;background:rgba(226,58,46,.08)}
+  .err.show{display:block}
+  .mode-note{margin-top:18px;font-size:.78rem;color:var(--muted-2);text-align:center}
+  .mode-note b{color:var(--gold)}
+  .hidden{display:none !important}
+
+  /* confirmation */
+  .confirm{max-width:720px;margin:20px auto 0;border:1px solid var(--gold);border-radius:6px;
+    background:linear-gradient(180deg,rgba(216,184,118,.1),rgba(5,13,24,.7));padding:clamp(26px,4vw,46px);text-align:center;animation:fadeUp .6s ease}
+  .confirm .bigseal{font-family:var(--serif);color:var(--crimson);font-size:2.6rem;text-shadow:0 0 22px rgba(226,58,46,.4)}
+  .confirm h3{font-size:1.8rem;margin:6px 0}
+  .confirm p{color:var(--muted);max-width:54ch;margin:0 auto}
+  .summary{text-align:left;margin:24px auto 0;max-width:560px;border:1px solid var(--line);border-radius:5px;background:rgba(5,13,24,.55);padding:22px}
+  .summary .r{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:.9rem}
+  .summary .r:last-child{border-bottom:0}
+  .summary .r .k{color:var(--muted);text-transform:uppercase;letter-spacing:.13em;font-size:.62rem;padding-top:3px}
+  .summary .r .v{color:var(--cream);text-align:right}
+  .summary ol{margin:6px 0 0;padding-left:20px;color:var(--cream);font-size:.9rem}
+  .summary ol li{padding:3px 0}
+  .summary ol li em{color:var(--gold);font-style:normal}
+
+  footer{padding:52px 0 60px;border-top:1px solid var(--line);text-align:center;margin-top:60px}
+  footer .slogan{font-family:var(--serif);font-style:italic;font-size:clamp(1rem,2.6vw,1.4rem);color:var(--gold-bright)}
+  footer .contact{color:var(--muted);font-size:.86rem;margin-top:16px;line-height:1.9}
+  footer .contact b{color:var(--cream)}
+  footer .fin{margin-top:18px;font-size:.68rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-deep)}
+
+  /* ===== hero CTA ===== */
+  .cta2{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px;opacity:0;animation:fadeUp 1s .82s ease forwards}
+  .cta2 .btn{padding:14px 26px}
+
+  /* ===== event content sections (ported) ===== */
+  section.band{padding:clamp(58px,9vw,110px) 0;position:relative}
+  .divider-top{border-top:1px solid var(--line)}
+  .lead{max-width:760px;margin:0 auto;text-align:center}
+  .lead .eyebrow{margin-bottom:18px}
+  .lead h2{font-size:clamp(1.8rem,5vw,3rem);line-height:1.1;color:var(--cream)}
+  .lead h2 em{font-style:italic;color:var(--gold-bright)}
+  .lead .quote{color:var(--muted);font-size:1.05rem;margin:20px auto 0;max-width:60ch}
+
+  .theme-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:42px}
+  @media(min-width:720px){.theme-grid{grid-template-columns:repeat(3,1fr)}}
+  .pill{border:1px solid var(--line);border-radius:6px;padding:24px 20px;background:var(--card);text-align:center}
+  .pill .ic{font-family:var(--serif);color:var(--gold);font-size:1.5rem;letter-spacing:.1em}
+  .pill h3{font-size:1.06rem;margin:12px 0 6px;color:var(--cream)}
+  .pill p{color:var(--muted);font-size:.9rem;margin:0}
+
+  .acts{display:grid;grid-template-columns:1fr;gap:24px;margin-top:48px}
+  @media(min-width:900px){.acts{grid-template-columns:1fr 1fr}}
+  .act{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;
+    background:linear-gradient(180deg,rgba(11,30,56,.55),rgba(5,13,24,.4));display:flex;flex-direction:column}
+  .act.gala{background:linear-gradient(180deg,rgba(58,16,14,.3),rgba(5,13,24,.5))}
+  .act-head{padding:24px 26px 20px;border-bottom:1px solid var(--line)}
+  .act-tag{display:flex;align-items:center;gap:10px;text-transform:uppercase;letter-spacing:.3em;font-size:.6rem;color:var(--gold)}
+  .act-tag .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold)}
+  .act.gala .act-tag{color:#eaa79f}
+  .act.gala .act-tag .dot{background:var(--crimson);box-shadow:0 0 10px var(--crimson)}
+  .act-head h3{font-size:clamp(1.35rem,3.2vw,1.85rem);margin:13px 0 4px;line-height:1.12;color:var(--cream)}
+  .act-head h3 .accent{color:var(--gold-bright)}
+  .act.gala .act-head h3 .accent{color:#f0b7ae}
+  .act-meta{display:flex;flex-wrap:wrap;gap:16px 26px;margin-top:15px}
+  .act-meta .k{text-transform:uppercase;letter-spacing:.22em;font-size:.56rem;color:var(--muted);margin-bottom:4px}
+  .act-meta .val{font-family:var(--serif);font-size:1.04rem;color:var(--cream);font-variant-numeric:tabular-nums}
+  .timeline{padding:20px 26px 26px;list-style:none;margin:0;position:relative}
+  .timeline li{display:grid;grid-template-columns:56px 1fr;gap:16px;padding:10px 0}
+  .timeline .t{font-variant-numeric:tabular-nums;color:var(--gold);font-family:var(--serif);font-size:1rem;text-align:right}
+  .timeline .body{position:relative;padding-left:20px}
+  .timeline .body::before{content:"";position:absolute;left:-6px;top:8px;width:9px;height:9px;border-radius:50%;background:var(--ink);border:1.5px solid var(--gold)}
+  .act.gala .timeline .body::before{border-color:var(--crimson)}
+  .timeline .ttl{color:var(--cream);font-weight:600;font-size:.95rem}
+  .timeline .desc{color:var(--muted);font-size:.85rem;margin-top:2px}
+  .timeline .desc em{color:var(--gold);font-style:italic}
+
+  .info-grid{display:grid;grid-template-columns:1fr;gap:16px;margin:40px auto 0;max-width:720px}
+  @media(min-width:600px){.info-grid{grid-template-columns:1fr 1fr}}
+  .info{border:1px solid var(--line);border-radius:8px;padding:24px;background:rgba(216,184,118,.05)}
+  .info .k{text-transform:uppercase;letter-spacing:.24em;font-size:.58rem;color:var(--gold);margin-bottom:12px}
+  .info .v{font-family:var(--serif);font-size:1.16rem;color:var(--cream);line-height:1.3}
+  .info .v small{display:block;font-family:var(--sans);font-size:.82rem;color:var(--muted);margin-top:6px;line-height:1.5}
+
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+  /* ===== limit note ===== */
+  .limit-note{margin:18px 0 0;padding:14px 16px;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;
+    background:rgba(216,184,118,.06);color:var(--muted);font-size:.86rem;line-height:1.65}
+  .limit-note b{color:var(--gold-bright)}
+  .add-btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* ===== responsive polish ===== */
+  html{scroll-padding-top:72px}
+  #chuongtrinh,#rsvp,#actsSection{scroll-margin-top:72px}
+  @media(max-width:900px){
+    .panel{margin-left:auto;margin-right:auto}
+  }
+  @media(max-width:640px){
+    .topbar .in{padding:10px 16px}
+    .brand-name{font-size:.72rem;letter-spacing:.12em}
+    .topbar .rlink{font-size:.64rem;letter-spacing:.08em}
+    .hero{padding:38px 18px 26px}
+    .hero .meta{flex-direction:column;gap:6px;margin-top:18px}
+    .hero .meta .sep{display:none}
+    .cta2{flex-direction:column}
+    .cta2 .btn{width:100%;justify-content:center}
+    section.band{padding:48px 0}
+    .step{margin-bottom:28px}
+    .step-head h3{font-size:1.08rem}
+    .two{grid-template-columns:1fr}
+    .submit-row{flex-direction:column;align-items:stretch}
+    .submit-row .btn{width:100%;justify-content:center}
+    .submit-row .note{text-align:center}
+    .confirm .submit-row .btn{width:100%}
+  }
+  @media(max-width:380px){
+    .stepper .val{width:52px;font-size:1.4rem}
+    .stepper button{width:46px;height:46px}
+    .seg{flex-wrap:wrap}
+    .seg label{min-width:calc(50% - 4px)}
+  }
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001s!important}}
+</style>
+</head>
+<body>
+
+<!-- Trang CHỈ mời Dạ tiệc tối (Gala). Bản đầy đủ Tọa đàm + Gala nằm ở dang-ky.html -->
+<script>window.__GALA_ONLY__ = true;</script>
+<script src="config.js"></script>
+
+<div class="topbar">
+  <div class="in">
+    <div class="brand"><div class="seal">&#8734;</div><div class="brand-name">ESUHAI <span>GROUP · 20 NĂM</span></div></div>
+    <span class="rlink">08 &middot; 08 &middot; 2026 &middot; GEM Center</span>
+  </div>
+</div>
+
+<canvas id="dust"></canvas>
+
+<header class="hero">
+  <span class="eyebrow kicker" id="heroKicker">Trân trọng kính mời · The 20 Years Next</span>
+  <div class="mono"><b>20</b><span class="inf">&#8734;</span></div>
+  <h1>Gala Kỷ Niệm <span class="grad">20 Năm ESUHAI Group</span></h1>
+  <p class="sub" id="heroSub">Hai mươi năm — một hành trình đáng trân trọng.<br>Kính mời Quý vị hiện diện trong ngày đặc biệt của ESUHAI Group, và dành đôi phút xác nhận để chúng tôi được đón tiếp thật chu đáo.</p>
+  <div class="meta" id="heroMeta">
+    <span><i>&#9670;</i> Thứ Bảy, 08 · 08 · 2026</span><span class="sep">|</span>
+    <span><i>&#9670;</i> Tọa đàm 14:30 &middot; Gala 17:00</span><span class="sep">|</span>
+    <span><i>&#9670;</i> GEM Center, TP. Hồ Chí Minh</span>
+  </div>
+  <div class="cta2">
+    <a class="btn btn-primary" href="#rsvp">Xác nhận tham dự &#8594;</a>
+    <a class="btn btn-ghost" href="#chuongtrinh">Xem chương trình</a>
+  </div>
+</header>
+
+<!-- ============ THÔNG ĐIỆP ============ -->
+<section class="band" id="chuongtrinh">
+  <div class="wrap">
+    <div class="lead reveal">
+      <span class="eyebrow" id="thesisEyebrow">Hội thảo chuyên đề</span>
+      <h2>Từ <em>&ldquo;Lao động phổ thông&rdquo;</em><br>đến <em>&ldquo;Sự nghiệp bền vững&rdquo;</em></h2>
+      <p class="quote">Sự hiện diện của Quý vị là niềm vinh hạnh, góp phần làm nên ý nghĩa trọn vẹn cho dấu mốc 20 năm hình thành và phát triển của ESUHAI Group.</p>
+    </div>
+    <div class="theme-grid">
+      <div class="pill reveal"><div class="ic">&#9670;</div><h3>Giáo dục &amp; Đào tạo</h3><p>Kiến tạo con người trước khi kiến tạo sự nghiệp.</p></div>
+      <div class="pill reveal"><div class="ic">&#9671;</div><h3>Kỹ thuật &amp; Công nghệ</h3><p>Cầu nối nguồn nhân lực Việt Nam với doanh nghiệp Nhật Bản.</p></div>
+      <div class="pill reveal"><div class="ic">&#8734;</div><h3>Kiến nghiệp thành công</h3><p>Hệ sinh thái cùng phát triển, bền vững cho 20 năm tiếp theo.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HAI BUỔI ============ -->
+<section class="band divider-top" id="actsSection">
+  <div class="wrap">
+    <div class="lead reveal">
+      <span class="eyebrow" id="actsEyebrow">Chương trình · 08.08.2026</span>
+      <h2 id="actsTitle">Một ngày, hai dấu ấn</h2>
+      <p class="quote" id="actsQuote">Buổi chiều tọa đàm chuyên sâu, buổi tối gala tri ân — cùng khép lại tại GEM Center.</p>
+    </div>
+    <div class="acts">
+      <article class="act reveal" data-act="toza">
+        <div class="act-head">
+          <div class="act-tag"><span class="dot"></span> Phần I · Tọa đàm</div>
+          <h3>Hội thảo <span class="accent">chuyên đề</span></h3>
+          <div class="act-meta">
+            <div><div class="k">Thời gian</div><div class="val num">14:30 – 16:30</div></div>
+            <div><div class="k">Không gian</div><div class="val">Tầng 7 · Sảnh SOL</div></div>
+          </div>
+        </div>
+        <ol class="timeline">
+          <li><div class="t num">14:30</div><div class="body"><div class="ttl">Đón tiếp khách mời</div></div></li>
+          <li><div class="t num">15:00</div><div class="body"><div class="ttl">Diễn thuyết đặc biệt</div><div class="desc">&ldquo;Kiến tạo hệ sinh thái cùng phát triển giữa doanh nghiệp Nhật Bản &amp; nguồn nhân lực Việt Nam.&rdquo;</div></div></li>
+          <li><div class="t num">16:30</div><div class="body"><div class="ttl">Thông điệp kết thúc</div><div class="desc">Chuyển tiếp Gala Lễ kỷ niệm — <em>The 20 Years Next</em>.</div></div></li>
+        </ol>
+      </article>
+
+      <article class="act gala reveal">
+        <div class="act-head">
+          <div class="act-tag"><span class="dot"></span> Phần II · Gala</div>
+          <h3>Gala <span class="accent">Lễ kỷ niệm</span></h3>
+          <div class="act-meta">
+            <div><div class="k">Thời gian</div><div class="val num">17:00 – 20:30</div></div>
+            <div><div class="k">Không gian</div><div class="val">Tầng 3 · Sảnh POLLUX</div></div>
+          </div>
+        </div>
+        <ol class="timeline">
+          <li><div class="t num">17:00</div><div class="body"><div class="ttl">Đón tiếp &amp; hướng dẫn</div><div class="desc">Tham quan triển lãm &ldquo;Hệ sinh thái ESUHAI Group&rdquo;.</div></div></li>
+          <li><div class="t num">17:45</div><div class="body"><div class="ttl">Chào đón Quý khách vào sảnh tiệc</div></div></li>
+          <li><div class="t num">18:00</div><div class="body"><div class="ttl">Lễ khai mạc</div></div></li>
+          <li><div class="t num">18:30</div><div class="body"><div class="ttl">Nghi thức Khai tiệc</div></div></li>
+          <li><div class="t num">18:45</div><div class="body"><div class="ttl">Lễ tri ân &amp; Vinh danh</div></div></li>
+          <li><div class="t num">20:00</div><div class="body"><div class="ttl">Tầm nhìn Chiến lược 20 năm</div><div class="desc">&amp; trình diễn tiết mục nghệ thuật đặc sắc.</div></div></li>
+          <li><div class="t num">20:15</div><div class="body"><div class="ttl">Phát biểu bế mạc</div></div></li>
+          <li><div class="t num">20:30</div><div class="body"><div class="ttl">Chụp ảnh lưu niệm</div></div></li>
+        </ol>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THÔNG TIN CẦN BIẾT ============ -->
+<section class="band divider-top">
+  <div class="wrap">
+    <div class="lead reveal">
+      <span class="eyebrow">Đôi điều mời Quý vị lưu tâm</span>
+      <h2>Để buổi hội ngộ thêm trọn vẹn</h2>
+    </div>
+    <div class="info-grid">
+      <div class="info reveal"><div class="k">Địa điểm</div><div class="v">GEM Center<small>08 Nguyễn Bỉnh Khiêm, Phường Sài Gòn, TP. Hồ Chí Minh</small></div></div>
+      <div class="info reveal"><div class="k">Trang phục</div><div class="v">Lễ phục trang trọng<small>Đôi nét chỉn chu để cùng nhau lưu giữ những khoảnh khắc đáng nhớ</small></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ XÁC NHẬN THAM DỰ ============ -->
+<div class="wrap" id="rsvp">
+  <div class="lead reveal" style="margin-bottom:34px">
+    <span class="eyebrow">R.S.V.P</span>
+    <h2>Xác nhận tham dự</h2>
+    <p class="quote">Đôi dòng thông tin sẽ giúp chúng tôi được đón tiếp Quý vị thật chu đáo và ấm áp.</p>
+  </div>
+  <div class="panel" id="panel">
+    <div class="panel-in">
+      <form id="form" novalidate>
+
+        <!-- STEP 1 -->
+        <div class="step">
+          <div class="step-head"><div class="step-no">1</div><div><h3>Quý vị sẽ đến chung vui cùng chúng tôi?</h3><p>Chỉ một thao tác nhỏ để chúng tôi được biết.</p></div></div>
+          <div class="attend">
+            <label class="opt accept"><input type="radio" name="attend" value="yes" checked>
+              <div class="box"><div class="ic">&#10003;</div><div class="t"><b>Vâng, tôi sẽ tham dự</b><small>Rất hân hạnh được đón tiếp Quý vị</small></div></div></label>
+            <label class="opt decline"><input type="radio" name="attend" value="no">
+              <div class="box"><div class="ic">&#9671;</div><div class="t"><b>Rất tiếc, tôi không thể</b><small>Xin gửi đôi lời chúc mừng</small></div></div></label>
+          </div>
+        </div>
+
+        <div id="yesFlow">
+          <div class="hairline"></div>
+
+          <!-- STEP 2 -->
+          <div class="step" id="stepSession">
+            <div class="step-head"><div class="step-no">2</div><div><h3>Quý vị tham dự phần nào?</h3><p>Quý vị có thể chọn cả hai để trọn vẹn một ngày đáng nhớ.</p></div></div>
+            <div class="chips">
+              <label class="chip"><input type="checkbox" name="session" value="Tọa đàm" checked>
+                <div class="b"><em>Buổi chiều</em><strong>Tọa đàm chuyên đề</strong><span>14:30 – 16:30 · Tầng 7, Sảnh SOL</span></div></label>
+              <label class="chip"><input type="checkbox" name="session" value="Gala" checked>
+                <div class="b"><em>Buổi tối</em><strong>Gala Lễ kỷ niệm</strong><span>17:00 – 20:30 · Tầng 3, Sảnh POLLUX</span></div></label>
+            </div>
+          </div>
+
+          <div class="hairline"></div>
+
+          <!-- STEP 3 -->
+          <div class="step">
+            <div class="step-head"><div class="step-no">3</div><div><h3>Quý vị đi cùng bao nhiêu vị khách?</h3><p>Chúng tôi sẽ mở đúng số phiếu thông tin tương ứng để Quý vị điền thuận tiện.</p></div></div>
+            <div class="party-row">
+              <div class="stepper">
+                <button type="button" id="minus" aria-label="Bớt một người">&minus;</button>
+                <div class="val num" id="sizeVal">1</div>
+                <button type="button" id="plus" aria-label="Thêm một người">+</button>
+              </div>
+              <p class="hint">Vị khách đầu tiên là <b style="color:var(--cream)">người đại diện</b> giữ liên lạc với ban tổ chức.</p>
+            </div>
+            <p class="limit-note">Không gian buổi lễ được chuẩn bị ấm cúng và chỉn chu, nên mỗi lượt đăng ký xin dành cho <b>tối đa 2 vị khách</b> — để chúng tôi được đón tiếp và chăm sóc trọn vẹn từng người. Trân trọng cảm ơn sự đồng hành quý báu của Quý vị.</p>
+          </div>
+
+          <div class="hairline"></div>
+
+          <!-- STEP 4 -->
+          <div class="step">
+            <div class="step-head"><div class="step-no">4</div><div><h3>Thông tin từng khách tham dự</h3><p>Kính mời Quý vị điền đôi dòng để chúng tôi chuẩn bị thẻ tên và đón tiếp thật chu đáo.</p></div></div>
+
+            <div class="two" style="margin-bottom:20px">
+              <div class="field"><label class="lab" for="repPhone">Điện thoại liên hệ <span class="req">*</span></label>
+                <input type="tel" id="repPhone" placeholder="09xx xxx xxx" autocomplete="tel"></div>
+              <div class="field"><label class="lab" for="repEmail">Email (nhận thư cảm ơn)</label>
+                <input type="email" id="repEmail" placeholder="email@congty.com" autocomplete="email"></div>
+            </div>
+
+            <div class="people" id="people"></div>
+            <button type="button" class="add-btn" id="addBtn">+ Thêm một khách tham dự</button>
+          </div>
+
+          <div class="hairline"></div>
+
+          <!-- STEP 5 -->
+          <div class="step">
+            <div class="step-head"><div class="step-no">5</div><div><h3>Đôi điều gửi gắm</h3><p>Không bắt buộc, song sẽ khiến ngày kỷ niệm thêm phần ý nghĩa.</p></div></div>
+            <div class="field"><label class="lab">Ẩm thực buổi Gala tối</label>
+              <div class="seg" id="dietary">
+                <label><input type="radio" name="dietary" value="Món mặn" checked><span>Món mặn</span></label>
+                <label><input type="radio" name="dietary" value="Món chay"><span>Món chay</span></label>
+              </div></div>
+            <div class="field"><label class="lab" for="wish">Lời chúc mừng &amp; kỳ vọng gửi ESUHAI cho 20 năm tới</label>
+              <textarea id="wish" placeholder="Một câu chúc của Quý vị sẽ được lưu giữ như một phần của dấu mốc 20 năm…"></textarea></div>
+            <div class="field"><label class="lab" for="note">Ghi chú thêm</label>
+              <textarea id="note" placeholder="Nhu cầu di chuyển, chỗ ngồi, hỗ trợ đặc biệt…"></textarea></div>
+          </div>
+        </div>
+
+        <!-- decline flow -->
+        <div id="noFlow" class="hidden">
+          <div class="hairline"></div>
+          <div class="step">
+            <div class="step-head"><div class="step-no">2</div><div><h3>Xin Quý vị cho biết quý danh</h3><p>Để chúng tôi lưu lại lời tri ân.</p></div></div>
+            <div class="two">
+              <div class="field"><label class="lab" for="noName">Họ và tên <span class="req">*</span></label><input type="text" id="noName" placeholder="Nguyễn Văn A"></div>
+              <div class="field"><label class="lab" for="noOrg">Đơn vị</label><input type="text" id="noOrg" placeholder="Tên đơn vị (nếu có)"></div>
+            </div>
+            <div class="field"><label class="lab" for="noWish">Lời nhắn / lời chúc gửi ESUHAI 20 năm</label>
+              <textarea id="noWish" placeholder="Đôi lời gửi đến ESUHAI Group…"></textarea></div>
+          </div>
+        </div>
+
+        <div class="err" id="err"></div>
+
+        <div class="submit-row">
+          <button type="submit" class="btn btn-primary" id="submitBtn">Gửi xác nhận &#8594;</button>
+          <p class="note" id="submitNote">Thông tin của Quý vị được gửi trực tiếp về ban tổ chức ESUHAI Group.</p>
+        </div>
+        <div class="mode-note" id="modeNote"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- confirmation -->
+  <div class="confirm hidden" id="confirm" tabindex="-1">
+    <div class="bigseal">&#8734;</div>
+    <h3 id="cTitle">Cảm ơn Quý vị!</h3>
+    <p id="cMsg"></p>
+    <div class="summary" id="summary"></div>
+    <div class="submit-row" style="justify-content:center;margin-top:24px">
+      <button type="button" class="btn btn-ghost" id="againBtn">Đăng ký thêm đoàn khác</button>
+      <button type="button" class="btn btn-ghost" id="mailBtn">Gửi kèm qua email</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p class="slogan">Giáo dục &amp; Đào tạo · Kỹ thuật &amp; Công nghệ · Kiến nghiệp thành công</p>
+    <p class="contact">Sự hiện diện của Quý vị là món quà trân quý nhất trong hành trình hai mươi năm của chúng tôi.</p>
+    <p class="fin">ESUHAI Group · 2006 – 2026 · The 20 Years Next</p>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   CẤU HÌNH — dán link Web App (Apps Script) vào ENDPOINT.
+   Để trống => trang tự chạy ở chế độ LƯU TẠM trên máy này
+   (dữ liệu xem được ở ket-qua.html trên cùng thiết bị/trình duyệt).
+   ============================================================ */
+var CONFIG = {
+  ENDPOINT: (window.RSVP_ENDPOINT || ""),   // link /exec khai báo trong config.js (xem apps-script/HUONG_DAN_DEPLOY.md)
+  RSVP_EMAIL: "hanhchanh@esuhai.com",
+  STORE_KEY: "esuhai20_rsvp"
+};
+
+(function(){
+  "use strict";
+
+  /* ---- gold dust background ---- */
+  (function dust(){
+    var c=document.getElementById("dust"), x=c.getContext("2d"), P=[], raf;
+    var reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+    function size(){c.width=innerWidth;c.height=innerHeight;}
+    function init(){P=[];var n=Math.min(70,Math.floor(innerWidth/22));for(var i=0;i<n;i++)P.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.6+.3,s:Math.random()*.25+.05,o:Math.random()*.5+.15});}
+    function draw(){x.clearRect(0,0,c.width,c.height);for(var i=0;i<P.length;i++){var p=P[i];p.y-=p.s;if(p.y<-4){p.y=c.height+4;p.x=Math.random()*c.width;}x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fillStyle="rgba(216,184,118,"+p.o+")";x.fill();}raf=requestAnimationFrame(draw);}
+    size();init();if(!reduce)draw();
+    addEventListener("resize",function(){size();init();});
+  })();
+
+  var $=function(s,r){return (r||document).querySelector(s);};
+  var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
+
+  /* ---- reveal on scroll ---- */
+  if("IntersectionObserver" in window){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}});},{threshold:.12});
+    $$(".reveal").forEach(function(n){io.observe(n);});
+  } else { $$(".reveal").forEach(function(n){n.classList.add("in");}); }
+
+  /* ---- CHẾ ĐỘ CHỈ MỜI DẠ TIỆC TỐI (GALA) ----
+     Bật khi mở link:  dang-ky.html?buoi=tiec-toi   (hoặc ?gala)  */
+  var qp=new URLSearchParams(location.search);
+  var GALA_ONLY = qp.get("buoi")==="tiec-toi" || qp.has("gala") || window.__GALA_ONLY__===true;
+  if(GALA_ONLY){
+    document.body.classList.add("gala-only");
+    // ẩn bước chọn phần + ẩn buổi Tọa đàm
+    var ss=document.getElementById("stepSession"); if(ss) ss.style.display="none";
+    var toza=document.querySelector('[data-act="toza"]'); if(toza) toza.style.display="none";
+    // đổi lời dẫn cho đúng ngữ cảnh Dạ tiệc
+    var set=function(id,html){var e=document.getElementById(id); if(e) e.innerHTML=html;};
+    set("heroKicker","Thư mời Dạ tiệc · The 20 Years Next");
+    set("heroSub","Chúng tôi hân hạnh kính mời Quý vị dự <b style=\"color:var(--cream)\">Gala Dạ tiệc</b> kỷ niệm 20 năm ESUHAI Group — một tối tri ân, vinh danh và kết nối. Kính mong Quý vị dành đôi phút xác nhận.");
+    set("heroMeta","<span><i>&#9670;</i> Thứ Bảy, 08 &middot; 08 &middot; 2026</span><span class=\"sep\">|</span><span><i>&#9670;</i> Gala 17:00 &ndash; 20:30</span><span class=\"sep\">|</span><span><i>&#9670;</i> Tầng 3 &middot; Sảnh POLLUX</span>");
+    set("thesisEyebrow","20 năm ESUHAI Group");
+    set("actsEyebrow","Dạ tiệc · 08.08.2026");
+    set("actsTitle","Chương trình Dạ tiệc tối");
+    set("actsQuote","Một tối tri ân trang trọng tại GEM Center — nơi khép lại hành trình 20 năm và mở ra chặng đường tiếp theo.");
+    // đánh số lại các bước còn hiển thị
+    var steps=$$(".step").filter(function(st){ return !st.closest("#noFlow") && st.style.display!=="none"; });
+    steps.forEach(function(st,i){ var no=st.querySelector(".step-no"); if(no) no.textContent=i+1; });
+  }
+
+  /* ---- attend toggle ---- */
+  var yesFlow=$("#yesFlow"), noFlow=$("#noFlow"), submitNote=$("#submitNote");
+  function syncAttend(){
+    var yes=$('input[name="attend"]:checked').value==="yes";
+    yesFlow.classList.toggle("hidden",!yes);
+    noFlow.classList.toggle("hidden",yes);
+    $("#submitBtn").innerHTML = yes ? "Gửi xác nhận &#8594;" : "Gửi lời nhắn &#8594;";
+    submitNote.textContent = yes ? "Thông tin của Quý vị được gửi trực tiếp về ban tổ chức ESUHAI Group." : "Cảm ơn Quý vị đã dành thời gian phản hồi.";
+  }
+  $$('input[name="attend"]').forEach(function(r){r.addEventListener("change",syncAttend);});
+
+  /* ---- people (dynamic) ---- */
+  var people=$("#people"), sizeVal=$("#sizeVal");
+  var MAX=2, seq=0;
+  function personCard(index){
+    seq++;
+    var wrap=document.createElement("div");
+    wrap.className="person";
+    var isRep=index===0;
+    wrap.innerHTML=
+      '<div class="person-head"><div class="who"><div class="n">'+(index+1)+'</div>'+
+        '<div class="lbl">'+(isRep?'Người đại diện':'Khách tham dự')+'<small>'+(isRep?'Giữ liên lạc':'Người '+(index+1))+'</small></div></div>'+
+        '<button type="button" class="rm">Xóa</button></div>'+
+      '<div class="person-body">'+
+        '<div class="field"><label class="lab">Họ và tên <span class="req">*</span></label><input type="text" class="p-name" placeholder="Nguyễn Văn A" autocomplete="name"></div>'+
+        '<div class="grid-2">'+
+          '<div class="field"><label class="lab">Thuộc đơn vị</label><input type="text" class="p-org" placeholder="Công ty / Trường / Phòng ban"></div>'+
+          '<div class="field"><label class="lab">Chức danh</label><input type="text" class="p-title" placeholder="VD: Giám đốc, Trưởng phòng…"></div>'+
+        '</div>'+
+        '<div class="field" style="margin-bottom:0"><label class="lab">Giới tính</label>'+
+          '<div class="seg">'+
+            '<label><input type="radio" name="g'+seq+'" value="Nam"><span>Nam</span></label>'+
+            '<label><input type="radio" name="g'+seq+'" value="Nữ"><span>Nữ</span></label>'+
+            '<label><input type="radio" name="g'+seq+'" value="Khác"><span>Khác</span></label>'+
+          '</div></div>'+
+      '</div>';
+    wrap.querySelector(".rm").addEventListener("click",function(){
+      if(people.children.length<=1) return;
+      wrap.remove(); renumber(); syncSize();
+    });
+    return wrap;
+  }
+  function renumber(){
+    $$(".person",people).forEach(function(p,i){
+      p.querySelector(".n").textContent=i+1;
+      var lbl=p.querySelector(".lbl");
+      lbl.childNodes[0].nodeValue = i===0?'Người đại diện':'Khách tham dự';
+      lbl.querySelector("small").textContent = i===0?'Giữ liên lạc':'Người '+(i+1);
+      p.querySelector(".rm").style.visibility = people.children.length>1?'visible':'hidden';
+    });
+  }
+  function setCount(n){
+    n=Math.max(1,Math.min(MAX,n));
+    var cur=people.children.length;
+    if(n>cur){ for(var i=cur;i<n;i++) people.appendChild(personCard(i)); }
+    else if(n<cur){ for(var j=cur;j>n;j--) people.lastElementChild.remove(); }
+    renumber(); sizeVal.textContent=n; updateStepBtns(n);
+  }
+  function syncSize(){ var n=people.children.length; sizeVal.textContent=n; updateStepBtns(n); }
+  function updateStepBtns(n){ $("#minus").disabled=n<=1; $("#plus").disabled=n>=MAX; var ab=$("#addBtn"); if(ab){ab.disabled=n>=MAX; ab.style.display=n>=MAX?"none":"block";} }
+  $("#minus").addEventListener("click",function(){ setCount(people.children.length-1); });
+  $("#plus").addEventListener("click",function(){ setCount(people.children.length+1); });
+  $("#addBtn").addEventListener("click",function(){ setCount(people.children.length+1); people.lastElementChild.querySelector(".p-name").focus(); });
+  setCount(1);
+
+  /* ---- collect + validate ---- */
+  var err=$("#err");
+  function showErr(m){err.textContent=m;err.classList.add("show");err.scrollIntoView({behavior:"smooth",block:"center"});}
+  function clearErr(){err.classList.remove("show");}
+
+  function collect(){
+    var attend=$('input[name="attend"]:checked').value;
+    if(attend==="no"){
+      return {status:"no",
+        rep:{name:$("#noName").value.trim(),org:$("#noOrg").value.trim()},
+        wish:$("#noWish").value.trim(), sessions:[], guests:[], submittedAt:new Date().toISOString()};
+    }
+    var guests=$$(".person",people).map(function(p){
+      var g=p.querySelector('.seg input:checked');
+      return {name:p.querySelector(".p-name").value.trim(),org:p.querySelector(".p-org").value.trim(),
+        title:p.querySelector(".p-title").value.trim(), gender:g?g.value:""};
+    });
+    var rep=guests[0]||{};
+    return {status:"yes",
+      sessions:GALA_ONLY ? ["Gala"] : $$('input[name="session"]:checked').map(function(c){return c.value;}),
+      rep:{name:rep.name,org:rep.org,phone:$("#repPhone").value.trim(),email:$("#repEmail").value.trim()},
+      dietary:(function(){var d=$('input[name="dietary"]:checked');return d?d.value:"";})(), wish:$("#wish").value.trim(), note:$("#note").value.trim(),
+      guests:guests, submittedAt:new Date().toISOString()};
+  }
+  function validate(s){
+    if(s.status==="no"){ if(!s.rep.name) return "Vui lòng cho biết quý danh của Quý vị."; return null; }
+    if(s.sessions.length===0) return "Vui lòng chọn ít nhất một phần: Tọa đàm hoặc Gala.";
+    if(!s.rep.phone) return "Vui lòng nhập số điện thoại liên hệ của người đại diện.";
+    for(var i=0;i<s.guests.length;i++){ if(!s.guests[i].name) return "Vui lòng nhập Họ và tên cho tất cả khách (còn thiếu người "+(i+1)+")."; }
+    return null;
+  }
+
+  /* ---- storage ---- */
+  function saveLocal(s){
+    try{ var a=JSON.parse(localStorage.getItem(CONFIG.STORE_KEY)||"[]"); a.push(s);
+      localStorage.setItem(CONFIG.STORE_KEY,JSON.stringify(a)); }catch(e){}
+  }
+  function sendRemote(s){
+    return fetch(CONFIG.ENDPOINT,{method:"POST",mode:"no-cors",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(s)});
+  }
+
+  /* ---- summary + mailto ---- */
+  function buildText(s){
+    var L=["XÁC NHẬN THAM DỰ — GALA 20 NĂM ESUHAI GROUP","Sự kiện: 08/08/2026 · GEM Center, TP.HCM","─────────────────────"];
+    if(s.status==="no"){L.push("Trạng thái: KHÔNG THỂ THAM DỰ");L.push("Người gửi: "+s.rep.name+(s.rep.org?" ("+s.rep.org+")":""));if(s.wish)L.push("Lời nhắn: "+s.wish);return L.join("\n");}
+    L.push("Trạng thái: THAM DỰ");L.push("Phần: "+s.sessions.join(" · "));
+    L.push("Đại diện: "+s.rep.name+" · "+s.rep.phone+(s.rep.email?" · "+s.rep.email:""));
+    L.push("Số khách: "+s.guests.length);L.push("");
+    s.guests.forEach(function(g,i){L.push((i+1)+". "+g.name+(g.title?" — "+g.title:"")+(g.org?" · "+g.org:"")+(g.gender?" ["+g.gender+"]":""));});
+    if(s.dietary)L.push("\nẨm thực: "+s.dietary);
+    if(s.wish)L.push("Lời chúc: "+s.wish);
+    if(s.note)L.push("Ghi chú: "+s.note);
+    return L.join("\n");
+  }
+  function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function mailto(s){return "mailto:"+CONFIG.RSVP_EMAIL+"?subject="+encodeURIComponent((s.status==="no"?"[Không tham dự] ":"[Xác nhận] ")+"Gala 20 năm ESUHAI — "+s.rep.name)+"&body="+encodeURIComponent(buildText(s));}
+  function summaryHTML(s){
+    if(s.status==="no"){return '<div class="r"><span class="k">Trạng thái</span><span class="v">Không thể tham dự</span></div><div class="r"><span class="k">Người gửi</span><span class="v">'+esc(s.rep.name)+'</span></div>'+(s.wish?'<div class="r"><span class="k">Lời nhắn</span><span class="v">'+esc(s.wish)+'</span></div>':'');}
+    var li=s.guests.map(function(g){return '<li>'+esc(g.name)+(g.title?' — <em>'+esc(g.title)+'</em>':'')+(g.org?' · '+esc(g.org):'')+(g.gender?' <em>('+esc(g.gender)+')</em>':'')+'</li>';}).join("");
+    return '<div class="r"><span class="k">Phần tham dự</span><span class="v">'+esc(s.sessions.join(" · "))+'</span></div>'+
+      '<div class="r"><span class="k">Liên hệ</span><span class="v">'+esc(s.rep.phone)+(s.rep.email?' · '+esc(s.rep.email):'')+'</span></div>'+
+      '<div class="r"><span class="k">Số khách</span><span class="v">'+s.guests.length+' người</span></div>'+
+      '<div class="r" style="display:block"><span class="k">Danh sách</span><ol>'+li+'</ol></div>'+
+      (s.dietary?'<div class="r"><span class="k">Ẩm thực</span><span class="v">'+esc(s.dietary)+'</span></div>':'')+
+      (s.wish?'<div class="r"><span class="k">Lời chúc</span><span class="v">'+esc(s.wish)+'</span></div>':'');
+  }
+
+  /* ---- mode note ---- */
+  var onGoogle = !!(window.google && google.script && google.script.run);
+  var configured=/^https?:\/\//.test(CONFIG.ENDPOINT);
+  $("#modeNote").innerHTML = (onGoogle||configured)
+    ? 'Dữ liệu được gửi an toàn về Google Sheet của ESUHAI Group.'
+    : 'Đang chạy thử ở chế độ <b>lưu tạm trên máy này</b>. Khai báo link Google Sheet trong <b>config.js</b> để nhận đăng ký từ mọi người.';
+
+  /* ---- submit ---- */
+  var lastState=null;
+  var form=$("#form"), confirm=$("#confirm"), panel=$("#panel");
+  form.addEventListener("submit",function(ev){
+    ev.preventDefault(); clearErr();
+    var s=collect(); var m=validate(s);
+    if(m){showErr(m);return;}
+    lastState=s;
+    var btn=$("#submitBtn"); btn.disabled=true; btn.textContent="Đang gửi…";
+
+    saveLocal(s);
+    var done=function(){
+      $("#summary").innerHTML=summaryHTML(s);
+      $("#cTitle").textContent = s.status==="no" ? "Cảm ơn Quý vị đã hồi âm" : "Hân hạnh được đón tiếp Quý vị";
+      $("#cMsg").textContent = s.status==="no"
+        ? "Thật tiếc vì lần này chưa được đón Quý vị. Chúng tôi xin trân trọng giữ gìn lời nhắn và mong sớm được hội ngộ trong những dịp tới."
+        : "Chúng tôi đã trân trọng ghi nhận xác nhận của Quý vị. Hân hạnh được đón tiếp Quý vị trong ngày kỷ niệm 20 năm ESUHAI Group — một dấu mốc chắc chắn sẽ thật đáng nhớ.";
+      panel.classList.add("hidden"); confirm.classList.remove("hidden");
+      confirm.focus(); confirm.scrollIntoView({behavior:"smooth",block:"center"});
+      btn.disabled=false; btn.innerHTML="Gửi xác nhận &#8594;";
+    };
+    if(window.google && google.script && google.script.run){
+      /* Chạy trên Google Apps Script: ghi thẳng vào Google Sheet */
+      google.script.run
+        .withSuccessHandler(function(){ done(); })
+        .withFailureHandler(function(){ done(); }) /* đã lưu tạm; vẫn hiện xác nhận */
+        .saveRSVP(s);
+    }
+    else if(configured){ sendRemote(s).then(done).catch(function(){ /* no-cors luôn resolve; fallback vẫn hiện */ done(); }); }
+    else { setTimeout(done,350); }
+  });
+
+  $("#mailBtn").addEventListener("click",function(){ if(lastState) window.location.href=mailto(lastState); });
+  $("#againBtn").addEventListener("click",function(){
+    confirm.classList.add("hidden"); panel.classList.remove("hidden");
+    form.reset(); setCount(1); syncAttend();
+    window.scrollTo({top:0,behavior:"smooth"});
+  });
+})();
+</script>
+</body>
+</html>

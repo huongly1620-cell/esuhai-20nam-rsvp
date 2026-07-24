@@ -322,7 +322,7 @@
 <body>
 
 <!-- Trang ĐẦY ĐỦ: Tọa đàm + Gala tối. (Bản chỉ mời Gala tối nằm ở tiec-toi.html) -->
-<script>window.__GALA_ONLY__ = false;</script>
+<script>window.__GALA_ONLY__ = false; window.RSVP_SOURCE = "dang-ky";</script>
 <script src="config.js"></script>
 
 <div class="topbar">
@@ -439,6 +439,10 @@
   <div class="panel" id="panel">
     <div class="panel-in">
       <form id="form" novalidate>
+        <!-- honeypot chống bot: người thật không thấy/không điền -->
+        <div aria-hidden="true" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden">
+          <label>Để trống ô này<input type="text" id="hp_company" name="company_website" tabindex="-1" autocomplete="off"></label>
+        </div>
 
         <!-- STEP 1 -->
         <div class="step">
@@ -722,8 +726,18 @@ var CONFIG = {
       localStorage.setItem(CONFIG.STORE_KEY,JSON.stringify(a)); }catch(e){}
   }
   function sendRemote(s){
-    return fetch(CONFIG.ENDPOINT,{method:"POST",mode:"no-cors",
-      headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(s)});
+    var hp=document.getElementById("hp_company");
+    var payload=Object.assign({},s,{
+      source:(window.RSVP_SOURCE||"dang-ky"),
+      honeypot:(hp?hp.value:"")
+    });
+    return fetch(CONFIG.ENDPOINT,{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)}).then(function(res){
+        return res.json().catch(function(){return {};}).then(function(j){
+          return {ok:res.ok,status:res.status,body:j};
+        });
+      });
   }
 
   /* ---- summary + mailto ---- */
@@ -753,11 +767,10 @@ var CONFIG = {
   }
 
   /* ---- mode note ---- */
-  var onGoogle = !!(window.google && google.script && google.script.run);
-  var configured=/^https?:\/\//.test(CONFIG.ENDPOINT);
-  $("#modeNote").innerHTML = (onGoogle||configured)
-    ? 'Dữ liệu được gửi an toàn về Google Sheet của ESUHAI Group.'
-    : 'Đang chạy thử ở chế độ <b>lưu tạm trên máy này</b>. Khai báo link Google Sheet trong <b>config.js</b> để nhận đăng ký từ mọi người.';
+  var configured = !!(CONFIG.ENDPOINT);
+  $("#modeNote").innerHTML = configured
+    ? 'Dữ liệu được gửi an toàn về hệ thống ban tổ chức ESUHAI Group.'
+    : 'Đang chạy thử ở chế độ <b>lưu tạm trên máy này</b> (chưa có kết nối máy chủ).';
 
   /* ---- submit ---- */
   var lastState=null;
@@ -769,7 +782,7 @@ var CONFIG = {
     lastState=s;
     var btn=$("#submitBtn"); btn.disabled=true; btn.textContent="Đang gửi…";
 
-    saveLocal(s);
+    saveLocal(s); // giữ bản lưu tạm trên máy làm phòng hờ
     var done=function(){
       $("#summary").innerHTML=summaryHTML(s);
       $("#cTitle").textContent = s.status==="no" ? "Cảm ơn Quý vị đã hồi âm" : "Hân hạnh được đón tiếp Quý vị";
@@ -778,17 +791,19 @@ var CONFIG = {
         : "Chúng tôi đã trân trọng ghi nhận xác nhận của Quý vị. Hân hạnh được đón tiếp Quý vị trong ngày kỷ niệm 20 năm ESUHAI Group — một dấu mốc chắc chắn sẽ thật đáng nhớ.";
       panel.classList.add("hidden"); confirm.classList.remove("hidden");
       confirm.focus(); confirm.scrollIntoView({behavior:"smooth",block:"center"});
-      btn.disabled=false; btn.innerHTML="Gửi xác nhận &#8594;";
     };
-    if(window.google && google.script && google.script.run){
-      /* Chạy trên Google Apps Script: ghi thẳng vào Google Sheet */
-      google.script.run
-        .withSuccessHandler(function(){ done(); })
-        .withFailureHandler(function(){ done(); }) /* đã lưu tạm; vẫn hiện xác nhận */
-        .saveRSVP(s);
-    }
-    else if(configured){ sendRemote(s).then(done).catch(function(){ /* no-cors luôn resolve; fallback vẫn hiện */ done(); }); }
-    else { setTimeout(done,350); }
+    var restoreBtn=function(){ btn.disabled=false; btn.innerHTML = s.status==="no" ? "Gửi lời nhắn &#8594;" : "Gửi xác nhận &#8594;"; };
+    var fail=function(msg){ restoreBtn(); showErr(msg || "Gửi không thành công. Vui lòng thử lại."); };
+
+    /* Không có máy chủ (mở file tĩnh): chỉ lưu tạm, vẫn hiện xác nhận để xem thử. */
+    if(!configured){ setTimeout(function(){ done(); restoreBtn(); },300); return; }
+
+    /* Gửi thật tới API cùng origin; CHỈ báo thành công khi máy chủ xác nhận đã ghi. */
+    sendRemote(s).then(function(r){
+      if(r.ok){ done(); restoreBtn(); }
+      else if(r.status===429){ fail("Quý vị vừa gửi xác nhận. Vui lòng thử lại sau ít phút."); }
+      else { fail((r.body && r.body.error) || "Gửi không thành công. Vui lòng thử lại."); }
+    }).catch(function(){ fail("Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại."); });
   });
 
   $("#mailBtn").addEventListener("click",function(){ if(lastState) window.location.href=mailto(lastState); });

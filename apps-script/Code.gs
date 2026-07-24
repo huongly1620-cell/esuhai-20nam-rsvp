@@ -1,4 +1,9 @@
 /**************************************************************************
+ * ⚠️ DEPRECATED (2026-07-24) — KHÔNG còn là đường ghi chính (SoT).
+ * SoT hiện tại: backend Railway + Postgres (POST /api/rsvp) + /admin.
+ * File này chỉ giữ lại để tham khảo; KHÔNG cần deploy, KHÔNG cần chạy Sheet.
+ * Ly/PM-con-Ly: bỏ qua file này — xem README.md.
+ * ------------------------------------------------------------------------
  * ESUHAI Group · 20 Năm · Form Xác nhận tham dự — BACKEND (Apps Script)
  * ------------------------------------------------------------------------
  * Vai trò: LƯU dữ liệu. Trang đẹp do GitHub Pages hiển thị; file này chỉ

@@ -1,0 +1,17 @@
+{
+  "name": "esuhai-20nam-rsvp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RSVP backend + Postgres + admin for ESUHAI Group 20th anniversary (08.08.2026)",
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}

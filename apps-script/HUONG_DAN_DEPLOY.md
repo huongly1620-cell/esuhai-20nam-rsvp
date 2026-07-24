@@ -1,3 +1,6 @@
+> ⚠️ **DEPRECATED (2026-07-24).** Hệ thống đã chuyển sang **Railway + Postgres** (xem `README.md`).
+> Không cần deploy Apps Script, không cần Google Sheet. Tài liệu này chỉ để tham khảo lịch sử.
+
 # Hướng dẫn nối trang với Google Sheet (Apps Script)
 
 **Sự kiện:** Gala Kỷ niệm 20 năm ESUHAI Group · 08/08/2026 · GEM Center

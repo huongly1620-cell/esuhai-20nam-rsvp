@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>RSVP · Bảng theo dõi · ESUHAI 20 năm</title>
+<style>
+  :root{--bg:#050d18;--panel:#0c1726;--gold:#d8b876;--cream:#f5efe1;--muted:#8a9bb0;
+    --line:#1d2c40;--green:#57c98a;--red:#ff8a7d}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--cream);
+    font-family:"Segoe UI",system-ui,Arial,sans-serif;padding:18px}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+  h1{font-size:1.15rem;margin:0}
+  .muted{color:var(--muted);font-size:.85rem}
+  .btn{padding:9px 14px;border:1px solid var(--line);border-radius:9px;background:#0a1420;
+    color:var(--cream);cursor:pointer;font-size:.9rem;text-decoration:none;display:inline-block}
+  .btn.gold{background:var(--gold);color:#1a1204;border-color:var(--gold);font-weight:700}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .c{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .c .n{font-size:1.7rem;font-weight:800}
+  .c .l{color:var(--muted);font-size:.8rem;margin-top:2px}
+  .tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+  input#q{flex:1;min-width:180px;padding:10px 12px;border-radius:9px;border:1px solid var(--line);
+    background:#0a1420;color:var(--cream)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:10px 12px;font-size:.86rem;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel)}
+  tr:last-child td{border-bottom:0}
+  .tag{padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:700}
+  .tag.yes{background:rgba(87,201,138,.15);color:var(--green)}
+  .tag.no{background:rgba(255,138,125,.15);color:var(--red)}
+  .src{font-size:.75rem;color:var(--muted)}
+  .wrap{overflow-x:auto}
+  .empty{padding:24px;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Bảng theo dõi RSVP</h1>
+      <div class="muted">ESUHAI Group · 20 năm · 08.08.2026 — số điện thoại được che một phần trên bảng</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <a class="btn gold" href="/admin/api/export.csv">⬇ Xuất CSV</a>
+      <button class="btn" id="logout">Đăng xuất</button>
+    </div>
+  </header>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="tools">
+    <input id="q" placeholder="Tìm theo tên hoặc số điện thoại…">
+    <button class="btn" id="refresh">Làm mới</button>
+  </div>
+
+  <div class="wrap">
+    <table>
+      <thead><tr>
+        <th>Thời gian</th><th>Tên đại diện</th><th>SĐT</th><th>Nguồn</th>
+        <th>Trạng thái</th><th>Phần</th><th>Số khách</th>
+      </tr></thead>
+      <tbody id="tb"><tr><td colspan="7" class="empty">Đang tải…</td></tr></tbody>
+    </table>
+  </div>
+
+<script>
+  function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function fmt(iso){ try{ var d=new Date(iso); return d.toLocaleString('vi-VN'); }catch(_){ return iso; } }
+
+  async function loadSummary(){
+    var r = await fetch('/admin/api/summary');
+    if(r.status===401){ location.href='/admin'; return; }
+    var s = await r.json();
+    var cards = [
+      ['Tổng phản hồi', s.total],
+      ['Tham dự', (s.byStatus&&s.byStatus.yes)||0],
+      ['Không tham dự', (s.byStatus&&s.byStatus.no)||0],
+      ['Tổng khách (đi)', s.totalGuests||0],
+      ['Trang đăng ký', (s.bySource&&s.bySource['dang-ky'])||0],
+      ['Trang dạ tiệc', (s.bySource&&s.bySource['tiec-toi'])||0]
+    ];
+    document.getElementById('cards').innerHTML = cards.map(function(c){
+      return '<div class="c"><div class="n">'+c[1]+'</div><div class="l">'+c[0]+'</div></div>';
+    }).join('');
+  }
+
+  async function loadRows(){
+    var q = document.getElementById('q').value.trim();
+    var r = await fetch('/admin/api/responses?limit=300&q='+encodeURIComponent(q));
+    if(r.status===401){ location.href='/admin'; return; }
+    var j = await r.json();
+    var tb = document.getElementById('tb');
+    if(!j.rows || !j.rows.length){ tb.innerHTML='<tr><td colspan="7" class="empty">Chưa có phản hồi.</td></tr>'; return; }
+    tb.innerHTML = j.rows.map(function(x){
+      var tag = x.status==='yes' ? '<span class="tag yes">Tham dự</span>' : '<span class="tag no">Không</span>';
+      return '<tr><td class="muted">'+esc(fmt(x.createdAt))+'</td><td>'+esc(x.name)+'</td>'+
+        '<td>'+esc(x.phone)+'</td><td class="src">'+esc(x.source)+'</td><td>'+tag+'</td>'+
+        '<td>'+esc(x.sessions)+'</td><td>'+esc(x.guests)+'</td></tr>';
+    }).join('');
+  }
+
+  function reload(){ loadSummary(); loadRows(); }
+  document.getElementById('refresh').addEventListener('click', reload);
+  var t; document.getElementById('q').addEventListener('input', function(){ clearTimeout(t); t=setTimeout(loadRows,250); });
+  document.getElementById('logout').addEventListener('click', async function(){
+    await fetch('/admin/logout',{method:'POST'}); location.href='/admin';
+  });
+  reload();
+</script>
+</body>
+</html>

@@ -536,6 +536,9 @@
   @media (prefers-reduced-motion:reduce){.wax-seal{animation:none}}
   @media(max-width:520px){.wax-seal{width:104px;height:104px}.wax-inf{width:48px;height:27px}.wax-20th{font-size:1.4rem}}
   @media(max-height:440px){.wax-seal{width:76px;height:76px;margin-bottom:8px}.wax-inf{width:36px;height:20px}.wax-20th{font-size:1.05rem}}
+
+  .contact-note{margin:-2px 0 0;font-size:.78rem;color:var(--muted-2);line-height:1.55}
+  .contact-note::before{content:"\1F512  ";}
 </style>
 </head>
 <body class="gate-lock">
@@ -682,7 +685,7 @@
   <div class="lead reveal" style="margin-bottom:34px">
     <span class="eyebrow">R.S.V.P</span>
     <h2>Xác nhận tham dự</h2>
-    <p class="quote">Đôi dòng thông tin sẽ giúp chúng tôi được đón tiếp Quý vị thật chu đáo và ấm áp.</p>
+    <p class="quote">Chỉ khoảng một phút — đôi dòng để chúng tôi được đón tiếp Quý vị thật chu đáo và ấm áp.</p>
   </div>
   <div class="panel" id="panel">
     <div class="panel-in">
@@ -721,7 +724,7 @@
 
           <!-- STEP 3 -->
           <div class="step">
-            <div class="step-head"><div class="step-no">3</div><div><h3>Quý vị đi cùng bao nhiêu vị khách?</h3><p>Chúng tôi sẽ mở đúng số phiếu thông tin tương ứng để Quý vị điền thuận tiện.</p></div></div>
+            <div class="step-head"><div class="step-no">3</div><div><h3>Quý vị đi cùng bao nhiêu vị khách?</h3><p>Chúng tôi sẽ chuẩn bị sẵn đúng số phần để Quý vị điền thật thuận tiện.</p></div></div>
             <div class="party-row">
               <div class="stepper">
                 <button type="button" id="minus" aria-label="Bớt một người">&minus;</button>
@@ -737,14 +740,15 @@
 
           <!-- STEP 4 -->
           <div class="step">
-            <div class="step-head"><div class="step-no">4</div><div><h3>Thông tin từng khách tham dự</h3><p>Kính mời Quý vị điền đôi dòng để chúng tôi chuẩn bị thẻ tên và đón tiếp thật chu đáo.</p></div></div>
+            <div class="step-head"><div class="step-no">4</div><div><h3>Đôi dòng về Quý khách</h3><p>Chỉ vài thông tin để chúng tôi chuẩn bị thẻ tên, chỗ ngồi và đón tiếp Quý vị thật chu đáo.</p></div></div>
 
             <div class="two" style="margin-bottom:20px">
-              <div class="field"><label class="lab" for="repPhone">Điện thoại liên hệ <span class="req">*</span></label>
+              <div class="field"><label class="lab" for="repPhone">Điện thoại / Zalo liên hệ <span class="req">*</span></label>
                 <input type="tel" id="repPhone" placeholder="09xx xxx xxx" autocomplete="tel"></div>
               <div class="field"><label class="lab" for="repEmail">Email (nhận thư cảm ơn)</label>
                 <input type="email" id="repEmail" placeholder="email@congty.com" autocomplete="email"></div>
             </div>
+            <p class="contact-note">Thông tin liên hệ chỉ dùng cho Ban tổ chức ESUHAI để đón tiếp Quý vị — được giữ kín, không chia sẻ cho bên thứ ba.</p>
 
             <div class="people" id="people"></div>
             <button type="button" class="add-btn" id="addBtn">+ Thêm một khách tham dự</button>

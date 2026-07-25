@@ -730,6 +730,7 @@
   .rsvp-by b{color:var(--gold-bright);font-weight:700;font-variant-numeric:lining-nums tabular-nums;letter-spacing:.06em}
   #rsvp input::placeholder,#rsvp textarea::placeholder{color:rgba(185,176,150,.28)}
   #confirm .submit-row{display:none}
+  #modeNote{display:none}
 </style>
 </head>
 <body class="gate-lock">
@@ -825,7 +826,7 @@
         </div>
         <ol class="timeline">
           <li><div class="t num">14:30</div><div class="body"><div class="ttl">Đón tiếp khách mời</div></div></li>
-          <li><div class="t num">15:00</div><div class="body"><div class="ttl">Diễn thuyết đặc biệt</div><div class="desc">Kiến tạo hệ sinh thái cùng phát triển giữa<br>doanh nghiệp Nhật Bản &amp; nguồn nhân lực<br>Việt Nam</div></div></li>
+          <li><div class="t num">15:00</div><div class="body"><div class="ttl">Diễn thuyết đặc biệt</div><div class="desc">Kiến tạo hệ sinh thái cùng phát triển giữa doanh nghiệp Nhật Bản &amp; nguồn nhân lực Việt Nam</div></div></li>
           <li><div class="t num">16:30</div><div class="body"><div class="ttl">Thông điệp kết thúc</div><div class="desc">Gala Lễ kỷ niệm — <em>The 20 Years Next</em></div></div></li>
         </ol>
       </article>
@@ -1021,13 +1022,13 @@ var CONFIG = {
 (function(){
   "use strict";
 
-  /* ---- gold dust background ---- */
-  (function dust(){
+  /* ---- nền sao lấp lánh (twinkle) ---- */
+  (function stars(){
     var c=document.getElementById("dust"), x=c.getContext("2d"), P=[], raf;
     var reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
     function size(){c.width=innerWidth;c.height=innerHeight;}
-    function init(){P=[];var n=Math.min(70,Math.floor(innerWidth/22));for(var i=0;i<n;i++)P.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.6+.3,s:Math.random()*.25+.05,o:Math.random()*.5+.15});}
-    function draw(){x.clearRect(0,0,c.width,c.height);for(var i=0;i<P.length;i++){var p=P[i];p.y-=p.s;if(p.y<-4){p.y=c.height+4;p.x=Math.random()*c.width;}x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fillStyle="rgba(216,184,118,"+p.o+")";x.fill();}raf=requestAnimationFrame(draw);}
+    function init(){P=[];var n=Math.min(64,Math.floor(innerWidth/24));for(var i=0;i<n;i++)P.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.1+.5,ph:Math.random()*6.283,tw:Math.random()*.028+.006,mo:Math.random()*.45+.18});}
+    function draw(){x.clearRect(0,0,c.width,c.height);for(var i=0;i<P.length;i++){var p=P[i];p.ph+=p.tw;var o=p.mo*(0.3+0.7*(0.5+0.5*Math.sin(p.ph)));p.y-=0.02;if(p.y<-4){p.y=c.height+4;p.x=Math.random()*c.width;}x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fillStyle="rgba(230,210,160,"+o+")";x.fill();if(o>p.mo*0.8){var g=o*0.55,L=p.r*3.4;x.strokeStyle="rgba(244,228,186,"+g+")";x.lineWidth=0.6;x.beginPath();x.moveTo(p.x-L,p.y);x.lineTo(p.x+L,p.y);x.moveTo(p.x,p.y-L);x.lineTo(p.x,p.y+L);x.stroke();}}raf=requestAnimationFrame(draw);}
     size();init();if(!reduce)draw();
     addEventListener("resize",function(){size();init();});
   })();
@@ -1200,7 +1201,7 @@ var CONFIG = {
     var isRep=index===0;
     wrap.innerHTML=
       '<div class="person-head"><div class="who"><div class="n">'+(index+1)+'</div>'+
-        '<div class="lbl">'+(isRep?'Người đại diện':'Khách tham dự')+'<small>'+(isRep?'Giữ liên lạc':'Người '+(index+1))+'</small></div></div>'+
+        '<div class="lbl">'+(isRep?'Người đại diện':'Khách tham dự')+'<small>'+(isRep?'Đầu mối liên lạc':'Người '+(index+1))+'</small></div></div>'+
         '<button type="button" class="rm">Xóa</button></div>'+
       '<div class="person-body">'+
         '<div class="field"><label class="lab">Họ và tên <span class="req">*</span></label><input type="text" class="p-name" placeholder="Nguyễn Văn A" autocomplete="name"></div>'+
@@ -1225,7 +1226,7 @@ var CONFIG = {
       p.querySelector(".n").textContent=i+1;
       var lbl=p.querySelector(".lbl");
       lbl.childNodes[0].nodeValue = i===0?'Người đại diện':'Khách tham dự';
-      lbl.querySelector("small").textContent = i===0?'Giữ liên lạc':'Người '+(i+1);
+      lbl.querySelector("small").textContent = i===0?'Đầu mối liên lạc':'Người '+(i+1);
       p.querySelector(".rm").style.visibility = people.children.length>1?'visible':'hidden';
     });
   }

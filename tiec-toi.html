@@ -659,6 +659,15 @@
   /* emblem "20 năm" vàng trong phần thông điệp */
   .emblem-20nam{display:block;width:min(320px,66vw);height:auto;margin:26px auto 0;
     filter:drop-shadow(0 6px 16px rgba(0,0,0,.42))}
+
+  /* ===== R0 · NẮP PHONG BÌ FULL SCREEN ===== */
+  .intro-content{justify-content:flex-start;padding:max(22px,env(safe-area-inset-top)) 0 0}
+  .envelope{width:100%;max-width:none;margin:0;position:relative}
+  .env-flap-svg{display:block;width:100%;height:min(58vh,80vw);filter:drop-shadow(0 24px 40px rgba(0,0,0,.55))}
+  .envelope .wax-seal{position:absolute;left:50%;top:min(58vh,80vw);transform:translate(-50%,-50%);
+    width:150px;height:150px;margin:0;z-index:3;animation:none;filter:drop-shadow(0 12px 18px rgba(0,0,0,.6))}
+  @media(max-width:520px){.envelope .wax-seal{width:122px;height:122px}}
+  .intro-content .intro-btn{margin-top:104px;position:relative;z-index:3}
 </style>
 </head>
 <body class="gate-lock">
@@ -680,7 +689,7 @@
   
   <div class="intro-content">
     <div class="envelope">
-      <svg class="env-flap-svg" viewBox="0 0 300 150" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="flapG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,246,220,.10)"/><stop offset="1" stop-color="rgba(0,0,0,.34)"/></linearGradient></defs><path d="M4 4 H296 L150 146 Z" fill="url(#flapG)" stroke="#d8b876" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      <svg class="env-flap-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="flapG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,246,220,.08)"/><stop offset="1" stop-color="rgba(0,0,0,.42)"/></linearGradient></defs><path d="M0 0 H100 L50 100 Z" fill="url(#flapG)" stroke="#d8b876" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linejoin="round"/><path d="M50 0 V100" stroke="rgba(216,184,118,.16)" stroke-width="1" vector-effect="non-scaling-stroke"/></svg>
       <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
     </div>
     

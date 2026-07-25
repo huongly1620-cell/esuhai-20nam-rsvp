@@ -668,6 +668,19 @@
     width:150px;height:150px;margin:0;z-index:3;animation:none;filter:drop-shadow(0 12px 18px rgba(0,0,0,.6))}
   @media(max-width:520px){.envelope .wax-seal{width:122px;height:122px}}
   .intro-content .intro-btn{margin-top:104px;position:relative;z-index:3}
+
+  /* ===== R0 · phong bì giấy FULL-SCREEN 3D (mặt sau, gấp 4 nếp) ===== */
+  .intro-content{padding:0}
+  .envelope{position:absolute;inset:0;width:auto;max-width:none;margin:0}
+  .env-flap-svg{position:absolute;inset:0;width:100%;height:100%;display:block;filter:none}
+  .envelope .wax-seal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:min(158px,42vw);height:min(158px,42vw);margin:0;z-index:3;animation:none;
+    filter:drop-shadow(0 14px 22px rgba(0,0,0,.65))}
+  .intro-content .intro-btn{position:absolute;left:50%;top:calc(50% + 128px);transform:translateX(-50%);z-index:3;white-space:nowrap}
+  @media(max-width:520px){
+    .envelope .wax-seal{width:min(138px,42vw);height:min(138px,42vw)}
+    .intro-content .intro-btn{top:calc(50% + 112px)}
+  }
 </style>
 </head>
 <body class="gate-lock">
@@ -689,7 +702,7 @@
   
   <div class="intro-content">
     <div class="envelope">
-      <svg class="env-flap-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="flapG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,246,220,.08)"/><stop offset="1" stop-color="rgba(0,0,0,.42)"/></linearGradient></defs><path d="M0 0 H100 L50 100 Z" fill="url(#flapG)" stroke="#d8b876" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linejoin="round"/><path d="M50 0 V100" stroke="rgba(216,184,118,.16)" stroke-width="1" vector-effect="non-scaling-stroke"/></svg>
+      <svg class="env-flap-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="flapTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#12403f"/><stop offset="1" stop-color="#0b2a30"/></linearGradient><linearGradient id="flapBot" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#0a2a30"/><stop offset="1" stop-color="#07202a"/></linearGradient><radialGradient id="ctrShade" cx="50" cy="50" r="55" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="rgba(0,0,0,.55)"/><stop offset="42%" stop-color="rgba(0,0,0,0)"/></radialGradient></defs><path d="M0 0 L50 50 L0 100 Z" fill="#08202a"/><path d="M100 0 L50 50 L100 100 Z" fill="#081d26"/><path d="M0 100 L50 50 L100 100 Z" fill="url(#flapBot)"/><path d="M0 0 L100 0 L50 50 Z" fill="url(#flapTop)"/><path d="M0 0 L50 50 M100 0 L50 50" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="2.4" vector-effect="non-scaling-stroke"/><path d="M0 0 L50 50 M100 0 L50 50 M0 100 L50 50 M100 100 L50 50" fill="none" stroke="#d8b876" stroke-width="0.9" stroke-opacity="0.7" vector-effect="non-scaling-stroke"/><path d="M0 0 H100" fill="none" stroke="rgba(255,244,214,.18)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><rect x="0" y="0" width="100" height="100" fill="url(#ctrShade)"/></svg>
       <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
     </div>
     

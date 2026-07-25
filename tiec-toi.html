@@ -23,7 +23,7 @@
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
-    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#eefde8 0,#e7f6db 470px,#a9d0b4 700px,#4c8672 880px,#1d4b49 1040px,#0b2f35 1200px,#061a2b 1460px) no-repeat #061a2b;
+    margin:0;font-family:var(--sans);color:var(--cream);background:#06182a;
     line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
   }
   body::before{
@@ -692,6 +692,23 @@
   .cover-cta{position:relative;z-index:1;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
     align-items:center;padding:44px 16px 54px}
   @media(max-width:560px){.cover-cta{flex-direction:column}.cover-cta .btn{width:min(330px,92vw);justify-content:center}}
+
+  /* ===== R0 · bìa full-viewport + nút trên màn + mobile chỉn chu ===== */
+  body::before{background:
+    radial-gradient(1100px 700px at 82% -8%, rgba(22,120,90,.18), transparent 60%),
+    radial-gradient(900px 620px at 6% 108%, rgba(14,90,80,.15), transparent 55%),
+    linear-gradient(180deg,#0a2f34 0%,#08222f 55%,#06182a 100%);animation:none}
+  .cover{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;
+    padding:18px 16px 24px;text-align:center;position:relative;z-index:1;
+    background:linear-gradient(180deg,#eefbe6 0%,#e5f4d7 100%)}
+  .cover-img{width:auto;max-width:min(400px,84vw);height:auto;max-height:50vh;object-fit:contain;
+    border-radius:12px;box-shadow:0 30px 62px rgba(18,48,34,.3),0 6px 16px rgba(0,0,0,.15)}
+  .cover-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:center}
+  .cover-actions .btn{white-space:nowrap}
+  @media(max-width:560px){.cover-actions{flex-direction:column;width:100%;gap:12px}
+    .cover-actions .btn{width:min(340px,84vw);justify-content:center}}
+  .to-dark{height:210px;position:relative;z-index:1;
+    background:linear-gradient(180deg,#e5f4d7 0%,#93c2a2 26%,#3d7c66 54%,#12403f 80%,#0a2f34 100%)}
 </style>
 </head>
 <body class="gate-lock">
@@ -743,13 +760,12 @@
 
 <section class="cover">
   <img class="cover-img" src="screen1-cover.jpg" alt="Trân trọng kính mời tham dự · GALA Kỷ niệm 20 năm ESUHAI Group · 20 năm thành lập 2006–2026">
-  <div class="scroll-hint" aria-hidden="true">Cuộn xuống để xác nhận &#8595;</div>
+  <div class="cover-actions">
+    <a class="btn btn-primary" href="#rsvp">Xác nhận tham dự &#8594;</a>
+    <a class="btn btn-ghost" href="#chuongtrinh">Chi tiết chương trình</a>
+  </div>
 </section>
-
-<section class="cover-cta">
-  <a class="btn btn-primary" href="#rsvp">Xác nhận tham dự &#8594;</a>
-  <a class="btn btn-ghost" href="#chuongtrinh">Chi tiết chương trình</a>
-</section>
+<div class="to-dark" aria-hidden="true"></div>
 
 <!-- ============ THÔNG ĐIỆP ============ -->
 <section class="band" id="chuongtrinh">
@@ -757,8 +773,7 @@
     <div class="lead reveal">
       <span class="eyebrow" id="thesisEyebrow">Hội thảo chuyên đề</span>
       <h2>Từ <em class="shimmer-text">&ldquo;Lao động phổ thông&rdquo;</em><br>đến <em class="shimmer-text">&ldquo;Sự nghiệp bền vững&rdquo;</em></h2>
-      <p class="quote">Sự hiện diện của Quý vị là niềm vinh hạnh, góp phần làm nên ý nghĩa trọn vẹn cho dấu mốc</p>
-      <img class="emblem-20nam" src="emblem-20nam-gold.png" alt="20 năm · 2006–2026 · Hình thành & phát triển của ESUHAI Group">
+      <p class="quote">Sự hiện diện của Quý vị là niềm vinh hạnh, góp phần làm nên ý nghĩa trọn vẹn cho dấu mốc 20 năm hình thành và phát triển của ESUHAI Group.</p>
     </div>
     <div class="theme-grid">
       <div class="pill reveal spot"><div class="ic"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5 12 4l10 4.5L12 13z"/><path d="M6 10.5V15c0 1.2 2.7 2.4 6 2.4s6-1.2 6-2.4v-4.5"/><path d="M22 8.5v5"/></svg></div><h3>Giáo dục &amp; Đào tạo</h3><p>Kiến tạo con người trước khi kiến tạo sự nghiệp.</p></div>

@@ -23,7 +23,7 @@
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
-    margin:0;font-family:var(--sans);color:var(--cream);background:var(--ink);
+    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#eefde8 0,#e7f6db 470px,#a9d0b4 700px,#4c8672 880px,#1d4b49 1040px,#0b2f35 1200px,#061a2b 1460px) no-repeat #061a2b;
     line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
   }
   body::before{
@@ -681,6 +681,17 @@
     .envelope .wax-seal{width:min(138px,42vw);height:min(138px,42vw)}
     .intro-content .intro-btn{top:calc(50% + 112px)}
   }
+
+  /* ===== R0 · bìa screen1 + nút + chuyển nền nhạt→đậm ===== */
+  body::before{background:none;animation:none}
+  .cover{position:relative;z-index:1;text-align:center;padding:22px 16px 8px}
+  .cover-img{display:block;width:min(430px,92vw);height:auto;margin:0 auto;border-radius:12px;
+    box-shadow:0 34px 70px rgba(0,0,0,.32),0 6px 16px rgba(0,0,0,.18)}
+  .scroll-hint{margin-top:20px;color:#2c6a5b;font-size:.76rem;letter-spacing:.24em;text-transform:uppercase;
+    font-weight:600;animation:bob 2.2s ease-in-out infinite}
+  .cover-cta{position:relative;z-index:1;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+    align-items:center;padding:44px 16px 54px}
+  @media(max-width:560px){.cover-cta{flex-direction:column}.cover-cta .btn{width:min(330px,92vw);justify-content:center}}
 </style>
 </head>
 <body class="gate-lock">
@@ -730,21 +741,15 @@
 <canvas id="dust"></canvas>
 <div id="progressBar"></div>
 
-<header class="hero">
-  <span class="eyebrow kicker" id="heroKicker">Trân trọng kính mời · The 20 Years Next</span>
-  <div class="mono"><b id="countNum">0</b><span class="inf"><img class="logo-img" src="logo-infinity.png" alt=""></span></div>
-  <h1 class="hero-lockup"><img class="lockup-img" src="lockup-gala.png" alt="GALA · Kỷ niệm 20 năm ESUHAI Group"><span class="grad shimmer-text">20 Năm ESUHAI Group</span></h1>
-  <p class="sub" id="heroSub">Hai mươi năm — một hành trình đáng trân trọng.<br>Kính mời Quý vị hiện diện trong ngày đặc biệt của ESUHAI Group, và dành đôi phút xác nhận để chúng tôi được đón tiếp thật chu đáo.</p>
-  <div class="meta" id="heroMeta">
-    <span><i>&#9670;</i> Thứ Bảy, 08 · 08 · 2026</span><span class="sep">|</span>
-    <span><i>&#9670;</i> Tọa đàm 14:30 &middot; Gala 17:00</span><span class="sep">|</span>
-    <span><i>&#9670;</i> GEM Center, TP. Hồ Chí Minh</span>
-  </div>
-  <div class="cta2">
-    <a class="btn btn-primary" href="#rsvp">Xác nhận tham dự &#8594;</a>
-    <a class="btn btn-ghost" href="#chuongtrinh">Xem chương trình</a>
-  </div>
-</header>
+<section class="cover">
+  <img class="cover-img" src="screen1-cover.jpg" alt="Trân trọng kính mời tham dự · GALA Kỷ niệm 20 năm ESUHAI Group · 20 năm thành lập 2006–2026">
+  <div class="scroll-hint" aria-hidden="true">Cuộn xuống để xác nhận &#8595;</div>
+</section>
+
+<section class="cover-cta">
+  <a class="btn btn-primary" href="#rsvp">Xác nhận tham dự &#8594;</a>
+  <a class="btn btn-ghost" href="#chuongtrinh">Chi tiết chương trình</a>
+</section>
 
 <!-- ============ THÔNG ĐIỆP ============ -->
 <section class="band" id="chuongtrinh">

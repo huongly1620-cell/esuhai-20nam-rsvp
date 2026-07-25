@@ -846,6 +846,37 @@
     animation:sealBreathe 4s ease-in-out infinite}
   .intro-btn{position:absolute !important;left:50%;top:55vh;transform:translateX(-50%);z-index:3;margin:0}
   @media(max-height:640px){.env-flap{height:32vh}.intro-content .wax-seal{top:32vh;width:min(118px,30vw);height:min(118px,30vw)}.intro-btn{top:47vh}}
+
+  /* ===== R0 · bìa thư v4: xanh ngọc-be-navy + vân 3D rõ + chạm dấu sáp để mở ===== */
+  .intro-content{perspective:1300px}
+  .intro-gate{background-color:#12564e;
+    background-image:radial-gradient(140% 92% at 50% 6%, rgba(214,196,152,.15), transparent 55%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='e'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04 0.085' numOctaves='4' seed='8' stitchTiles='stitch' result='n'/%3E%3CfeDiffuseLighting in='n' surfaceScale='3.4' diffuseConstant='1.15' lighting-color='%23efe3c6'%3E%3CfeDistantLight azimuth='235' elevation='56'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23e)'/%3E%3C/svg%3E"), linear-gradient(165deg,#1c705d 0%,#155a52 42%,#0e2f45 100%);
+    background-size:cover, 260px 260px, cover;
+    background-blend-mode:screen, overlay, normal;
+    box-shadow:inset 0 0 150px rgba(0,0,0,.42)}
+  .env-flap{position:absolute;top:0;left:0;width:100%;height:38vh;z-index:2;margin:0;
+    clip-path:polygon(0 0,100% 0,50% 100%);background-color:#1c7060;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='e'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04 0.085' numOctaves='4' seed='8' stitchTiles='stitch' result='n'/%3E%3CfeDiffuseLighting in='n' surfaceScale='3.4' diffuseConstant='1.15' lighting-color='%23efe3c6'%3E%3CfeDistantLight azimuth='235' elevation='56'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23e)'/%3E%3C/svg%3E"), linear-gradient(180deg,#247f6a,#123f50);
+    background-size:260px 260px, cover;background-blend-mode:overlay,normal;
+    transform-origin:top center;transition:transform .85s cubic-bezier(.5,0,.2,1);
+    filter:drop-shadow(0 14px 24px rgba(0,0,0,.5))}
+  .intro-content .wax-seal{position:absolute;left:50%;top:40vh;transform:translate(-50%,-50%);
+    width:min(160px,41vw);height:min(160px,41vw);margin:0;z-index:3;cursor:pointer;
+    animation:sealBreathe 4s ease-in-out infinite}
+  /* nhấn dấu sáp -> mở: NẮP BẬT LÊN + sáp vỡ mờ + màn tan */
+  .intro-gate.opening .env-flap{transform:rotateX(-155deg)}
+  .intro-gate.opening .wax-seal{animation:none;transform:translate(-50%,-50%) scale(.5);opacity:0;transition:transform .55s ease,opacity .5s ease}
+  .intro-gate.opening{opacity:0;transition:opacity .5s .55s ease}
+  .intro-gate.opening .intro-btn{opacity:0;transition:opacity .3s ease}
+  /* dòng gợi ý + mũi tên chỉ LÊN dấu sáp */
+  .intro-btn{position:absolute !important;left:50%;top:53vh;transform:translateX(-50%);z-index:3;margin:0;
+    background:none;border:0;box-shadow:none;padding:6px 10px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    color:#ecd9a6;font-family:var(--sans);font-size:.82rem;font-weight:500;letter-spacing:.05em}
+  .intro-btn .arw{font-size:1.4rem;line-height:1;color:#e9c877;animation:arwBounce 1.4s ease-in-out infinite}
+  @keyframes arwBounce{0%,100%{transform:translateY(0);opacity:.6}50%{transform:translateY(-6px);opacity:1}}
+  @media(prefers-reduced-motion:reduce){.intro-btn .arw{animation:none}.env-flap{transition:none}}
+  @media(max-height:640px){.env-flap{height:32vh}.intro-content .wax-seal{top:32vh;width:min(120px,31vw);height:min(120px,31vw)}.intro-btn{top:45vh}}
 </style>
 </head>
 <body class="gate-lock">
@@ -868,7 +899,7 @@
   <div class="intro-content">
     <div class="env-flap"></div>
     <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
-    <button type="button" class="btn btn-primary intro-btn" id="introBtn">&#9835;&nbsp; Chạm để mở thiệp</button>
+    <button type="button" class="intro-btn" id="introBtn"><span class="arw">&#8593;</span>Chạm vào con dấu để mở</button>
     
   </div>
 </div>
@@ -1241,13 +1272,14 @@ var CONFIG = {
     var audioReady=!!bgm;
     if(bgm) bgm.addEventListener("error",function(){ audioReady=false; });
     function openGate(){ gate.classList.add("opening"); body.classList.remove("gate-lock");
-      fab.classList.add("show"); setTimeout(function(){ gate.style.display="none"; },1250); }
+      fab.classList.add("show"); setTimeout(function(){ gate.style.display="none"; },1500); }
     function fadeIn(){ if(!bgm) return; bgm.volume=0; setTimeout(function(){ var v=0; var t=setInterval(function(){ v+=0.03; if(v>=0.4){v=0.4;clearInterval(t);} if(bgm) bgm.volume=v; },90); },450); }
     function tryPlay(){ if(!bgm) return; bgm.volume=0; var p=bgm.play();
       if(p && p.catch){ p.then(function(){ fab.classList.add("playing"); fab.classList.remove("muted"); fadeIn(); })
         .catch(function(){ fab.classList.add("muted"); fab.classList.remove("playing"); }); }
       else { fab.classList.add("playing"); fadeIn(); } }
     introBtn.addEventListener("click",function(){ if(audioReady) tryPlay(); openGate(); });
+    var introSeal=document.querySelector(".intro-content .wax-seal"); if(introSeal){ introSeal.style.cursor="pointer"; introSeal.addEventListener("click",function(){ if(audioReady) tryPlay(); openGate(); }); }
     fab.addEventListener("click",function(){ if(!bgm) return;
       if(bgm.paused){ tryPlay(); } else { bgm.pause(); fab.classList.remove("playing"); } });
   })();

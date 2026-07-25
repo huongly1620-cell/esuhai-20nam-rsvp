@@ -723,6 +723,30 @@
   @media(max-width:640px){.topbar .seal{height:27px}.topbar .seal .logo-img{height:26px}}
   .rsvp-by{margin:12px 0 0;font-family:var(--sans);font-size:.9rem;letter-spacing:.02em;color:var(--muted)}
   .rsvp-by b{color:var(--gold-bright);font-weight:600;font-variant-numeric:lining-nums tabular-nums;letter-spacing:.05em}
+
+  /* ===== R0 · phong bì 4 CÁNH BUNG RA + con dấu giữa + nhạc êm ===== */
+  .envelope{position:relative;width:min(338px,78vw);aspect-ratio:1/1;margin:2px auto 30px;perspective:1600px}
+  .envelope .ef{position:absolute;inset:0;backface-visibility:hidden;box-shadow:inset 0 0 46px rgba(0,0,0,.4);
+    transition:transform 1s cubic-bezier(.62,.03,.24,1),opacity .7s ease .3s}
+  .envelope .ef-t{clip-path:polygon(0 0,100% 0,50% 50%);background:linear-gradient(180deg,#155650,#0e3a3a);transform-origin:50% 0}
+  .envelope .ef-b{clip-path:polygon(0 100%,100% 100%,50% 50%);background:linear-gradient(0deg,#0a2830,#0d3838);transform-origin:50% 100%}
+  .envelope .ef-l{clip-path:polygon(0 0,0 100%,50% 50%);background:linear-gradient(90deg,#103f3b,#0b3033);transform-origin:0 50%}
+  .envelope .ef-r{clip-path:polygon(100% 0,100% 100%,50% 50%);background:linear-gradient(270deg,#103f3b,#0b3033);transform-origin:100% 50%}
+  .env-seams{position:absolute;inset:0;pointer-events:none;transition:opacity .5s ease;z-index:2}
+  .intro-content .envelope .wax-seal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;
+    width:126px;height:126px;z-index:6;transition:transform .55s ease,opacity .45s ease}
+  @media(max-width:520px){.intro-content .envelope .wax-seal{width:104px;height:104px}}
+  .intro-gate.opening .ef-t{transform:rotateX(-181deg)}
+  .intro-gate.opening .ef-b{transform:rotateX(181deg)}
+  .intro-gate.opening .ef-l{transform:rotateY(181deg)}
+  .intro-gate.opening .ef-r{transform:rotateY(-181deg)}
+  .intro-gate.opening .ef{opacity:.06}
+  .intro-gate.opening .env-seams{opacity:0}
+  .intro-gate.opening .wax-seal{transform:translate(-50%,-50%) scale(.32);opacity:0}
+  .intro-gate.opening .intro-btn{opacity:0;transition:opacity .3s ease}
+  .intro-gate.opening{opacity:0;transition:opacity .55s .72s ease}
+  .intro-gate.opening .intro-content{opacity:1 !important;transform:none !important;transition:none}
+  @media(prefers-reduced-motion:reduce){.envelope .ef,.intro-content .envelope .wax-seal{transition:none}.intro-gate.opening{transition:opacity .3s ease}}
 </style>
 </head>
 <body class="gate-lock">
@@ -744,7 +768,11 @@
   
   <div class="intro-content">
     <div class="envelope">
-      <svg class="env-flap-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="flapTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#12403f"/><stop offset="1" stop-color="#0b2a30"/></linearGradient><linearGradient id="flapBot" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#0a2a30"/><stop offset="1" stop-color="#07202a"/></linearGradient><radialGradient id="ctrShade" cx="50" cy="50" r="55" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="rgba(0,0,0,.55)"/><stop offset="42%" stop-color="rgba(0,0,0,0)"/></radialGradient></defs><path d="M0 0 L50 50 L0 100 Z" fill="#08202a"/><path d="M100 0 L50 50 L100 100 Z" fill="#081d26"/><path d="M0 100 L50 50 L100 100 Z" fill="url(#flapBot)"/><path d="M0 0 L100 0 L50 50 Z" fill="url(#flapTop)"/><path d="M0 0 L50 50 M100 0 L50 50" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="2.4" vector-effect="non-scaling-stroke"/><path d="M0 0 L50 50 M100 0 L50 50 M0 100 L50 50 M100 100 L50 50" fill="none" stroke="#d8b876" stroke-width="0.9" stroke-opacity="0.7" vector-effect="non-scaling-stroke"/><path d="M0 0 H100" fill="none" stroke="rgba(255,244,214,.18)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><rect x="0" y="0" width="100" height="100" fill="url(#ctrShade)"/></svg>
+      <div class="ef ef-t"></div>
+      <div class="ef ef-b"></div>
+      <div class="ef ef-l"></div>
+      <div class="ef ef-r"></div>
+      <svg class="env-seams" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L50 50 L100 0 M0 100 L50 50 L100 100" fill="none" stroke="#d8b876" stroke-width="0.8" stroke-opacity="0.55" vector-effect="non-scaling-stroke"/></svg>
       <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
     </div>
     
@@ -1120,11 +1148,12 @@ var CONFIG = {
     var audioReady=!!bgm;
     if(bgm) bgm.addEventListener("error",function(){ audioReady=false; });
     function openGate(){ gate.classList.add("opening"); body.classList.remove("gate-lock");
-      fab.classList.add("show"); setTimeout(function(){ gate.style.display="none"; },1250); }
-    function tryPlay(){ if(!bgm) return; var p=bgm.play();
-      if(p && p.catch){ p.then(function(){ fab.classList.add("playing"); fab.classList.remove("muted"); })
+      fab.classList.add("show"); setTimeout(function(){ gate.style.display="none"; },1500); }
+    function fadeIn(){ if(!bgm) return; bgm.volume=0; setTimeout(function(){ var v=0; var t=setInterval(function(){ v+=0.03; if(v>=0.4){v=0.4;clearInterval(t);} if(bgm) bgm.volume=v; },90); },450); }
+    function tryPlay(){ if(!bgm) return; bgm.volume=0; var p=bgm.play();
+      if(p && p.catch){ p.then(function(){ fab.classList.add("playing"); fab.classList.remove("muted"); fadeIn(); })
         .catch(function(){ fab.classList.add("muted"); fab.classList.remove("playing"); }); }
-      else { fab.classList.add("playing"); } }
+      else { fab.classList.add("playing"); fadeIn(); } }
     introBtn.addEventListener("click",function(){ if(audioReady) tryPlay(); openGate(); });
     fab.addEventListener("click",function(){ if(!bgm) return;
       if(bgm.paused){ tryPlay(); } else { bgm.pause(); fab.classList.remove("playing"); } });

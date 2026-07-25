@@ -29,9 +29,9 @@
   body::before{
     content:"";position:fixed;inset:0;z-index:-3;
     background:
-      radial-gradient(1200px 720px at 82% -12%, rgba(30,160,105,.42), transparent 60%),
-      radial-gradient(1000px 640px at 4% 112%, rgba(14,120,95,.4), transparent 55%),
-      linear-gradient(180deg,#0c6a4c 0%,#0b4a4c 30%,#0a3040 60%,#08192f 100%);
+      radial-gradient(1200px 720px at 82% -12%, rgba(24,130,88,.3), transparent 60%),
+      radial-gradient(1000px 640px at 4% 112%, rgba(12,95,78,.28), transparent 55%),
+      linear-gradient(180deg,#095039 0%,#083a3a 30%,#082738 60%,#061225 100%);
   }
   #dust{position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.55}
   body::after{
@@ -646,6 +646,19 @@
   .intro-gate.opening .env-flap-group{transform:rotateX(172deg)}
   .intro-gate.opening .intro-content{opacity:1 !important;transform:none !important;transition:none}
   @media (prefers-reduced-motion:reduce){.env-flap-group{transition:none}.intro-gate.opening{transition:opacity .3s ease}}
+
+  /* ===== R0 · (stage3) nền đậm hơn + nắp phong bì line + emblem 20 năm ===== */
+  /* màn mở thiệp: nền tối, NẮP dạng line + đổ bóng (không ảnh, không animation mở) */
+  .intro-gate{background:linear-gradient(160deg,#061225 0%,#082a34 50%,#083b3c 100%)}
+  .envelope{position:relative;width:min(320px,74vw);aspect-ratio:auto;margin:6px auto 30px;perspective:none}
+  .env-flap-svg{display:block;width:100%;height:auto;filter:drop-shadow(0 18px 30px rgba(0,0,0,.55))}
+  .envelope .wax-seal{position:absolute;left:50%;bottom:0;transform:translate(-50%,36%);
+    width:130px;height:130px;margin:0;z-index:2;animation:none;filter:drop-shadow(0 10px 16px rgba(0,0,0,.55))}
+  @media(max-width:520px){.envelope .wax-seal{width:112px;height:112px}}
+  .intro-gate.opening{opacity:0;transition:opacity .5s ease}
+  /* emblem "20 năm" vàng trong phần thông điệp */
+  .emblem-20nam{display:block;width:min(320px,66vw);height:auto;margin:26px auto 0;
+    filter:drop-shadow(0 6px 16px rgba(0,0,0,.42))}
 </style>
 </head>
 <body class="gate-lock">
@@ -667,11 +680,8 @@
   
   <div class="intro-content">
     <div class="envelope">
-      <div class="env-body"></div>
-      <div class="env-flap-group">
-        <div class="env-flap"></div>
-        <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
-      </div>
+      <svg class="env-flap-svg" viewBox="0 0 300 150" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="flapG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,246,220,.10)"/><stop offset="1" stop-color="rgba(0,0,0,.34)"/></linearGradient></defs><path d="M4 4 H296 L150 146 Z" fill="url(#flapG)" stroke="#d8b876" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
     </div>
     
     
@@ -720,7 +730,8 @@
     <div class="lead reveal">
       <span class="eyebrow" id="thesisEyebrow">Hội thảo chuyên đề</span>
       <h2>Từ <em class="shimmer-text">&ldquo;Lao động phổ thông&rdquo;</em><br>đến <em class="shimmer-text">&ldquo;Sự nghiệp bền vững&rdquo;</em></h2>
-      <p class="quote">Sự hiện diện của Quý vị là niềm vinh hạnh, góp phần làm nên ý nghĩa trọn vẹn cho dấu mốc 20 năm hình thành và phát triển của ESUHAI Group.</p>
+      <p class="quote">Sự hiện diện của Quý vị là niềm vinh hạnh, góp phần làm nên ý nghĩa trọn vẹn cho dấu mốc</p>
+      <img class="emblem-20nam" src="emblem-20nam-gold.png" alt="20 năm · 2006–2026 · Hình thành & phát triển của ESUHAI Group">
     </div>
     <div class="theme-grid">
       <div class="pill reveal spot"><div class="ic"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5 12 4l10 4.5L12 13z"/><path d="M6 10.5V15c0 1.2 2.7 2.4 6 2.4s6-1.2 6-2.4v-4.5"/><path d="M22 8.5v5"/></svg></div><h3>Giáo dục &amp; Đào tạo</h3><p>Kiến tạo con người trước khi kiến tạo sự nghiệp.</p></div>

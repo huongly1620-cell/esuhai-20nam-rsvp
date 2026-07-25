@@ -10,6 +10,7 @@
     --ink:#050d18; --navy:#0b1e38; --jade-deep:#0c3b37; --jade:#14584e;
     --gold:#d8b876; --gold-bright:#f4e2b0; --gold-deep:#a6873f;
     --crimson:#e23a2e; --crimson-deep:#b01e17;
+    --mint:#43e08d; --emerald:#0c6a4c;
     --cream:#f5efe1; --muted:#b9b096; --muted-2:#8f886f;
     --line:rgba(216,184,118,.20);
     --line-strong:rgba(216,184,118,.4);
@@ -28,9 +29,9 @@
   body::before{
     content:"";position:fixed;inset:0;z-index:-3;
     background:
-      radial-gradient(1300px 760px at 80% -10%, rgba(20,88,78,.5), transparent 60%),
-      radial-gradient(1000px 640px at 5% 110%, rgba(12,59,55,.5), transparent 55%),
-      linear-gradient(160deg,#050d18 0%,#0a1a30 40%,#0b2b2f 76%,#0c3b37 100%);
+      radial-gradient(1200px 720px at 82% -12%, rgba(30,160,105,.42), transparent 60%),
+      radial-gradient(1000px 640px at 4% 112%, rgba(14,120,95,.4), transparent 55%),
+      linear-gradient(180deg,#0c6a4c 0%,#0b4a4c 30%,#0a3040 60%,#08192f 100%);
   }
   #dust{position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.55}
   body::after{
@@ -581,6 +582,13 @@
   .wax-20th sup{font-size:.48em;letter-spacing:0;margin-left:1px}
   @media(max-width:520px){.wax-seal{width:116px;height:116px}.wax-inf{width:52px;height:30px}.wax-20th{font-size:1.4rem}}
   @media(max-height:440px){.wax-seal{width:82px;height:82px;margin-bottom:8px}.wax-inf{width:40px;height:22px}.wax-20th{font-size:1.1rem}}
+
+  /* ===== R0 · lockup GALA + palette thiệp giấy (ảnh 3) ===== */
+  .hero-lockup{display:flex;flex-direction:column;align-items:center;gap:6px;margin:14px 0 8px;animation:fadeUp 1s .4s ease forwards;opacity:0}
+  .lockup-img{width:min(440px,82vw);height:auto;display:block;filter:drop-shadow(0 7px 20px rgba(0,0,0,.42))}
+  .hero-lockup .grad{font-family:var(--serif);font-style:italic;font-size:clamp(1.05rem,3vw,1.55rem)}
+  .act-meta .val.num{color:var(--mint)}
+  .hero .meta i{color:var(--gold)}
 </style>
 </head>
 <body class="gate-lock">
@@ -630,7 +638,7 @@
 <header class="hero">
   <span class="eyebrow kicker" id="heroKicker">Trân trọng kính mời · The 20 Years Next</span>
   <div class="mono"><b id="countNum">0</b><span class="inf"><img class="logo-img" src="logo-infinity.png" alt=""></span></div>
-  <h1>Gala Kỷ Niệm <span class="grad shimmer-text">20 Năm ESUHAI Group</span></h1>
+  <h1 class="hero-lockup"><img class="lockup-img" src="lockup-gala.png" alt="GALA · Kỷ niệm 20 năm ESUHAI Group"><span class="grad shimmer-text">20 Năm ESUHAI Group</span></h1>
   <p class="sub" id="heroSub">Hai mươi năm — một hành trình đáng trân trọng.<br>Kính mời Quý vị hiện diện trong ngày đặc biệt của ESUHAI Group, và dành đôi phút xác nhận để chúng tôi được đón tiếp thật chu đáo.</p>
   <div class="meta" id="heroMeta">
     <span><i>&#9670;</i> Thứ Bảy, 08 · 08 · 2026</span><span class="sep">|</span>

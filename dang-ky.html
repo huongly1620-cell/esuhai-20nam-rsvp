@@ -616,6 +616,10 @@
 
   /* emblem ∞+20th đã nung trong ảnh con dấu -> ẩn lớp CSS cũ */
   .wax-emblem{display:none}
+
+  /* màn mở thiệp: chỉ con dấu (to, giữa) + nút */
+  .intro-content .wax-seal{width:min(250px,66vw);height:min(250px,66vw);margin:0 auto 34px}
+  @media(max-height:560px){.intro-content .wax-seal{width:min(160px,42vw);height:min(160px,42vw);margin-bottom:20px}}
 </style>
 </head>
 <body class="gate-lock">
@@ -637,10 +641,10 @@
   <div class="leaf right"></div>
   <div class="intro-content">
     <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
-    <p class="intro-eyebrow">ESUHAI Group · The 20 Years Next</p>
-    <h2 class="intro-title">Thiệp mời <span class="shimmer-text">Kỷ niệm 20 năm</span></h2>
+    
+    
     <button type="button" class="btn btn-primary intro-btn" id="introBtn">&#9835;&nbsp; Chạm để mở thiệp</button>
-    <p class="intro-hint">Nhấn để mở thiệp cùng giai điệu chúc mừng</p>
+    
   </div>
 </div>
 

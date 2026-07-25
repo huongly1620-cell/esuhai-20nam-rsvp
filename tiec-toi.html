@@ -589,6 +589,30 @@
   .hero-lockup .grad{font-family:var(--serif);font-style:italic;font-size:clamp(1.05rem,3vw,1.55rem)}
   .act-meta .val.num{color:var(--mint)}
   .hero .meta i{color:var(--gold)}
+
+  /* ===== R0 · con dấu sáp GOLD từ ảnh mẫu (stamp) — đè bản CSS cũ ===== */
+  .wax-seal{
+    width:152px;height:152px;margin:2px auto 20px;border-radius:0;
+    background:url("wax-seal.png") center/contain no-repeat;
+    box-shadow:none;isolation:auto;
+    filter:drop-shadow(0 16px 20px rgba(0,0,0,.5)) drop-shadow(0 4px 7px rgba(0,0,0,.32));
+    display:grid;place-items:center;animation:waxBreathe 5.5s ease-in-out infinite;
+  }
+  .wax-seal::before,.wax-seal::after{display:none}
+  .wax-emblem{transform:translateY(-3px);filter:none;gap:0}
+  .wax-inf{width:54px;height:31px;
+    background:linear-gradient(160deg,#8a6614,#573b07 72%);
+    -webkit-mask:url("logo-infinity.png") center/contain no-repeat;
+            mask:url("logo-infinity.png") center/contain no-repeat;
+    filter:drop-shadow(0 1px .8px rgba(38,25,2,.6)) drop-shadow(0 -.5px .3px rgba(255,242,205,.35));
+    -webkit-text-fill-color:initial}
+  .wax-20th{font-family:var(--serif);font-weight:700;font-size:1.44rem;line-height:.8;letter-spacing:.01em;
+    background:linear-gradient(180deg,#8a6614,#573b07);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 1px .6px rgba(38,25,2,.55))}
+  .wax-20th sup{font-size:.48em;margin-left:1px}
+  @media(max-width:520px){.wax-seal{width:132px;height:132px}.wax-inf{width:48px;height:28px}.wax-20th{font-size:1.3rem}}
+  @media(max-height:440px){.wax-seal{width:94px;height:94px;margin-bottom:8px}.wax-inf{width:36px;height:21px}.wax-20th{font-size:1.02rem}}
 </style>
 </head>
 <body class="gate-lock">

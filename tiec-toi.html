@@ -800,6 +800,35 @@
   .intro-btn{position:absolute !important;left:50%;top:63vh;transform:translateX(-50%);z-index:3;margin:0}
   @media(max-height:620px){.env-flap{height:38vh}.intro-content .wax-seal{top:38vh;width:min(122px,30vw);height:min(122px,30vw)}.intro-btn{top:55vh}}
   @media(max-width:520px){.intro-content .wax-seal{width:min(150px,44vw);height:min(150px,44vw)}}
+
+  /* ===== R0 · BÌA THƯ v2: nắp tam giác 3D (đỉnh khớp dấu sáp) + dấu sáp toả sáng + chữ mời ===== */
+  .intro-content{position:absolute;inset:0;padding:0}
+  .env-flap{position:absolute;top:0;left:0;width:100%;height:34vh;z-index:2;margin:0;
+    clip-path:polygon(0 0,100% 0,50% 100%);background-color:#164274;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='340'%3E%3Cfilter id='e'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.045 0.09' numOctaves='4' seed='8' stitchTiles='stitch' result='n'/%3E%3CfeDiffuseLighting in='n' surfaceScale='1.9' diffuseConstant='1.1' lighting-color='%23ffffff'%3E%3CfeDistantLight azimuth='235' elevation='58'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23e)'/%3E%3C/svg%3E"), linear-gradient(180deg,#20507e,#0e2c4e);
+    background-size:300px 300px, cover;background-blend-mode:overlay,normal;
+    filter:drop-shadow(0 14px 24px rgba(0,0,0,.55))}
+  .env-flap::after{content:"";position:absolute;inset:0;clip-path:polygon(0 0,100% 0,50% 100%);
+    background:linear-gradient(to bottom,rgba(255,255,255,.05),transparent 30%)}
+  .intro-kicker{position:absolute;top:8vh;left:0;right:0;text-align:center;z-index:3;
+    font-family:var(--sans);font-size:.72rem;letter-spacing:.44em;text-transform:uppercase;color:#ecc981}
+  .intro-content .wax-seal{position:absolute;left:50%;top:34vh;transform:translate(-50%,-50%);
+    width:min(158px,40vw);height:min(158px,40vw);margin:0;z-index:3;
+    animation:sealBreathe 4s ease-in-out infinite}
+  @keyframes sealBreathe{0%,100%{transform:translate(-50%,-50%) scale(1);
+      filter:drop-shadow(0 14px 22px rgba(0,0,0,.6)) drop-shadow(0 0 12px rgba(232,192,112,.22))}
+    50%{transform:translate(-50%,-50%) scale(1.035);
+      filter:drop-shadow(0 16px 26px rgba(0,0,0,.6)) drop-shadow(0 0 30px rgba(244,206,132,.52))}}
+  @media(prefers-reduced-motion:reduce){.intro-content .wax-seal{animation:none;filter:drop-shadow(0 14px 22px rgba(0,0,0,.6))}}
+  .intro-occ{position:absolute;top:47vh;left:0;right:0;text-align:center;z-index:3;display:flex;flex-direction:column;gap:6px}
+  .intro-occ .io-1{font-family:var(--serif);font-style:italic;font-size:clamp(1.55rem,5.5vw,2.35rem);color:#e2c274;
+    background:linear-gradient(180deg,#f7e4ae,#d8b05c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .intro-occ .io-2{font-family:var(--sans);font-size:.8rem;letter-spacing:.36em;color:var(--cream);opacity:.82}
+  .intro-date{position:absolute;top:56vh;left:0;right:0;text-align:center;z-index:3;
+    font-family:var(--sans);font-size:.82rem;letter-spacing:.12em;color:#cdb98a;font-variant-numeric:lining-nums tabular-nums}
+  .intro-btn{position:absolute !important;left:50%;top:66vh;transform:translateX(-50%);z-index:3;margin:0}
+  @media(max-height:640px){.env-flap{height:30vh}.intro-content .wax-seal{top:30vh;width:min(118px,30vw);height:min(118px,30vw)}
+    .intro-kicker{top:5vh}.intro-occ{top:43vh}.intro-date{top:51vh}.intro-btn{top:59vh}}
 </style>
 </head>
 <body class="gate-lock">
@@ -821,7 +850,10 @@
   
   <div class="intro-content">
     <div class="env-flap"></div>
+    <div class="intro-kicker">Trân trọng kính mời</div>
     <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
+    <div class="intro-occ"><span class="io-1">Kỷ niệm 20 Năm</span><span class="io-2">ESUHAI GROUP</span></div>
+    <div class="intro-date">08 &middot; 08 &middot; 2026 &nbsp;&middot;&nbsp; GEM Center</div>
     <button type="button" class="btn btn-primary intro-btn" id="introBtn">&#9835;&nbsp; Chạm để mở thiệp</button>
     
   </div>

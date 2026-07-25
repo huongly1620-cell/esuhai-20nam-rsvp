@@ -829,6 +829,23 @@
   .intro-btn{position:absolute !important;left:50%;top:66vh;transform:translateX(-50%);z-index:3;margin:0}
   @media(max-height:640px){.env-flap{height:30vh}.intro-content .wax-seal{top:30vh;width:min(118px,30vw);height:min(118px,30vw)}
     .intro-kicker{top:5vh}.intro-occ{top:43vh}.intro-date{top:51vh}.intro-btn{top:59vh}}
+
+  /* ===== R0 · bìa thư v3: XANH DƯƠNG-XANH NGỌC + bỏ chữ (liên kết bên trong) ===== */
+  .intro-gate{background-color:#134f5a;
+    background-image:radial-gradient(140% 92% at 50% 7%, rgba(122,196,190,.17), transparent 55%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='340'%3E%3Cfilter id='e'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.045 0.09' numOctaves='4' seed='8' stitchTiles='stitch' result='n'/%3E%3CfeDiffuseLighting in='n' surfaceScale='1.9' diffuseConstant='1.1' lighting-color='%23ffffff'%3E%3CfeDistantLight azimuth='235' elevation='58'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23e)'/%3E%3C/svg%3E"), linear-gradient(165deg,#17635e 0%,#124f62 52%,#0f3d5e 100%);
+    background-size:cover, 300px 300px, cover;
+    background-blend-mode:screen, overlay, normal;
+    box-shadow:inset 0 0 150px rgba(0,0,0,.4)}
+  .env-flap{position:absolute;top:0;left:0;width:100%;height:38vh;z-index:2;margin:0;
+    clip-path:polygon(0 0,100% 0,50% 100%);background-color:#1c6d67;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='340'%3E%3Cfilter id='e'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.045 0.09' numOctaves='4' seed='8' stitchTiles='stitch' result='n'/%3E%3CfeDiffuseLighting in='n' surfaceScale='1.9' diffuseConstant='1.1' lighting-color='%23ffffff'%3E%3CfeDistantLight azimuth='235' elevation='58'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23e)'/%3E%3C/svg%3E"), linear-gradient(180deg,#26766c,#123f5c);
+    background-size:300px 300px, cover;background-blend-mode:overlay,normal;
+    filter:drop-shadow(0 14px 24px rgba(0,0,0,.5))}
+  .intro-content .wax-seal{position:absolute;left:50%;top:38vh;transform:translate(-50%,-50%);
+    width:min(158px,40vw);height:min(158px,40vw);margin:0;z-index:3;
+    animation:sealBreathe 4s ease-in-out infinite}
+  .intro-btn{position:absolute !important;left:50%;top:55vh;transform:translateX(-50%);z-index:3;margin:0}
+  @media(max-height:640px){.env-flap{height:32vh}.intro-content .wax-seal{top:32vh;width:min(118px,30vw);height:min(118px,30vw)}.intro-btn{top:47vh}}
 </style>
 </head>
 <body class="gate-lock">
@@ -850,10 +867,7 @@
   
   <div class="intro-content">
     <div class="env-flap"></div>
-    <div class="intro-kicker">Trân trọng kính mời</div>
     <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
-    <div class="intro-occ"><span class="io-1">Kỷ niệm 20 Năm</span><span class="io-2">ESUHAI GROUP</span></div>
-    <div class="intro-date">08 &middot; 08 &middot; 2026 &nbsp;&middot;&nbsp; GEM Center</div>
     <button type="button" class="btn btn-primary intro-btn" id="introBtn">&#9835;&nbsp; Chạm để mở thiệp</button>
     
   </div>

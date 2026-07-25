@@ -26,7 +26,7 @@
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
-    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#eefde8 0,#e7f6db 470px,#a9d0b4 700px,#4c8672 880px,#1d4b49 1040px,#0b2f35 1250px,#0d3a48 1900px,#134c5e 2500px,#0e3a4c 3100px,#0a2636 3700px,#061a2b 4400px) no-repeat #061a2b;
+    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#eefde8 0,#e7f6db 470px,#a9d0b4 700px,#4c8672 880px,#1d4b49 1040px,#0b2f35 1200px,#061a2b 1460px) no-repeat #061a2b;
     line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
   }
   body::before{
@@ -747,6 +747,33 @@
     width:min(216px,56vw);height:min(216px,56vw);margin:0 0 26px;
     filter:drop-shadow(0 18px 30px rgba(0,0,0,.6)) drop-shadow(0 4px 10px rgba(0,0,0,.42))}
   @media(max-width:520px){.intro-content .envelope .wax-seal{width:min(184px,54vw);height:min(184px,54vw)}}
+
+  /* ===== R0 · hạn hồi âm nổi bật + phong bì kraft vân dày + nắp có dấu sáp ===== */
+  .rsvp-by{display:inline-flex;align-items:center;gap:8px;margin:18px 0 0;padding:9px 20px 9px 15px;
+    border:0;border-radius:999px;background:linear-gradient(135deg,#f3d488,#dcae55);
+    color:#0b2338;font-size:.92rem;font-weight:600;letter-spacing:.01em;
+    box-shadow:0 0 0 1px rgba(255,238,190,.55),0 8px 22px rgba(214,168,80,.28);
+    animation:rsvpPulse 2.6s ease-in-out infinite}
+  .rsvp-by .rb-ic{display:inline-flex;width:17px;height:17px;color:#7c2318;flex:none}
+  .rsvp-by .rb-ic svg{width:100%;height:100%}
+  .rsvp-by b{color:#7c2318;font-weight:800;font-variant-numeric:lining-nums tabular-nums;letter-spacing:.04em}
+  @keyframes rsvpPulse{0%,100%{box-shadow:0 0 0 1px rgba(255,238,190,.5),0 8px 20px rgba(214,168,80,.24);transform:translateY(0)}
+    50%{box-shadow:0 0 0 1px rgba(255,247,214,.9),0 10px 30px rgba(214,168,80,.52);transform:translateY(-1px)}}
+  @media(prefers-reduced-motion:reduce){.rsvp-by{animation:none}}
+  /* phong bì: navy + kraft vân DÀY hơn */
+  .intro-gate{background-color:#0a1e35;
+    background-image:radial-gradient(120% 100% at 50% 34%, rgba(96,134,150,.14), transparent 60%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='k'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23k)' opacity='0.82'/%3E%3C/svg%3E");
+    background-blend-mode:screen, soft-light;}
+  /* thân + nắp phong bì + dấu sáp đính ở tâm nắp */
+  .envelope{display:block;position:relative;width:min(330px,80vw);aspect-ratio:1.4/1;margin:0 auto 8px;perspective:none;filter:none}
+  .env-body{position:absolute;inset:0;border-radius:7px;background:linear-gradient(180deg,#10294a,#0a1f38);
+    box-shadow:0 26px 46px rgba(0,0,0,.5),inset 0 0 0 1px rgba(201,168,106,.18)}
+  .env-flap{position:absolute;top:0;left:0;width:100%;height:66%;display:block;z-index:2;
+    filter:drop-shadow(0 10px 18px rgba(0,0,0,.4))}
+  .intro-content .envelope .wax-seal{position:absolute;left:50%;top:66%;transform:translate(-50%,-50%);
+    width:min(146px,39vw);height:min(146px,39vw);margin:0;z-index:3;
+    filter:drop-shadow(0 11px 20px rgba(0,0,0,.55))}
+  @media(max-width:520px){.intro-content .envelope .wax-seal{width:min(126px,37vw);height:min(126px,37vw)}}
 </style>
 </head>
 <body class="gate-lock">
@@ -768,6 +795,8 @@
   
   <div class="intro-content">
     <div class="envelope">
+      <div class="env-body"></div>
+      <svg class="env-flap" viewBox="0 0 100 66" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="flapK" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#143a5e"/><stop offset="1" stop-color="#0b2340"/></linearGradient></defs><path d="M0 0 L100 0 L50 66 Z" fill="url(#flapK)" stroke="#c9a86a" stroke-width="0.6" stroke-opacity="0.55" vector-effect="non-scaling-stroke"/></svg>
       <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
     </div>
     
@@ -890,7 +919,7 @@
     <span class="eyebrow">R.S.V.P</span>
     <h2>Xác nhận tham dự</h2>
     <p class="quote">Kính mời Quý vị dành đôi phút xác nhận, để Ban tổ chức chuẩn bị đón tiếp thật chu đáo!</p>
-    <p class="rsvp-by">Kính mong nhận hồi âm trước ngày <b>31.07.2026</b></p>
+    <p class="rsvp-by"><span class="rb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span>Kính mong nhận hồi âm trước ngày <b>31.07.2026</b></p>
   </div>
   <div class="panel" id="panel">
     <div class="panel-in">

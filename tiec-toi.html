@@ -620,6 +620,32 @@
   /* màn mở thiệp: chỉ con dấu (to, giữa) + nút */
   .intro-content .wax-seal{width:min(250px,66vw);height:min(250px,66vw);margin:0 auto 34px}
   @media(max-height:560px){.intro-content .wax-seal{width:min(160px,42vw);height:min(160px,42vw);margin-bottom:20px}}
+
+  /* ===== R0 · màn mở thiệp dạng NẮP PHONG BÌ (thay kiểu rèm tách) ===== */
+  .intro-gate{background:linear-gradient(160deg,#050d18 0%,#0a2230 45%,#0b3b37 100%)}
+  .intro-gate .leaf{display:none}
+  .envelope{position:relative;width:min(374px,82vw);aspect-ratio:1.52/1;margin:0 auto 30px;perspective:1500px}
+  .env-body{position:absolute;inset:0;border-radius:9px;overflow:hidden;
+    background:linear-gradient(160deg,#f5ecd5 0%,#e7d8b4 100%);
+    box-shadow:0 30px 55px rgba(0,0,0,.55),inset 0 0 0 1px rgba(120,90,40,.18)}
+  .env-body::before{content:"";position:absolute;inset:0;
+    background:linear-gradient(45deg,transparent 49.6%,rgba(90,60,20,.1) 50%,transparent 50.4%),
+      linear-gradient(-45deg,transparent 49.6%,rgba(90,60,20,.1) 50%,transparent 50.4%)}
+  .env-flap-group{position:absolute;top:0;left:0;right:0;height:64%;z-index:4;transform-origin:top center;
+    transform:rotateX(0deg);transform-style:preserve-3d;transition:transform 1s cubic-bezier(.55,0,.2,1)}
+  .env-flap{position:absolute;inset:0;clip-path:polygon(0 0,100% 0,50% 100%);
+    background:linear-gradient(160deg,#f0e4c7 0%,#dcca9f 100%);box-shadow:0 8px 16px rgba(0,0,0,.2)}
+  .env-flap::before{content:"";position:absolute;inset:0;clip-path:polygon(0 0,100% 0,50% 100%);
+    background:linear-gradient(115deg,rgba(255,255,255,.42),transparent 42%)}
+  .env-flap-group .wax-seal{position:absolute;left:50%;bottom:0;transform:translate(-50%,50%);
+    width:124px;height:124px;margin:0;z-index:5;animation:none;filter:drop-shadow(0 10px 14px rgba(0,0,0,.5))}
+  @media(max-width:520px){.env-flap-group .wax-seal{width:104px;height:104px}}
+  @media(max-height:560px){.envelope{width:min(300px,66vw)}.env-flap-group .wax-seal{width:96px;height:96px}}
+  /* mở nắp lên */
+  .intro-gate.opening{opacity:0;transition:opacity .45s .7s ease}
+  .intro-gate.opening .env-flap-group{transform:rotateX(172deg)}
+  .intro-gate.opening .intro-content{opacity:1 !important;transform:none !important;transition:none}
+  @media (prefers-reduced-motion:reduce){.env-flap-group{transition:none}.intro-gate.opening{transition:opacity .3s ease}}
 </style>
 </head>
 <body class="gate-lock">
@@ -637,10 +663,16 @@
 </audio>
 
 <div class="intro-gate" id="introGate">
-  <div class="leaf left"></div>
-  <div class="leaf right"></div>
+  
+  
   <div class="intro-content">
-    <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
+    <div class="envelope">
+      <div class="env-body"></div>
+      <div class="env-flap-group">
+        <div class="env-flap"></div>
+        <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
+      </div>
+    </div>
     
     
     <button type="button" class="btn btn-primary intro-btn" id="introBtn">&#9835;&nbsp; Chạm để mở thiệp</button>

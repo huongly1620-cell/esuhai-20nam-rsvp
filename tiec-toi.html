@@ -26,7 +26,7 @@
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
-    margin:0;font-family:var(--sans);color:var(--cream);background:#06182a;
+    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#eefde8 0,#e7f6db 470px,#a9d0b4 700px,#4c8672 880px,#1d4b49 1040px,#0b2f35 1200px,#061a2b 1460px) no-repeat #061a2b;
     line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
   }
   body::before{
@@ -696,22 +696,14 @@
     align-items:center;padding:44px 16px 54px}
   @media(max-width:560px){.cover-cta{flex-direction:column}.cover-cta .btn{width:min(330px,92vw);justify-content:center}}
 
-  /* ===== R0 · bìa full-viewport + nút trên màn + mobile chỉn chu ===== */
-  body::before{background:
-    radial-gradient(1100px 700px at 82% -8%, rgba(22,120,90,.18), transparent 60%),
-    radial-gradient(900px 620px at 6% 108%, rgba(14,90,80,.15), transparent 55%),
-    linear-gradient(180deg,#0a2f34 0%,#08222f 55%,#06182a 100%);animation:none}
-  .cover{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;
-    padding:18px 16px 24px;text-align:center;position:relative;z-index:1;
-    background:linear-gradient(180deg,#eefbe6 0%,#e5f4d7 100%)}
-  .cover-img{width:auto;max-width:min(400px,84vw);height:auto;max-height:50vh;object-fit:contain;
-    border-radius:12px;box-shadow:0 30px 62px rgba(18,48,34,.3),0 6px 16px rgba(0,0,0,.15)}
-  .cover-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:center}
-  .cover-actions .btn{white-space:nowrap}
-  @media(max-width:560px){.cover-actions{flex-direction:column;width:100%;gap:12px}
-    .cover-actions .btn{width:min(340px,84vw);justify-content:center}}
-  .to-dark{height:210px;position:relative;z-index:1;
-    background:linear-gradient(180deg,#e5f4d7 0%,#93c2a2 26%,#3d7c66 54%,#12403f 80%,#0a2f34 100%)}
+
+  /* ===== R0 · chỉnh chi tiết: icon giữa, số giờ đều, decline xám, trang phục ===== */
+  .pill .ic{display:flex;justify-content:center;align-items:center}
+  .act-meta .val,.timeline .t{font-family:var(--sans);font-variant-numeric:lining-nums tabular-nums;font-feature-settings:"lnum" 1,"tnum" 1}
+  .opt.decline input:checked + .box{border-color:var(--muted-2);box-shadow:inset 0 0 0 1px var(--muted-2);background:rgba(143,136,111,.1)}
+  .opt.decline input:checked + .box .ic{background:var(--muted-2);color:#fff;border-color:var(--muted-2)}
+  .dress-ic{display:inline-flex;vertical-align:middle;margin-right:9px;color:var(--gold)}
+  .dress-ic svg{width:22px;height:22px}
 </style>
 </head>
 <body class="gate-lock">
@@ -763,12 +755,13 @@
 
 <section class="cover">
   <img class="cover-img" src="screen1-cover.jpg" alt="Trân trọng kính mời tham dự · GALA Kỷ niệm 20 năm ESUHAI Group · 20 năm thành lập 2006–2026">
-  <div class="cover-actions">
-    <a class="btn btn-primary" href="#rsvp">Xác nhận tham dự &#8594;</a>
-    <a class="btn btn-ghost" href="#chuongtrinh">Chi tiết chương trình</a>
-  </div>
+  <div class="scroll-hint" aria-hidden="true">Cuộn xuống để xác nhận &#8595;</div>
 </section>
-<div class="to-dark" aria-hidden="true"></div>
+
+<section class="cover-cta">
+  <a class="btn btn-primary" href="#rsvp">Xác nhận tham dự &#8594;</a>
+  <a class="btn btn-ghost" href="#chuongtrinh">Chi tiết chương trình</a>
+</section>
 
 <!-- ============ THÔNG ĐIỆP ============ -->
 <section class="band" id="chuongtrinh">
@@ -844,7 +837,7 @@
     </div>
     <div class="info-grid">
       <div class="info reveal spot"><div class="k">Địa điểm</div><div class="v">GEM Center<small>08 Nguyễn Bỉnh Khiêm, Phường Sài Gòn, TP. Hồ Chí Minh</small></div></div>
-      <div class="info reveal spot"><div class="k">Trang phục</div><div class="v">Lễ phục trang trọng<small>Đôi nét chỉn chu để cùng nhau lưu giữ những khoảnh khắc đáng nhớ</small></div></div>
+      <div class="info reveal spot"><div class="k">Trang phục</div><div class="v"><span class="dress-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M11 8.5 4.5 5.5v13L11 15.5z"/><path d="M13 8.5 19.5 5.5v13L13 15.5z"/><rect x="10.2" y="8.6" width="3.6" height="6.8" rx="1.1"/></svg></span>Lễ phục trang trọng</div></div>
     </div>
   </div>
 </section>
@@ -893,7 +886,7 @@
 
           <!-- STEP 3 -->
           <div class="step">
-            <div class="step-head"><div class="step-no">3</div><div><h3>Quý vị đi cùng bao nhiêu vị khách?</h3><p>Chúng tôi sẽ chuẩn bị sẵn đúng số phần để Quý vị điền thật thuận tiện.</p></div></div>
+            <div class="step-head"><div class="step-no">3</div><div><h3>Quý vị đi cùng bao nhiêu vị khách?</h3></div></div>
             <div class="party-row">
               <div class="stepper">
                 <button type="button" id="minus" aria-label="Bớt một người">&minus;</button>
@@ -935,7 +928,7 @@
               </div></div>
             <div class="field"><label class="lab" for="wish">Lời chúc mừng &amp; kỳ vọng gửi ESUHAI cho 20 năm tới</label>
               <textarea id="wish" placeholder="Một câu chúc của Quý vị sẽ được lưu giữ như một phần của dấu mốc 20 năm…"></textarea></div>
-            <div class="field"><label class="lab" for="note">Ghi chú thêm</label>
+            <div class="field" style="display:none"><label class="lab" for="note">Ghi chú thêm</label>
               <textarea id="note" placeholder="Nhu cầu di chuyển, chỗ ngồi, hỗ trợ đặc biệt…"></textarea></div>
           </div>
         </div>
@@ -944,7 +937,7 @@
         <div id="noFlow" class="hidden">
           <div class="hairline"></div>
           <div class="step">
-            <div class="step-head"><div class="step-no">2</div><div><h3>Xin Quý vị cho biết quý danh</h3><p>Để chúng tôi lưu lại lời tri ân.</p></div></div>
+            <div class="step-head"><div class="step-no">2</div><div><h3>Thông tin tham dự</h3><p>Để chúng tôi lưu lại lời tri ân.</p></div></div>
             <div class="two">
               <div class="field"><label class="lab" for="noName">Họ và tên <span class="req">*</span></label><input type="text" id="noName" placeholder="Nguyễn Văn A"></div>
               <div class="field"><label class="lab" for="noOrg">Đơn vị</label><input type="text" id="noOrg" placeholder="Tên đơn vị (nếu có)"></div>

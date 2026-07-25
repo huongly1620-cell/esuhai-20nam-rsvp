@@ -716,6 +716,13 @@
   .acts{margin-top:34px}
   .info-grid{margin-top:28px}
   footer{margin-top:34px;padding:38px 0 46px}
+
+  /* ===== R0 · logo Esuhai topbar + hạn hồi âm ===== */
+  .topbar .seal{width:auto;height:32px;border:none;border-radius:0;box-shadow:none;background:none}
+  .topbar .seal .logo-img{width:auto;height:30px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.3))}
+  @media(max-width:640px){.topbar .seal{height:27px}.topbar .seal .logo-img{height:26px}}
+  .rsvp-by{margin:12px 0 0;font-family:var(--sans);font-size:.9rem;letter-spacing:.02em;color:var(--muted)}
+  .rsvp-by b{color:var(--gold-bright);font-weight:600;font-variant-numeric:lining-nums tabular-nums;letter-spacing:.05em}
 </style>
 </head>
 <body class="gate-lock">
@@ -757,7 +764,7 @@
 
 <div class="topbar">
   <div class="in">
-    <div class="brand"><div class="seal"><img class="logo-img" src="logo-infinity.png" alt="ESUHAI"></div><div class="brand-name">ESUHAI <span>GROUP · 20 NĂM</span></div></div>
+    <div class="brand"><div class="seal"><img class="logo-img" src="logo-esuhai-mark.png" alt="ESUHAI"></div><div class="brand-name">ESUHAI <span>GROUP · 20 NĂM</span></div></div>
     <span class="rlink">08 &middot; 08 &middot; 2026 &middot; GEM Center</span>
   </div>
 </div>
@@ -859,7 +866,8 @@
   <div class="lead reveal" style="margin-bottom:34px">
     <span class="eyebrow">R.S.V.P</span>
     <h2>Xác nhận tham dự</h2>
-    <p class="quote">Chỉ khoảng một phút — đôi dòng để chúng tôi được đón tiếp Quý vị thật chu đáo và ấm áp.</p>
+    <p class="quote">Kính mời Quý vị dành đôi phút xác nhận, để Ban tổ chức chuẩn bị đón tiếp chu đáo.</p>
+    <p class="rsvp-by">Kính mong nhận hồi âm trước ngày <b>31.07.2026</b></p>
   </div>
   <div class="panel" id="panel">
     <div class="panel-in">
@@ -871,7 +879,7 @@
 
         <!-- STEP 1 -->
         <div class="step">
-          <div class="step-head"><div class="step-no">1</div><div><h3>Quý vị sẽ đến chung vui cùng chúng tôi?</h3><p>Chỉ một thao tác nhỏ để chúng tôi được biết.</p></div></div>
+          <div class="step-head"><div class="step-no">1</div><div><h3>Quý vị có thể đến chung vui?</h3><p>Vui lòng chọn một phương án.</p></div></div>
           <div class="attend">
             <label class="opt accept"><input type="radio" name="attend" value="yes" checked>
               <div class="box spot"><div class="ic">&#10003;</div><div class="t"><b>Vâng, tôi sẽ tham dự</b><small>Rất hân hạnh được đón tiếp Quý vị</small></div></div></label>
@@ -885,7 +893,7 @@
 
           <!-- STEP 2 -->
           <div class="step" id="stepSession">
-            <div class="step-head"><div class="step-no">2</div><div><h3>Quý vị tham dự phần nào?</h3><p>Quý vị có thể chọn cả hai để trọn vẹn một ngày đáng nhớ.</p></div></div>
+            <div class="step-head"><div class="step-no">2</div><div><h3>Quý vị tham dự phần nào?</h3><p>Có thể chọn cả hai.</p></div></div>
             <div class="chips">
               <label class="chip"><input type="checkbox" name="session" value="Tọa đàm" checked>
                 <div class="b spot"><em>Buổi chiều</em><strong>Tọa đàm chuyên đề</strong><span>14:30 – 16:30 · Tầng 7, Sảnh SOL</span></div></label>
@@ -898,23 +906,23 @@
 
           <!-- STEP 3 -->
           <div class="step">
-            <div class="step-head"><div class="step-no">3</div><div><h3>Quý vị đi cùng bao nhiêu vị khách?</h3></div></div>
+            <div class="step-head"><div class="step-no">3</div><div><h3>Quý vị đi cùng bao nhiêu khách?</h3></div></div>
             <div class="party-row">
               <div class="stepper">
                 <button type="button" id="minus" aria-label="Bớt một người">&minus;</button>
                 <div class="val num" id="sizeVal">1</div>
                 <button type="button" id="plus" aria-label="Thêm một người">+</button>
               </div>
-              <p class="hint">Vị khách đầu tiên là <b style="color:var(--cream)">người đại diện</b> giữ liên lạc với ban tổ chức.</p>
+              <p class="hint">Vị khách đầu tiên là <b style="color:var(--cream)">người đại diện</b> giữ liên lạc.</p>
             </div>
-            <p class="limit-note">Không gian buổi lễ được chuẩn bị ấm cúng và chỉn chu, nên mỗi lượt đăng ký xin dành cho <b>tối đa 2 vị khách</b> — để chúng tôi được đón tiếp và chăm sóc trọn vẹn từng người. Trân trọng cảm ơn sự đồng hành quý báu của Quý vị.</p>
+            <p class="limit-note" id="limitNote" style="display:none">Mỗi lượt đăng ký xin dành cho <b>tối đa 2 vị khách</b>, để Ban tổ chức đón tiếp trọn vẹn.</p>
           </div>
 
           <div class="hairline"></div>
 
           <!-- STEP 4 -->
           <div class="step">
-            <div class="step-head"><div class="step-no">4</div><div><h3>Đôi dòng về Quý khách</h3><p>Chỉ vài thông tin để chúng tôi chuẩn bị thẻ tên, chỗ ngồi và đón tiếp Quý vị thật chu đáo.</p></div></div>
+            <div class="step-head"><div class="step-no">4</div><div><h3>Thông tin liên hệ</h3><p>Để chúng tôi chuẩn bị thẻ tên và chỗ ngồi.</p></div></div>
 
             <div class="two" style="margin-bottom:20px">
               <div class="field"><label class="lab" for="repPhone">Điện thoại / Zalo liên hệ <span class="req">*</span></label>
@@ -922,7 +930,7 @@
               <div class="field"><label class="lab" for="repEmail">Email (nhận thư cảm ơn)</label>
                 <input type="email" id="repEmail" placeholder="email@congty.com" autocomplete="email"></div>
             </div>
-            <p class="contact-note">Thông tin liên hệ chỉ dùng cho Ban tổ chức ESUHAI để đón tiếp Quý vị — được giữ kín, không chia sẻ cho bên thứ ba.</p>
+            <p class="contact-note">Thông tin được giữ kín, chỉ dùng cho việc đón tiếp.</p>
 
             <div class="people" id="people"></div>
             <button type="button" class="add-btn" id="addBtn">+ Thêm một khách tham dự</button>
@@ -932,7 +940,7 @@
 
           <!-- STEP 5 -->
           <div class="step">
-            <div class="step-head"><div class="step-no">5</div><div><h3>Đôi điều gửi gắm</h3><p>Không bắt buộc, song sẽ khiến ngày kỷ niệm thêm phần ý nghĩa.</p></div></div>
+            <div class="step-head"><div class="step-no">5</div><div><h3>Đôi điều gửi gắm</h3><p>Không bắt buộc.</p></div></div>
             <div class="field"><label class="lab">Ẩm thực buổi Gala tối</label>
               <div class="seg" id="dietary">
                 <label><input type="radio" name="dietary" value="Món mặn" checked><span>Món mặn</span></label>
@@ -963,7 +971,7 @@
 
         <div class="submit-row">
           <button type="submit" class="btn btn-primary" id="submitBtn">Gửi xác nhận &#8594;</button>
-          <p class="note" id="submitNote">Thông tin của Quý vị được gửi trực tiếp về ban tổ chức ESUHAI Group.</p>
+          <p class="note" id="submitNote">Thông tin gửi trực tiếp về Ban tổ chức ESUHAI Group.</p>
         </div>
         <div class="mode-note" id="modeNote"></div>
       </form>
@@ -1196,7 +1204,6 @@ var CONFIG = {
           '<div class="seg">'+
             '<label><input type="radio" name="g'+seq+'" value="Nam"><span>Nam</span></label>'+
             '<label><input type="radio" name="g'+seq+'" value="Nữ"><span>Nữ</span></label>'+
-            '<label><input type="radio" name="g'+seq+'" value="Khác"><span>Khác</span></label>'+
           '</div></div>'+
       '</div>';
     wrap.querySelector(".rm").addEventListener("click",function(){
@@ -1222,7 +1229,7 @@ var CONFIG = {
     renumber(); sizeVal.textContent=n; updateStepBtns(n);
   }
   function syncSize(){ var n=people.children.length; sizeVal.textContent=n; updateStepBtns(n); }
-  function updateStepBtns(n){ $("#minus").disabled=n<=1; $("#plus").disabled=n>=MAX; var ab=$("#addBtn"); if(ab){ab.disabled=n>=MAX; ab.style.display=n>=MAX?"none":"block";} }
+  function updateStepBtns(n){ $("#minus").disabled=n<=1; $("#plus").disabled=n>=MAX; var ab=$("#addBtn"); if(ab){ab.disabled=n>=MAX; ab.style.display=n>=MAX?"none":"block";} var ln=$("#limitNote"); if(ln){ln.style.display=n>=MAX?"block":"none";} }
   $("#minus").addEventListener("click",function(){ setCount(people.children.length-1); });
   $("#plus").addEventListener("click",function(){ setCount(people.children.length+1); });
   $("#addBtn").addEventListener("click",function(){ setCount(people.children.length+1); people.lastElementChild.querySelector(".p-name").focus(); });

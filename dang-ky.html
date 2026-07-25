@@ -774,6 +774,32 @@
     width:min(146px,39vw);height:min(146px,39vw);margin:0;z-index:3;
     filter:drop-shadow(0 11px 20px rgba(0,0,0,.55))}
   @media(max-width:520px){.intro-content .envelope .wax-seal{width:min(126px,37vw);height:min(126px,37vw)}}
+
+  /* ===== R0 · PHONG BÌ TRÀN MÀN HÌNH: giấy vân nổi + nắp tam giác 3D + dấu sáp ===== */
+  .intro-gate{background-color:#0b2340;
+    background-image:radial-gradient(140% 92% at 50% 6%, rgba(120,162,196,.17), transparent 55%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='340'%3E%3Cfilter id='e'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.045 0.09' numOctaves='4' seed='8' stitchTiles='stitch' result='n'/%3E%3CfeDiffuseLighting in='n' surfaceScale='1.9' diffuseConstant='1.1' lighting-color='%23ffffff'%3E%3CfeDistantLight azimuth='235' elevation='58'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23e)'/%3E%3C/svg%3E"), linear-gradient(180deg,#0d2846,#071b34);
+    background-size:cover, 300px 300px, cover;
+    background-blend-mode:screen, overlay, normal;
+    box-shadow:inset 0 0 150px rgba(0,0,0,.45)}
+  .intro-content{position:absolute;inset:0;padding:0}
+  /* NẮP tam giác 3D (đỉnh ở giữa, bóng nếp gấp) */
+  .env-flap{position:absolute;top:0;left:0;width:100%;height:42vh;z-index:2;margin:0;
+    clip-path:polygon(0 0,100% 0,50% 100%);
+    background-color:#164274;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='340'%3E%3Cfilter id='e'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.045 0.09' numOctaves='4' seed='8' stitchTiles='stitch' result='n'/%3E%3CfeDiffuseLighting in='n' surfaceScale='1.9' diffuseConstant='1.1' lighting-color='%23ffffff'%3E%3CfeDistantLight azimuth='235' elevation='58'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23e)'/%3E%3C/svg%3E"), linear-gradient(180deg,#1f4d7a,#0e2c4e);
+    background-size:300px 300px, cover;
+    background-blend-mode:overlay, normal;
+    filter:drop-shadow(0 13px 22px rgba(0,0,0,.55))}
+  .env-flap::after{content:"";position:absolute;inset:0;clip-path:polygon(0 0,100% 0,50% 100%);
+    background:linear-gradient(to bottom right,transparent calc(50% - .7px),rgba(216,232,248,.15) 50%,transparent calc(50% + .7px)),
+              linear-gradient(to bottom left,transparent calc(50% - .7px),rgba(216,232,248,.15) 50%,transparent calc(50% + .7px))}
+  /* dấu sáp niêm ở ĐỈNH nắp (giữa) */
+  .intro-content .wax-seal{position:absolute;left:50%;top:42vh;transform:translate(-50%,-50%);
+    width:min(168px,42vw);height:min(168px,42vw);margin:0;z-index:3;
+    filter:drop-shadow(0 14px 22px rgba(0,0,0,.6)) drop-shadow(0 4px 9px rgba(0,0,0,.42))}
+  .intro-btn{position:absolute !important;left:50%;top:63vh;transform:translateX(-50%);z-index:3;margin:0}
+  @media(max-height:620px){.env-flap{height:38vh}.intro-content .wax-seal{top:38vh;width:min(122px,30vw);height:min(122px,30vw)}.intro-btn{top:55vh}}
+  @media(max-width:520px){.intro-content .wax-seal{width:min(150px,44vw);height:min(150px,44vw)}}
 </style>
 </head>
 <body class="gate-lock">
@@ -794,13 +820,8 @@
   
   
   <div class="intro-content">
-    <div class="envelope">
-      <div class="env-body"></div>
-      <svg class="env-flap" viewBox="0 0 100 66" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="flapK" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#143a5e"/><stop offset="1" stop-color="#0b2340"/></linearGradient></defs><path d="M0 0 L100 0 L50 66 Z" fill="url(#flapK)" stroke="#c9a86a" stroke-width="0.6" stroke-opacity="0.55" vector-effect="non-scaling-stroke"/></svg>
-      <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
-    </div>
-    
-    
+    <div class="env-flap"></div>
+    <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
     <button type="button" class="btn btn-primary intro-btn" id="introBtn">&#9835;&nbsp; Chạm để mở thiệp</button>
     
   </div>

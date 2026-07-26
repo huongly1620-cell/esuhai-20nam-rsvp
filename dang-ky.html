@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<!-- ESUHAI Group 20 năm · Landing RSVP (đầy đủ · Tọa đàm + Gala) · Xuất bản lúc: 2026-07-26 20:55 · R0 nâng cấp UX · CL1 – Hương Ly -->
+<!-- ESUHAI Group 20 năm · Landing RSVP (đầy đủ · Tọa đàm + Gala) · Xuất bản lúc: 2026-07-26 21:52 · R0 nâng cấp UX · CL1 – Hương Ly -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ESUHAI Group · 20 Năm · Xác nhận tham dự · 08.08.2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,7 +26,7 @@
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
-    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#D9F3C9 0%,#D9F3C9 13%,#bfe3bc 14.2%,#3f7a6e 14.9%,#0e5651 15.6%,#0e5651 26.5%,#09472f 28.5%,#06402c 30.5%,#06402c 46%,#0a3a48 49%,#1a42a0 52.6%,#123157 55.3%,#0B2A47 58%,#0a2440 80%,#08192f 90%,#050f1e 100%) no-repeat #050f1e;
+    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#D9F3C9 0%,#D9F3C9 5%,#cbe8bf 8%,#9ec59f 10.5%,#5f9584 12.5%,#256257 13.8%,#0e5651 15%,#0e5651 26.5%,#09472f 28.5%,#06402c 30.5%,#06402c 46%,#0a3a48 49%,#1a42a0 52.6%,#123157 55.3%,#0B2A47 58%,#0a2440 80%,#08192f 90%,#050f1e 100%) no-repeat #050f1e;
     line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
   }
   body::before{
@@ -694,7 +694,7 @@
   .cover{position:relative;z-index:1;text-align:center;padding:22px 16px 8px}
   .cover-img{display:block;width:min(430px,92vw);height:auto;margin:0 auto;border-radius:12px;
     box-shadow:0 34px 70px rgba(0,0,0,.32),0 6px 16px rgba(0,0,0,.18)}
-  .scroll-hint{margin-top:20px;color:#1f5647;font-size:.76rem;letter-spacing:.24em;text-transform:uppercase;
+  .scroll-hint{margin-top:20px;color:#123d30;font-weight:600;font-size:.76rem;letter-spacing:.24em;text-transform:uppercase;
     font-weight:600;animation:bob 2.2s ease-in-out infinite}
   .cover-cta{position:relative;z-index:1;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
     align-items:center;padding:44px 16px 54px}
@@ -930,7 +930,7 @@
   @media(max-width:430px){.topbar .rlink{font-size:.56rem;letter-spacing:.04em}}
   /* TÔNG NAVY thương hiệu — CHỈ trang tiec-toi (body.gala-only) */
   body.gala-only{--mint:#15E77E}
-  body.gala-only{background:linear-gradient(180deg,#D9F3C9 0%,#D9F3C9 15.3%,#bfe3bc 16.5%,#3f7a6e 17%,#0e5651 17.7%,#0e5651 30%,#09472f 32%,#06402c 34%,#06402c 48%,#0a3a48 50%,#2555d0 53%,#153a86 56%,#0B2A47 58.4%,#0a2440 82%,#08192f 90%,#050f1e 100%) no-repeat #050f1e !important}
+  body.gala-only{background:linear-gradient(180deg,#D9F3C9 0%,#D9F3C9 6%,#cbe8bf 9.5%,#9ec59f 12%,#5f9584 14.5%,#256257 16%,#0e5651 17.2%,#0e5651 30%,#09472f 32%,#06402c 34%,#06402c 48%,#0a3a48 50%,#2555d0 53%,#153a86 56%,#0B2A47 58.4%,#0a2440 82%,#08192f 90%,#050f1e 100%) no-repeat #050f1e !important}
   body.gala-only .intro-gate{background:radial-gradient(circle at 50% 45%, rgba(242,208,134,.14), transparent 40%), radial-gradient(135% 106% at 50% 40%, #123f5e 0%, #0d2c4a 46%, #0a1f3d 72%, #08152b 100%) !important}
   body.gala-only .act.gala .act-tag{color:#f0623f}
   body.gala-only .act.gala .act-tag .dot{background:#e8452a;box-shadow:0 0 12px rgba(232,69,42,.6)}
@@ -958,10 +958,9 @@
 <!-- ============ MÀN HÌNH MỞ THIỆP + NHẠC NỀN (R0) ============
      Nhạc nền hòa tấu không lời (nhac-nen.m4a) — phát khi Quý vị bấm mở thiệp.
      Thiếu file nhạc thì vẫn mở thiệp bình thường, chỉ là không có nhạc. -->
-<audio id="bgm" loop preload="none">
-  <source src="nhac-nen.m4a" type="audio/mp4">
-  <source src="nhac-nen.wav" type="audio/wav">
-</audio>
+<!-- NHẠC TẠM BỎ (bỏ comment để bật lại):
+<audio id="bgm" loop preload="none"><source src="nhac-nen.m4a" type="audio/mp4"><source src="nhac-nen.wav" type="audio/wav"></audio>
+-->
 
 <div class="intro-gate" id="introGate">
   
@@ -976,7 +975,7 @@
   </div>
 </div>
 
-<button type="button" class="music-fab" id="musicToggle" aria-label="Bật / tắt nhạc nền" title="Nhạc nền">
+<button type="button" class="music-fab" id="musicToggle" aria-label="Bật / tắt nhạc nền" title="Nhạc nền" style="display:none">
   <span class="disc"></span>
   <span class="eq"><i></i><i></i><i></i></span>
 </button>

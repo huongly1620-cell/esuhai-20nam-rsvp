@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<!-- ESUHAI Group 20 năm · Landing RSVP (đầy đủ · Tọa đàm + Gala) · Xuất bản lúc: 2026-07-26 21:52 · R0 nâng cấp UX · CL1 – Hương Ly -->
+<!-- ESUHAI Group 20 năm · Landing RSVP (đầy đủ · Tọa đàm + Gala) · Xuất bản lúc: 2026-07-26 23:21 · R0 nâng cấp UX · CL1 – Hương Ly -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ESUHAI Group · 20 Năm · Xác nhận tham dự · 08.08.2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,7 +26,7 @@
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
-    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#D9F3C9 0%,#D9F3C9 5%,#cbe8bf 8%,#9ec59f 10.5%,#5f9584 12.5%,#256257 13.8%,#0e5651 15%,#0e5651 26.5%,#09472f 28.5%,#06402c 30.5%,#06402c 46%,#0a3a48 49%,#1a42a0 52.6%,#123157 55.3%,#0B2A47 58%,#0a2440 80%,#08192f 90%,#050f1e 100%) no-repeat #050f1e;
+    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#D9F3C9 0%,#D9F3C9 6%,#cbe8bf 9.5%,#9ec59f 12.5%,#5f9584 15.5%,#256257 17.3%,#0e5651 18.5%,#0e5651 45%,#123150 48%,#0B2A47 50%,#0B2A47 86%,#08192f 91%,#050f1e 100%) no-repeat #050f1e;
     line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
   }
   body::before{
@@ -48,7 +48,7 @@
   a{color:var(--gold-bright);text-decoration:none}
   a:hover{text-decoration:underline;text-underline-offset:3px}
   .wrap{max-width:var(--maxw);margin:0 auto;padding:0 clamp(18px,5vw,40px)}
-  .eyebrow{font-family:var(--sans);text-transform:uppercase;letter-spacing:.44em;font-size:.64rem;font-weight:600;color:var(--gold);display:inline-block}
+  .eyebrow{font-family:var(--sans);text-transform:uppercase;letter-spacing:.3em;font-size:.82rem;font-weight:700;color:var(--gold);display:inline-block}
   h1,h2,h3,h4{font-family:var(--serif);font-weight:600;text-wrap:balance;margin:0}
   .num{font-variant-numeric:tabular-nums}
 
@@ -930,7 +930,7 @@
   @media(max-width:430px){.topbar .rlink{font-size:.56rem;letter-spacing:.04em}}
   /* TÔNG NAVY thương hiệu — CHỈ trang tiec-toi (body.gala-only) */
   body.gala-only{--mint:#15E77E}
-  body.gala-only{background:linear-gradient(180deg,#D9F3C9 0%,#D9F3C9 6%,#cbe8bf 9.5%,#9ec59f 12%,#5f9584 14.5%,#256257 16%,#0e5651 17.2%,#0e5651 30%,#09472f 32%,#06402c 34%,#06402c 48%,#0a3a48 50%,#2555d0 53%,#153a86 56%,#0B2A47 58.4%,#0a2440 82%,#08192f 90%,#050f1e 100%) no-repeat #050f1e !important}
+  body.gala-only{background:linear-gradient(180deg,#D9F3C9 0%,#D9F3C9 6%,#cbe8bf 9.5%,#9ec59f 13%,#5f9584 16%,#256257 18%,#0e5651 19.3%,#0e5651 48%,#123150 51%,#0B2A47 53%,#0B2A47 85%,#08192f 90%,#050f1e 100%) no-repeat #050f1e !important}
   body.gala-only .intro-gate{background:radial-gradient(circle at 50% 45%, rgba(242,208,134,.14), transparent 40%), radial-gradient(135% 106% at 50% 40%, #123f5e 0%, #0d2c4a 46%, #0a1f3d 72%, #08152b 100%) !important}
   body.gala-only .act.gala .act-tag{color:#f0623f}
   body.gala-only .act.gala .act-tag .dot{background:#e8452a;box-shadow:0 0 12px rgba(232,69,42,.6)}
@@ -947,6 +947,26 @@
   .cover-actions{position:absolute;left:0;right:0;bottom:4.5%;display:flex;gap:8px;padding:0 5.5%;justify-content:center;z-index:2}
   .cover-actions .btn{flex:1;min-width:0;font-size:.78rem;padding:9px 6px;justify-content:center;text-align:center;white-space:nowrap}
   .cover-actions .btn-ghost{background:rgba(255,255,255,.75);border:1px solid #2f7862;color:#184a44}
+
+  /* ===== R0 · thu gọn lịch trình sau nút "Xem chi tiết" ===== */
+  .acts-more{margin-top:16px;text-align:center}
+  .acts-more>.acts{margin-top:22px;text-align:left}
+  .acts-more-btn{list-style:none;display:inline-flex;align-items:center;gap:9px;cursor:pointer;
+    font-family:var(--sans);font-size:.9rem;font-weight:600;letter-spacing:.02em;color:var(--gold);
+    padding:12px 24px;border:1px solid rgba(216,184,118,.42);border-radius:9px;background:rgba(216,184,118,.06);transition:.2s;-webkit-tap-highlight-color:transparent}
+  .acts-more-btn::-webkit-details-marker{display:none}
+  .acts-more-btn::marker{content:"";font-size:0}
+  .acts-more-btn:hover{border-color:var(--gold);background:rgba(216,184,118,.12)}
+  .acts-more .chev{transition:transform .25s ease;font-style:normal;font-size:.9em}
+  .acts-more[open] .chev{transform:rotate(180deg)}
+  .acts-more[open] .acts-more-btn{color:var(--cream);margin-bottom:4px}
+  .acts-more[open] .reveal{opacity:1 !important;transform:none !important}
+
+  /* ===== R0 · SECTION MÀU SOLID (bỏ loang màu, cho rõ) ===== */
+  #chuongtrinh{background:#0e5651}
+  #actsSection{background:#06402c}
+  #infoSection{background:#1a42a0}
+  body.gala-only #infoSection{background:#2555d0}
 </style>
 </head>
 <body class="gate-lock">
@@ -1028,6 +1048,7 @@
       <h2 id="actsTitle">Một ngày, hai dấu ấn</h2>
       <p class="quote" id="actsQuote">Buổi chiều tọa đàm chuyên sâu, buổi tối gala tri ân — cùng khép lại tại GEM Center.</p>
     </div>
+    <details class="acts-more"><summary class="acts-more-btn"><span>Xem chi tiết chương trình</span><i class="chev" aria-hidden="true">&#9662;</i></summary>
     <div class="acts">
       <article class="act reveal spot" data-act="toza">
         <div class="act-head">
@@ -1066,11 +1087,12 @@
         </ol>
       </article>
     </div>
+    </details>
   </div>
 </section>
 
 <!-- ============ THÔNG TIN CẦN BIẾT ============ -->
-<section class="band divider-top">
+<section class="band divider-top" id="infoSection">
   <div class="wrap">
     <div class="lead reveal">
       <span class="eyebrow">Đôi điều mời Quý vị lưu tâm</span>

@@ -918,6 +918,18 @@
   body.gala-only .act.gala .act-tag .dot{background:var(--gold);box-shadow:0 0 10px var(--gold)}
   body.gala-only .act.gala .act-head h3 .accent{color:var(--gold-bright)}
   body.gala-only .act.gala .timeline .body::before{border-color:var(--gold)}
+
+  /* ===== R0 · FIX pill hồi âm mobile + TÔNG NAVY tiec-toi + polish ===== */
+  .rsvp-by{display:inline-block;max-width:min(92vw,460px);text-align:center;line-height:1.55}
+  .rsvp-by .rb-ic{display:inline-flex;vertical-align:-3px;margin-right:6px}
+  @media(max-width:520px){.rsvp-by{border-radius:18px;padding:10px 16px}}
+  @media(max-width:430px){.topbar .rlink{font-size:.56rem;letter-spacing:.04em}}
+  /* TÔNG NAVY thương hiệu — CHỈ trang tiec-toi (body.gala-only) */
+  body.gala-only{--mint:#15E77E}
+  body.gala-only{background:linear-gradient(180deg,#eefde8 0,#e7f6db 470px,#a9d0b4 700px,#3f8f7e 900px,#1f6a70 1120px,#124f62 1360px,#0e3a56 1650px,#0b2d4e 2000px,#0a1f3d 2500px) no-repeat #0a1b3a !important}
+  body.gala-only .intro-gate{background:radial-gradient(circle at 50% 45%, rgba(242,208,134,.14), transparent 40%), radial-gradient(135% 106% at 50% 40%, #123f5e 0%, #0d2c4a 46%, #0a1f3d 72%, #08152b 100%) !important}
+  body.gala-only .act.gala .act-tag{color:#f0623f}
+  body.gala-only .act.gala .act-tag .dot{background:#e8452a;box-shadow:0 0 12px rgba(232,69,42,.6)}
 </style>
 </head>
 <body class="gate-lock">

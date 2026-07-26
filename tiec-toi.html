@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<!-- ESUHAI Group 20 năm · Landing RSVP (chỉ Gala tối) · Xuất bản lúc: 2026-07-26 19:46 · R0 nâng cấp UX · CL1 – Hương Ly -->
+<!-- ESUHAI Group 20 năm · Landing RSVP (chỉ Gala tối) · Xuất bản lúc: 2026-07-26 20:02 · R0 nâng cấp UX · CL1 – Hương Ly -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ESUHAI Group · 20 Năm · Thư mời Đêm tiệc Tri ân · 08.08.2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -173,6 +173,9 @@
   .person-head .rm{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:4px;padding:6px 12px;font-size:.78rem;cursor:pointer;transition:.2s}
   .person-head .rm:hover{border-color:var(--crimson);color:var(--crimson)}
   .person-body{padding:18px}
+  .person:first-child{border:none;background:none;border-radius:0;overflow:visible}
+  .person:first-child .person-head{background:none;border-bottom:none;padding:0 0 10px}
+  .person:first-child .person-body{padding:0}
   .grid-2{display:grid;grid-template-columns:1fr;gap:14px}
   @media(min-width:560px){.grid-2{grid-template-columns:1fr 1fr}}
 
@@ -1123,25 +1126,9 @@
 
           <div class="hairline"></div>
 
-          <!-- STEP 3 -->
-          <div class="step">
-            <div class="step-head"><div class="step-no">3</div><div><h3>Số lượng tham dự</h3></div></div>
-            <div class="party-row">
-              <div class="stepper">
-                <button type="button" id="minus" aria-label="Bớt một người">&minus;</button>
-                <div class="val num" id="sizeVal">1</div>
-                <button type="button" id="plus" aria-label="Thêm một người">+</button>
-              </div>
-              <p class="hint">Vị khách đầu tiên là <b style="color:var(--cream)">người đại diện</b> thông tin liên lạc.</p>
-            </div>
-            <p class="limit-note" id="limitNote" style="display:none">Mỗi lời ngỏ xin phép <b>tối đa 2 vị khách</b>, để Ban tổ chức đón tiếp chu đáo và trọn vẹn.</p>
-          </div>
-
-          <div class="hairline"></div>
-
           <!-- STEP 4 -->
           <div class="step">
-            <div class="step-head"><div class="step-no">4</div><div><h3>Thông tin tham dự</h3><p>(Nhằm giúp Quý vị xác định vị trí thông qua Thẻ tên và các dịch vụ khác)</p></div></div>
+            <div class="step-head"><div class="step-no">3</div><div><h3>Thông tin tham dự</h3><p>(Nhằm giúp Quý vị xác định vị trí thông qua Thẻ tên và các dịch vụ khác)</p></div></div>
 
             <div class="two" style="margin-bottom:20px;grid-template-columns:1fr">
               <div class="field"><label class="lab" for="repPhone">Điện thoại / Zalo liên hệ <span class="req">*</span></label>
@@ -1153,6 +1140,7 @@
 
             <div class="people" id="people"></div>
             <button type="button" class="add-btn" id="addBtn">+ Thêm một khách tham dự</button>
+            <p class="limit-note" id="limitNote" style="display:none">Mỗi lời ngỏ xin phép <b>tối đa 2 vị khách</b>, để Ban tổ chức đón tiếp chu đáo và trọn vẹn.</p>
             <div class="field" style="margin-top:18px"><label class="lab">Ẩm thực buổi Gala tối</label>
               <div class="seg" id="dietary">
                 <label><input type="radio" name="dietary" value="Món mặn" checked><span>Món mặn</span></label>
@@ -1164,7 +1152,7 @@
 
           <!-- STEP 5 -->
           <div class="step">
-            <div class="step-head"><div class="step-no">5</div><div><h3>Đôi lời gửi gắm</h3><p>(Không bắt buộc, chúng tôi vô cùng trân quý)</p></div></div>
+            <div class="step-head"><div class="step-no">4</div><div><h3>Đôi lời gửi gắm</h3><p>(Không bắt buộc, chúng tôi vô cùng trân quý)</p></div></div>
             <div class="field"><label class="lab" for="wish">Lời chúc mừng &amp; kỳ vọng gửi ESUHAI cho 20 năm tới</label>
               <textarea id="wish" placeholder="Một câu chúc của Quý vị sẽ được lưu giữ như một phần của dấu mốc 20 năm…"></textarea></div>
             <div class="field" style="display:none"><label class="lab" for="note">Ghi chú thêm</label>
@@ -1409,7 +1397,7 @@ var CONFIG = {
   $$('input[name="attend"]').forEach(function(r){r.addEventListener("change",syncAttend);});
 
   /* ---- people (dynamic) ---- */
-  var people=$("#people"), sizeVal=$("#sizeVal");
+  var people=$("#people");
   var MAX=2, seq=0;
   function personCard(index){
     seq++;
@@ -1452,12 +1440,10 @@ var CONFIG = {
     var cur=people.children.length;
     if(n>cur){ for(var i=cur;i<n;i++) people.appendChild(personCard(i)); }
     else if(n<cur){ for(var j=cur;j>n;j--) people.lastElementChild.remove(); }
-    renumber(); sizeVal.textContent=n; updateStepBtns(n);
+    renumber(); updateStepBtns(n);
   }
-  function syncSize(){ var n=people.children.length; sizeVal.textContent=n; updateStepBtns(n); }
-  function updateStepBtns(n){ $("#minus").disabled=n<=1; $("#plus").disabled=n>=MAX; var ab=$("#addBtn"); if(ab){ab.disabled=n>=MAX; ab.style.display=n>=MAX?"none":"block";} var ln=$("#limitNote"); if(ln){ln.style.display=n>=MAX?"block":"none";} }
-  $("#minus").addEventListener("click",function(){ setCount(people.children.length-1); });
-  $("#plus").addEventListener("click",function(){ setCount(people.children.length+1); });
+  function syncSize(){ updateStepBtns(people.children.length); }
+  function updateStepBtns(n){ var ab=$("#addBtn"); if(ab){ab.disabled=n>=MAX; ab.style.display=n>=MAX?"none":"block";} var ln=$("#limitNote"); if(ln){ln.style.display=n>=MAX?"block":"none";} }
   $("#addBtn").addEventListener("click",function(){ setCount(people.children.length+1); people.lastElementChild.querySelector(".p-name").focus(); });
   setCount(1);
 

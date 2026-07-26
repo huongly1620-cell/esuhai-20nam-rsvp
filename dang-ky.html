@@ -877,6 +877,39 @@
   @keyframes arwBounce{0%,100%{transform:translateY(0);opacity:.6}50%{transform:translateY(-6px);opacity:1}}
   @media(prefers-reduced-motion:reduce){.intro-btn .arw{animation:none}.env-flap{transition:none}}
   @media(max-height:640px){.env-flap{height:32vh}.intro-content .wax-seal{top:32vh;width:min(120px,31vw);height:min(120px,31vw)}.intro-btn{top:45vh}}
+
+  /* ===== VER 2 · MỞ THƯ sang trọng: khung vàng + con dấu tâm điểm + mở điện ảnh ===== */
+  .intro-gate{background:
+    radial-gradient(circle at 50% 45%, rgba(242,208,134,.15), transparent 40%),
+    radial-gradient(135% 106% at 50% 40%, #154442 0%, #0c2c35 46%, #08202c 72%, #05141d 100%);
+    box-shadow:inset 0 0 210px rgba(0,0,0,.55)}
+  .intro-content{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:20px}
+  .env-flap{display:none !important}
+  .v2-orn{position:absolute;width:46px;height:46px;border:1.5px solid rgba(216,184,118,.5);z-index:2;pointer-events:none}
+  .v2-orn-tl{top:28px;left:28px;border-right:0;border-bottom:0}
+  .v2-orn-tr{top:28px;right:28px;border-left:0;border-bottom:0}
+  .v2-orn-bl{bottom:28px;left:28px;border-right:0;border-top:0}
+  .v2-orn-br{bottom:28px;right:28px;border-left:0;border-top:0}
+  .v2-flourish{width:min(240px,60vw);height:20px;position:relative;flex:none}
+  .v2-flourish::before{content:"";position:absolute;top:50%;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(216,184,118,.75) 24%,rgba(216,184,118,.75) 76%,transparent)}
+  .v2-flourish::after{content:"";position:absolute;top:50%;left:50%;width:7px;height:7px;
+    transform:translate(-50%,-50%) rotate(45deg);background:#d8b876;box-shadow:0 0 9px rgba(216,184,118,.7)}
+  .v2-top{margin-bottom:30px}.v2-bot{margin-top:30px}
+  .intro-content .wax-seal{position:relative;left:auto;top:auto;transform:none;margin:0;
+    width:min(212px,55vw);height:min(212px,55vw);z-index:3;cursor:pointer;animation:sealV2 4.6s ease-in-out infinite}
+  @keyframes sealV2{0%,100%{transform:scale(1);filter:drop-shadow(0 18px 32px rgba(0,0,0,.55)) drop-shadow(0 0 14px rgba(244,206,132,.2))}
+    50%{transform:scale(1.028);filter:drop-shadow(0 22px 40px rgba(0,0,0,.55)) drop-shadow(0 0 34px rgba(244,206,132,.5))}}
+  .intro-btn{position:static !important;transform:none !important;margin:34px 0 0 !important;
+    background:none;border:0;box-shadow:none;padding:4px 10px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    color:#e9d9ac;font-family:var(--serif);font-style:italic;font-size:1.02rem;letter-spacing:.02em}
+  .intro-btn .arw{font-size:1.35rem;color:#e9c877;font-style:normal;animation:arwBounce 1.5s ease-in-out infinite}
+  .intro-gate.opening{opacity:0;transition:opacity .6s ease}
+  .intro-gate.opening .intro-content{transform:scale(1.09) !important;opacity:0 !important;transition:transform .75s cubic-bezier(.4,0,.2,1),opacity .6s ease !important}
+  .intro-gate.opening .wax-seal{animation:none}
+  @media(prefers-reduced-motion:reduce){.intro-content .wax-seal{animation:none}.intro-btn .arw{animation:none}.intro-gate.opening .intro-content{transition:opacity .4s ease !important}}
+  @media(max-height:600px){.intro-content .wax-seal{width:min(150px,40vw);height:min(150px,40vw)}.v2-top{margin-bottom:20px}.v2-bot{margin-top:20px}.intro-btn{margin-top:24px !important}}
 </style>
 </head>
 <body class="gate-lock">
@@ -897,9 +930,11 @@
   
   
   <div class="intro-content">
-    <div class="env-flap"></div>
+    <span class="v2-orn v2-orn-tl"></span><span class="v2-orn v2-orn-tr"></span><span class="v2-orn v2-orn-bl"></span><span class="v2-orn v2-orn-br"></span>
+    <div class="v2-flourish v2-top" aria-hidden="true"></div>
     <div class="wax-seal"><span class="wax-emblem"><span class="wax-inf" aria-hidden="true"></span><span class="wax-20th">20<sup>th</sup></span></span></div>
-    <button type="button" class="intro-btn" id="introBtn"><span class="arw">&#8593;</span>Chạm vào con dấu để mở</button>
+    <div class="v2-flourish v2-bot" aria-hidden="true"></div>
+    <button type="button" class="intro-btn" id="introBtn"><span class="arw">&#8593;</span>Chạm để mở thư</button>
     
   </div>
 </div>

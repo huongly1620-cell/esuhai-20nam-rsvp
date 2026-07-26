@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<!-- ESUHAI Group 20 năm · Landing RSVP (chỉ Gala tối) · Xuất bản lúc: 2026-07-25 12:15 · R0 nâng cấp UX · CL1 – Hương Ly -->
+<!-- ESUHAI Group 20 năm · Landing RSVP (chỉ Gala tối) · Xuất bản lúc: 2026-07-26 19:37 · R0 nâng cấp UX · CL1 – Hương Ly -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ESUHAI Group · 20 Năm · Thư mời Đêm tiệc Tri ân · 08.08.2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,7 +26,7 @@
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
-    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#eef9e3 0,#e7f4da 620px,#dcefce 1250px,#cbe6bf 1680px,#8fbf9e 1880px,#4c8672 2080px,#2f6a5f 2450px,#1f524e 3050px,#164340 3800px,#0e3538 4700px,#0b2f35 5600px,#061a2b 6600px) no-repeat #061a2b;
+    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#116157 0%,#0e5548 8%,#0C4D3C 14%,#0C4D3C 25%,#0A3E31 30%,#0A3E31 46%,#0c3a4c 50%,#1a42a0 52.6%,#123157 55.3%,#0B2A47 58%,#0a2440 80%,#08192f 90%,#050f1e 100%) no-repeat #050f1e;
     line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
   }
   body::before{
@@ -926,7 +926,7 @@
   @media(max-width:430px){.topbar .rlink{font-size:.56rem;letter-spacing:.04em}}
   /* TÔNG NAVY thương hiệu — CHỈ trang tiec-toi (body.gala-only) */
   body.gala-only{--mint:#15E77E}
-  body.gala-only{background:linear-gradient(180deg,#eef9e3 0,#e7f4da 620px,#dcefce 1250px,#cbe6bf 1680px,#83b8b0 1880px,#2f8378 2080px,#1f6a70 2450px,#175a6e 3050px,#124f62 3800px,#0e3d55 4700px,#0b2d4e 5700px,#0a1f3d 6700px) no-repeat #0a1b3a !important}
+  body.gala-only{background:linear-gradient(180deg,#15487c 0%,#103c68 12%,#0d3357 30%,#0B2A47 52%,#0a2440 78%,#081a30 90%,#050f1e 100%) no-repeat #050f1e !important}
   body.gala-only .intro-gate{background:radial-gradient(circle at 50% 45%, rgba(242,208,134,.14), transparent 40%), radial-gradient(135% 106% at 50% 40%, #123f5e 0%, #0d2c4a 46%, #0a1f3d 72%, #08152b 100%) !important}
   body.gala-only .act.gala .act-tag{color:#f0623f}
   body.gala-only .act.gala .act-tag .dot{background:#e8452a;box-shadow:0 0 12px rgba(232,69,42,.6)}
@@ -943,16 +943,6 @@
   .cover-actions{position:absolute;left:0;right:0;bottom:4.5%;display:flex;gap:8px;padding:0 5.5%;justify-content:center;z-index:2}
   .cover-actions .btn{flex:1;min-width:0;font-size:.78rem;padding:9px 6px;justify-content:center;text-align:center;white-space:nowrap}
   .cover-actions .btn-ghost{background:rgba(255,255,255,.75);border:1px solid #2f7862;color:#184a44}
-
-  /* ===== R0 · #5 màu chữ vùng nền SÁNG (thesis) — dễ đọc + hài hoà ===== */
-  #chuongtrinh .eyebrow{color:#9a7526}
-  #chuongtrinh .lead h2{color:#163d36}
-  #chuongtrinh .lead h2 em,#chuongtrinh .shimmer-text{color:#a67c2a;-webkit-text-fill-color:#a67c2a;background:none;animation:none}
-  #chuongtrinh .lead .quote{color:#3f5349}
-  #chuongtrinh .pill{background:rgba(255,255,255,.55);border-color:rgba(28,74,62,.22)}
-  #chuongtrinh .pill h3{color:#163d36}
-  #chuongtrinh .pill p{color:#43574c}
-  #chuongtrinh .pill .ic{color:#2c7d5c}
 </style>
 </head>
 <body class="gate-lock">
@@ -1245,13 +1235,14 @@ var CONFIG = {
 
   /* ---- nền sao: chấm lấp lánh xa xa (hiện dần khi trời tối) ---- */
   (function stars(){
-    var c=document.getElementById("dust"), x=c.getContext("2d"), P=[], raf;
+    var c=document.getElementById("dust"); if(!c) return; var x=c.getContext("2d"), P=[], raf, sf=0;
     var reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
     function size(){c.width=innerWidth;c.height=innerHeight;}
-    function init(){P=[];var n=Math.min(140,Math.floor(innerWidth/13));for(var i=0;i<n;i++)P.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.05+.35,ph:Math.random()*6.283,tw:Math.random()*.032+.006,mo:Math.random()*.5+.35});}
-    function draw(){x.clearRect(0,0,c.width,c.height);for(var i=0;i<P.length;i++){var p=P[i];p.ph+=p.tw;var t=0.5+0.5*Math.sin(p.ph);var o=p.mo*(0.18+0.82*t);p.y-=0.012;if(p.y<-4){p.y=c.height+4;p.x=Math.random()*c.width;}x.shadowBlur=p.r*(1.5+3.5*t);x.shadowColor="rgba(255,201,96,"+(o*0.9)+")";x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fillStyle="rgba(255,228,156,"+o+")";x.fill();}x.shadowBlur=0;raf=requestAnimationFrame(draw);}
-    function fade(){var y=window.pageYOffset||document.documentElement.scrollTop||0;c.style.opacity=Math.max(0,Math.min(.92,(y-500)/1400));}
-    size();init();fade();if(!reduce)draw();
+    function init(){P=[];var n=Math.min(200,Math.floor(innerWidth/6));for(var i=0;i<n;i++)P.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.15+.35,ph:Math.random()*6.283,tw:Math.random()*.032+.006,mo:Math.random()*.5+.4,on:0.5+0.46*Math.pow(Math.random(),0.85)});}
+    function frac(){var d=document.documentElement;var y=window.pageYOffset||d.scrollTop||0;var m=(d.scrollHeight||1)-innerHeight;sf=m>0?Math.max(0,Math.min(1,y/m)):0;}
+    function draw(){x.clearRect(0,0,c.width,c.height);for(var i=0;i<P.length;i++){var p=P[i];p.ph+=p.tw;var t=0.5+0.5*Math.sin(p.ph);var vis=sf<=p.on?0:Math.min(1,(sf-p.on)/0.06);if(vis>0){var o=p.mo*(0.18+0.82*t)*vis;p.y-=0.012;if(p.y<-4){p.y=c.height+4;p.x=Math.random()*c.width;}x.shadowBlur=p.r*(1.6+3.6*t);x.shadowColor="rgba(255,201,96,"+(o*0.9)+")";x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fillStyle="rgba(255,230,160,"+o+")";x.fill();}}x.shadowBlur=0;raf=requestAnimationFrame(draw);}
+    function fade(){frac();c.style.opacity=Math.max(0,Math.min(1,(sf-0.44)/0.1));}
+    size();init();frac();fade();if(!reduce)draw();
     addEventListener("resize",function(){size();init();});
     addEventListener("scroll",fade,{passive:true});
   })();

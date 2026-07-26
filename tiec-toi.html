@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<!-- ESUHAI Group 20 năm · Landing RSVP (chỉ Gala tối) · Xuất bản lúc: 2026-07-26 23:21 · R0 nâng cấp UX · CL1 – Hương Ly -->
+<!-- ESUHAI Group 20 năm · Landing RSVP (chỉ Gala tối) · Xuất bản lúc: 2026-07-26 23:47 · R0 nâng cấp UX · CL1 – Hương Ly -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ESUHAI Group · 20 Năm · Thư mời Đêm tiệc Tri ân · 08.08.2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,7 +26,7 @@
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
-    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#D9F3C9 0%,#D9F3C9 6%,#cbe8bf 9.5%,#9ec59f 12.5%,#5f9584 15.5%,#256257 17.3%,#0e5651 18.5%,#0e5651 45%,#123150 48%,#0B2A47 50%,#0B2A47 86%,#08192f 91%,#050f1e 100%) no-repeat #050f1e;
+    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#0B2A47 0%,#0B2A47 74%,#08192f 88%,#050f1e 100%) no-repeat #050f1e;
     line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
   }
   body::before{
@@ -930,7 +930,7 @@
   @media(max-width:430px){.topbar .rlink{font-size:.56rem;letter-spacing:.04em}}
   /* TÔNG NAVY thương hiệu — CHỈ trang tiec-toi (body.gala-only) */
   body.gala-only{--mint:#15E77E}
-  body.gala-only{background:linear-gradient(180deg,#D9F3C9 0%,#D9F3C9 6%,#cbe8bf 9.5%,#9ec59f 13%,#5f9584 16%,#256257 18%,#0e5651 19.3%,#0e5651 48%,#123150 51%,#0B2A47 53%,#0B2A47 85%,#08192f 90%,#050f1e 100%) no-repeat #050f1e !important}
+  body.gala-only{background:linear-gradient(180deg,#0B2A47 0%,#0B2A47 74%,#08192f 88%,#050f1e 100%) no-repeat #050f1e !important}
   body.gala-only .intro-gate{background:radial-gradient(circle at 50% 45%, rgba(242,208,134,.14), transparent 40%), radial-gradient(135% 106% at 50% 40%, #123f5e 0%, #0d2c4a 46%, #0a1f3d 72%, #08152b 100%) !important}
   body.gala-only .act.gala .act-tag{color:#f0623f}
   body.gala-only .act.gala .act-tag .dot{background:#e8452a;box-shadow:0 0 12px rgba(232,69,42,.6)}
@@ -967,6 +967,22 @@
   #actsSection{background:#06402c}
   #infoSection{background:#1a42a0}
   body.gala-only #infoSection{background:#2555d0}
+
+  /* ===== R0 · bìa CHỌN LỐI: 2 nút nổi bật, ẩn nội dung tới khi bấm ===== */
+  .gated{display:none !important}
+  .revealing{animation:gateIn .5s ease both}
+  .revealing .reveal,.revealing .timeline li,.revealing.reveal{opacity:1 !important;transform:none !important}
+  @keyframes gateIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  .cover-choose{max-width:min(430px,92vw);margin:20px auto 12px;text-align:center;padding:0 4px}
+  .cover-prompt{font-family:var(--serif);font-style:italic;color:#164033;font-weight:500;font-size:1.04rem;margin:0 0 15px}
+  .cover-choose .cover-actions{position:static;display:flex;flex-direction:column;gap:13px;padding:0}
+  .cover-choose .btn{flex:none;width:100%;justify-content:center;font-size:1.04rem;padding:16px 22px;border-radius:13px;font-weight:700;white-space:normal}
+  .cover-choose .btn-primary{box-shadow:0 14px 36px rgba(216,184,118,.5),0 4px 12px rgba(0,0,0,.2);animation:ctaPulse 2.6s ease-in-out infinite}
+  .cover-choose .btn-ghost{background:rgba(255,255,255,.78);border:1.5px solid #2f7862;color:#184a44;box-shadow:0 8px 22px rgba(20,60,50,.18)}
+  @keyframes ctaPulse{0%,100%{box-shadow:0 14px 36px rgba(216,184,118,.42),0 4px 12px rgba(0,0,0,.2)}50%{box-shadow:0 16px 46px rgba(216,184,118,.72),0 4px 12px rgba(0,0,0,.2)}}
+  @media(prefers-reduced-motion:reduce){.cover-choose .btn-primary{animation:none}}
+
+  .cover{background:#D9F3C9;min-height:100vh}
 </style>
 </head>
 <body class="gate-lock">
@@ -1014,18 +1030,20 @@
 <div id="progressBar"></div>
 
 <section class="cover">
-  <div class="scroll-hint" aria-hidden="true">Cuộn xuống để xác nhận &#8595;</div>
   <div class="cover-frame">
     <img class="cover-img" src="screen1-cover.jpg" alt="Trân trọng kính mời tham dự · GALA Kỷ niệm 20 năm ESUHAI Group · 20 năm thành lập 2006–2026">
+  </div>
+  <div class="cover-choose">
+    <p class="cover-prompt">Kính mời Quý vị chọn một mục để tiếp tục</p>
     <div class="cover-actions">
-      <a class="btn btn-primary" href="#rsvp">Xác nhận tham dự &#8594;</a>
-      <a class="btn btn-ghost" href="#chuongtrinh">Chi tiết chương trình</a>
+      <button type="button" class="btn btn-primary" id="ctaConfirm">Xác nhận tham dự &#8594;</button>
+      <button type="button" class="btn btn-ghost" id="ctaDetail">Chi tiết chương trình</button>
     </div>
   </div>
 </section>
 
 <!-- ============ THÔNG ĐIỆP ============ -->
-<section class="band" id="chuongtrinh">
+<section class="band gated gate-detail" id="chuongtrinh">
   <div class="wrap">
     <div class="lead reveal">
       <span class="eyebrow" id="thesisEyebrow">Hội thảo chuyên đề</span>
@@ -1041,14 +1059,13 @@
 </section>
 
 <!-- ============ HAI BUỔI ============ -->
-<section class="band divider-top" id="actsSection">
+<section class="band divider-top gated gate-detail" id="actsSection">
   <div class="wrap">
     <div class="lead reveal">
       <span class="eyebrow" id="actsEyebrow">Chương trình · 08.08.2026</span>
       <h2 id="actsTitle">Một ngày, hai dấu ấn</h2>
       <p class="quote" id="actsQuote">Buổi chiều tọa đàm chuyên sâu, buổi tối gala tri ân — cùng khép lại tại GEM Center.</p>
     </div>
-    <details class="acts-more"><summary class="acts-more-btn"><span>Xem chi tiết chương trình</span><i class="chev" aria-hidden="true">&#9662;</i></summary>
     <div class="acts">
       <article class="act reveal spot" data-act="toza">
         <div class="act-head">
@@ -1087,12 +1104,11 @@
         </ol>
       </article>
     </div>
-    </details>
   </div>
 </section>
 
 <!-- ============ THÔNG TIN CẦN BIẾT ============ -->
-<section class="band divider-top" id="infoSection">
+<section class="band divider-top gated gate-detail" id="infoSection">
   <div class="wrap">
     <div class="lead reveal">
       <span class="eyebrow">Đôi điều mời Quý vị lưu tâm</span>
@@ -1106,7 +1122,7 @@
 </section>
 
 <!-- ============ XÁC NHẬN THAM DỰ ============ -->
-<div class="wrap" id="rsvp">
+<div class="wrap gated gate-rsvp" id="rsvp">
   <div class="lead reveal" style="margin-bottom:34px">
     <span class="eyebrow">R.S.V.P</span>
     <h2>Xác nhận tham dự</h2>
@@ -1220,7 +1236,7 @@
   </div>
 </div>
 
-<footer>
+<footer class="gated gate-rsvp">
   <div class="wrap">
     <p class="slogan">Giáo dục &amp; Đào tạo · Kỹ thuật &amp; Công nghệ · Kiến nghiệp thành công</p>
     <p class="contact">Sự hiện diện của Quý vị là món quà trân quý nhất trong hành trình hai mươi năm của chúng tôi.</p>
@@ -1244,6 +1260,14 @@ var CONFIG = {
   "use strict";
 
   /* ---- nền sao: chấm lấp lánh xa xa (hiện dần khi trời tối) ---- */
+  /* ---- R0 · bìa 2 nút: ẩn nội dung, bấm mới hiện ---- */
+  (function(){
+    function reveal(cls){ Array.prototype.slice.call(document.getElementsByClassName(cls)).forEach(function(el){ el.classList.remove("gated"); el.classList.add("revealing"); }); }
+    function go(sel){ setTimeout(function(){ var t=document.querySelector(sel); if(t) t.scrollIntoView({behavior:"smooth",block:"start"}); },90); }
+    var c=document.getElementById("ctaConfirm"), d=document.getElementById("ctaDetail");
+    if(c) c.addEventListener("click",function(){ reveal("gate-rsvp"); go("#rsvp"); });
+    if(d) d.addEventListener("click",function(){ reveal("gate-detail"); reveal("gate-rsvp"); go("#chuongtrinh"); });
+  })();
   (function stars(){
     var c=document.getElementById("dust"); if(!c) return; var x=c.getContext("2d"), P=[], raf, sf=0;
     var reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches;

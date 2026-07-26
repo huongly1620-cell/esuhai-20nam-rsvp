@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<!-- ESUHAI Group 20 năm · Landing RSVP (đầy đủ · Tọa đàm + Gala) · Xuất bản lúc: 2026-07-26 20:02 · R0 nâng cấp UX · CL1 – Hương Ly -->
+<!-- ESUHAI Group 20 năm · Landing RSVP (đầy đủ · Tọa đàm + Gala) · Xuất bản lúc: 2026-07-26 20:30 · R0 nâng cấp UX · CL1 – Hương Ly -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ESUHAI Group · 20 Năm · Xác nhận tham dự · 08.08.2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,7 +26,7 @@
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
-    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#e9f3e0 0%,#e6f2dc 8%,#c8e0bc 11%,#4a856b 13%,#0C4D3C 14%,#0C4D3C 25%,#0A3E31 30%,#0A3E31 46%,#0c3a4c 50%,#1a42a0 52.6%,#123157 55.3%,#0B2A47 58%,#0a2440 80%,#08192f 90%,#050f1e 100%) no-repeat #050f1e;
+    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#e9f3e0 0%,#e9f3e0 13%,#cfe6c2 14.2%,#4f8468 14.9%,#0C4D3C 15.5%,#0C4D3C 25%,#0A3E31 30%,#0A3E31 46%,#0c3a4c 50%,#1a42a0 52.6%,#123157 55.3%,#0B2A47 58%,#0a2440 80%,#08192f 90%,#050f1e 100%) no-repeat #050f1e;
     line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
   }
   body::before{
@@ -176,6 +176,7 @@
   .person:first-child{border:none;background:none;border-radius:0;overflow:visible}
   .person:first-child .person-head{background:none;border-bottom:none;padding:0 0 10px}
   .person:first-child .person-body{padding:0}
+  .person-head .n{display:none}
   .grid-2{display:grid;grid-template-columns:1fr;gap:14px}
   @media(min-width:560px){.grid-2{grid-template-columns:1fr 1fr}}
 
@@ -187,9 +188,9 @@
   .seg input:checked + span{border-color:var(--gold);background:rgba(216,184,118,.12);color:var(--gold-bright);box-shadow:inset 0 0 0 1px var(--gold)}
   .seg input:focus-visible + span{outline:2px solid var(--gold-bright);outline-offset:2px}
 
-  .add-btn{margin-top:16px;border:1px dashed var(--line);background:transparent;color:var(--gold);border-radius:5px;
-    padding:13px 20px;cursor:pointer;font-family:var(--sans);font-size:.86rem;font-weight:600;letter-spacing:.03em;transition:.2s;width:100%}
-  .add-btn:hover{border-color:var(--gold);background:rgba(216,184,118,.08)}
+  .add-btn{margin-top:14px;border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:5px;
+    padding:8px 15px;cursor:pointer;font-family:var(--sans);font-size:.8rem;font-weight:500;letter-spacing:.02em;transition:.2s;width:auto;display:inline-block}
+  .add-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(216,184,118,.06)}
 
   .btn{font-family:var(--sans);font-size:.9rem;font-weight:600;letter-spacing:.04em;padding:15px 30px;border-radius:5px;cursor:pointer;border:1px solid transparent;
     transition:transform .18s,box-shadow .25s,background .25s,color .2s;display:inline-flex;align-items:center;gap:9px}
@@ -929,7 +930,7 @@
   @media(max-width:430px){.topbar .rlink{font-size:.56rem;letter-spacing:.04em}}
   /* TÔNG NAVY thương hiệu — CHỈ trang tiec-toi (body.gala-only) */
   body.gala-only{--mint:#15E77E}
-  body.gala-only{background:linear-gradient(180deg,#e9f3e0 0%,#e2eedb 8%,#a9c6cb 11%,#3f6f88 13%,#123f6b 15%,#0d3357 30%,#0B2A47 52%,#0a2440 78%,#081a30 90%,#050f1e 100%) no-repeat #050f1e !important}
+  body.gala-only{background:linear-gradient(180deg,#e9f3e0 0%,#e9f3e0 15.3%,#cfe6c2 16.5%,#4f8468 17%,#0C4D3C 17.6%,#0C4D3C 31%,#0A3E31 34%,#0A3E31 48%,#0c3a52 50.5%,#2555d0 53%,#153a86 56%,#0B2A47 58.4%,#0a2440 82%,#08192f 90%,#050f1e 100%) no-repeat #050f1e !important}
   body.gala-only .intro-gate{background:radial-gradient(circle at 50% 45%, rgba(242,208,134,.14), transparent 40%), radial-gradient(135% 106% at 50% 40%, #123f5e 0%, #0d2c4a 46%, #0a1f3d 72%, #08152b 100%) !important}
   body.gala-only .act.gala .act-tag{color:#f0623f}
   body.gala-only .act.gala .act-tag .dot{background:#e8452a;box-shadow:0 0 12px rgba(232,69,42,.6)}
@@ -1139,7 +1140,7 @@
             <p class="contact-note">Thông tin của Quý vị được giữ kín, chỉ dùng cho việc chuẩn bị đón tiếp của BTC.</p>
 
             <div class="people" id="people"></div>
-            <button type="button" class="add-btn" id="addBtn">+ Thêm một khách tham dự</button>
+            <button type="button" class="add-btn" id="addBtn">+ Thêm 01 khách đi cùng (nếu cần)</button>
             <p class="limit-note" id="limitNote" style="display:none">Mỗi lời ngỏ xin phép <b>tối đa 2 vị khách</b>, để Ban tổ chức đón tiếp chu đáo và trọn vẹn.</p>
             <div class="field" style="margin-top:18px"><label class="lab">Ẩm thực buổi Gala tối</label>
               <div class="seg" id="dietary">

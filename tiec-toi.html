@@ -26,7 +26,7 @@
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
-    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#eefde8 0,#e7f6db 470px,#a9d0b4 700px,#4c8672 880px,#1d4b49 1040px,#0b2f35 1200px,#061a2b 1460px) no-repeat #061a2b;
+    margin:0;font-family:var(--sans);color:var(--cream);background:linear-gradient(180deg,#eefde8 0,#e7f6db 500px,#c8e4bd 960px,#9ecaa4 1450px,#6fa98d 2000px,#4a8672 2600px,#316a60 3250px,#20544f 3950px,#143f3f 4700px,#0c3236 5500px,#061a2b 6400px) no-repeat #061a2b;
     line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
   }
   body::before{
@@ -926,10 +926,23 @@
   @media(max-width:430px){.topbar .rlink{font-size:.56rem;letter-spacing:.04em}}
   /* TÔNG NAVY thương hiệu — CHỈ trang tiec-toi (body.gala-only) */
   body.gala-only{--mint:#15E77E}
-  body.gala-only{background:linear-gradient(180deg,#eefde8 0,#e7f6db 470px,#a9d0b4 700px,#3f8f7e 900px,#1f6a70 1120px,#124f62 1360px,#0e3a56 1650px,#0b2d4e 2000px,#0a1f3d 2500px) no-repeat #0a1b3a !important}
+  body.gala-only{background:linear-gradient(180deg,#eefde8 0,#e7f6db 500px,#c8e4bd 960px,#9ecaa4 1450px,#5f9f8f 2000px,#2f8378 2600px,#1f6a70 3250px,#175a6e 3950px,#124f62 4700px,#0e3d55 5500px,#0b2d4e 6300px,#0a1f3d 7100px) no-repeat #0a1b3a !important}
   body.gala-only .intro-gate{background:radial-gradient(circle at 50% 45%, rgba(242,208,134,.14), transparent 40%), radial-gradient(135% 106% at 50% 40%, #123f5e 0%, #0d2c4a 46%, #0a1f3d 72%, #08152b 100%) !important}
   body.gala-only .act.gala .act-tag{color:#f0623f}
   body.gala-only .act.gala .act-tag .dot{background:#e8452a;box-shadow:0 0 12px rgba(232,69,42,.6)}
+
+  /* ===== R0 · #4 icon tick + viền vàng cho chip chọn phần ===== */
+  .chip .b{position:relative}
+  .chip .b::after{content:"";position:absolute;top:13px;right:13px;width:22px;height:22px;border-radius:50%;border:2px solid var(--line-strong);transition:.2s}
+  .chip input:checked + .b::after{border-color:var(--gold);background:var(--gold) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 13l4 4L19 7' fill='none' stroke='%230b2340' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/13px no-repeat}
+
+  /* ===== R0 · #2 nút CTA lồng trong ảnh (dưới logo) + gợi ý cuộn nhỏ+động ===== */
+  .scroll-hint{font-size:.62rem;letter-spacing:.2em;margin-top:2px}
+  .cover-frame{position:relative;display:block;width:min(430px,92vw);margin:8px auto 0}
+  .cover-frame .cover-img{width:100%;margin:0;display:block}
+  .cover-actions{position:absolute;left:0;right:0;bottom:4.5%;display:flex;gap:8px;padding:0 5.5%;justify-content:center;z-index:2}
+  .cover-actions .btn{flex:1;min-width:0;font-size:.78rem;padding:9px 6px;justify-content:center;text-align:center;white-space:nowrap}
+  .cover-actions .btn-ghost{background:rgba(255,255,255,.75);border:1px solid #2f7862;color:#184a44}
 </style>
 </head>
 <body class="gate-lock">
@@ -978,13 +991,14 @@
 <div id="progressBar"></div>
 
 <section class="cover">
-  <img class="cover-img" src="screen1-cover.jpg" alt="Trân trọng kính mời tham dự · GALA Kỷ niệm 20 năm ESUHAI Group · 20 năm thành lập 2006–2026">
   <div class="scroll-hint" aria-hidden="true">Cuộn xuống để xác nhận &#8595;</div>
-</section>
-
-<section class="cover-cta">
-  <a class="btn btn-primary" href="#rsvp">Xác nhận tham dự &#8594;</a>
-  <a class="btn btn-ghost" href="#chuongtrinh">Chi tiết chương trình</a>
+  <div class="cover-frame">
+    <img class="cover-img" src="screen1-cover.jpg" alt="Trân trọng kính mời tham dự · GALA Kỷ niệm 20 năm ESUHAI Group · 20 năm thành lập 2006–2026">
+    <div class="cover-actions">
+      <a class="btn btn-primary" href="#rsvp">Xác nhận tham dự &#8594;</a>
+      <a class="btn btn-ghost" href="#chuongtrinh">Chi tiết chương trình</a>
+    </div>
+  </div>
 </section>
 
 <!-- ============ THÔNG ĐIỆP ============ -->
@@ -1328,7 +1342,8 @@ var CONFIG = {
     if(bgm) bgm.addEventListener("error",function(){ audioReady=false; });
     function openGate(){ gate.classList.add("opening"); body.classList.remove("gate-lock");
       fab.classList.add("show"); setTimeout(function(){ gate.style.display="none"; },1500); }
-    function fadeIn(){ if(!bgm) return; bgm.volume=0; setTimeout(function(){ var v=0; var t=setInterval(function(){ v+=0.03; if(v>=0.4){v=0.4;clearInterval(t);} if(bgm) bgm.volume=v; },90); },450); }
+    function fadeIn(){ if(!bgm) return; bgm.volume=0; setTimeout(function(){ var v=0; var t=setInterval(function(){ v+=0.02; if(v>=0.17){v=0.17;clearInterval(t);startBreathe();} if(bgm) bgm.volume=v; },110); },500); }
+    var breatheT=null; function startBreathe(){ if(breatheT) return; var s=0; breatheT=setInterval(function(){ s+=0.11; if(bgm && !bgm.paused){ bgm.volume=Math.max(0,0.055+0.115*(0.5+0.5*Math.sin(s))); } },420); }
     function tryPlay(){ if(!bgm) return; bgm.volume=0; var p=bgm.play();
       if(p && p.catch){ p.then(function(){ fab.classList.add("playing"); fab.classList.remove("muted"); fadeIn(); })
         .catch(function(){ fab.classList.add("muted"); fab.classList.remove("playing"); }); }

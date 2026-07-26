@@ -910,6 +910,14 @@
   .intro-gate.opening .wax-seal{animation:none}
   @media(prefers-reduced-motion:reduce){.intro-content .wax-seal{animation:none}.intro-btn .arw{animation:none}.intro-gate.opening .intro-content{transition:opacity .4s ease !important}}
   @media(max-height:600px){.intro-content .wax-seal{width:min(150px,40vw);height:min(150px,40vw)}.v2-top{margin-bottom:20px}.v2-bot{margin-top:20px}.intro-btn{margin-top:24px !important}}
+
+  /* ===== R0 · trang CHỈ-GALA (tiec-toi): căn lại bố cục sau khi ẩn Tọa đàm ===== */
+  body.gala-only .acts{grid-template-columns:1fr;max-width:600px;margin-left:auto;margin-right:auto}
+  body.gala-only .act.gala{background:linear-gradient(180deg,rgba(22,66,64,.26),rgba(6,20,36,.46))}
+  body.gala-only .act.gala .act-tag{color:var(--gold)}
+  body.gala-only .act.gala .act-tag .dot{background:var(--gold);box-shadow:0 0 10px var(--gold)}
+  body.gala-only .act.gala .act-head h3 .accent{color:var(--gold-bright)}
+  body.gala-only .act.gala .timeline .body::before{border-color:var(--gold)}
 </style>
 </head>
 <body class="gate-lock">
@@ -1335,6 +1343,7 @@ var CONFIG = {
     // ẩn bước chọn phần + ẩn buổi Tọa đàm
     var ss=document.getElementById("stepSession"); if(ss) ss.style.display="none";
     var toza=document.querySelector('[data-act="toza"]'); if(toza) toza.style.display="none";
+    var gtag=document.querySelector(".act.gala .act-tag"); if(gtag) gtag.innerHTML='<span class="dot"></span> The 20 Years Next';
     // đổi lời dẫn cho đúng ngữ cảnh Dạ tiệc
     var set=function(id,html){var e=document.getElementById(id); if(e) e.innerHTML=html;};
     set("heroKicker","Thư mời Dạ tiệc · The 20 Years Next");

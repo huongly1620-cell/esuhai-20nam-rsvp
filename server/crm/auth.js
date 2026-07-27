@@ -16,12 +16,41 @@ const MAX_ATTEMPTS = 5;
 // request-code rate limit: max 5 / 10min per email+ip (in-memory, one web service).
 const reqLimit = new Map();
 const RL_WINDOW = 10 * 60 * 1000;
-const RL_MAX = 5;
+const RL_MAX = 10;
 
 function normEmail(e) { return String(e || '').trim().toLowerCase(); }
 function sha(s) { return crypto.createHash('sha256').update(String(s) + OTP_SALT).digest('hex'); }
 function ipOf(req) { return (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim(); }
 function maskEmail(e) { const [u, d] = String(e || '').split('@'); return !d ? e : (u.slice(0, 2) + '***@' + d); }
+
+// ---- OTP email via SMTP (lazy-require; only when OTP_DELIVERY=smtp) ----
+// Never logs the code or credentials; on failure the caller logs err.code only.
+let _mailer = null;
+function mailer() {
+  if (_mailer) return _mailer;
+  const nodemailer = require('nodemailer'); // lazy: not loaded in console mode
+  const port = parseInt(process.env.SMTP_PORT || '587', 10);
+  _mailer = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port,
+    secure: port === 465,       // office365 :587 = STARTTLS
+    requireTLS: port !== 465,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  });
+  return _mailer;
+}
+async function sendOtpEmail(to, code) {
+  await mailer().sendMail({
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    to,
+    subject: 'Mã đăng nhập CRM đón tiếp · ESUHAI 20 năm',
+    text: `Ma dang nhap CRM don tiep cua ban: ${code}\nMa co hieu luc 10 phut. Neu ban khong yeu cau, hay bo qua email nay.`,
+    html: '<div style="font-family:Segoe UI,Arial,sans-serif;color:#1a1a1a">'
+      + '<p>Mã đăng nhập <b>CRM đón tiếp</b> — Kỷ niệm 20 năm ESUHAI Group:</p>'
+      + '<p style="font-size:26px;font-weight:700;letter-spacing:6px;color:#0b1e38">' + code + '</p>'
+      + '<p style="color:#666">Mã có hiệu lực 10 phút. Nếu bạn không yêu cầu, hãy bỏ qua email này.</p></div>',
+  });
+}
 
 // ---- signed cookie session ----
 function sign(obj) {
@@ -93,11 +122,14 @@ function mount(app) {
            ON CONFLICT (email) DO UPDATE SET code_hash = EXCLUDED.code_hash, expires_at = EXCLUDED.expires_at, attempts = 0, created_at = now()`,
           [email, sha(code), expires]
         );
-        if (OTP_DELIVERY === 'console') {
-          // Dev delivery: print to server log only (no email provider until go-live).
+        if (OTP_DELIVERY === 'smtp') {
+          // Send via SMTP. Never log the code/credentials; on failure log only err.code.
+          try { await sendOtpEmail(email, code); }
+          catch (e) { console.error('[crm-auth] otp email failed:', (e && e.code) || 'send-error'); }
+        } else {
+          // console mode (local/fixture): print to server log only.
           console.log(`[crm-otp] code for ${email}: ${code} (expires in 10m)`);
         }
-        // (go-live: send via email provider here)
       }
       // Always generic response.
       return res.status(202).json({ ok: true });

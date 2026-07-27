@@ -24,6 +24,7 @@
   .msg.err{color:var(--red)} .msg.ok{color:var(--green)}
   .hidden{display:none}
   .back{background:none;border:0;color:var(--muted);font-size:.8rem;margin-top:10px;cursor:pointer;width:100%}
+  .hint{color:var(--muted);font-size:.8rem;margin:12px 0 2px;text-align:center;line-height:1.55}
 </style>
 </head>
 <body>
@@ -39,9 +40,11 @@
     </form>
 
     <form id="step2" class="hidden">
-      <label for="code">Mã 6 số vừa gửi</label>
+      <label for="code">Mã 6 số vừa gửi qua email</label>
       <input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="______">
+      <p class="hint">Mã được gửi tới email của bạn — nhớ kiểm tra cả thư mục <b>Spam / Junk</b>. Mã sống 10 phút.</p>
       <button type="submit" id="verifyBtn">Vào CRM &#8594;</button>
+      <button type="button" class="back" id="resendBtn">Gửi lại mã</button>
       <button type="button" class="back" id="backBtn">&#8592; Đổi email</button>
     </form>
 
@@ -76,6 +79,16 @@
       setMsg(j.error||"Mã không đúng.","err");
     }catch(_){ setMsg("Lỗi kết nối, thử lại.","err"); }
     $("verifyBtn").disabled=false; $("verifyBtn").textContent="Vào CRM →";
+  });
+  $("resendBtn").addEventListener("click", async function(){
+    if(!email){ setMsg("Nhập email trước.","err"); return; }
+    setMsg("Đang gửi lại…",""); $("resendBtn").disabled=true;
+    try{
+      var r=await fetch("/auth/request-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email})});
+      if(r.status===429){ setMsg("Bạn xin mã hơi nhanh — đợi một chút rồi thử lại.","err"); }
+      else { setMsg("Đã gửi lại mã. Kiểm tra hộp thư và Spam.","ok"); }
+    }catch(_){ setMsg("Lỗi kết nối, thử lại.","err"); }
+    $("resendBtn").disabled=false;
   });
   $("backBtn").addEventListener("click", function(){
     $("step2").classList.add("hidden"); $("step1").classList.remove("hidden"); setMsg(""); $("email").focus();

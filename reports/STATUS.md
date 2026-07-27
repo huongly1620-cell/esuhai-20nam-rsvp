@@ -11,9 +11,39 @@
 | Smoke AC-2…AC-5 (local + Docker PG) | ✅ PASS | xem bảng dưới |
 | **Railway provisioned** | ✅ DONE 2026-07-24 | project + Postgres + web service + env (trừ ADMIN_PASSWORD) |
 | **Live smoke trên URL Railway** | ✅ PASS | AC-1/2/3/4-gate/6/7 xanh (xem dưới) |
-| **ADMIN_PASSWORD (Railway env)** | ⛔ CHỜ ANH KHA | chưa set → /admin trả 503 (đúng thiết kế) |
-| **Push `main`** | ⛔ CHỜ LỆNH | GitHub-connected; push → auto-deploy thật (AC-1) |
-| Gate 2 (QC độc lập, actor≠worker) | ⛔ | sau khi push + set password |
+| **ADMIN_PASSWORD (Railway env)** | ✅ SET | anh Kha đã set → /admin/login gate hoạt động (probe → 401, không còn 503) |
+| **Push `main`** | ✅ DONE | commit `1ab50bd` trên `main` (Ly invite Write cho `NicholasChen868`) |
+| **Deploy code mới** | ✅ LIVE (CLI) | `railway up` — live = `7d5c88a` + **tối ưu tải trang (PM-con-Kha 27/07)**; smoke PASS |
+
+## Tối ưu tải trang (27/07) — giữ nguyên thiết kế
+
+Nguyên tắc: đo → tối ưu → đo lại → verify (Chromium + WebKit/Safari) → deploy. **Thiết kế giữ nguyên** (verify ảnh 2 engine giống hệt trước).
+
+| Hạng mục | Trước | Sau |
+|---|---|---|
+| Ảnh tải thật (wax-seal, cover, 2 logo) | 933 KB | **151 KB (−84%)** |
+| `wax-seal.png` | 453 KB | 71 KB |
+| `screen1-cover.jpg` | 417 KB | 72 KB |
+| Asset chết (không tham chiếu) | 737 KB | **xoá (0)** |
+| Tổng asset repo | 1.8 MB | 372 KB |
+| First-load (ảnh+html gz) | ~960 KB | **~180 KB** |
+
+- Ảnh: nén bằng `sharp` (giữ nguyên định dạng/tên file → không đổi markup), verify chất lượng bằng mắt (đạt/đẹp hơn).
+- Animation nhẹ hơn: shimmer chạy **1 lần** thay vì vô hạn; canvas sao **tạm dừng khi ẩn/offscreen/tab nền**; pulseGlow hữu hạn. Giảm repaint desktop (nghi vấn "chữ giật" Safari).
+- **Chưa repro được** lỗi "đơn điệu" của Ly (headless Chromium+WebKit đều render đúng) → chờ Ly xác nhận trên M5 thật + quay 10s nếu còn.
+
+⚠️ Thay đổi đang ở **working tree + đã railway up**, **CHƯA push `main`** — cần push để giữ lại + Ly pull không mất.
+| **AC-1 auto-deploy khi push** | 🅗 HOLD (chấp nhận) | Wave 1 **chốt deploy bằng CLI `railway up`** (anh Kha 25/07). Auto-deploy = follow-up: cần anh connect Source (Railway) + Ly cài Railway GitHub App (GitHub) — 2 tay |
+| **Gate 2 (QC độc lập)** | ✅ PASS-có-điều-kiện 25/07 | QC actor khác (§B7 OK). AC-2…7 PASS · AC-1 HOLD. Log: `review-logs/2026-07-25-rsvp-railway-mvp-gate2.md` |
+
+## Deploy runbook (wave 1 — CLI)
+
+**Publish thay đổi lên live** (PM-con-Kha, từ `~/Projects_S2/LandingPage_KhachMoi_0808/`):
+```
+railway up --service esuhai-web --detach   # deploy code hiện tại lên Railway
+```
+> ⚠️ **Push `main` KHÔNG tự lên web.** Ly push FE → phải có PM-con-Kha chạy `railway up` mới publish.
+> ADMIN_PASSWORD đổi được ngay trên Railway env (không cần redeploy).
 
 ## Railway (workspace Backend.4all)
 

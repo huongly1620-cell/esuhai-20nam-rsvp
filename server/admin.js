@@ -118,18 +118,20 @@ function mount(app) {
 
   app.get('/admin/api/responses', requireAuth, async (req, res) => {
     const q = String(req.query.q || '').trim();
-    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit, 10) || 100));
+    const limit = Math.min(2000, Math.max(1, parseInt(req.query.limit, 10) || 1000));
     try {
       const params = [];
       let where = '';
       if (q) {
         params.push(`%${q}%`);
-        where = 'WHERE rep_name ILIKE $1 OR rep_phone ILIKE $1';
+        where = 'WHERE rep_name ILIKE $1 OR rep_phone ILIKE $1 OR rep_email ILIKE $1 OR rep_org ILIKE $1';
       }
       params.push(limit);
+      // Read-only, authed. Returns the full record the dashboard needs;
+      // phone is MASKED here (full phone only via /admin/api/export.csv).
       const rows = await pool.query(
-        `SELECT id, source, status, rep_name, rep_phone, rep_email, sessions,
-                guest_count, created_at
+        `SELECT id, source, status, rep_name, rep_phone, rep_email, rep_org, sessions,
+                dietary, wish, note, guests, guest_count, submitted_at, created_at
          FROM rsvp_submissions ${where}
          ORDER BY created_at DESC LIMIT $${params.length}`, params);
       return res.json({
@@ -138,11 +140,19 @@ function mount(app) {
           id: String(r.id),
           source: r.source,
           status: r.status,
-          name: r.rep_name,
-          phone: maskPhone(r.rep_phone), // masked on table
-          email: r.rep_email || '',
-          sessions: r.sessions || '',
-          guests: r.guest_count,
+          rep: {
+            name: r.rep_name || '',
+            phone: maskPhone(r.rep_phone),
+            email: r.rep_email || '',
+            org: r.rep_org || '',
+          },
+          sessions: r.sessions ? String(r.sessions).split(' · ').filter(Boolean) : [],
+          dietary: r.dietary || '',
+          wish: r.wish || '',
+          note: r.note || '',
+          guests: Array.isArray(r.guests) ? r.guests : [],
+          guestCount: r.guest_count,
+          submittedAt: r.submitted_at || r.created_at,
           createdAt: r.created_at,
         })),
       });

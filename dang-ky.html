@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<!-- ESUHAI Group 20 năm · Landing RSVP (đầy đủ · Tọa đàm + Gala) · Xuất bản lúc: 2026-07-27 11:21 · R0 nâng cấp UX · CL1 – Hương Ly -->
+<!-- ESUHAI Group 20 năm · Landing RSVP (đầy đủ · Tọa đàm + Gala) · Xuất bản lúc: 2026-07-27 11:29 · R0 nâng cấp UX · CL1 – Hương Ly -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ESUHAI Group · 20 Năm · Xác nhận tham dự · 08.08.2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1275,9 +1275,12 @@ var CONFIG = {
     var c=document.getElementById("dust"); if(!c) return; var x=c.getContext("2d"), P=[], raf, sf=0;
     var reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
     function size(){c.width=innerWidth;c.height=innerHeight;}
-    function init(){P=[];var n=Math.min(300,Math.floor(innerWidth/4));for(var i=0;i<n;i++)P.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.15+.35,ph:Math.random()*6.283,tw:Math.random()*.032+.006,mo:Math.random()*.5+.4,on:0.45+0.5*Math.pow(Math.random(),0.85)});}
+    var COL=[[255,255,255],[206,224,255],[255,234,186],[176,204,255],[255,246,224]];
+    var CA=Math.cos(-0.44),SA=Math.sin(-0.44);
+    function init(){P=[];var n=Math.min(420,Math.floor(innerWidth/2.4));for(var i=0;i<n;i++){var bg=Math.random(),r=bg>0.95?(Math.random()*1.7+1.9):(bg>0.72?(Math.random()*0.9+0.9):(Math.random()*0.6+0.35));var px,py;if(Math.random()<0.44){var tt=(Math.random()-0.5)*2.2*c.width,pp=(Math.random()-0.5)*0.30*c.height*Math.random();px=0.55*c.width+tt*CA-pp*SA;py=0.60*c.height+tt*SA+pp*CA;}else{px=Math.random()*c.width;py=Math.random()*c.height;}P.push({x:px,y:py,r:r,col:COL[(Math.random()*COL.length)|0],ph:Math.random()*6.283,tw:Math.random()*.028+.005,mo:Math.random()*.35+.55,on:0.4+0.55*Math.pow(Math.random(),0.9),cross:bg>0.93});}}
     function frac(){var d=document.documentElement;var y=window.pageYOffset||d.scrollTop||0;var m=(d.scrollHeight||1)-innerHeight;sf=m>0?Math.max(0,Math.min(1,y/m)):0;}
-    function draw(){x.clearRect(0,0,c.width,c.height);for(var i=0;i<P.length;i++){var p=P[i];p.ph+=p.tw;var t=0.5+0.5*Math.sin(p.ph);var vis=sf<=p.on?0:Math.min(1,(sf-p.on)/0.06);if(vis>0){var o=p.mo*(0.18+0.82*t)*vis;p.y-=0.012;if(p.y<-4){p.y=c.height+4;p.x=Math.random()*c.width;}x.shadowBlur=p.r*(1.6+3.6*t);x.shadowColor="rgba(255,201,96,"+(o*0.9)+")";x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fillStyle="rgba(255,230,160,"+o+")";x.fill();}}x.shadowBlur=0;raf=requestAnimationFrame(draw);}
+    function band(a){x.save();x.translate(c.width*0.55,c.height*0.60);x.rotate(-0.44);var bw=c.width*2.4,bh=c.height*0.7,g=x.createLinearGradient(0,-bh/2,0,bh/2);g.addColorStop(0,"rgba(150,175,235,0)");g.addColorStop(0.42,"rgba(150,175,235,"+(0.05*a)+")");g.addColorStop(0.5,"rgba(196,210,248,"+(0.13*a)+")");g.addColorStop(0.58,"rgba(150,175,235,"+(0.05*a)+")");g.addColorStop(1,"rgba(150,175,235,0)");x.fillStyle=g;x.fillRect(-bw/2,-bh/2,bw,bh);x.restore();}
+    function draw(){x.clearRect(0,0,c.width,c.height);var ga=Math.max(0,Math.min(1,(sf-0.5)/0.35));if(ga>0)band(ga);for(var i=0;i<P.length;i++){var p=P[i];p.ph+=p.tw;var t=0.5+0.5*Math.sin(p.ph);var vis=sf<=p.on?0:Math.min(1,(sf-p.on)/0.06);if(vis>0){var o=Math.min(1,p.mo*(0.25+0.75*t)*vis);var cl=p.col;x.shadowBlur=p.r*(2.2+3.8*t);x.shadowColor="rgba("+cl[0]+","+cl[1]+","+cl[2]+","+(o*0.9)+")";x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fillStyle="rgba("+cl[0]+","+cl[1]+","+cl[2]+","+o+")";x.fill();if(p.cross&&t>0.4){x.shadowBlur=0;x.strokeStyle="rgba("+cl[0]+","+cl[1]+","+cl[2]+","+(o*0.5)+")";x.lineWidth=0.7;var L=p.r*(3.5+3*t);x.beginPath();x.moveTo(p.x-L,p.y);x.lineTo(p.x+L,p.y);x.moveTo(p.x,p.y-L);x.lineTo(p.x,p.y+L);x.stroke();}}}x.shadowBlur=0;raf=requestAnimationFrame(draw);}
     function fade(){frac();c.style.opacity=Math.max(0,Math.min(1,(sf-0.44)/0.1));}
     size();init();frac();fade();if(!reduce)draw();
     addEventListener("resize",function(){size();init();});

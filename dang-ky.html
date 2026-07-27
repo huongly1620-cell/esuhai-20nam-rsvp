@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<!-- ESUHAI Group 20 năm · Landing RSVP (đầy đủ · Tọa đàm + Gala) · Xuất bản lúc: 2026-07-27 09:01 · R0 nâng cấp UX · CL1 – Hương Ly -->
+<!-- ESUHAI Group 20 năm · Landing RSVP (đầy đủ · Tọa đàm + Gala) · Xuất bản lúc: 2026-07-27 09:13 · R0 nâng cấp UX · CL1 – Hương Ly -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ESUHAI Group · 20 Năm · Xác nhận tham dự · 08.08.2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -982,15 +982,16 @@
   @keyframes ctaPulse{0%,100%{box-shadow:0 14px 36px rgba(216,184,118,.42),0 4px 12px rgba(0,0,0,.2)}50%{box-shadow:0 16px 46px rgba(216,184,118,.72),0 4px 12px rgba(0,0,0,.2)}}
   @media(prefers-reduced-motion:reduce){.cover-choose .btn-primary{animation:none}}
 
-  .cover{background:#D9F3C9;min-height:calc(100vh - 52px);min-height:calc(100dvh - 52px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;padding:12px 16px 18px}
+  .cover{background:#D9F3C9;min-height:calc(100vh - 52px);min-height:calc(100dvh - 52px);display:flex;flex-direction:column;align-items:center;padding:12px 16px 18px}
+  .cover-main{margin:auto 0;display:flex;flex-direction:column;align-items:center;gap:15px;width:100%}
   .cover-frame{width:auto;max-width:min(400px,90vw);margin:0}
   .cover-frame .cover-img{max-height:54vh;width:auto;max-width:100%;margin:0}
   .cover-choose{margin:0}
 
   /* ===== R0 · tinh chỉnh 27/7 ===== */
   #rsvp{padding-top:26px}
-  .cover-frame .cover-img{max-height:49vh}
-  .cover-privacy{margin:13px auto 0;max-width:min(400px,90vw);font-size:.72rem;color:#35604e;line-height:1.5;text-align:center}
+  .cover-frame .cover-img{max-height:46vh}
+  .cover-privacy{margin:0 auto;max-width:min(400px,90vw);font-size:.72rem;color:#35604e;line-height:1.5;text-align:center}
   .cover-privacy::before{content:"\1F512  "}
   @media(max-width:429px){
     .brand-name .tb-dot{display:none}
@@ -1046,6 +1047,7 @@
 <div id="progressBar"></div>
 
 <section class="cover">
+  <div class="cover-main">
   <div class="cover-frame">
     <img class="cover-img" src="screen1-cover.jpg" alt="Trân trọng kính mời tham dự · GALA Kỷ niệm 20 năm ESUHAI Group · 20 năm thành lập 2006–2026">
   </div>
@@ -1055,8 +1057,9 @@
       <button type="button" class="btn btn-primary" id="ctaConfirm">Xác nhận tham dự &#8594;</button>
       <button type="button" class="btn btn-ghost" id="ctaDetail">Chi tiết chương trình</button>
     </div>
-    <p class="cover-privacy">Thông tin của Quý vị được giữ kín, chỉ dùng cho việc chuẩn bị đón tiếp của ESUHAI Group.</p>
   </div>
+  </div>
+  <p class="cover-privacy">Thông tin của Quý vị được giữ kín, chỉ dùng cho việc chuẩn bị đón tiếp của ESUHAI Group.</p>
 </section>
 
 <!-- ============ THÔNG ĐIỆP ============ -->

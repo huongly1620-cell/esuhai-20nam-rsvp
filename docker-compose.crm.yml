@@ -1,0 +1,17 @@
+# Local dev only — MinIO for CRM photo storage (DoR-fixture).
+# Prod uses managed object storage via env; this file is not deployed.
+#   docker compose -f docker-compose.crm.yml up -d
+services:
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # web console
+    environment:
+      MINIO_ROOT_USER: devminio
+      MINIO_ROOT_PASSWORD: devminio123
+    volumes:
+      - crm-minio-data:/data
+volumes:
+  crm-minio-data:

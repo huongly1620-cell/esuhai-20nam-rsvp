@@ -1,0 +1,6 @@
+guest_ext_id,full_name,org,title,phone,email,assigned_email,tags
+EXT-001,Khach Mau Mot,Cong ty Mau A,Giam doc,0900000001,mau1@example.test,staff@example.test,VIP
+EXT-002,Khach Mau Hai,Cong ty Mau B,Truong phong,0900000002,mau2@example.test,staff@example.test,
+EXT-003,Khach Mau Ba,Truong Mau C,Chuyen vien,0900000003,,btl@example.test,doi-tac
+EXT-004,Khach Mau Bon,,,0900000004,,staff@example.test,
+EXT-005,Khach Mau Nam,Cong ty Mau A,Pho giam doc,0900000005,mau5@example.test,,VIP

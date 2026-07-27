@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>CRM Đón tiếp · ESUHAI 20 năm</title>
+<style>
+  :root{--bg:#050d18;--panel:#0c1726;--gold:#d8b876;--cream:#f5efe1;--muted:#8a9bb0;--line:#1d2c40;--green:#57c98a;--red:#ff8a7d}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;background:var(--bg);
+    color:var(--cream);font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;padding:20px}
+  .card{width:min(400px,100%);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:28px}
+  .seal{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;
+    border:1px solid rgba(216,184,118,.4);color:#e23a2e;font-family:Georgia,serif;font-size:1.6rem}
+  h1{font-size:1.15rem;margin:0 0 4px;text-align:center}
+  p.sub{color:var(--muted);font-size:.85rem;margin:0 0 22px;text-align:center}
+  label{display:block;font-size:.8rem;color:var(--muted);margin:14px 0 6px}
+  input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid var(--line);background:#0a1420;color:var(--cream);font-size:1.05rem}
+  input:focus{outline:none;border-color:var(--gold)}
+  button{margin-top:18px;width:100%;padding:14px;border:0;border-radius:10px;background:var(--gold);color:#1a1204;font-weight:700;font-size:1.02rem;cursor:pointer}
+  button:disabled{opacity:.5}
+  .msg{font-size:.85rem;margin-top:12px;min-height:1.1em;text-align:center}
+  .msg.err{color:var(--red)} .msg.ok{color:var(--green)}
+  .hidden{display:none}
+  .back{background:none;border:0;color:var(--muted);font-size:.8rem;margin-top:10px;cursor:pointer;width:100%}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="seal">&#8734;</div>
+    <h1>CRM Đón tiếp · Lễ tân</h1>
+    <p class="sub">Kỷ niệm 20 năm ESUHAI Group · dành cho đội đón tiếp</p>
+
+    <form id="step1">
+      <label for="email">Email công tác</label>
+      <input id="email" type="email" autocomplete="email" placeholder="ban@esuhai.com" autofocus>
+      <button type="submit" id="sendBtn">Gửi mã đăng nhập</button>
+    </form>
+
+    <form id="step2" class="hidden">
+      <label for="code">Mã 6 số vừa gửi</label>
+      <input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="______">
+      <button type="submit" id="verifyBtn">Vào CRM &#8594;</button>
+      <button type="button" class="back" id="backBtn">&#8592; Đổi email</button>
+    </form>
+
+    <div class="msg" id="msg"></div>
+  </div>
+<script>
+  var email="";
+  var $=function(id){return document.getElementById(id);};
+  function setMsg(t,cls){ var m=$("msg"); m.textContent=t||""; m.className="msg"+(cls?(" "+cls):""); }
+  $("step1").addEventListener("submit", async function(e){
+    e.preventDefault(); setMsg("");
+    email=$("email").value.trim().toLowerCase();
+    if(!email){ setMsg("Nhập email.","err"); return; }
+    $("sendBtn").disabled=true; $("sendBtn").textContent="Đang gửi…";
+    try{
+      await fetch("/auth/request-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email})});
+      $("step1").classList.add("hidden"); $("step2").classList.remove("hidden");
+      setMsg("Nếu email nằm trong danh sách đón tiếp, mã đã được gửi. Nhập mã để vào.","ok");
+      setTimeout(function(){ $("code").focus(); },50);
+    }catch(_){ setMsg("Lỗi kết nối, thử lại.","err"); }
+    $("sendBtn").disabled=false; $("sendBtn").textContent="Gửi mã đăng nhập";
+  });
+  $("step2").addEventListener("submit", async function(e){
+    e.preventDefault(); setMsg("");
+    var code=$("code").value.trim();
+    if(!code){ setMsg("Nhập mã.","err"); return; }
+    $("verifyBtn").disabled=true; $("verifyBtn").textContent="Đang kiểm tra…";
+    try{
+      var r=await fetch("/auth/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,code:code})});
+      if(r.ok){ location.href="/crm"; return; }
+      var j=await r.json().catch(function(){return {};});
+      setMsg(j.error||"Mã không đúng.","err");
+    }catch(_){ setMsg("Lỗi kết nối, thử lại.","err"); }
+    $("verifyBtn").disabled=false; $("verifyBtn").textContent="Vào CRM →";
+  });
+  $("backBtn").addEventListener("click", function(){
+    $("step2").classList.add("hidden"); $("step1").classList.remove("hidden"); setMsg(""); $("email").focus();
+  });
+</script>
+</body>
+</html>

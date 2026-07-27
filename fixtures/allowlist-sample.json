@@ -1,0 +1,4 @@
+[
+  { "email": "btl@example.test", "role": "btl", "active": true },
+  { "email": "staff@example.test", "role": "staff", "active": true }
+]

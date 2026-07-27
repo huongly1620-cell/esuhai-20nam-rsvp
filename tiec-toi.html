@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<!-- ESUHAI Group 20 năm · Landing RSVP (chỉ Gala tối) · Xuất bản lúc: 2026-07-27 08:07 · R0 nâng cấp UX · CL1 – Hương Ly -->
+<!-- ESUHAI Group 20 năm · Landing RSVP (chỉ Gala tối) · Xuất bản lúc: 2026-07-27 09:01 · R0 nâng cấp UX · CL1 – Hương Ly -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ESUHAI Group · 20 Năm · Thư mời Đêm tiệc Tri ân · 08.08.2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -64,7 +64,7 @@
     box-shadow:inset 0 0 12px rgba(226,58,46,.25),0 0 14px rgba(226,58,46,.15);
   }
   .brand-name{font-weight:700;letter-spacing:.22em;font-size:.86rem}
-  .brand-name span{color:var(--gold);font-weight:400}
+  .brand-name .tb-sub,.brand-name .tb-dot{color:var(--gold);font-weight:400}
   .topbar .rlink{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 
   /* ===== HERO ===== */
@@ -986,6 +986,19 @@
   .cover-frame{width:auto;max-width:min(400px,90vw);margin:0}
   .cover-frame .cover-img{max-height:54vh;width:auto;max-width:100%;margin:0}
   .cover-choose{margin:0}
+
+  /* ===== R0 · tinh chỉnh 27/7 ===== */
+  #rsvp{padding-top:26px}
+  .cover-frame .cover-img{max-height:49vh}
+  .cover-privacy{margin:13px auto 0;max-width:min(400px,90vw);font-size:.72rem;color:#35604e;line-height:1.5;text-align:center}
+  .cover-privacy::before{content:"\1F512  "}
+  @media(max-width:429px){
+    .brand-name .tb-dot{display:none}
+    .brand-name .tb-sub{display:block;letter-spacing:.14em;line-height:1.35}
+    .topbar .rlink{display:block;text-align:right;line-height:1.4}
+    .rlink .tb-dot2{display:none}
+    .rlink .tb-date,.rlink .tb-place{display:block}
+  }
 </style>
 </head>
 <body class="gate-lock">
@@ -1024,8 +1037,8 @@
 
 <div class="topbar">
   <div class="in">
-    <div class="brand"><div class="seal"><img class="logo-img" src="logo-esuhai-mark.png" alt="ESUHAI"></div><div class="brand-name">ESUHAI <span>GROUP · 20 NĂM</span></div></div>
-    <span class="rlink">08 &middot; 08 &middot; 2026 &middot; GEM Center</span>
+    <div class="brand"><div class="seal"><img class="logo-img" src="logo-esuhai-mark.png" alt="ESUHAI"></div><div class="brand-name"><span class="tb-main">ESUHAI GROUP</span><span class="tb-dot"> · </span><span class="tb-sub">20 NĂM</span></div></div>
+    <span class="rlink"><span class="tb-date">08 &middot; 08 &middot; 2026</span><span class="tb-dot2"> &middot; </span><span class="tb-place">GEM Center</span></span>
   </div>
 </div>
 
@@ -1042,6 +1055,7 @@
       <button type="button" class="btn btn-primary" id="ctaConfirm">Xác nhận tham dự &#8594;</button>
       <button type="button" class="btn btn-ghost" id="ctaDetail">Chi tiết chương trình</button>
     </div>
+    <p class="cover-privacy">Thông tin của Quý vị được giữ kín, chỉ dùng cho việc chuẩn bị đón tiếp của ESUHAI Group.</p>
   </div>
 </section>
 
@@ -1152,7 +1166,6 @@
         </div>
 
         <div id="yesFlow">
-          <div class="hairline"></div>
 
           <!-- STEP 2 -->
           <div class="step" id="stepSession">
@@ -1165,7 +1178,6 @@
             </div>
           </div>
 
-          <div class="hairline"></div>
 
           <!-- STEP 4 -->
           <div class="step">
@@ -1177,10 +1189,9 @@
               <div class="field" style="display:none"><label class="lab" for="repEmail">Email (nhận thư cảm ơn)</label>
                 <input type="email" id="repEmail" placeholder="email@congty.com" autocomplete="email"></div>
             </div>
-            <p class="contact-note">Thông tin của Quý vị được giữ kín, chỉ dùng cho việc chuẩn bị đón tiếp của BTC.</p>
 
             <div class="people" id="people"></div>
-            <button type="button" class="add-btn" id="addBtn">+ Thêm một khách tham dự</button>
+            <button type="button" class="add-btn" id="addBtn">+ Thêm khách đi cùng</button>
             <p class="limit-note" id="limitNote" style="display:none">Mỗi lời ngỏ xin phép <b>tối đa 2 vị khách</b>, để Ban tổ chức đón tiếp chu đáo và trọn vẹn.</p>
             <div class="field" style="margin-top:18px"><label class="lab">Ẩm thực buổi Gala tối</label>
               <div class="seg" id="dietary">
@@ -1189,13 +1200,11 @@
               </div></div>
           </div>
 
-          <div class="hairline"></div>
 
           <!-- STEP 5 -->
           <div class="step">
             <div class="step-head"><div class="step-no">4</div><div><h3>Đôi lời gửi gắm</h3><p>(Không bắt buộc, chúng tôi vô cùng trân quý)</p></div></div>
-            <div class="field"><label class="lab" for="wish">Lời chúc mừng &amp; kỳ vọng gửi ESUHAI cho 20 năm tới</label>
-              <textarea id="wish" placeholder="Một câu chúc của Quý vị sẽ được lưu giữ như một phần của dấu mốc 20 năm…"></textarea></div>
+            <div class="field"><textarea id="wish" aria-label="Lời chúc &amp; kỳ vọng gửi ESUHAI cho 20 năm tiếp theo" placeholder="Lời chúc &amp; kỳ vọng gửi ESUHAI cho 20 năm tiếp theo…"></textarea></div>
             <div class="field" style="display:none"><label class="lab" for="note">Ghi chú thêm</label>
               <textarea id="note" placeholder="Nhu cầu di chuyển, chỗ ngồi, hỗ trợ đặc biệt…"></textarea></div>
           </div>
@@ -1203,7 +1212,6 @@
 
         <!-- decline flow -->
         <div id="noFlow" class="hidden">
-          <div class="hairline"></div>
           <div class="step">
             <div class="step-head"><div class="step-no">2</div><div><h3>Lời tri ân của Quý vị</h3><p>(Không bắt buộc, chúng tôi vô cùng trân quý)</p></div></div>
             <div class="two">

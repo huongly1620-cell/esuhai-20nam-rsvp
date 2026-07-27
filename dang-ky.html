@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<!-- ESUHAI Group 20 năm · Landing RSVP (đầy đủ · Tọa đàm + Gala) · Xuất bản lúc: 2026-07-27 11:41 · R0 nâng cấp UX · CL1 – Hương Ly -->
+<!-- ESUHAI Group 20 năm · Landing RSVP (đầy đủ · Tọa đàm + Gala) · Xuất bản lúc: 2026-07-27 16:29 · R0 nâng cấp UX · CL1 – Hương Ly -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ESUHAI Group · 20 Năm · Xác nhận tham dự · 08.08.2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -999,6 +999,37 @@
     .rlink .tb-date,.rlink .tb-place{display:block}
   }
 </style>
+<style id="r0-thankyou">
+  /* ===== R0 · Section XÁC NHẬN MỚI (đọc localStorage, không đụng backend) ===== */
+  .ty{padding:52px 18px 74px;color:var(--cream);text-align:center;scroll-margin-top:64px}
+  .ty-wrap{max-width:462px;margin:0 auto}
+  .ty-eyebrow{color:var(--gold);text-transform:uppercase;letter-spacing:.28em;font-size:.72rem;font-weight:700;font-family:var(--sans)}
+  .ty-seal{margin:16px auto 6px}.ty-seal img{width:66px;height:auto}
+  .ty-title{font-family:var(--serif);font-size:2rem;color:#fff;margin:8px 0 12px;line-height:1.22}
+  .ty-msg{font-size:.95rem;color:var(--muted);line-height:1.62;margin:0 auto 26px;max-width:410px}
+  .ty-card{border:1px solid rgba(216,184,118,.28);border-radius:14px;background:rgba(7,17,32,.5);padding:18px 18px 8px;text-align:left;margin-bottom:20px}
+  .ty-row{display:flex;justify-content:space-between;gap:14px;padding:11px 2px;border-bottom:1px dashed rgba(255,255,255,.09);font-size:.9rem}
+  .ty-k{color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-size:.7rem;font-weight:700;flex-shrink:0;padding-top:2px}
+  .ty-v{color:var(--cream);text-align:right;line-height:1.45}
+  .ty-guests{padding:14px 0 2px;border-bottom:1px dashed rgba(255,255,255,.09)}
+  .ty-glabel{color:var(--gold);text-transform:uppercase;letter-spacing:.06em;font-size:.7rem;font-weight:700;margin:2px 2px 12px}
+  .ty-guests .guest{border:1px solid rgba(216,184,118,.22);border-radius:11px;padding:6px 14px;margin-bottom:11px;background:rgba(255,255,255,.02)}
+  .ty-guests .g-no{font-family:var(--serif);color:var(--gold-bright);font-size:.98rem;padding:8px 0 4px;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:2px}
+  .ty-guests .g-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:.88rem;border-bottom:1px solid rgba(255,255,255,.05)}
+  .ty-guests .g-row:last-child{border-bottom:0}
+  .ty-guests .g-k{color:var(--muted-2);font-size:.78rem;flex-shrink:0;padding-top:1px}
+  .ty-guests .g-v{color:#fff;text-align:right;font-weight:600}
+  .remind{border:1.5px solid rgba(216,184,118,.5);border-radius:14px;background:linear-gradient(180deg,rgba(216,184,118,.10),rgba(216,184,118,.02));padding:8px 18px 16px;text-align:left;margin-bottom:24px;box-shadow:inset 0 0 26px rgba(216,184,118,.07)}
+  .remind-h{font-family:var(--serif);color:var(--gold-bright);font-size:1.16rem;text-align:center;padding:14px 0 6px}
+  .remind-row{display:flex;gap:13px;align-items:flex-start;padding:12px 2px;border-top:1px solid rgba(216,184,118,.16)}
+  .remind-row .ic{width:22px;height:22px;color:var(--gold);flex-shrink:0;margin-top:1px}
+  .remind-row .ic svg{width:22px;height:22px}
+  .remind-k{color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-size:.7rem;font-weight:700;margin-bottom:3px}
+  .remind-v{color:var(--cream);font-size:.9rem;line-height:1.5}
+  .ty-back{display:inline-flex;align-items:center;gap:9px;font-family:var(--sans);font-size:.92rem;font-weight:600;color:var(--gold-bright);background:transparent;border:1.5px solid rgba(216,184,118,.55);border-radius:30px;padding:13px 26px;cursor:pointer;letter-spacing:.01em;transition:background .2s,border-color .2s}
+  .ty-back:hover{background:rgba(216,184,118,.1);border-color:rgba(216,184,118,.8)}
+  .ty-back .ty-arrow{width:18px;height:18px;display:inline-flex}.ty-back .ty-arrow svg{width:18px;height:18px}
+</style>
 </head>
 <body class="gate-lock">
 
@@ -1238,6 +1269,24 @@
     </div>
   </div>
 </div>
+
+<!-- R0 · Section xác nhận mới (tách khỏi #rsvp) -->
+<section class="ty" id="thankyou" style="display:none" tabindex="-1" aria-live="polite">
+ <div class="ty-wrap">
+  <div class="ty-eyebrow" id="tyEyebrow">Xác nhận thành công</div>
+  <div class="ty-seal"><img src="logo-infinity.png" alt=""></div>
+  <h2 class="ty-title" id="tyTitle">Hân hạnh được đón tiếp Quý vị</h2>
+  <p class="ty-msg" id="tyMsg"></p>
+  <div class="ty-card" id="tyCard"></div>
+  <div class="remind" id="tyRemind">
+   <div class="remind-h">Nhắc lịch dự sự kiện</div>
+   <div class="remind-row"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg></span><div><div class="remind-k">Thời gian</div><div class="remind-v">Thứ Bảy · 08.08.2026<br>Tọa đàm 14:30–16:30 · Tầng 7, Sảnh SOL<br>Gala 17:00–20:30 · Tầng 3, Sảnh POLLUX</div></div></div>
+   <div class="remind-row"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.4 7-11a7 7 0 10-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg></span><div><div class="remind-k">Địa điểm</div><div class="remind-v">GEM Center<br>08 Nguyễn Bỉnh Khiêm, Phường Sài Gòn, TP. Hồ Chí Minh</div></div></div>
+   <div class="remind-row"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l-1.5 4.5L12 21 9.5 7.5z"/><path d="M9.5 7.5h5"/></svg></span><div><div class="remind-k">Trang phục</div><div class="remind-v">Lễ phục trang trọng</div></div></div>
+  </div>
+  <button class="ty-back" type="button" id="tyBack"><span class="ty-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span>Xem chi tiết chương trình</button>
+ </div>
+</section>
 
 <footer class="gated gate-rsvp">
   <div class="wrap">
@@ -1624,6 +1673,54 @@ var CONFIG = {
     confirm.classList.add("hidden"); panel.classList.remove("hidden");
     form.reset(); setCount(1); syncAttend();
     window.scrollTo({top:0,behavior:"smooth"});
+  });
+})();
+</script>
+<script>
+/* ===== R0 · điều phối Section xác nhận mới — KHÔNG sửa backend Kha ===== */
+(function(){"use strict";
+  var STORE_KEY="esuhai20_rsvp";
+  var confirmEl=document.getElementById("confirm"), ty=document.getElementById("thankyou"), rsvp=document.getElementById("rsvp");
+  if(!confirmEl||!ty) return;
+  var shown=false, SESS={"Tọa đàm":"Tọa đàm chuyên đề","Gala":"Gala tri ân"};
+  function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function readLast(){try{var a=JSON.parse(localStorage.getItem(STORE_KEY)||"[]");return a.length?a[a.length-1]:null;}catch(e){return null;}}
+  function gRow(k,v){return v?'<div class="g-row"><span class="g-k">'+k+'</span><span class="g-v">'+esc(v)+'</span></div>':"";}
+  function tyRow(k,v){return '<div class="ty-row"><span class="ty-k">'+k+'</span><span class="ty-v">'+v+'</span></div>';}
+  function card(s){
+    if(s.status==="no"){
+      var h=tyRow("Người gửi",esc(s.rep.name)+(s.rep.org?'<br>'+esc(s.rep.org):''));
+      if(s.wish)h+='<div class="ty-row" style="border-bottom:0"><span class="ty-k">Lời nhắn</span><span class="ty-v">'+esc(s.wish)+'</span></div>';
+      return h;
+    }
+    var sess=(s.sessions||[]).map(function(x){return SESS[x]||x;}).join(" · ");
+    var guests=(s.guests||[]).map(function(g,i){return '<div class="guest"><div class="g-no">Khách '+(i+1)+'</div>'+
+      gRow("Họ và tên",g.name)+gRow("Chức danh",g.title)+gRow("Đơn vị",g.org)+gRow("Giới tính",g.gender)+'</div>';}).join("");
+    var h=tyRow("Phần tham dự",esc(sess))+tyRow("Người liên hệ",esc(s.rep.phone)+(s.rep.email?'<br>'+esc(s.rep.email):''))+
+      tyRow("Số khách",(s.guests?s.guests.length:0)+" người")+
+      '<div class="ty-guests"><div class="ty-glabel">Danh sách khách mời</div>'+guests+'</div>';
+    if(s.dietary)h+=tyRow("Ẩm thực",esc(s.dietary));
+    if(s.wish)h+='<div class="ty-row" style="border-bottom:0"><span class="ty-k">Lời chúc</span><span class="ty-v">'+esc(s.wish)+'</span></div>';
+    return h;
+  }
+  function show(){
+    if(shown)return; var s=readLast(); if(!s)return; shown=true;
+    var ct=document.getElementById("cTitle"),cm=document.getElementById("cMsg");
+    document.getElementById("tyTitle").textContent=(ct&&ct.textContent)||(s.status==="no"?"Cảm ơn Quý vị đã hồi âm":"Hân hạnh được đón tiếp Quý vị");
+    document.getElementById("tyMsg").textContent=(cm&&cm.textContent)||"";
+    document.getElementById("tyEyebrow").textContent=s.status==="no"?"Đã ghi nhận hồi âm":"Xác nhận thành công";
+    document.getElementById("tyCard").innerHTML=card(s);
+    var rem=document.getElementById("tyRemind"); if(rem)rem.style.display=s.status==="no"?"none":"";
+    if(rsvp)rsvp.style.display="none";
+    ty.style.display="block";
+    setTimeout(function(){ty.scrollIntoView({behavior:"smooth",block:"start"});},40);
+  }
+  new MutationObserver(function(){ if(!confirmEl.classList.contains("hidden"))show(); })
+    .observe(confirmEl,{attributes:true,attributeFilter:["class"]});
+  var back=document.getElementById("tyBack");
+  if(back)back.addEventListener("click",function(){
+    Array.prototype.slice.call(document.getElementsByClassName("gate-detail")).forEach(function(el){el.classList.remove("gated");});
+    var t=document.getElementById("chuongtrinh"); if(t)t.scrollIntoView({behavior:"smooth",block:"start"});
   });
 })();
 </script>

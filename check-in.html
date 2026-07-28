@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Check-in · Gala 20 Năm ESUHAI</title>
+<!--
+  R0 · Hương Ly — Trang ĐIỂM DANH / CHECK-IN (mobile-first, mọi máy)
+  Bản R0 dựng trước: dữ liệu MẪU + trạng thái lưu localStorage (tạm).
+  Anh Kha follow sau: API danh sách thật + đồng bộ trạng thái/ảnh nhiều quầy (Postgres).
+-->
+<style>
+  :root{
+    --ink:#050d18; --navy:#0b1e38; --navy2:#0E1B31; --deep:#08111F;
+    --gold:#d8b876; --gold-bright:#f4e2b0; --gold-deep:#a6873f;
+    --cream:#f5efe1; --muted:#b9b096; --muted-2:#8f886f;
+    --green:#43e08d; --green-deep:#0c6a4c; --crimson:#e23a2e;
+    --line:rgba(216,184,118,.20); --line-strong:rgba(216,184,118,.42);
+    --card:rgba(255,255,255,.04);
+    --serif:"Playfair Display","Cormorant Garamond","Cambria",Georgia,serif;
+    --sans:"Be Vietnam Pro","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:var(--sans);color:var(--cream);background:var(--navy2);
+    line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+    background:radial-gradient(900px 500px at 90% -8%,rgba(20,88,78,.34),transparent 60%),
+      radial-gradient(700px 500px at -5% 108%,rgba(12,59,55,.4),transparent 55%),
+      linear-gradient(170deg,#0b1a30 0%,#0b2330 55%,#08111F 100%) fixed;}
+  h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* topbar */
+  .top{position:sticky;top:0;z-index:30;backdrop-filter:blur(12px);
+    background:linear-gradient(180deg,rgba(8,17,31,.94),rgba(8,17,31,.72));
+    border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+  .top-in{display:flex;align-items:center;gap:10px;padding:11px 15px}
+  .top .logo{height:26px;width:auto;flex:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
+  .top .ttl{font-weight:700;letter-spacing:.12em;font-size:.72rem;text-transform:uppercase;color:var(--cream)}
+  .top .ttl b{color:var(--gold);font-weight:400}
+  .counter{margin-left:auto;text-align:right;flex:none}
+  .counter .c-num{font-family:var(--serif);font-size:1.15rem;color:var(--gold-bright);line-height:1}
+  .counter .c-lbl{font-size:.56rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted-2)}
+
+  /* search */
+  .search-wrap{padding:14px 15px 8px;position:sticky;top:49px;z-index:20;
+    background:linear-gradient(180deg,rgba(11,26,48,.96),rgba(11,26,48,.7));backdrop-filter:blur(8px)}
+  .search{position:relative}
+  .search input{width:100%;font-family:var(--sans);font-size:1.02rem;color:var(--cream);
+    background:rgba(5,13,24,.6);border:1.5px solid var(--line);border-radius:13px;
+    padding:15px 44px 15px 46px;outline:none}
+  .search input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(216,184,118,.15)}
+  .search input::placeholder{color:rgba(185,176,150,.6)}
+  .search .ic{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1.1rem}
+  .search .clr{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;background:rgba(255,255,255,.08);
+    color:var(--muted);width:28px;height:28px;border-radius:50%;font-size:1rem;cursor:pointer;display:none}
+  .search .clr.show{display:block}
+  .chips{display:flex;gap:8px;padding:10px 15px 4px;overflow-x:auto;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;border:1px solid var(--line);background:rgba(5,13,24,.4);color:var(--muted);border-radius:20px;
+    padding:8px 15px;font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap}
+  .chip.active{border-color:var(--gold);color:var(--ink);background:var(--gold)}
+
+  /* list */
+  .list{padding:8px 15px 40px;display:flex;flex-direction:column;gap:9px}
+  .hint{color:var(--muted-2);font-size:.82rem;text-align:center;padding:6px 0 2px}
+  .g-card{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:13px;
+    background:var(--card);padding:11px 12px;cursor:pointer;transition:border-color .15s,background .15s}
+  .g-card:active{background:rgba(216,184,118,.06)}
+  .g-card.done{border-color:rgba(67,224,141,.4);background:rgba(67,224,141,.06)}
+  .av{width:50px;height:50px;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;
+    background:linear-gradient(160deg,#123f50,#0b2340);border:1px solid var(--line-strong);
+    color:var(--gold-bright);font-family:var(--serif);font-size:1.1rem}
+  .av img{width:100%;height:100%;object-fit:cover}
+  .g-main{flex:1;min-width:0}
+  .g-name{font-family:var(--serif);font-size:1.06rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .g-sub{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  .g-right{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+  .t-badge{font-size:.66rem;font-weight:700;letter-spacing:.03em;color:var(--gold-bright);
+    border:1px solid var(--line-strong);border-radius:8px;padding:3px 8px;white-space:nowrap}
+  .t-badge b{font-family:var(--serif);font-size:.92rem;margin-left:3px}
+  .done-tick{color:var(--green);font-size:.72rem;font-weight:700;display:none;align-items:center;gap:3px}
+  .g-card.done .done-tick{display:flex}
+  .g-card.done .chev{display:none}
+  .chev{color:var(--muted-2)}
+  .empty{text-align:center;color:var(--muted);padding:40px 20px}
+  .empty b{display:block;font-family:var(--serif);color:var(--cream);font-size:1.2rem;margin-bottom:6px}
+
+  /* profile overlay */
+  .pf{position:fixed;inset:0;z-index:60;background:linear-gradient(180deg,#0b1a30,#08111F);
+    transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);overflow-y:auto;overscroll-behavior:contain}
+  .pf.show{transform:translateY(0)}
+  .pf-bar{position:sticky;top:0;display:flex;align-items:center;gap:10px;padding:12px 15px;z-index:5;
+    background:linear-gradient(180deg,rgba(8,17,31,.95),rgba(8,17,31,.6));backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .pf-back{border:0;background:rgba(255,255,255,.08);color:var(--cream);width:38px;height:38px;border-radius:50%;
+    font-size:1.1rem;cursor:pointer;flex:none}
+  .pf-bar .lbl{font-size:.66rem;text-transform:uppercase;letter-spacing:.16em;color:var(--gold)}
+  .pf-body{padding:20px 18px 46px;max-width:560px;margin:0 auto}
+  .pf-hero{display:flex;gap:16px;align-items:center}
+  .pf-av{width:96px;height:96px;border-radius:20px;flex:none;display:grid;place-items:center;overflow:hidden;
+    background:linear-gradient(160deg,#123f50,#0b2340);border:1px solid var(--line-strong);
+    color:var(--gold-bright);font-family:var(--serif);font-size:2rem;box-shadow:0 8px 22px rgba(0,0,0,.3)}
+  .pf-av img{width:100%;height:100%;object-fit:cover}
+  .pf-name{font-family:var(--serif);font-size:1.7rem;color:#fff;line-height:1.15}
+  .pf-role{color:var(--muted);font-size:.9rem;margin-top:4px}
+  .pf-role b{color:var(--cream);font-weight:600}
+
+  .table-hero{margin:18px 0;border:1.5px solid var(--line-strong);border-radius:16px;text-align:center;
+    padding:16px;background:linear-gradient(180deg,rgba(216,184,118,.12),rgba(216,184,118,.02));
+    box-shadow:inset 0 0 30px rgba(216,184,118,.07)}
+  .table-hero .k{font-size:.64rem;text-transform:uppercase;letter-spacing:.24em;color:var(--gold)}
+  .table-hero .n{font-family:var(--serif);font-size:3.2rem;color:var(--gold-bright);line-height:1;margin-top:2px}
+  .table-hero .z{color:var(--muted);font-size:.8rem;margin-top:4px}
+
+  .facts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .fact{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:rgba(5,13,24,.4);font-size:.82rem}
+  .fact .fk{font-size:.58rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted-2);margin-bottom:2px}
+  .fact .fv{color:var(--cream);font-weight:600}
+  .fact.diet-man .fv{color:var(--gold-bright)} .fact.diet-chay .fv{color:var(--green)}
+  .fact.vip .fv{color:var(--gold-bright)}
+
+  .info-row{display:flex;justify-content:space-between;gap:14px;padding:11px 2px;border-bottom:1px dashed var(--line);font-size:.9rem}
+  .info-row .ik{color:var(--muted);flex:none}
+  .info-row .iv{color:var(--cream);text-align:right;font-weight:500}
+
+  .ci-box{margin:20px 0 8px}
+  .ci-btn{width:100%;border:0;border-radius:14px;padding:17px;font-family:var(--sans);font-size:1.05rem;font-weight:700;
+    cursor:pointer;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:10px;
+    background:linear-gradient(180deg,#f0d999,#cfa758);color:#2a1e05;box-shadow:0 10px 26px rgba(216,184,118,.28)}
+  .ci-btn:active{transform:scale(.98)}
+  .ci-done{border:1.5px solid rgba(67,224,141,.5);border-radius:14px;padding:15px;background:rgba(67,224,141,.08);text-align:center}
+  .ci-done .cd-t{color:var(--green);font-weight:700;font-size:1.05rem;display:flex;align-items:center;justify-content:center;gap:8px}
+  .ci-done .cd-time{color:var(--muted);font-size:.82rem;margin-top:3px}
+  .ci-actions{display:flex;gap:10px;margin-top:12px}
+  .ci-actions button{flex:1;border:1px solid var(--line);background:rgba(5,13,24,.5);color:var(--cream);
+    border-radius:11px;padding:12px;font-size:.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+  .ci-actions .undo{color:#ff9a8f;border-color:rgba(226,58,46,.3)}
+  .shot{margin-top:12px;position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);display:none}
+  .shot.show{display:block}
+  .shot img{width:100%;display:block;max-height:260px;object-fit:cover}
+  .shot .rm{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:50%;width:30px;height:30px;cursor:pointer}
+  input[type=file]{display:none}
+
+  /* journey (trước-trong-sau) */
+  .journey{margin-top:26px;border-top:1px solid var(--line);padding-top:18px}
+  .journey h3{font-size:.72rem;text-transform:uppercase;letter-spacing:.18em;color:var(--gold);font-family:var(--sans);font-weight:700;margin-bottom:12px}
+  .step{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px dashed var(--line)}
+  .step:last-child{border-bottom:0}
+  .step .si{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;
+    background:rgba(216,184,118,.1);border:1px solid var(--line);color:var(--gold)}
+  .step .st{flex:1}.step .st .sn{color:var(--cream);font-weight:600;font-size:.92rem}
+  .step .st .ss{color:var(--muted-2);font-size:.74rem}
+  .step .sw{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:20px;padding:7px 13px;font-size:.76rem;font-weight:600;cursor:pointer}
+  .step .sw.on{background:rgba(67,224,141,.14);border-color:rgba(67,224,141,.4);color:var(--green)}
+
+  .foot{text-align:center;color:var(--muted-2);font-size:.64rem;letter-spacing:.1em;padding:24px 0 30px}
+  @media(min-width:560px){ .list,.search-wrap,.chips{max-width:600px;margin-left:auto;margin-right:auto} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <img class="logo" src="logo-esuhai-mark.png" alt="ESUHAI">
+    <div class="ttl">CHECK-IN <b>· GALA 20 NĂM</b></div>
+    <div class="counter"><div class="c-num num"><span id="cDone">0</span>/<span id="cTotal">0</span></div><div class="c-lbl">đã đến</div></div>
+  </div>
+</header>
+
+<div class="search-wrap">
+  <div class="search">
+    <span class="ic">&#8981;</span>
+    <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="Gõ tên khách (không dấu cũng được)…">
+    <button class="clr" id="clr" aria-label="Xoá">&times;</button>
+  </div>
+</div>
+<div class="chips" id="chips">
+  <button class="chip active" data-f="all">Tất cả</button>
+  <button class="chip" data-f="todo">Chưa đến</button>
+  <button class="chip" data-f="done">Đã đến</button>
+  <button class="chip" data-f="vip">VIP</button>
+</div>
+
+<div class="hint" id="hint"></div>
+<main class="list" id="list"></main>
+
+<!-- Hồ sơ khách -->
+<section class="pf" id="pf" aria-hidden="true">
+  <div class="pf-bar">
+    <button class="pf-back" id="pfBack" aria-label="Quay lại">&#8592;</button>
+    <span class="lbl">Hồ sơ khách mời</span>
+  </div>
+  <div class="pf-body" id="pfBody"></div>
+</section>
+
+<input type="file" id="camIn" accept="image/*" capture="environment">
+
+<div class="foot">ESUHAI GROUP · GALA 20 NĂM · 08.08.2026 · GEM Center — Công cụ nội bộ (R0 · bản dựng trước)</div>
+
+<script>
+/* ================= DỮ LIỆU MẪU (R0) — sẽ thay bằng DS thật chị import ================= */
+var GUESTS=[
+ {id:"K001",name:"Nguyễn Văn An",gender:"Nam",title:"Tổng Giám đốc",org:"Công ty ABC",session:"Tọa đàm + Gala",diet:"Món mặn",role:"Người đại diện",handler:"Trần Thị B",cat:"Khách mời",vip:"VIP1",table:"1",photo:"",note:"Có xe đưa đón"},
+ {id:"K002",name:"Trần Mỹ Linh",gender:"Nữ",title:"Trợ lý",org:"Công ty ABC",session:"Gala",diet:"Món chay",role:"Khách đi cùng",handler:"Trần Thị B",cat:"Khách mời",vip:"VIP1",table:"1",photo:"",note:"Đi cùng đoàn K001"},
+ {id:"K003",name:"Phan Hoàng Ân",gender:"Nam",title:"Chủ tịch HĐQT",org:"Tập đoàn XYZ",session:"Gala",diet:"Món mặn",role:"Người đại diện",handler:"Lê Văn C",cat:"Khách mời",vip:"VIP1",table:"2",photo:"",note:""},
+ {id:"K004",name:"Đoàn Thái Kiên",gender:"Nam",title:"Trưởng phòng Kinh doanh",org:"DEF Corp",session:"Tọa đàm + Gala",diet:"Món chay",role:"Người đại diện",handler:"Lê Văn C",cat:"Khách mời",vip:"VIP2 - Hàng 2",table:"5",photo:"",note:""},
+ {id:"K005",name:"Nguyễn Hải Phương",gender:"Nữ",title:"Phó Giám đốc",org:"Đối tác GHI",session:"Gala",diet:"Món mặn",role:"Người đại diện",handler:"Phạm Thị D",cat:"Khách mời",vip:"VIP2 - Hàng 2",table:"6",photo:"",note:""},
+ {id:"K006",name:"Nguyễn Thị Thùy Trang",gender:"Nữ",title:"Giám đốc Nhân sự",org:"Công ty JKL",session:"Gala",diet:"Món mặn",role:"Người đại diện",handler:"Phạm Thị D",cat:"Khách mời",vip:"VIP2 - Hàng 3",table:"9",photo:"",note:"Dẫn 2 khách đi cùng"},
+ {id:"K007",name:"Nguyễn Hoàng Kha",gender:"Nam",title:"Nhà sáng lập & CEO",org:"MNO Group",session:"Tọa đàm + Gala",diet:"Món chay",role:"Người đại diện",handler:"Trần Thị B",cat:"Khách mời",vip:"VIP1",table:"3",photo:"",note:""},
+ {id:"K008",name:"Lê Hồng Vân",gender:"Nữ",title:"Quản lý Đối ngoại",org:"Công ty PQR",session:"Gala",diet:"Món mặn",role:"Người đại diện",handler:"Lê Văn C",cat:"Khách mời",vip:"VIP2 - Hàng 3",table:"10",photo:"",note:""},
+ {id:"K009",name:"Võ Thành Nhân",gender:"Nam",title:"Chuyên viên Truyền thông",org:"ESUHAI Group",session:"Gala",diet:"Món mặn",role:"Người đại diện",handler:"—",cat:"Nội bộ - Nhân viên",vip:"",table:"NV-1",photo:"",note:"Nhân sự hỗ trợ"},
+ {id:"K010",name:"Hồ Thanh Sơn",gender:"Nam",title:"Học viên khoá K52",org:"Trường JPC",session:"Gala",diet:"Món chay",role:"Người đại diện",handler:"—",cat:"Nội bộ - Học viên",vip:"",table:"HV-2",photo:"",note:""}
+];
+
+/* ================= trạng thái (localStorage tạm — Kha thay bằng API sync) ================= */
+var CK_KEY="esuhai20_checkin";
+function loadCK(){ try{return JSON.parse(localStorage.getItem(CK_KEY)||"{}");}catch(e){return {};} }
+function saveCK(o){ try{localStorage.setItem(CK_KEY,JSON.stringify(o));}catch(e){} }
+var CK=loadCK();
+
+/* ================= tiện ích ================= */
+function $(s,r){return (r||document).querySelector(s);}
+function norm(s){var t=String(s||"").toLowerCase().normalize("NFD"),o="";for(var i=0;i<t.length;i++){var c=t.charCodeAt(i);if(c<0x300||c>0x36f)o+=t[i];}return o.replace(/đ/g,"d");}
+function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function initials(n){var p=String(n||"").trim().split(/\s+/);var a=p.length>1?p[p.length-2]:p[0],b=p[p.length-1];return ((a&&a[0])||"")+((b&&b[0])||"");}
+function avatar(g,big){ if(g.photo) return '<img src="'+esc(g.photo)+'" alt="">'; return esc(initials(g.name).toUpperCase()); }
+function fmtT(iso){var d=new Date(iso);var p=function(n){return String(n).padStart(2,"0");};return p(d.getHours())+":"+p(d.getMinutes());}
+
+var state={f:"all",q:""};
+
+function counts(){var done=0;GUESTS.forEach(function(g){if(CK[g.id]&&CK[g.id].at)done++;});return {done:done,total:GUESTS.length};}
+function refreshCounter(){var c=counts();$("#cDone").textContent=c.done;$("#cTotal").textContent=c.total;}
+
+function match(g){
+  if(state.q){var q=norm(state.q);var hay=norm(g.name+" "+g.org+" "+g.title+" "+g.id+" "+g.table);if(hay.indexOf(q)===-1)return false;}
+  var done=!!(CK[g.id]&&CK[g.id].at);
+  if(state.f==="done"&&!done)return false;
+  if(state.f==="todo"&&done)return false;
+  if(state.f==="vip"&&String(g.vip||"").indexOf("VIP")!==0)return false;
+  return true;
+}
+function renderList(){
+  var rows=GUESTS.filter(match);
+  var hint=$("#hint");
+  if(!state.q&&state.f==="all"){var c=counts();hint.textContent="Tổng "+c.total+" khách · "+c.done+" đã đến · "+(c.total-c.done)+" chưa đến";}
+  else hint.textContent=rows.length+" kết quả";
+  var L=$("#list");
+  if(rows.length===0){L.innerHTML='<div class="empty"><b>Không tìm thấy</b>Thử gõ tên khác, hoặc kiểm tra lại chính tả.</div>';return;}
+  L.innerHTML=rows.map(function(g){
+    var done=!!(CK[g.id]&&CK[g.id].at);
+    var tbl=g.table?('<span class="t-badge">BÀN<b>'+esc(g.table)+'</b></span>'):'';
+    return '<div class="g-card'+(done?' done':'')+'" data-id="'+g.id+'">'
+      +'<div class="av">'+avatar(g)+'</div>'
+      +'<div class="g-main"><div class="g-name">'+esc(g.name)+'</div>'
+      +'<div class="g-sub">'+esc(g.title)+(g.org?' · '+esc(g.org):'')+'</div></div>'
+      +'<div class="g-right">'+tbl
+      +'<span class="done-tick">&#10003; Đã đến '+(done?fmtT(CK[g.id].at):'')+'</span>'
+      +'<span class="chev">&#10148;</span></div></div>';
+  }).join("");
+}
+
+/* ================= hồ sơ khách ================= */
+var curId=null;
+function openPf(id){
+  var g=GUESTS.filter(function(x){return x.id===id;})[0]; if(!g)return; curId=id;
+  var ck=CK[id]||{};
+  var dietCls=g.diet==="Món chay"?"diet-chay":"diet-man";
+  var facts='';
+  if(g.vip) facts+='<div class="fact vip"><div class="fk">Hạng</div><div class="fv">'+esc(g.vip)+'</div></div>';
+  facts+='<div class="fact"><div class="fk">Buổi</div><div class="fv">'+esc(g.session)+'</div></div>';
+  facts+='<div class="fact '+dietCls+'"><div class="fk">Ẩm thực</div><div class="fv">'+esc(g.diet)+'</div></div>';
+  facts+='<div class="fact"><div class="fk">Phân loại</div><div class="fv">'+esc(g.cat)+'</div></div>';
+
+  var ci = ck.at
+    ? '<div class="ci-done"><div class="cd-t">&#10003; Đã check-in</div><div class="cd-time">Đến lúc '+fmtT(ck.at)+' · '+new Date(ck.at).toLocaleDateString("vi-VN")+'</div></div>'
+      +'<div class="ci-actions"><button class="cam" data-id="'+g.id+'">&#128247; '+(ck.photo?'Chụp lại':'Chụp ảnh khách')+'</button><button class="undo" data-id="'+g.id+'">&#8630; Huỷ check-in</button></div>'
+      +'<div class="shot'+(ck.photo?' show':'')+'" id="shot">'+(ck.photo?'<img src="'+esc(ck.photo)+'"><button class="rm" data-id="'+g.id+'">&times;</button>':'')+'</div>'
+    : '<button class="ci-btn" id="ciBtn" data-id="'+g.id+'">&#10003;&nbsp; Check-in — Khách đã đến</button>';
+
+  $("#pfBody").innerHTML=
+    '<div class="pf-hero"><div class="pf-av">'+avatar(g,true)+'</div>'
+    +'<div><div class="pf-name">'+esc(g.name)+'</div>'
+    +'<div class="pf-role"><b>'+esc(g.title)+'</b>'+(g.org?'<br>'+esc(g.org):'')+'</div></div></div>'
+    +(g.table?'<div class="table-hero"><div class="k">Số bàn</div><div class="n num">'+esc(g.table)+'</div><div class="z">'+(g.vip?esc(g.vip):esc(g.cat))+'</div></div>':'')
+    +'<div class="facts">'+facts+'</div>'
+    +'<div class="info-row"><span class="ik">Người phụ trách</span><span class="iv">'+esc(g.handler||"—")+'</span></div>'
+    +'<div class="info-row"><span class="ik">Vai trò</span><span class="iv">'+esc(g.role||"—")+'</span></div>'
+    +'<div class="info-row"><span class="ik">Mã khách</span><span class="iv">'+esc(g.id)+'</span></div>'
+    +(g.note?'<div class="info-row"><span class="ik">Ghi chú</span><span class="iv">'+esc(g.note)+'</span></div>':'')
+    +'<div class="ci-box">'+ci+'</div>'
+    +'<div class="journey"><h3>Hành trình khách (trước · trong · sau)</h3>'
+      +journeyStep("&#127873;","Quà tặng","Trao quà lưu niệm 20 năm","gift",ck.gift)
+      +journeyStep("&#9993;","Thư cảm ơn","Gửi thư cảm ơn sau sự kiện","thanks",ck.thanks)
+      +journeyStep("&#128247;","Ảnh sự kiện","Bộ ảnh gửi riêng cho khách","album",ck.album)
+    +'</div>';
+  $("#pf").classList.add("show");$("#pf").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
+}
+function journeyStep(ic,name,sub,key,on){
+  return '<div class="step"><div class="si">'+ic+'</div><div class="st"><div class="sn">'+name+'</div><div class="ss">'+sub+'</div></div>'
+    +'<button class="sw'+(on?' on':'')+'" data-step="'+key+'">'+(on?'&#10003; Đã xong':'Đánh dấu')+'</button></div>';
+}
+function closePf(){$("#pf").classList.remove("show");$("#pf").setAttribute("aria-hidden","true");document.body.style.overflow="";curId=null;}
+
+/* ================= sự kiện ================= */
+$("#list").addEventListener("click",function(e){var c=e.target.closest(".g-card");if(c)openPf(c.getAttribute("data-id"));});
+$("#pfBack").addEventListener("click",closePf);
+$("#q").addEventListener("input",function(e){state.q=e.target.value;$("#clr").classList.toggle("show",!!state.q);renderList();});
+$("#clr").addEventListener("click",function(){state.q="";$("#q").value="";$("#clr").classList.remove("show");renderList();$("#q").focus();});
+$("#chips").addEventListener("click",function(e){var b=e.target.closest(".chip");if(!b)return;
+  document.querySelectorAll(".chip").forEach(function(x){x.classList.remove("active");});b.classList.add("active");state.f=b.getAttribute("data-f");renderList();});
+
+$("#pfBody").addEventListener("click",function(e){
+  var t=e.target.closest("button");if(!t)return;var id=t.getAttribute("data-id")||curId;
+  if(t.id==="ciBtn"){ CK[id]=CK[id]||{}; CK[id].at=new Date().toISOString(); saveCK(CK); refreshCounter(); openPf(id); renderList(); return; }
+  if(t.classList.contains("undo")){ if(confirm("Huỷ check-in khách này?")){ if(CK[id]){delete CK[id].at;} saveCK(CK); refreshCounter(); openPf(id); renderList(); } return; }
+  if(t.classList.contains("cam")){ camTarget=id; $("#camIn").click(); return; }
+  if(t.classList.contains("rm")){ if(CK[id]){delete CK[id].photo;} saveCK(CK); openPf(id); return; }
+  if(t.classList.contains("sw")){ var step=t.getAttribute("data-step"); CK[id]=CK[id]||{}; CK[id][step]=!CK[id][step]; saveCK(CK); openPf(id); return; }
+});
+var camTarget=null;
+$("#camIn").addEventListener("change",function(e){
+  var f=e.target.files&&e.target.files[0]; if(!f||!camTarget)return;
+  var rd=new FileReader(); rd.onload=function(){ CK[camTarget]=CK[camTarget]||{}; CK[camTarget].photo=rd.result; if(!CK[camTarget].at)CK[camTarget].at=new Date().toISOString(); saveCK(CK); var id=camTarget; camTarget=null; refreshCounter(); openPf(id); renderList(); };
+  rd.readAsDataURL(f); e.target.value="";
+});
+window.addEventListener("keydown",function(e){if(e.key==="Escape"&&$("#pf").classList.contains("show"))closePf();});
+
+refreshCounter(); renderList();
+</script>
+</body>
+</html>

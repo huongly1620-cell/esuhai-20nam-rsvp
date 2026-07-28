@@ -2,6 +2,7 @@
 
 const crypto = require('crypto');
 const { pool } = require('./db');
+const { syncFromRsvp } = require('./crm/sync-from-rsvp');
 
 // ---- config ----
 const RATE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes per phone (R3.3)
@@ -127,7 +128,20 @@ async function handleRsvp(req, res) {
        row.sessions, row.dietary, row.wish, row.note, row.guest_count, row.guests,
        row.ip_hash, row.user_agent, row.submitted_at]
     );
-    return res.status(201).json({ ok: true, id: String(result.rows[0].id) });
+    const newId = result.rows[0].id;
+    // Mirror confirmed guests into the reception CRM. Non-fatal: a sync failure
+    // must never break the guest's RSVP (still return 201).
+    if (row.status === 'yes') {
+      try {
+        await syncFromRsvp(pool, {
+          id: newId,
+          source: row.source,
+          rep: { name: row.rep_name, phone: row.rep_phone, email: row.rep_email, org: row.rep_org },
+          guests: JSON.parse(row.guests || '[]'),
+        });
+      } catch (e) { console.error('[rsvp] crm sync failed:', e.message); }
+    }
+    return res.status(201).json({ ok: true, id: String(newId) });
   } catch (err) {
     console.error('[rsvp] insert failed:', err.message); // no PII, no stack to client
     return res.status(500).json({ ok: false, error: 'Có lỗi khi lưu. Vui lòng thử lại.' });

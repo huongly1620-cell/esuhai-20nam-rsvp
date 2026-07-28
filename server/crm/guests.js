@@ -30,6 +30,7 @@ function mount(app, requireCrmAuth, requireRole) {
       params.push(limit);
       const r = await pool.query(
         `SELECT g.id, g.full_name, g.phone, g.org, g.title,
+                (g.response_id IS NOT NULL) AS from_rsvp,
                 (ci.guest_id IS NOT NULL) AS checked_in, ci.checked_in_at, ci.actor_email AS checked_in_by
          FROM crm_guests g
          ${join}

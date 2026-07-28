@@ -40,6 +40,7 @@
   .badge{font-size:.66rem;font-weight:700;border-radius:20px;padding:3px 9px;white-space:nowrap}
   .badge.in{background:rgba(87,201,138,.16);color:var(--green);border:1px solid rgba(87,201,138,.4)}
   .badge.out{background:rgba(138,155,176,.12);color:var(--muted);border:1px solid var(--line)}
+  .rsvp-tag{font-size:.6rem;font-weight:700;color:#7fd6c0;border:1px solid rgba(127,214,192,.4);border-radius:20px;padding:1px 6px;vertical-align:middle;margin-left:4px}
   .empty{color:var(--muted);text-align:center;padding:36px 16px}
   /* sheet / modal */
   .sheet{position:fixed;inset:0;z-index:50;display:none;background:rgba(3,8,16,.72)}
@@ -139,7 +140,7 @@
       if(!rows.length){ $("#list").innerHTML='<div class="empty">Không tìm thấy khách phù hợp.</div>'; return; }
       $("#list").innerHTML=rows.map(function(g){
         var badge=g.checked_in?'<span class="badge in">&#10003; Đã điểm danh</span>':'<span class="badge out">Chưa</span>';
-        return '<div class="g" data-id="'+g.id+'"><div><div class="nm">'+esc(g.full_name)+'</div>'
+        return '<div class="g" data-id="'+g.id+'"><div><div class="nm">'+esc(g.full_name)+(g.from_rsvp?' <span class="rsvp-tag">RSVP</span>':'')+'</div>'
           +'<div class="meta">'+esc([g.org,g.title].filter(Boolean).join(" · ")||"—")+'</div></div>'
           +'<div class="sp">'+badge+'</div></div>';
       }).join("");

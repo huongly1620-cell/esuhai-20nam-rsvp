@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Xếp bàn · Gala 20 Năm ESUHAI</title>
+<!-- R0 · Hương Ly — Công cụ TÍNH & XẾP BÀN (POLLUX). Dữ liệu MẪU; ghép DS thật khi import. -->
+<style>
+  :root{--ink:#050d18;--navy:#0E1B31;--deep:#08111F;--gold:#d8b876;--gold-bright:#f4e2b0;--gold-deep:#a6873f;
+    --cream:#f5efe1;--muted:#b9b096;--muted-2:#8f886f;--green:#43e08d;--crimson:#e23a2e;
+    --line:rgba(216,184,118,.2);--line-strong:rgba(216,184,118,.42);--card:rgba(255,255,255,.04);
+    --serif:"Playfair Display","Cambria",Georgia,serif;--sans:"Be Vietnam Pro","Segoe UI",system-ui,Arial,sans-serif;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--sans);color:var(--cream);line-height:1.5;-webkit-font-smoothing:antialiased;
+    background:radial-gradient(900px 500px at 88% -8%,rgba(20,88,78,.34),transparent 60%),linear-gradient(170deg,#0b1a30,#0b2330 55%,#08111F);min-height:100vh}
+  h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}.num{font-variant-numeric:tabular-nums}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 clamp(14px,3vw,32px)}
+  .top{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);background:linear-gradient(180deg,rgba(8,17,31,.92),rgba(8,17,31,.55));border-bottom:1px solid var(--line)}
+  .top-in{display:flex;align-items:center;gap:10px;padding:11px clamp(14px,3vw,32px);max-width:1100px;margin:0 auto}
+  .logo{height:26px}.ttl{font-weight:700;letter-spacing:.1em;font-size:.74rem;text-transform:uppercase}.ttl b{color:var(--gold);font-weight:400}
+  .rlink{margin-left:auto;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-decoration:none}
+  .head{padding:26px 0 8px}.head .eb{text-transform:uppercase;letter-spacing:.3em;font-size:.6rem;color:var(--gold);font-weight:700}
+  .head h1{font-size:clamp(1.5rem,4vw,2.2rem);margin:8px 0 4px}.head .sub{color:var(--muted);font-size:.92rem}
+  .cfg{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:16px 0;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+  .cfg .f{display:flex;flex-direction:column;gap:5px}.cfg label{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--gold)}
+  .cfg input{width:78px;background:rgba(5,13,24,.6);border:1px solid var(--line);border-radius:8px;color:var(--cream);padding:9px 11px;font:inherit;font-variant-numeric:tabular-nums}
+  .cfg input:focus{outline:none;border-color:var(--gold)}
+  .btn{border:1px solid var(--line);background:rgba(5,13,24,.5);color:var(--cream);border-radius:9px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer}
+  .btn-gold{background:linear-gradient(180deg,#f0d999,#cfa758);color:#2a1e05;border-color:transparent}
+  .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:6px 0 20px}
+  @media(min-width:720px){.stat-grid{grid-template-columns:repeat(5,1fr)}}
+  .stat{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--card)}
+  .stat .l{font-size:.58rem;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:6px}
+  .stat .v{font-family:var(--serif);font-size:1.7rem;line-height:1}.stat .s{color:var(--muted);font-size:.72rem;margin-top:4px}
+  .stat.total{border-color:var(--line-strong);background:rgba(216,184,118,.08)}
+  .tier{margin:22px 0 10px;display:flex;align-items:center;gap:10px}
+  .tier h2{font-size:1.15rem}.tier .pill{font-size:.66rem;font-weight:700;color:var(--ink);background:var(--gold);border-radius:20px;padding:3px 10px}
+  .tier .meta{margin-left:auto;color:var(--muted);font-size:.8rem}
+  .tables{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:640px){.tables{grid-template-columns:1fr 1fr}}
+  .tbl{border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
+  .tbl.full{border-color:rgba(67,224,141,.35)}
+  .tbl-h{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:rgba(5,13,24,.3)}
+  .tbl-h .no{font-family:var(--serif);font-size:1.2rem;color:var(--gold-bright)}
+  .tbl-h .cap{margin-left:auto;font-size:.74rem;color:var(--muted)}
+  .tbl-h .cap b{color:var(--cream)}
+  .seats{padding:8px 14px 14px;display:flex;flex-direction:column;gap:2px}
+  .seat{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:.88rem;border-bottom:1px dashed rgba(255,255,255,.06)}
+  .seat:last-child{border-bottom:0}
+  .seat .n{width:20px;color:var(--muted-2);font-size:.74rem;text-align:right;flex:none}
+  .seat .nm{color:var(--cream);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .seat .og{color:var(--muted);font-size:.76rem;flex:none;max-width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .seat .dot{width:7px;height:7px;border-radius:50%;flex:none}.dot.man{background:var(--gold)}.dot.chay{background:var(--green)}
+  .empty-seat{color:var(--muted-2);font-size:.78rem;font-style:italic;padding:5px 0}
+  .note{margin:26px 0 40px;padding:14px 16px;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;background:rgba(216,184,118,.05);color:var(--muted);font-size:.84rem;line-height:1.7}
+  .note b{color:var(--gold-bright)}
+  .foot{text-align:center;color:var(--muted-2);font-size:.64rem;letter-spacing:.08em;padding:10px 0 30px}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <img class="logo" src="logo-esuhai-mark.png" alt="ESUHAI">
+  <div class="ttl">XẾP BÀN <b>· GALA 20 NĂM</b></div>
+  <a class="rlink" href="/admin">← Bảng điều khiển</a>
+</div></header>
+
+<div class="wrap">
+  <div class="head">
+    <span class="eb">Ban tổ chức · POLLUX 1 (48×28m)</span>
+    <h1>Tính &amp; xếp bàn tiệc Gala</h1>
+    <p class="sub">Tự tính số bàn theo hạng VIP + gán bàn cho từng khách (giữ khách cùng đơn vị chung bàn). Số bàn chảy vào <b>thẻ tên</b> &amp; <b>check-in</b>.</p>
+  </div>
+
+  <div class="cfg">
+    <div class="f"><label>VIP1 (người/bàn)</label><input id="c1" type="number" value="8" min="1"></div>
+    <div class="f"><label>VIP2 · Hàng 2</label><input id="c2" type="number" value="10" min="1"></div>
+    <div class="f"><label>VIP2 · Hàng 3</label><input id="c3" type="number" value="11" min="1"></div>
+    <div class="f"><label>Nội bộ (người/bàn)</label><input id="c4" type="number" value="10" min="1"></div>
+    <button class="btn btn-gold" id="calc">↻ Tính lại</button>
+    <button class="btn" id="exp">↓ Xuất CSV (khách → bàn)</button>
+  </div>
+
+  <div class="stat-grid" id="stats"></div>
+  <div id="out"></div>
+
+  <div class="note"><b>Cách hoạt động:</b> BTC gán mỗi khách 1 <b>Hạng</b> (VIP1/VIP2-H2/VIP2-H3) trong file import → công cụ gom theo <b>đơn vị</b>, xếp vào bàn tới sức chứa, ưu tiên <b>không tách đoàn</b>. Nhóm <b>Nội bộ</b> (NV/Học viên/BTC) xếp bàn riêng, không chiếm bàn VIP. Số bàn (1, 2… / NB-1…) tự gán và có thể xuất ra để in thẻ tên + nạp vào check-in.</div>
+</div>
+<div class="foot">ESUHAI GROUP · GALA 20 NĂM · 08.08.2026 · GEM Center — Công cụ nội bộ (R0 · bản dựng trước)</div>
+
+<script>
+/* ===== dữ liệu MẪU (thay bằng DS import) ===== */
+var ORGS_VIP=["Tập đoàn Alpha","Công ty Beta","Đối tác Gamma","Tập đoàn Delta","Công ty Epsilon","Đối tác Zeta","Tập đoàn Eta","Công ty Theta","Đối tác Iota"];
+var TITLES=["Chủ tịch","Tổng Giám đốc","Phó TGĐ","Giám đốc","Trưởng phòng","Quản lý","Trợ lý"];
+var HO=["Nguyễn","Trần","Lê","Phạm","Hoàng","Vũ","Đặng","Bùi","Đỗ","Hồ","Phan","Võ"];
+var TEN=["An","Bình","Cường","Dung","Hà","Khoa","Lan","Minh","Nam","Oanh","Phúc","Quân","Sơn","Trang","Uyên","Vân"];
+function rnd(a,i){return a[i%a.length];}
+function mk(prefix,tier,n,org_pool,start){
+  var arr=[];
+  for(var i=0;i<n;i++){
+    var org=rnd(org_pool,Math.floor(i/2)); // ~2 người/đơn vị để thấy gom đoàn
+    arr.push({id:prefix+String(start+i).padStart(3,"0"),name:rnd(HO,i*3+start)+" "+rnd(HO,i)+" "+rnd(TEN,i*7+start),
+      title:rnd(TITLES,i),org:org,vip:tier,cat:"Khách mời",diet:(i%5===0?"Món chay":"Món mặn")});
+  }
+  return arr;
+}
+var GUESTS=[]
+  .concat(mk("K","VIP1",17,ORGS_VIP.slice(0,5),1))
+  .concat(mk("K","VIP2 - Hàng 2",23,ORGS_VIP.slice(3,8),100))
+  .concat(mk("K","VIP2 - Hàng 3",26,ORGS_VIP.slice(5,9),200))
+  .concat(mk("N","Nội bộ",14,["Nhân viên ESUHAI","Học viên JPC","BTC"],1).map(function(g){g.cat="Nội bộ";g.vip="";return g;}));
+
+var TIERS=[{key:"VIP1",cid:"c1",label:"VIP 1 (gần sân khấu)"},
+ {key:"VIP2 - Hàng 2",cid:"c2",label:"VIP 2 — Hàng 2"},
+ {key:"VIP2 - Hàng 3",cid:"c3",label:"VIP 2 — Hàng 3"},
+ {key:"Nội bộ",cid:"c4",label:"Nội bộ (NV · Học viên · BTC)"}];
+
+function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+var assignment=[]; // {no,tier,cap,guests:[]}
+
+function packTier(guests,cap){
+  // gom theo đơn vị, xếp vào bàn tới sức chứa, ưu tiên không tách đoàn
+  var byOrg={},order=[];
+  guests.forEach(function(g){ if(!byOrg[g.org]){byOrg[g.org]=[];order.push(g.org);} byOrg[g.org].push(g); });
+  order.sort(function(a,b){return byOrg[b].length-byOrg[a].length;}); // đoàn lớn trước
+  var tables=[],cur=[];
+  function close(){ if(cur.length){tables.push(cur);cur=[];} }
+  order.forEach(function(org){
+    var grp=byOrg[org];
+    if(grp.length>cap){ // đoàn lớn hơn 1 bàn → chia
+      close();
+      for(var i=0;i<grp.length;i+=cap) tables.push(grp.slice(i,i+cap));
+      return;
+    }
+    if(cur.length+grp.length>cap) close();
+    cur=cur.concat(grp);
+  });
+  close();
+  return tables;
+}
+function assign(){
+  var caps={"VIP1":+document.getElementById("c1").value||8,"VIP2 - Hàng 2":+document.getElementById("c2").value||10,
+    "VIP2 - Hàng 3":+document.getElementById("c3").value||11,"Nội bộ":+document.getElementById("c4").value||10};
+  assignment=[]; var no=0;
+  TIERS.forEach(function(t){
+    var gs=GUESTS.filter(function(g){return (g.vip||g.cat)===t.key || (t.key==="Nội bộ"&&g.cat==="Nội bộ");});
+    if(t.key!=="Nội bộ") gs=GUESTS.filter(function(g){return g.vip===t.key;});
+    else gs=GUESTS.filter(function(g){return g.cat==="Nội bộ";});
+    var cap=caps[t.key], tabs=packTier(gs,cap);
+    tabs.forEach(function(seats,i){
+      no++; var label=(t.key==="Nội bộ")?("NB-"+(i+1)):String(no);
+      seats.forEach(function(g){g.table=label;});
+      assignment.push({no:label,tier:t.key,tierLabel:t.label,cap:cap,seats:seats});
+    });
+  });
+  render();
+}
+function render(){
+  var caps={}; TIERS.forEach(function(t){caps[t.key]=+document.getElementById(t.cid).value;});
+  // stats
+  var byTier={}; TIERS.forEach(function(t){byTier[t.key]={g:0,tb:0,seats:0};});
+  assignment.forEach(function(t){byTier[t.tier].tb++;byTier[t.tier].seats+=t.cap;byTier[t.tier].g+=t.seats.length;});
+  var totalTb=assignment.length, totalG=GUESTS.length, totalSeats=assignment.reduce(function(s,t){return s+t.cap;},0);
+  var S=document.getElementById("stats");
+  var cards=TIERS.map(function(t){var b=byTier[t.key];return '<div class="stat"><div class="l">'+esc(t.key)+'</div><div class="v num">'+b.tb+' <span style="font-size:.9rem;color:var(--muted)">bàn</span></div><div class="s">'+b.g+' khách · '+caps[t.key]+'/bàn</div></div>';});
+  cards.push('<div class="stat total"><div class="l">Tổng cộng</div><div class="v num">'+totalTb+' bàn</div><div class="s">'+totalG+' khách · trống '+(totalSeats-totalG)+' ghế</div></div>');
+  S.innerHTML=cards.join("");
+  // tables theo tier
+  var out="";
+  TIERS.forEach(function(t){
+    var ts=assignment.filter(function(x){return x.tier===t.key;});
+    if(!ts.length) return;
+    out+='<div class="tier"><span class="pill">'+esc(t.key)+'</span><h2>'+esc(t.tierLabel)+'</h2><span class="meta">'+ts.length+' bàn · '+byTier[t.key].g+' khách</span></div>';
+    out+='<div class="tables">'+ts.map(function(tb){
+      var used=tb.seats.length,full=used>=tb.cap;
+      var seats=tb.seats.map(function(g,i){return '<div class="seat"><span class="n num">'+(i+1)+'</span><span class="dot '+(g.diet==="Món chay"?"chay":"man")+'"></span><span class="nm">'+esc(g.name)+'</span><span class="og">'+esc(g.org)+'</span></div>';}).join("");
+      if(used<tb.cap) seats+='<div class="empty-seat">+ '+(tb.cap-used)+' ghế trống</div>';
+      return '<div class="tbl'+(full?' full':'')+'"><div class="tbl-h"><span class="no">Bàn '+esc(tb.no)+'</span><span class="cap"><b>'+used+'</b>/'+tb.cap+' ghế</span></div><div class="seats">'+seats+'</div></div>';
+    }).join("")+'</div>';
+  });
+  document.getElementById("out").innerHTML=out;
+}
+document.getElementById("calc").addEventListener("click",assign);
+document.getElementById("exp").addEventListener("click",function(){
+  var rows=[["Mã khách","Họ tên","Đơn vị","Hạng","Ẩm thực","Số bàn"]];
+  assignment.forEach(function(t){t.seats.forEach(function(g){rows.push([g.id,g.name,g.org,g.vip||g.cat,g.diet,t.no]);});});
+  var csv="﻿"+rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(",");}).join("\n");
+  var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="xep_ban_gala.csv";a.click();
+});
+assign();
+</script>
+</body>
+</html>

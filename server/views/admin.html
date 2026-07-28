@@ -51,11 +51,10 @@
     border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
   .topbar .in{max-width:var(--maxw);margin:0 auto;padding:12px clamp(16px,4vw,40px);display:flex;align-items:center;justify-content:space-between;gap:14px}
   .brand{display:flex;align-items:center;gap:11px;min-width:0}
-  .seal{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none;
-    border:1px solid var(--line-strong);color:var(--crimson);font-family:var(--serif);font-size:1.2rem;
-    box-shadow:inset 0 0 12px rgba(226,58,46,.25),0 0 14px rgba(226,58,46,.15)}
+  .seal{height:32px;display:flex;align-items:center;flex:none}
+  .seal .logo-img{height:30px;width:auto;display:block;filter:drop-shadow(0 1px 3px rgba(0,0,0,.35))}
   .brand-name{font-weight:700;letter-spacing:.16em;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .brand-name span{color:var(--gold);font-weight:400}
+  .brand-name .tb-dot,.brand-name .tb-sub{color:var(--gold);font-weight:400}
   .topbar .rlink{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);flex:none}
   .topbar-right{display:flex;align-items:center;gap:16px}
   .logout-btn{background:none;border:0;cursor:pointer;font:inherit;padding:0;color:var(--muted);
@@ -198,9 +197,10 @@
 
   @media(max-width:480px){
     .topbar .in{padding:9px 14px}
-    .seal{width:28px;height:28px;font-size:1rem}
+    .seal{height:26px}
+    .seal .logo-img{height:24px}
     .brand-name{font-size:.64rem;letter-spacing:.06em}
-    .brand-name span{display:none}
+    .brand-name .tb-dot,.brand-name .tb-sub{display:none}
     .topbar .rlink{font-size:.62rem}
     .head{padding:24px 0 16px}
     .head-status{align-items:flex-start}
@@ -213,13 +213,20 @@
     .fselect{font-size:.72rem;padding:8px 26px 8px 12px}
     .modal-card{padding:18px}
   }
+  /* ===== R0 · căn cột list thẻ chi tiết (Buổi/Khách thẳng hàng) ===== */
+  .rec-sess{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .rec-guests{display:flex;align-items:center}
+  @media(min-width:640px){
+    .rec-top{display:grid;grid-template-columns:auto minmax(0,1fr) 152px 80px 16px;gap:12px;flex-wrap:nowrap}
+    .rec-top .rec-name{margin-right:0}
+  }
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div class="in">
-    <div class="brand"><div class="seal">&#8734;</div><div class="brand-name">ESUHAI <span>GROUP · 20 NĂM</span></div></div>
+    <div class="brand"><div class="seal"><img class="logo-img" src="/logo-esuhai-mark.png" alt="ESUHAI"></div><div class="brand-name"><span class="tb-main">ESUHAI GROUP</span><span class="tb-dot"> · </span><span class="tb-sub">20 NĂM</span></div></div>
     <div class="topbar-right">
       <a class="rlink" href="/dang-ky.html">&#8592; Trang đăng ký</a>
       <button type="button" class="logout-btn" id="logoutBtn">Đăng xuất</button>
@@ -367,9 +374,9 @@
   function renderStats(st){
     var rate = st.total ? Math.round(st.yes/st.total*100) : 0;
     $("#statGrid").innerHTML = [
-      statCard("Tổng lượt phản hồi", st.total, "đoàn đã gửi xác nhận"),
-      statCard("Khách xác nhận tham dự", st.totalGuests, st.yes+" đoàn · dự kiến đón tiếp"),
-      statCard("Không thể tham dự", st.no, "đoàn đã hồi âm"),
+      statCard("Tổng lượt phản hồi", st.total, "lượt đã gửi xác nhận"),
+      statCard("Khách xác nhận tham dự", st.totalGuests, st.yes+" lượt · dự kiến đón tiếp"),
+      statCard("Không thể tham dự", st.no, "lượt đã hồi âm"),
       statCard("Tỷ lệ xác nhận tham dự", rate+"%", "trên tổng số phản hồi")
     ].join("");
   }
@@ -409,7 +416,7 @@
     var b1='<div class="bar-card"><h4>Buổi tham dự (theo số khách)</h4>'
       + barRow("Tọa đàm chuyên đề", st.sess["Tọa đàm"], sessMax, goldC)
       + barRow("Gala Lễ kỷ niệm", st.sess["Gala"], sessMax, crimsonC) + '</div>';
-    var b2='<div class="bar-card"><h4>Trạng thái phản hồi (theo đoàn)</h4>'
+    var b2='<div class="bar-card"><h4>Trạng thái phản hồi (theo lượt)</h4>'
       + stackedBar([{name:"Tham dự", count:st.yes, color:goldC},{name:"Không tham dự", count:st.no, color:crimsonC}]) + '</div>';
     var b3='<div class="bar-card"><h4>Ẩm thực Gala (theo số khách)</h4>'
       + stackedBar([{name:"Món mặn", count:st.diet["Món mặn"], color:goldC},{name:"Món chay", count:st.diet["Món chay"], color:jadeC}]) + '</div>';
@@ -474,10 +481,9 @@
     return '<details class="rec"><summary>'
       + '<div class="rec-top">'
       + '<span class="badge '+(isYes?"yes":"no")+'">'+(isYes?"Tham dự":"Không tham dự")+'</span>'
-      + '<span class="rec-name">'+esc((d.rep&&d.rep.name)||"(Chưa rõ tên)")+'</span>'
-      + (d.__dup?'<span class="dup-badge">Trùng SĐT</span>':'')
-      + sessTags
-      + (isYes?'<span class="tag">'+guestCount+' khách</span>':'')
+      + '<span class="rec-name">'+esc((d.rep&&d.rep.name)||"(Chưa rõ tên)")+(d.__dup?' <span class="dup-badge">Trùng SĐT</span>':'')+'</span>'
+      + '<span class="rec-sess">'+sessTags+'</span>'
+      + '<span class="rec-guests">'+(isYes?'<span class="tag">'+guestCount+' khách</span>':'')+'</span>'
       + '<span class="rec-arrow">&#10148;</span>'
       + '</div>'
       + '<div class="rec-meta"><span>Gửi lúc '+fmtDate(d.submittedAt)+'</span></div>'
@@ -598,7 +604,7 @@
         xCell(d.dietary||""), xCell(d.__dup?"Có":""), xCell(d.wish||""), xCell(d.note||""), xCell(fmtDate(d.submittedAt))
       ]));
     });
-    var h2=["STT đoàn","Trạng thái","Vai trò","Họ tên khách","Đơn vị","Chức danh","Giới tính","Buổi tham dự","Ẩm thực","SĐT đại diện (che)","Email đại diện","Thời gian gửi"];
+    var h2=["STT lượt","Trạng thái","Vai trò","Họ tên khách","Đơn vị","Chức danh","Giới tính","Buổi tham dự","Ẩm thực","SĐT đại diện (che)","Email đại diện","Thời gian gửi"];
     var rows2=[xRow(h2.map(function(h){return xCell(h,"String","header");}))];
     data.forEach(function(d,i){
       if(d.status!=="yes") return;
@@ -613,7 +619,7 @@
     });
     var st=computeStats(data); var rate=st.total?Math.round(st.yes/st.total*100):0;
     var rows3=[xRow(["Chỉ số","Giá trị"].map(function(h){return xCell(h,"String","header");}))];
-    [["Tổng lượt phản hồi", st.total],["Số đoàn xác nhận tham dự", st.yes],["Số đoàn không thể tham dự", st.no],
+    [["Tổng lượt phản hồi", st.total],["Số lượt xác nhận tham dự", st.yes],["Số lượt không thể tham dự", st.no],
      ["Tổng số khách xác nhận", st.totalGuests],["Tỷ lệ xác nhận (%)", rate],
      ["Khách dự Tọa đàm", st.sess["Tọa đàm"]],["Khách dự Gala", st.sess["Gala"]],
      ["Khách chọn món mặn", st.diet["Món mặn"]],["Khách chọn món chay", st.diet["Món chay"]]

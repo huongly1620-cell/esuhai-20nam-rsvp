@@ -290,6 +290,9 @@
       <button type="button" class="btn" id="exportCsvBtn">&#8681; Xuất CSV (đầy đủ)</button>
       <button type="button" class="btn" id="importCrmBtn" title="Nhập danh sách khách mời vào công cụ điểm danh (/crm)">&#8593; Nhập DS khách → CRM</button>
       <input type="file" id="importCrmFile" accept=".csv,.xlsx" style="display:none">
+      <a class="btn" href="/admin/api/export-seating.csv" title="Xuất DS khách để nạp vào công cụ Xếp bàn của Ly">&#8681; DS cho xếp bàn</a>
+      <button type="button" class="btn" id="importTablesBtn" title="Nhập số bàn (CSV xuất từ công cụ Xếp bàn) → hiện khi check-in">&#8593; Nhập số bàn</button>
+      <input type="file" id="importTablesFile" accept=".csv,.xlsx" style="display:none">
     </div>
   </div>
 
@@ -718,6 +721,17 @@
       var j=await r.json().catch(function(){return {};});
       if(r.ok){ alert("Đã nhập vào CRM điểm danh:\n• Tạo mới: "+j.created+"\n• Cập nhật: "+j.updated+"\n• Phân công: "+j.assigned+"\n\nKhách đã hiện trên trang /crm để lễ tân tìm + điểm danh.\n(File cần tiêu đề ở DÒNG 1: Họ tên, SĐT, Đơn vị, Chức vụ, Tags, NV phụ trách.)"); }
       else { alert(j.error||"Nhập không thành công."); }
+    }catch(e){ alert("Lỗi kết nối, thử lại."); }
+  });
+  $("#importTablesBtn").addEventListener("click", function(){ $("#importTablesFile").click(); });
+  $("#importTablesFile").addEventListener("change", async function(){
+    var f=this.files&&this.files[0]; if(!f) return; this.value="";
+    var fd=new FormData(); fd.append("file", f);
+    try{
+      var r=await fetch("/admin/api/import-tables",{method:"POST",body:fd,credentials:"same-origin"});
+      var j=await r.json().catch(function(){return {};});
+      if(r.ok){ alert("Đã nhập số bàn vào CRM:\n• Khớp: "+j.matched+"\n• Không khớp (Mã khách lạ): "+j.unmatched+"\n\nSố bàn hiện trên /crm khi lễ tân điểm danh."); }
+      else { alert(j.error||"Nhập số bàn không thành công."); }
     }catch(e){ alert("Lỗi kết nối, thử lại."); }
   });
   $("#logoutBtn").addEventListener("click", function(){

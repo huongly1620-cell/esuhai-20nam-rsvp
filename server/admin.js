@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const path = require('path');
 const { pool } = require('./db');
+const crmImport = require('./crm/import');
 
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
@@ -188,6 +189,16 @@ function mount(app) {
       console.error('[admin] export failed:', err.message);
       return res.status(500).json({ ok: false, error: 'export error' });
     }
+  });
+
+  // Import a guest list (CSV / .xlsx, header row 1) into the reception CRM
+  // (crm_guests) — admin-cookie authed, same pipeline as /crm/import (E08-D014).
+  app.post('/admin/api/import-crm', requireAuth, crmImport.upload.single('file'), async (req, res) => {
+    try {
+      const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+      const out = await crmImport.importRows(crmImport.parseUpload(req), 'admin:' + ADMIN_USER, ip);
+      return res.json({ ok: true, ...out });
+    } catch (err) { return crmImport.importError(res, err, 'admin-import-crm'); }
   });
 }
 

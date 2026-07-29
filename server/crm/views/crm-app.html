@@ -247,7 +247,7 @@
     $("#sheet2Body").innerHTML =
       '<h2>Import CSV phân công</h2>'
       + '<p style="color:var(--muted);font-size:.84rem">Cột: guest_ext_id, full_name, org, title, phone, email, assigned_email, tags. Chạy lại nhiều lần không nhân đôi (upsert).</p>'
-      + '<input class="f" type="file" id="impFile" accept=".csv,text/csv">'
+      + '<input class="f" type="file" id="impFile" accept=".csv,.xlsx">'
       + '<button class="btn gold block" id="impRun" style="margin-top:10px">Chạy import</button><div class="msg" id="impMsg"></div>';
     $("#impRun").addEventListener("click", async function(){
       var f=$("#impFile").files && $("#impFile").files[0]; if(!f){ $("#impMsg").textContent="Chọn file CSV."; $("#impMsg").className="msg err"; return; }

@@ -288,6 +288,8 @@
       <button type="button" class="btn" id="printBtn">&#128424; In danh sách check-in</button>
       <button type="button" class="btn btn-gold" id="exportExcelBtn">&#8681; Xuất Excel</button>
       <button type="button" class="btn" id="exportCsvBtn">&#8681; Xuất CSV (đầy đủ)</button>
+      <button type="button" class="btn" id="importCrmBtn" title="Nhập danh sách khách mời vào công cụ điểm danh (/crm)">&#8593; Nhập DS khách → CRM</button>
+      <input type="file" id="importCrmFile" accept=".csv,.xlsx" style="display:none">
     </div>
   </div>
 
@@ -707,6 +709,17 @@
   $("#printBtn").addEventListener("click", printGuestList);
   $("#exportExcelBtn").addEventListener("click", exportExcel);
   $("#exportCsvBtn").addEventListener("click", exportCSV);
+  $("#importCrmBtn").addEventListener("click", function(){ $("#importCrmFile").click(); });
+  $("#importCrmFile").addEventListener("change", async function(){
+    var f=this.files&&this.files[0]; if(!f) return; this.value="";
+    var fd=new FormData(); fd.append("file", f);
+    try{
+      var r=await fetch("/admin/api/import-crm",{method:"POST",body:fd,credentials:"same-origin"});
+      var j=await r.json().catch(function(){return {};});
+      if(r.ok){ alert("Đã nhập vào CRM điểm danh:\n• Tạo mới: "+j.created+"\n• Cập nhật: "+j.updated+"\n• Phân công: "+j.assigned+"\n\nKhách đã hiện trên trang /crm để lễ tân tìm + điểm danh.\n(File cần tiêu đề ở DÒNG 1: Họ tên, SĐT, Đơn vị, Chức vụ, Tags, NV phụ trách.)"); }
+      else { alert(j.error||"Nhập không thành công."); }
+    }catch(e){ alert("Lỗi kết nối, thử lại."); }
+  });
   $("#logoutBtn").addEventListener("click", function(){
     fetch("/admin/logout", {method:"POST", credentials:"same-origin"}).then(function(){ location.href="/admin"; }).catch(function(){ location.href="/admin"; });
   });

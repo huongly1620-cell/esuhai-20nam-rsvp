@@ -92,6 +92,9 @@ CREATE TABLE IF NOT EXISTS crm_auth_codes (
   attempts    INTEGER NOT NULL DEFAULT 0,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Seating table number (from Ly's xep-ban tool), shown at check-in. CRM table only.
+ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS table_no TEXT;
 `;
 
 async function migrateCrm() {

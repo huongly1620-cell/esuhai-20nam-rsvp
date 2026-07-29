@@ -29,7 +29,7 @@ function mount(app, requireCrmAuth, requireRole) {
       }
       params.push(limit);
       const r = await pool.query(
-        `SELECT g.id, g.full_name, g.phone, g.org, g.title,
+        `SELECT g.id, g.full_name, g.phone, g.org, g.title, g.table_no,
                 (g.response_id IS NOT NULL) AS from_rsvp,
                 (ci.guest_id IS NOT NULL) AS checked_in, ci.checked_in_at, ci.actor_email AS checked_in_by
          FROM crm_guests g
@@ -61,7 +61,7 @@ function mount(app, requireCrmAuth, requireRole) {
         guest: {
           id: row.id, full_name: row.full_name, phone: row.phone, email: row.email,
           org: row.org, title: row.title, note: row.note, tags: row.tags,
-          response_id: row.response_id, created_at: row.created_at,
+          table_no: row.table_no, response_id: row.response_id, created_at: row.created_at,
         },
         checkIn: ci.rows[0] || null,
         assignments: asg.rows,

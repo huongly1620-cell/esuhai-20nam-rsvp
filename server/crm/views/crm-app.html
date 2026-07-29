@@ -41,6 +41,7 @@
   .badge.in{background:rgba(87,201,138,.16);color:var(--green);border:1px solid rgba(87,201,138,.4)}
   .badge.out{background:rgba(138,155,176,.12);color:var(--muted);border:1px solid var(--line)}
   .rsvp-tag{font-size:.6rem;font-weight:700;color:#7fd6c0;border:1px solid rgba(127,214,192,.4);border-radius:20px;padding:1px 6px;vertical-align:middle;margin-left:4px}
+  .table-tag{font-size:.68rem;font-weight:800;color:#1a1204;background:var(--gold);border-radius:20px;padding:2px 9px;white-space:nowrap;display:inline-block;margin-bottom:4px}
   .empty{color:var(--muted);text-align:center;padding:36px 16px}
   /* sheet / modal */
   .sheet{position:fixed;inset:0;z-index:50;display:none;background:rgba(3,8,16,.72)}
@@ -140,9 +141,10 @@
       if(!rows.length){ $("#list").innerHTML='<div class="empty">Không tìm thấy khách phù hợp.</div>'; return; }
       $("#list").innerHTML=rows.map(function(g){
         var badge=g.checked_in?'<span class="badge in">&#10003; Đã điểm danh</span>':'<span class="badge out">Chưa</span>';
+        var tban=g.table_no?'<span class="table-tag">Bàn '+esc(g.table_no)+'</span>':'';
         return '<div class="g" data-id="'+g.id+'"><div><div class="nm">'+esc(g.full_name)+(g.from_rsvp?' <span class="rsvp-tag">RSVP</span>':'')+'</div>'
           +'<div class="meta">'+esc([g.org,g.title].filter(Boolean).join(" · ")||"—")+'</div></div>'
-          +'<div class="sp">'+badge+'</div></div>';
+          +'<div class="sp">'+tban+badge+'</div></div>';
       }).join("");
       Array.prototype.forEach.call(document.querySelectorAll(".g"), function(el){
         el.addEventListener("click", function(){ openGuest(el.getAttribute("data-id")); });
@@ -172,6 +174,7 @@
 
     $("#sheetBody").innerHTML =
       '<h2>'+esc(g.full_name)+'</h2>'
+      + (g.table_no?'<div class="table-tag" style="font-size:1rem;padding:6px 14px;margin:6px 0 2px">&#127869; Bàn '+esc(g.table_no)+'</div>':'')
       + '<div class="fld"><div class="k">Đơn vị · Chức danh</div><div class="v">'+esc([g.org,g.title].filter(Boolean).join(" · ")||"—")+'</div></div>'
       + '<div class="fld"><div class="k">Liên hệ</div><div class="v">'+esc([g.phone,g.email].filter(Boolean).join(" · ")||"—")+'</div></div>'
       + '<div class="fld"><div class="k">Phân công</div><div class="v">'+assigned+'</div></div>'

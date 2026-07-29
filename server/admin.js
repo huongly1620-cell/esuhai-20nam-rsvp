@@ -200,6 +200,72 @@ function mount(app) {
       return res.json({ ok: true, ...out });
     } catch (err) { return crmImport.importError(res, err, 'admin-import-crm'); }
   });
+
+  // Export guests as a CSV for Ly's seating tool (xep-ban.html). "Mã khách" =
+  // guest_ext_id so table numbers round-trip back via import-tables. "Hạng" is a
+  // best-effort default from tags — BTC edits it before seating.
+  app.get('/admin/api/export-seating.csv', requireAuth, async (req, res) => {
+    try {
+      const r = await pool.query(
+        `SELECT id, guest_ext_id, full_name, org, tags, note FROM crm_guests
+         WHERE deleted_at IS NULL ORDER BY full_name`);
+      const hang = (tags) => {
+        const t = (tags || '').toLowerCase();
+        if (/nội bộ|noi bo|nhân viên|nhan vien|học viên|hoc vien|\bbtc\b/.test(t)) return 'Nội bộ';
+        if (/vip/.test(t)) return 'VIP1';
+        return 'VIP2 - Hàng 3';
+      };
+      const diet = (note) => (/chay/i.test(note || '') ? 'Món chay' : 'Món mặn');
+      const header = ['Mã khách', 'Họ tên', 'Đơn vị', 'Hạng', 'Ẩm thực'];
+      const lines = [header.map(csvCell).join(',')];
+      for (const g of r.rows) {
+        lines.push([g.guest_ext_id || ('crm:' + g.id), g.full_name, g.org, hang(g.tags), diet(g.note)].map(csvCell).join(','));
+      }
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="ds-xep-ban.csv"');
+      return res.send('﻿' + lines.join('\r\n'));
+    } catch (err) {
+      console.error('[admin] export-seating failed:', err.message);
+      return res.status(500).json({ ok: false, error: 'export error' });
+    }
+  });
+
+  // Import table numbers (Ly's xep-ban CSV export) into crm_guests.table_no,
+  // matched by "Mã khách" (guest_ext_id, or crm:<id>). Idempotent.
+  app.post('/admin/api/import-tables', requireAuth, crmImport.upload.single('file'), async (req, res) => {
+    try {
+      const rows = crmImport.parseUpload(req);
+      if (!rows || rows.length < 2) return res.status(400).json({ ok: false, error: 'File trống.' });
+      const norm = (h) => String(h || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '');
+      const hdr = rows[0].map(norm);
+      const iMa = hdr.findIndex((h) => h.includes('makhach') || h.includes('maid') || h === 'ma');
+      const iBan = hdr.findIndex((h) => h.includes('soban') || h === 'ban' || h.includes('table'));
+      if (iMa < 0 || iBan < 0) return res.status(400).json({ ok: false, error: 'Cần cột "Mã khách" và "Số bàn".' });
+      let matched = 0; let unmatched = 0;
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        for (let r = 1; r < rows.length; r++) {
+          const ma = String(rows[r][iMa] || '').trim();
+          const ban = String(rows[r][iBan] || '').trim();
+          if (!ma) continue;
+          let upd;
+          if (ma.startsWith('crm:')) {
+            upd = await client.query('UPDATE crm_guests SET table_no=$1, updated_at=now() WHERE id=$2 AND deleted_at IS NULL', [ban || null, parseInt(ma.slice(4), 10)]);
+          } else {
+            upd = await client.query('UPDATE crm_guests SET table_no=$1, updated_at=now() WHERE guest_ext_id=$2 AND deleted_at IS NULL', [ban || null, ma]);
+          }
+          if (upd.rowCount > 0) matched++; else unmatched++;
+        }
+        await client.query('COMMIT');
+      } catch (e) { await client.query('ROLLBACK').catch(() => {}); client.release(); throw e; }
+      client.release();
+      return res.json({ ok: true, matched, unmatched, total: rows.length - 1 });
+    } catch (err) {
+      console.error('[admin] import-tables failed:', err.message);
+      return res.status(500).json({ ok: false, error: 'Nhập số bàn lỗi.' });
+    }
+  });
 }
 
 module.exports = { mount };

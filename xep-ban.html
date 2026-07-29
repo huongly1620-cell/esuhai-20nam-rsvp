@@ -77,8 +77,11 @@
     <div class="f"><label>VIP2 · Hàng 3</label><input id="c3" type="number" value="11" min="1"></div>
     <div class="f"><label>Nội bộ (người/bàn)</label><input id="c4" type="number" value="10" min="1"></div>
     <button class="btn btn-gold" id="calc">↻ Tính lại</button>
+    <button class="btn" id="loadCsv">↑ Nạp DS khách (CSV)</button>
+    <input type="file" id="loadFile" accept=".csv,text/csv" style="display:none">
     <button class="btn" id="exp">↓ Xuất CSV (khách → bàn)</button>
   </div>
+  <div id="loadMsg" style="margin:2px 0 10px;font-size:.82rem;color:var(--muted);line-height:1.5"></div>
 
   <div class="stat-grid" id="stats"></div>
   <div id="out"></div>
@@ -186,6 +189,49 @@ document.getElementById("exp").addEventListener("click",function(){
   var csv="﻿"+rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(",");}).join("\n");
   var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="xep_ban_gala.csv";a.click();
 });
+
+/* ===== Nạp DS khách thật (CSV từ /admin → "DS cho xếp bàn") ===== */
+function parseCSV(text){
+  var rows=[],row=[],f="",q=false;
+  for(var i=0;i<text.length;i++){var c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else { if(c==='"')q=true; else if(c===','){row.push(f);f="";} else if(c==='\n'){row.push(f);rows.push(row);row=[];f="";} else if(c!=='\r')f+=c; }
+  }
+  if(f.length||row.length){row.push(f);rows.push(row);}
+  return rows.filter(function(r){return r.some(function(v){return String(v||"").trim()!=="";});});
+}
+function normh(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g,"");}
+function mapTier(hang){
+  var h=normh(hang);
+  if(h.indexOf("noibo")>-1||h.indexOf("nhanvien")>-1||h.indexOf("hocvien")>-1||h==="nb"||h.indexOf("btc")>-1) return {cat:"Nội bộ",vip:""};
+  if(h.indexOf("hang3")>-1||h.indexOf("h3")>-1) return {vip:"VIP2 - Hàng 3",cat:"Khách mời"};
+  if(h.indexOf("hang2")>-1||h.indexOf("h2")>-1) return {vip:"VIP2 - Hàng 2",cat:"Khách mời"};
+  if(h.indexOf("vip1")>-1||h==="vip") return {vip:"VIP1",cat:"Khách mời"};
+  return null; // chưa rõ Hạng → không xếp, báo BTC
+}
+function loadGuestsCSV(text){
+  var rows=parseCSV(text); if(rows.length<2){ setMsg("File CSV trống hoặc không đọc được.","#ffb3a8"); return; }
+  var hdr=rows[0].map(normh);
+  var col=function(){var ks=[].slice.call(arguments);for(var k=0;k<ks.length;k++){var i=hdr.findIndex(function(h){return h.indexOf(ks[k])>-1;});if(i>-1)return i;}return -1;};
+  var iId=col("makhach","maid"),iNm=col("hoten","ten","name"),iOrg=col("donvi","org"),iHang=col("hang"),iDiet=col("amthuc","menu","diet");
+  if(iNm<0){ setMsg("Không thấy cột Họ tên trong CSV.","#ffb3a8"); return; }
+  var arr=[],unmapped=[];
+  for(var r=1;r<rows.length;r++){
+    var rec=rows[r],name=String(rec[iNm]||"").trim(); if(!name)continue;
+    var m=iHang>-1?mapTier(rec[iHang]):null;
+    var g={id:(iId>-1?String(rec[iId]||"").trim():"")||("row"+r),name:name,org:(iOrg>-1?String(rec[iOrg]||"").trim():"")||"—",title:"",diet:/chay/i.test(String(rec[iDiet]||""))?"Món chay":"Món mặn"};
+    if(m){ g.vip=m.vip; g.cat=m.cat; } else { g.vip=""; g.cat=""; unmapped.push(g); }
+    arr.push(g);
+  }
+  GUESTS=arr; assign();
+  var msg="✓ Đã nạp "+arr.length+" khách thật (thay dữ liệu mẫu).";
+  if(unmapped.length){ msg+=" ⚠ "+unmapped.length+" khách CHƯA rõ Hạng → chưa xếp bàn. BTC điền cột \"Hạng\" (VIP1 / VIP2 - Hàng 2 / VIP2 - Hàng 3 / Nội bộ) rồi nạp lại. Ví dụ: "+unmapped.slice(0,6).map(function(g){return g.name;}).join(", ")+(unmapped.length>6?"…":""); }
+  setMsg(msg, unmapped.length?"#ffb3a8":"var(--green)");
+}
+function setMsg(t,c){var el=document.getElementById("loadMsg");if(el){el.textContent=t;el.style.color=c||"var(--muted)";}}
+document.getElementById("loadCsv").addEventListener("click",function(){document.getElementById("loadFile").click();});
+document.getElementById("loadFile").addEventListener("change",function(){var f=this.files&&this.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){loadGuestsCSV(String(rd.result||""));};rd.readAsText(f,"utf-8");this.value="";});
+
 assign();
 </script>
 </body>

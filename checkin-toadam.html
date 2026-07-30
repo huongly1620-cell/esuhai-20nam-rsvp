@@ -1,0 +1,147 @@
+<!doctype html><html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Check-in Tọa đàm · Gala 20 Năm</title>
+<style>
+ :root{--nav:#0E1B31;--deep:#08111F;--gold:#d8b876;--gold-b:#f4e2b0;--cream:#f5efe1;--muted:#b9b096;--muted2:#8f886f;
+  --line:rgba(216,184,118,.2);--line2:rgba(216,184,118,.42);--card:rgba(255,255,255,.04);--green-ok:#43e08d;--amber:#f0b34a;--red:#e2493a;
+  --acc:#0F955A;--acc-dim:rgba(15,149,90,.12);--acc-glow:rgba(15,149,90,.3);}
+ *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+ body{margin:0;font-family:"Be Vietnam Pro","Segoe UI",system-ui,Arial,sans-serif;color:var(--cream);line-height:1.45;overflow-x:hidden;
+  background:radial-gradient(800px 460px at 88% -8%,var(--acc-glow),transparent 60%),linear-gradient(170deg,#0b1a30,#0b2330 55%,#08111F) fixed}
+ h1,h2,h3{font-family:"Playfair Display","Cambria",Georgia,serif;font-weight:600;margin:0}.num{font-variant-numeric:tabular-nums}
+ .top{position:sticky;top:0;z-index:30;backdrop-filter:blur(12px);background:linear-gradient(180deg,rgba(8,17,31,.95),rgba(8,17,31,.7));border-bottom:2px solid var(--acc);padding-top:env(safe-area-inset-top)}
+ .top-in{display:flex;align-items:center;gap:10px;padding:10px 14px}.logo{height:24px}
+ .ttl{font-weight:800;letter-spacing:.1em;font-size:.74rem;text-transform:uppercase;color:var(--acc)}
+ .lich{margin-left:auto;border:1px solid var(--line);background:rgba(5,13,24,.5);color:var(--cream);border-radius:8px;padding:7px 12px;font:inherit;font-size:.74rem;font-weight:600;cursor:pointer}
+ /* dashboard đếm */
+ .cnt{display:flex;align-items:center;gap:12px;padding:12px 14px}
+ .cnt .big{flex:1;text-align:center;border:1.5px solid var(--acc);border-radius:14px;background:var(--acc-dim);padding:10px}
+ .cnt .big .n{font-family:"Playfair Display",serif;font-size:1.9rem;line-height:1;color:var(--acc)}.cnt .big .n b{color:var(--muted);font-size:1.1rem}
+ .cnt .big .l{font-size:.6rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-top:3px}
+ .cnt .fbtn{flex:none;display:flex;flex-direction:column;gap:7px}
+ .fb{border:1px solid var(--line);background:rgba(5,13,24,.5);color:var(--muted);border-radius:20px;padding:8px 14px;font:inherit;font-size:.8rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;white-space:nowrap}
+ .fb .mk{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;display:inline-block}
+ .fb .xx{font-size:1rem;line-height:1}
+ .fb.came.on{background:var(--green-ok);border-color:var(--green-ok);color:#042a17}
+ .fb.no.on{background:var(--amber);border-color:var(--amber);color:#2a1e05}
+ /* search + quick */
+ .sr{padding:4px 14px 8px;position:sticky;top:52px;z-index:20;background:linear-gradient(180deg,rgba(11,26,48,.96),rgba(11,26,48,.6));backdrop-filter:blur(8px)}
+ .sr .box{position:relative}.sr input{width:100%;font:inherit;font-size:1rem;color:var(--cream);background:rgba(5,13,24,.6);border:1.5px solid var(--line);border-radius:12px;padding:13px 14px 13px 42px;outline:none}
+ .sr input:focus{border-color:var(--acc)}.sr .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
+ .quick{display:flex;gap:7px;padding:8px 14px 2px;overflow-x:auto;scrollbar-width:none}.quick::-webkit-scrollbar{display:none}
+ .qb{flex:none;border:1px solid var(--line);background:rgba(5,13,24,.4);color:var(--muted);border-radius:20px;padding:7px 13px;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap}
+ .qb.on{border-color:var(--acc);background:var(--acc);color:#04121f}
+ .hint{color:var(--muted2);font-size:.78rem;text-align:center;padding:6px}
+ .list{padding:4px 14px 40px;display:flex;flex-direction:column;gap:8px}
+ .gc{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px 11px;cursor:pointer}
+ .gc.done{border-color:rgba(67,224,141,.4);background:rgba(67,224,141,.06)}
+ .sd{width:9px;height:9px;border-radius:50%;flex:none;background:var(--amber)}.sd.came{background:var(--green-ok)}
+ .av{width:46px;height:46px;border-radius:10px;flex:none;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,#123f50,#0b2340);border:1px solid var(--line2);color:var(--gold-b);font-family:serif;font-size:1rem}
+ .av img{width:100%;height:100%;object-fit:cover}
+ .gm{flex:1;min-width:0}.gm .n1{font-family:serif;font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gm .n2{font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .tb{font-size:.64rem;font-weight:700;color:var(--acc);border:1px solid var(--line2);border-radius:8px;padding:3px 7px;white-space:nowrap;text-align:center}.tb b{font-family:serif;font-size:.88rem;display:block}
+ .gt{color:var(--green-ok);font-size:.68rem;font-weight:700;white-space:nowrap}
+ /* profile */
+ .pf{position:fixed;inset:0;z-index:60;background:linear-gradient(180deg,#0b1a30,#08111F);transform:translateY(100%);transition:transform .3s;overflow-y:auto}
+ .pf.show{transform:translateY(0)}
+ .pf-bar{position:sticky;top:0;display:flex;align-items:center;gap:10px;padding:12px 14px;background:linear-gradient(180deg,rgba(8,17,31,.95),transparent);border-bottom:1px solid var(--line)}
+ .pf-back{border:0;background:rgba(255,255,255,.08);color:var(--cream);width:38px;height:38px;border-radius:50%;font-size:1.1rem;cursor:pointer}
+ .pf-b{padding:22px 18px 46px;max-width:520px;margin:0 auto;text-align:center}
+ .pf-av{width:190px;height:190px;border-radius:18px;margin:0 auto;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,#123f50,#0b2340);border:2px solid var(--acc);color:var(--gold-b);font-family:serif;font-size:3.4rem;box-shadow:0 12px 34px rgba(0,0,0,.4)}
+ .pf-av img{width:100%;height:100%;object-fit:cover}
+ .pf-nm{font-family:serif;font-size:1.7rem;color:#fff;margin-top:14px;line-height:1.2}
+ .pf-rl{color:var(--muted);font-size:.92rem;margin-top:4px}.pf-rl b{color:var(--cream)}
+ .th{margin:16px auto;display:inline-flex;gap:22px;border:1.5px solid var(--acc);border-radius:16px;background:var(--acc-dim);padding:12px 26px}
+ .th .c .k{font-size:.58rem;text-transform:uppercase;letter-spacing:.18em;color:var(--muted)}.th .c .v{font-family:serif;font-size:2.4rem;color:var(--acc);line-height:1}
+ .facts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+ .ft{border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-size:.8rem;background:rgba(5,13,24,.4)}.ft .k{font-size:.55rem;text-transform:uppercase;color:var(--muted2)}.ft .v{color:var(--cream);font-weight:600}
+ .ft.chay .v{color:var(--green-ok)}
+ .info{text-align:left;border-top:1px solid var(--line);margin-top:6px}
+ .ir{display:flex;justify-content:space-between;gap:14px;padding:11px 2px;border-bottom:1px dashed var(--line);font-size:.9rem}.ir .k{color:var(--muted)}.ir .v{color:var(--cream);text-align:right;font-weight:500}
+ .cib{width:100%;border:0;border-radius:14px;padding:17px;font:inherit;font-size:1.05rem;font-weight:700;cursor:pointer;margin-top:20px;background:linear-gradient(180deg,#f0d999,#cfa758);color:#2a1e05;box-shadow:0 10px 26px rgba(216,184,118,.28);display:flex;align-items:center;justify-content:center;gap:10px}
+ .cidone{border:1.5px solid rgba(67,224,141,.5);border-radius:14px;padding:15px;background:rgba(67,224,141,.08);margin-top:20px}.cidone .t{color:var(--green-ok);font-weight:700}
+ .undo{margin-top:10px;width:100%;border:1px solid rgba(226,58,46,.3);background:transparent;color:#ff9a8f;border-radius:11px;padding:11px;font:inherit;font-weight:600;cursor:pointer}
+ /* lịch trình */
+ .sheet{position:fixed;inset:0;z-index:70;background:rgba(5,13,24,.75);display:none;align-items:flex-end}.sheet.show{display:flex}
+ .sheet-in{background:linear-gradient(180deg,#0b2330,#08111F);width:100%;max-height:82vh;overflow:auto;border-radius:18px 18px 0 0;border-top:2px solid var(--acc);padding:20px 18px 40px}
+ @media(min-width:600px){.sheet{align-items:center}.sheet-in{max-width:520px;margin:0 auto;border-radius:16px}}
+ .sheet h3{color:var(--acc);font-size:1.2rem;text-align:center;margin-bottom:4px}.sheet .sub{text-align:center;color:var(--muted);font-size:.82rem;margin-bottom:14px}
+ .si{display:flex;gap:12px;padding:11px 0;border-bottom:1px dashed var(--line)}.si .tm{font-family:serif;color:var(--acc);font-size:1.05rem;flex:none;width:110px}.si .d .n{color:var(--cream);font-weight:600}.si .d .s{color:var(--muted2);font-size:.78rem}
+ input[type=file]{display:none}
+</style></head><body>
+<header class="top"><div class="top-in">
+  <img class="logo" src="logo-esuhai-mark.png" alt=""><div class="ttl">CHECK-IN · Tọa đàm</div>
+  <button class="lich" id="lichBtn">&#128197; Lịch trình</button>
+</div>
+<div class="cnt">
+  <div class="big"><div class="n num"><span id="cDone">0</span><b>/16</b></div><div class="l">đã đến / tổng khách</div></div>
+  <div class="fbtn">
+    <button class="fb came" data-f="came"><span class="mk"></span> Đã đến</button>
+    <button class="fb no" data-f="no"><span class="xx">&#10005;</span> Chưa đến</button>
+  </div>
+</div></header>
+<div class="sr"><div class="box"><span class="ic">&#8981;</span><input id="q" type="search" placeholder="Gõ tên khách (không dấu cũng được)…"></div></div>
+<div class="quick" id="quick">
+  <button class="qb" data-q="vip">★ VIP</button><button class="qb" data-q="nhat">🎌 Khách Nhật</button>
+  <button class="qb" data-q="noi">Gia đình-Nội</button><button class="qb" data-q="ngoai">Gia đình-Ngoại</button>
+</div>
+<div class="hint" id="hint"></div>
+<main class="list" id="list"></main>
+
+<section class="pf" id="pf"><div class="pf-bar"><button class="pf-back" id="pfBack">&#8592;</button><span style="color:var(--acc);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase">Hồ sơ khách</span></div><div class="pf-b" id="pfBody"></div></section>
+<div class="sheet" id="sheet"><div class="sheet-in"><h3>Tọa đàm · 08.08.2026</h3><div class="sub">Tầng 7 · Sảnh SOL · GEM Center</div><div class="si"><div class="tm">14:30</div><div class="d"><div class="n">Đón tiếp khách mời</div><div class="s">Tầng 7 · Sảnh SOL</div></div></div><div class="si"><div class="tm">15:00</div><div class="d"><div class="n">Diễn thuyết đặc biệt</div><div class="s">Kiến tạo hệ sinh thái cùng phát triển</div></div></div><div class="si"><div class="tm">16:30</div><div class="d"><div class="n">Thông điệp kết thúc Tọa đàm</div></div></div><div style="text-align:center;margin-top:14px"><button class="lich" onclick="document.getElementById('sheet').classList.remove('show')">Đóng</button></div></div></div>
+<input type="file" id="cam" accept="image/*" capture="environment">
+
+<script>
+var G=[{"id": "K001", "name": "Bà Nguyễn Thị Hoài Thu", "title": "- Nguyên Ủy viên Ban chấp hành TW Đảng; \n- Nguyên Ủy viên Ủy ban Thường vụ Quốc hội; \n- Nguyên Chủ nhiệm Ủy ban về các vấn đề xã hội của Quốc hội", "org": "", "vip": "VIP1", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "Vũ Ngọc Giang", "role": "Người đại diện", "note": "", "phanloai": "Khách VIP", "table": "1", "seat": "1", "photo": "Bà Nguyễn Thị Hoài Thu.jpg"}, {"id": "K002", "name": "Bà Trần Thị Anh Vũ", "title": "Phó Chủ tịch", "org": "Hội những người đồng hương tỉnh Đồng Tháp", "vip": "", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "Vũ Ngọc Giang", "role": "Khách đi cùng", "note": "Đi cùng cô Hoài Thu", "phanloai": "Khách thường", "table": "1", "seat": "2", "photo": "Bà Đồng Thị Bạch Tuyết.jpg"}, {"id": "K003", "name": "Bà Đồng Thị Bạch Tuyết", "title": "- Chủ tịch Hội khuyến học tỉnh Đồng Tháp\n- Nguyên Giám đốc Sở giáo dục Tiền Giang (cũ)", "org": "", "vip": "", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "Vũ Ngọc Giang", "role": "Khách đi cùng", "note": "Đi cùng cô Hoài Thu", "phanloai": "Khách thường", "table": "1", "seat": "3", "photo": "Bà Trần Thị Anh Vũ.jpg"}, {"id": "K006", "name": "Thầy Nguyễn Đức Hòe", "title": "Hiệu trưởng Nhật ngữ Đông Du", "org": "Trường Nhật ngữ Đông Du", "vip": "", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "Quang Tịnh Nghi", "role": "Người đại diện", "note": "", "phanloai": "Khách VIP", "table": "1", "seat": "4", "photo": "Thầy Nguyễn Đức Hòe.jpg"}, {"id": "K023", "name": "Ông Lê Văn Thanh", "title": "- Chủ tịch Hiệp hội XKLĐ Việt Nam\n- Nguyên Thứ trưởng Bộ Nội vụ", "org": "Vamas", "vip": "VIP1", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "Việt Trinh", "role": "Người đại diện", "note": "", "phanloai": "Khách VIP", "table": "1", "seat": "5", "photo": "Ông Lê Văn Thanh.jpg"}, {"id": "K025", "name": "Ông Doãn Mậu Diệp", "title": "- Nguyên Chủ tịch Hiệp hội XKLĐ Việt Nam\n- Nguyên Thứ trưởng Bộ Lao động - Thương binh và Xã hội", "org": "Vamas", "vip": "VIP1", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "Việt Trinh", "role": "Người đại diện", "note": "", "phanloai": "Khách VIP", "table": "1", "seat": "6", "photo": "Ông Doãn Mậu Diệp.jpg"}, {"id": "K026", "name": "Ông Nguyễn Lương Trào", "title": "- Nguyên Chủ tịch Hiệp hội XKLĐ Việt Nam\n- Nguyên Thứ trưởng Bộ Lao động - Thương binh và Xã hội", "org": "Vamas", "vip": "VIP1", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "Việt Trinh", "role": "Người đại diện", "note": "", "phanloai": "Khách VIP", "table": "1", "seat": "7", "photo": "Ông Nguyễn Lương Trào.jpg"}, {"id": "K027", "name": "Ông Nguyễn Xuân An", "title": "Nguyên Phó Chủ tịch Hiệp hội Xuất khẩu Lao động Việt Nam", "org": "Vamas", "vip": "VIP1", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "Việt Trinh", "role": "Người đại diện", "note": "", "phanloai": "Khách VIP", "table": "1", "seat": "8", "photo": "Ông Nguyễn Xuân An.jpg"}, {"id": "K034", "name": "Ông Đào Ngọc Dung", "title": "- Nguyên Bộ Trưởng Bộ Dân tộc và Tôn giáo\n- Nguyên Bộ trưởng Bộ Lao động – Thương binh và Xã hội", "org": "", "vip": "VIP1", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "", "role": "Người đại diện", "note": "", "phanloai": "Khách VIP", "table": "2", "seat": "1", "photo": "Ông Đào Ngọc Dung.jpg"}, {"id": "K035", "name": "Phu Nhân ông Đào Ngọc Dung", "title": "", "org": "", "vip": "VIP1", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "", "role": "Khách đi cùng", "note": "Phu nhân ông Đào Ngọc Dung", "phanloai": "Khách VIP", "table": "2", "seat": "2", "photo": ""}, {"id": "K061", "name": "Ông Nguyễn Ngọc Trung", "title": "Giám đốc", "org": "CÔNG TY TNHH CƠ KHÍ CHÍNH XÁC OKUTOMI - NGUYỄN", "vip": "", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "Minh Duy/ Biên tập Alesu", "role": "Người đại diện", "note": "", "phanloai": "Khách thường", "table": "2", "seat": "3", "photo": ""}, {"id": "K062", "name": "Ông Nguyễn Ngọc Dũng", "title": "Giám đốc", "org": "Công ty Cổ phần Cơ khí công nghiệp VNP", "vip": "", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "Minh Duy/ Biên tập Alesu", "role": "Người đại diện", "note": "", "phanloai": "Khách thường", "table": "2", "seat": "4", "photo": ""}, {"id": "K063", "name": "Ông Nguyễn Ngọc Hiếu", "title": "Giám đốc", "org": "Công ty TNHH MTV V.N.T Việt Nam", "vip": "", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "Minh Duy/ Biên tập Alesu", "role": "Người đại diện", "note": "", "phanloai": "Khách thường", "table": "2", "seat": "5", "photo": ""}, {"id": "K065", "name": "Phạm Đình Bắc", "title": "Nguyên Trưởng phòng Pháp chế", "org": "", "vip": "", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "Việt Trinh", "role": "Người đại diện", "note": "", "phanloai": "Khách thường", "table": "2", "seat": "6", "photo": ""}, {"id": "K067", "name": "Trần Thị Thùy Trang", "title": "", "org": "", "vip": "", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "", "role": "Người đại diện", "note": "Phu nhân TGĐ | Đã xác nhận thông tin qua QR code", "phanloai": "Nội bộ - Nhân viên", "table": "2", "seat": "7", "photo": ""}, {"id": "K068", "name": "Lê Vi Trang (Mika)", "title": "", "org": "", "vip": "", "buoi": "Tọa đàm + Gala", "diet": "Món mặn", "handler": "", "role": "Người đại diện", "note": "Con gái TGĐ | Đã xác nhận thông tin qua QR code", "phanloai": "Nội bộ - Nhân viên", "table": "2", "seat": "8", "photo": ""}];var CI_KEY="esuhai20_checkin";var SESS="Tọa đàm";
+function ci(){try{return JSON.parse(localStorage.getItem(CI_KEY)||"{}");}catch(e){return {};}}
+function saveCi(o){try{localStorage.setItem(CI_KEY,JSON.stringify(o));}catch(e){}}
+var CK=ci();
+function $(s){return document.querySelector(s);}
+function norm(s){var t=String(s||"").toLowerCase().normalize("NFD"),o="";for(var i=0;i<t.length;i++){var c=t.charCodeAt(i);if(c<0x300||c>0x36f)o+=t[i];}return o.replace(/đ/g,"d");}
+function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function ini(n){var p=String(n||"").replace(/^(Bà|Ông|Cô|Chú|Anh|Chị|Em|Thầy|Gia đình|Ms\.|Mr\.)\s+/,"").trim().split(/\s+/);return(((p[p.length-2]||p[0]||"")[0]||"")+((p[p.length-1]||"")[0]||"")).toUpperCase();}
+function isKanji(n){return /[぀-ヿ㐀-䶿一-鿿]/.test(String(n||""));}
+function came(g){var c=CK[g.id];return c&&c.at?c.at:"";}
+function fmt(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+var st={q:"",quick:"",f:""},curId=null;
+function counter(){var n=G.filter(came).length;$("#cDone").textContent=n;}
+function match(g){
+ if(st.f==="came"&&!came(g))return false; if(st.f==="no"&&came(g))return false;
+ if(st.quick==="vip"&&String(g.vip||"").indexOf("VIP")===-1&&String(g.vip||"").indexOf("VVIP")===-1)return false;
+ if(st.quick==="nhat"&&!isKanji(g.name))return false;
+ if(st.quick==="noi"&&String(g.phanloai||"").indexOf("Nội")===-1)return false;
+ if(st.quick==="ngoai"&&String(g.phanloai||"").indexOf("Ngoại")===-1)return false;
+ if(st.q){var h=norm(g.name+" "+g.title+" "+g.org);if(h.indexOf(norm(st.q))===-1)return false;}
+ return true;}
+function renderList(){var rows=G.filter(match);
+ $("#hint").textContent=(st.q||st.quick||st.f)?rows.length+" kết quả":"Tổng "+G.length+" khách "+SESS;
+ $("#list").innerHTML=rows.map(function(g){var cm=came(g);
+  return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'"><span class="sd'+(cm?" came":"")+'"></span>'
+   +'<div class="av">'+(g.photo?'':esc(ini(g.name)))+'</div><div class="gm"><div class="n1">'+esc(g.name)+'</div><div class="n2">'+esc(g.title||g.org||"")+'</div></div>'
+   +(cm?'<span class="gt">&#9711; '+cm+'</span>':'<span class="tb">BÀN<b>'+esc(g.table)+'</b></span>')+'</div>';}).join("")||'<div class="hint">Không tìm thấy.</div>';}
+function openPf(id){var g=G.filter(function(x){return x.id===id;})[0];if(!g)return;curId=id;var cm=came(g);
+ var dcls=g.diet==="Món chay"?"chay":"";
+ var ciBox=cm?'<div class="cidone"><div class="t">&#9711; Đã check-in lúc '+cm+'</div></div><button class="undo" data-undo="'+esc(g.id)+'">Huỷ check-in</button>'
+   :'<button class="cib" data-ci="'+esc(g.id)+'">&#9711;&nbsp; Check-in — Khách đã đến</button>';
+ $("#pfBody").innerHTML='<div class="pf-av">'+(g.photo?'':esc(ini(g.name)))+'</div>'
+  +'<div class="pf-nm">'+esc(g.name)+'</div><div class="pf-rl"><b>'+esc(g.title||"—")+'</b>'+(g.org?'<br>'+esc(g.org):'')+'</div>'
+  +'<div class="th"><div class="c"><div class="k">Bàn</div><div class="v num">'+esc(g.table)+'</div></div><div class="c"><div class="k">Ghế</div><div class="v num">'+esc(g.seat)+'</div></div></div>'
+  +'<div class="facts">'+(g.vip?'<div class="ft"><div class="k">Hạng</div><div class="v">'+esc(g.vip)+'</div></div>':'')+'<div class="ft"><div class="k">Buổi</div><div class="v">'+esc(g.buoi)+'</div></div><div class="ft '+dcls+'"><div class="k">Ẩm thực</div><div class="v">'+esc(g.diet||"—")+'</div></div></div>'
+  +'<div class="info"><div class="ir"><span class="k">Người phụ trách</span><span class="v">'+esc(g.handler||"—")+'</span></div>'
+  +'<div class="ir"><span class="k">Vai trò / đi cùng</span><span class="v">'+esc(g.role||"—")+(g.note?' · '+esc(g.note):'')+'</span></div>'
+  +'<div class="ir"><span class="k">SĐT</span><span class="v">••• (đã ẩn)</span></div>'
+  +'<div class="ir"><span class="k">Mã khách</span><span class="v">'+esc(g.id)+'</span></div></div>'+ciBox;
+ $("#pf").classList.add("show");document.body.style.overflow="hidden";}
+$("#list").addEventListener("click",function(e){var c=e.target.closest(".gc");if(c)openPf(c.getAttribute("data-id"));});
+$("#pfBack").addEventListener("click",function(){$("#pf").classList.remove("show");document.body.style.overflow="";});
+$("#pfBody").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+ if(b.getAttribute("data-ci")){var id=b.getAttribute("data-ci");CK[id]={at:fmt(new Date().toISOString())};saveCi(CK);counter();openPf(id);renderList();}
+ if(b.getAttribute("data-undo")){var id=b.getAttribute("data-undo");if(confirm("Huỷ check-in?")){delete CK[id];saveCi(CK);counter();openPf(id);renderList();}}});
+$("#q").addEventListener("input",function(e){st.q=e.target.value;renderList();});
+$("#quick").addEventListener("click",function(e){var b=e.target.closest(".qb");if(!b)return;var q=b.getAttribute("data-q");st.quick=(st.quick===q?"":q);document.querySelectorAll(".qb").forEach(function(x){x.classList.remove("on");});if(st.quick)b.classList.add("on");renderList();});
+document.querySelectorAll(".fb").forEach(function(b){b.addEventListener("click",function(){var f=b.getAttribute("data-f");st.f=(st.f===f?"":f);document.querySelectorAll(".fb").forEach(function(x){x.classList.remove("on");});if(st.f)b.classList.add("on");renderList();});});
+$("#lichBtn").addEventListener("click",function(){$("#sheet").classList.add("show");});
+$("#sheet").addEventListener("click",function(e){if(e.target===this)this.classList.remove("show");});
+counter();renderList();
+</script></body></html>

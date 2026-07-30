@@ -31,6 +31,11 @@ admin.mount(app);
 // CRM đón tiếp (magic-link auth + RBAC + MinIO) — fully separate realm
 crm.mount(app);
 
+// One SoT (E08-D019): the mock crm.html is no longer an operational tool.
+// Redirect it to the real /crm app BEFORE static can serve the file. The file
+// stays in the repo (R0 layout kept) but its 116-guest data was emptied.
+app.get(['/crm.html', '/crm.htm'], (req, res) => res.redirect(302, '/crm'));
+
 // Do not expose backend source / internal docs / vcs / fixtures as static assets.
 const BLOCKED = ['/server', '/reports', '/apps-script', '/tools', '/.git', '/fixtures', '/docker-compose.crm.yml'];
 app.use((req, res, next) => {

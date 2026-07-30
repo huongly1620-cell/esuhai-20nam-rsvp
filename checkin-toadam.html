@@ -96,7 +96,7 @@ function tagArr(s){return String(s||"").split(",").map(function(x){return x.trim
 function vipOf(a){for(var i=0;i<a.length;i++)if(/^V?VIP/i.test(a[i]))return a[i];return"";}
 function buoiOf(a){var b=[];if(a.indexOf("toa-dam")>-1)b.push("Tọa đàm");if(a.indexOf("gala")>-1)b.push("Gala");return b.join(" + ");}
 function parseNote(s){var o={};String(s||"").split(" · ").forEach(function(p){var k=(p.split(":")[0]||"").trim(),v=p.slice(p.indexOf(":")+1).trim();if(/Ẩm thực/.test(k))o.diet=v;else if(/Vai trò/.test(k))o.role=v;else if(/^S2/.test(k))o.handler=v;else if(/Số bàn/.test(k))o.seat=v;});return o;}
-function mapRow(r){var a=tagArr(r.tags);return{id:String(r.id),name:r.full_name,title:r.title||"",org:r.org||"",table:r.table_no||"",_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(a),phanloai:(a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),seat:"",diet:"",handler:"",role:"",note:"",photo:"",_enriched:false};}
+function mapRow(r){var a=tagArr(r.tags);return{id:String(r.id),name:r.full_name,title:r.title||"",org:r.org||"",table:r.table_no||"",_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(a),phanloai:(a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),seat:"",diet:"",handler:"",role:"",note:"",photo:r.photo_url||"",_enriched:false};}
 function byId(id){for(var i=0;i<G.length;i++)if(G[i].id===String(id))return G[i];return null;}
 function $(s){return document.querySelector(s);}
 function norm(s){var t=String(s||"").toLowerCase().normalize("NFD"),o="";for(var i=0;i<t.length;i++){var c=t.charCodeAt(i);if(c<0x300||c>0x36f)o+=t[i];}return o.replace(/đ/g,"d");}

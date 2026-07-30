@@ -42,10 +42,14 @@ function mount(app, requireCrmAuth, requireRole) {
       const r = await pool.query(
         `SELECT g.id, g.full_name, g.phone, g.org, g.title, g.table_no, g.tags,
                 (g.response_id IS NOT NULL) AS from_rsvp,
-                (ci.guest_id IS NOT NULL) AS checked_in, ci.checked_in_at, ci.actor_email AS checked_in_by
+                (ci.guest_id IS NOT NULL) AS checked_in, ci.checked_in_at, ci.actor_email AS checked_in_by,
+                CASE WHEN p.id IS NULL THEN NULL ELSE '/crm/photos/' || p.id END AS photo_url
          FROM crm_guests g
          ${join}
          LEFT JOIN crm_check_ins ci ON ci.guest_id = g.id
+         LEFT JOIN LATERAL (
+           SELECT ph.id FROM crm_photos ph WHERE ph.guest_id = g.id ORDER BY ph.created_at DESC LIMIT 1
+         ) p ON TRUE
          ${'WHERE ' + conds.join(' AND ')}
          ORDER BY g.full_name ASC LIMIT $${params.length}`, params);
       return res.json({ ok: true, rows: r.rows });

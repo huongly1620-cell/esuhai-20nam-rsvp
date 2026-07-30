@@ -59,7 +59,8 @@
   .row{display:flex;align-items:center;gap:10px;padding:9px 13px;border-bottom:1px solid var(--line);cursor:pointer}
   .row:hover{background:rgba(216,184,118,.06)}.row.sel{background:rgba(216,184,118,.13);border-left:3px solid var(--gold)}
   .st-dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--amber)}.st-dot.came{background:var(--green-ok)}
-  .av{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;background:linear-gradient(160deg,#123f50,#0b2340);border:1px solid var(--line2);color:var(--gold-bright);font-family:serif;font-size:.85rem}
+  .av{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;background:linear-gradient(160deg,#123f50,#0b2340);border:1px solid var(--line2);color:var(--gold-bright);font-family:serif;font-size:.85rem;overflow:hidden;position:relative}
+  .av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .row .nm{flex:1;min-width:0}.row .nm .n1{font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.row .nm .n2{color:var(--muted2);font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .rb{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none}
   .tag{font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap}
@@ -67,7 +68,8 @@
   .tag.came{color:#042a17;background:var(--green-ok)}.tag.no{color:var(--amber);border:1px solid rgba(240,179,74,.4)}.tag.ban{color:#1a1204;background:var(--gold);font-weight:800}
   .detail{flex:1;overflow-y:auto;padding:18px 20px 50px;min-width:0;max-height:70vh}
   .empty{display:grid;place-items:center;height:100%;color:var(--muted);text-align:center;padding:30px}
-  .dhead{display:flex;gap:14px;align-items:center;margin-bottom:8px}.dav{width:56px;height:56px;border-radius:14px;flex:none;display:grid;place-items:center;background:linear-gradient(160deg,#123f50,#0b2340);border:1px solid var(--line2);color:var(--gold-bright);font-family:serif;font-size:1.3rem}
+  .dhead{display:flex;gap:14px;align-items:center;margin-bottom:8px}.dav{width:56px;height:56px;border-radius:14px;flex:none;display:grid;place-items:center;background:linear-gradient(160deg,#123f50,#0b2340);border:1px solid var(--line2);color:var(--gold-bright);font-family:serif;font-size:1.3rem;overflow:hidden;position:relative}
+  .dav img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .ci-on{border:1px solid rgba(67,224,141,.4);background:rgba(67,224,141,.1);color:var(--green-ok);border-radius:10px;padding:11px 14px;font-size:.9rem;margin:12px 0}
   .fld2{margin:12px 0}.fld2 .k{font-size:.58rem;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);margin-bottom:4px}.fld2 .v{color:var(--text)}
   input.f,select.f,textarea.f{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--inp);color:var(--text);font:inherit}
@@ -233,7 +235,7 @@
         +(g.from_rsvp?'<span class="tag rsvp">RSVP</span>':'')
         +(g.__dup?'<span class="tag dup">Trùng</span>':'');
       return '<div class="row'+(String(g.id)===String(curId)?" sel":"")+'" data-id="'+g.id+'">'+st
-        +'<div class="av">'+esc(initials(g.full_name))+'</div>'
+        +'<div class="av">'+(g.photo_url?'<img src="'+esc(g.photo_url)+'" loading="lazy" alt="" onerror="this.remove()">':'')+esc(initials(g.full_name))+'</div>'
         +'<div class="nm"><div class="n1">'+esc(g.full_name)+'</div><div class="n2">'+esc([g.org,g.title].filter(Boolean).join(" · ")||"—")+'</div></div>'
         +'<div class="rb">'+tags+'</div></div>';
     }).join("");
@@ -266,7 +268,7 @@
     var photos=(j.photos||[]).map(function(p){return '<img src="'+esc(p.url)+'" loading="lazy" alt="ảnh">';}).join("")||'<span class="hint">Chưa có ảnh.</span>';
     var inter=(j.interactions||[]).map(function(x){return '<div class="inter"><div>'+esc(x.body)+'</div><div class="m">'+esc(x.kind)+' · '+esc(x.actor_email)+' · '+esc(fmt(x.created_at))+'</div></div>';}).join("")||'<div class="inter m">Chưa có tương tác.</div>';
     $("#detail").innerHTML=
-      '<div class="dhead"><div class="dav">'+esc(initials(g.full_name))+'</div><div><h2 style="font-size:1.2rem">'+esc(g.full_name)+'</h2>'
+      '<div class="dhead"><div class="dav">'+((j.photos&&j.photos[0])?'<img src="'+esc(j.photos[0].url)+'" loading="lazy" alt="" onerror="this.remove()">':'')+esc(initials(g.full_name))+'</div><div><h2 style="font-size:1.2rem">'+esc(g.full_name)+'</h2>'
         +'<div class="hint" style="margin-top:2px">'+esc([g.org,g.title].filter(Boolean).join(" · ")||"—")+'</div></div>'
         +(g.table_no?'<span class="tag ban" style="margin-left:auto;font-size:.8rem;padding:5px 12px">🍽 Bàn '+esc(g.table_no)+'</span>':'')+'</div>'
       +ciBlock

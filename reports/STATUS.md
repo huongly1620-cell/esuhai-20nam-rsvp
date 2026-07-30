@@ -5,6 +5,14 @@
 
 ## Deploy log — mới nhất
 
+**2026-07-30 · E08-D019 Một SoT: cắt 3 page mock — ✅ LIVE trên production (SHA `2ade14e`)**
+SoT = `/crm` + Postgres. Gate 1 PASS (rỗng data · redirect 302 · banner) · **Gate 2 §B7 PASS 7/7** (QC độc lập ≠ worker, 0 tên khách còn nhúng) · `railway up` · smoke prod xanh.
+- `crm.html` → **302 → /crm** (route trước static); `var SEED=[]`.
+- `checkin-toadam/gala.html` → **banner đỏ** «BẢN THIẾT KẾ — điểm danh thật /crm» + nút /crm; `var G=[]` (trước đây serve DS VIP **không-auth** → nay hết lộ PII).
+- Không đụng `/crm`,`/admin`,`/api/rsvp`,`dang-ky`,`xep-ban`; `/crm/classic` vẫn đường lùi.
+Smoke prod: crm.html 302 (0 guest-data) · 2 checkin 200+banner+0 tên · /crm//crm/classic/dang-ky/xep-ban/admin/health 200 · /admin/api & /crm/me 401.
+🔎 Follow-up (Gate 2 nêu, không chặn): `crm-app-v2.html` nav vẫn link ra 2 page check-in mock — dọn ở vé sau để dứt điểm "một SoT".
+
 **2026-07-30 · E08-D018 data 116 + ảnh TGĐ — ✅ LIVE trên production (SHA `1d4229d` + UI deploy)**
 anh xác nhận UI D017 OK + lệnh chạy (Ly chưa chốt, chấp nhận vì script idempotent). Đã chạy prod:
 - **Merge importer** `--commit`: 104 update · 10 insert · 2 ambiguous(→BTL). Guests **144 → 154** (+10, KHÔNG nhân đôi 260); **114 kcode-tagged**. Dry prod khớp Gate 2.

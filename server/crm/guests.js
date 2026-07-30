@@ -12,10 +12,16 @@ const PATCH_WHITELIST = ['full_name', 'phone', 'email', 'org', 'title', 'note', 
 
 function mount(app, requireCrmAuth, requireRole) {
   // ---- search (staff sees all; ?mine=1 filters to actor's assignments) ----
+  // Session tags written by the D018 importer (Wave A uses tags, not a schema
+  // column — see E08-D020). Only these two are filterable; anything else 400s.
+  const SESSION_TAGS = { 'toa-dam': 'toa-dam', gala: 'gala' };
+
   app.get('/crm/guests', requireCrmAuth, async (req, res) => {
     const q = String(req.query.q || '').trim();
     const mine = String(req.query.mine || '') === '1';
-    const limit = Math.min(200, Math.max(1, parseInt(req.query.limit, 10) || 50));
+    const session = String(req.query.session || '').trim();
+    if (session && !SESSION_TAGS[session]) return res.status(400).json({ ok: false, error: 'session không hợp lệ (toa-dam|gala).' });
+    const limit = Math.min(1000, Math.max(1, parseInt(req.query.limit, 10) || 50));
     try {
       const params = []; const conds = ['g.deleted_at IS NULL'];
       let join = '';
@@ -23,13 +29,18 @@ function mount(app, requireCrmAuth, requireRole) {
         params.push('%' + q + '%');
         conds.push(`(g.full_name ILIKE $${params.length} OR g.phone_norm ILIKE $${params.length} OR g.org ILIKE $${params.length})`);
       }
+      if (session) {
+        // exact tag match inside the comma-separated tags string (no substring bleed).
+        params.push('%,' + SESSION_TAGS[session] + ',%');
+        conds.push(`(',' || COALESCE(g.tags,'') || ',') ILIKE $${params.length}`);
+      }
       if (mine) {
         params.push(req.actor.email);
         join = `JOIN crm_assignments a ON a.guest_id = g.id AND a.staff_email = $${params.length}`;
       }
       params.push(limit);
       const r = await pool.query(
-        `SELECT g.id, g.full_name, g.phone, g.org, g.title, g.table_no,
+        `SELECT g.id, g.full_name, g.phone, g.org, g.title, g.table_no, g.tags,
                 (g.response_id IS NOT NULL) AS from_rsvp,
                 (ci.guest_id IS NOT NULL) AS checked_in, ci.checked_in_at, ci.actor_email AS checked_in_by
          FROM crm_guests g

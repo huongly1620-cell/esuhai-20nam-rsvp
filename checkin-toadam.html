@@ -65,14 +65,14 @@
  input[type=file]{display:none}
 </style></head><body>
 <!-- E08-D019 một SoT: bản thiết kế, không phải công cụ điểm danh thật -->
-<div style="position:sticky;top:0;z-index:99999;background:#c0161d;color:#fff;font-family:system-ui,'Segoe UI',Arial,sans-serif;padding:10px 14px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.3)">⚠ BẢN THIẾT KẾ — không điểm danh tại đây. Điểm danh thật: <b>/crm</b><a href="/crm" style="background:#fff;color:#c0161d;text-decoration:none;padding:5px 12px;border-radius:6px;font-weight:700">Mở /crm →</a></div>
+<div style="position:sticky;top:0;z-index:99999;background:#0f955a;color:#fff;font-family:system-ui,'Segoe UI',Arial,sans-serif;padding:8px 14px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:13px;font-weight:600">✔ Đã nối <b>/crm</b> · dữ liệu SoT · điểm danh ghi thật<a href="/crm" style="background:rgba(255,255,255,.9);color:#0f955a;text-decoration:none;padding:4px 10px;border-radius:6px;font-weight:700">Mở /crm</a></div>
 <header class="top"><div class="top-in">
   <img class="logo" src="logo-esuhai-mark.png" alt=""><div class="ttl" data-i="ci">CHECK-IN · Tọa đàm</div>
   <button class="lang" id="langBtn">日本語</button>
   <button class="lich" id="lichBtn" data-i="lich">📅 Lịch trình</button>
 </div>
 <div class="cnt">
-  <div class="big"><div class="cl" data-i="came_label">ĐÃ ĐẾN</div><div class="cn"><span id="cDone">0</span><b>/16</b></div><div class="cs" data-i="guests">Khách tham dự</div></div>
+  <div class="big"><div class="cl" data-i="came_label">ĐÃ ĐẾN</div><div class="cn"><span id="cDone">0</span><b>/<span id="cTot">0</span></b></div><div class="cs" data-i="guests">Khách tham dự</div></div>
   <div class="fbtn"><button class="fb came" data-f="came"><span class="mk"></span> <span data-i="btn_came">Đã đến</span></button><button class="fb no" data-f="no"><span class="xx">&#10005;</span> <span data-i="btn_no">Chưa đến</span></button></div>
 </div></header>
 <div class="sr"><div class="box"><span class="ic">&#8981;</span><input id="q" type="search" placeholder="Gõ tên khách (không dấu cũng được)…"></div></div>
@@ -85,21 +85,29 @@
 <div class="sheet" id="sheet"><div class="sheet-in"><h3>Tọa đàm · 08.08.2026</h3><div class="sub">Tầng 7 · Sảnh SOL · GEM Center</div><div class="si"><div class="tm">14:30</div><div class="d"><div class="n">Đón tiếp khách mời</div><div class="s">Tầng 7 · Sảnh SOL</div></div></div><div class="si"><div class="tm">15:00</div><div class="d"><div class="n">Diễn thuyết đặc biệt</div></div></div><div class="si"><div class="tm">16:30</div><div class="d"><div class="n">Thông điệp kết thúc</div></div></div><div style="text-align:center;margin-top:14px"><button class="lich" id="schClose" data-i="close">Đóng</button></div></div></div>
 <input type="file" id="cam" accept="image/*" capture="environment">
 <script>
-var G=[] /* R0 data removed E08-D019: SoT = /crm */;var CI_KEY="esuhai20_checkin";var SESS="Tọa đàm";
+var G=[];var SESSION="toa-dam";var SESS="Tọa đàm"; /* E08-D020: SoT = /crm API, filter theo tag buổi */
 var T={"vn": {"ci": "CHECK-IN · Tọa đàm", "lich": "📅 Lịch trình", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Tọa đàm", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)", "makhach": "Mã khách", "cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in", "close": "Đóng"}, "jp": {"ci": "受付 · 座談会", "lich": "📅 式次第", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "座談会 ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)", "makhach": "ゲストID", "cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消", "close": "閉じる"}};var LANG=localStorage.getItem("ci_lang")||"vn";
 function t(k,rep){var s=(T[LANG]&&T[LANG][k])||T.vn[k]||k;if(rep)for(var x in rep)s=s.replace("{"+x+"}",rep[x]);return s;}
-function ci(){try{return JSON.parse(localStorage.getItem(CI_KEY)||"{}");}catch(e){return {};}}
-function saveCi(o){try{localStorage.setItem(CI_KEY,JSON.stringify(o));}catch(e){}}
-var CK=ci();
+// --- API layer (SoT = /crm + Postgres) — thay hẳn localStorage check-in ---
+async function api(u,o){o=o||{};o.credentials="same-origin";return fetch(u,o);}
+async function jget(u){var r=await api(u);if(!r.ok)throw{status:r.status};return r.json();}
+async function jpost(u){var r=await api(u,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});var j={};try{j=await r.json();}catch(e){}return{ok:r.ok,status:r.status,body:j};}
+function tagArr(s){return String(s||"").split(",").map(function(x){return x.trim();}).filter(Boolean);}
+function vipOf(a){for(var i=0;i<a.length;i++)if(/^V?VIP/i.test(a[i]))return a[i];return"";}
+function buoiOf(a){var b=[];if(a.indexOf("toa-dam")>-1)b.push("Tọa đàm");if(a.indexOf("gala")>-1)b.push("Gala");return b.join(" + ");}
+function parseNote(s){var o={};String(s||"").split(" · ").forEach(function(p){var k=(p.split(":")[0]||"").trim(),v=p.slice(p.indexOf(":")+1).trim();if(/Ẩm thực/.test(k))o.diet=v;else if(/Vai trò/.test(k))o.role=v;else if(/^S2/.test(k))o.handler=v;else if(/Số bàn/.test(k))o.seat=v;});return o;}
+function mapRow(r){var a=tagArr(r.tags);return{id:String(r.id),name:r.full_name,title:r.title||"",org:r.org||"",table:r.table_no||"",_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(a),phanloai:(a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),seat:"",diet:"",handler:"",role:"",note:"",photo:"",_enriched:false};}
+function byId(id){for(var i=0;i<G.length;i++)if(G[i].id===String(id))return G[i];return null;}
 function $(s){return document.querySelector(s);}
 function norm(s){var t=String(s||"").toLowerCase().normalize("NFD"),o="";for(var i=0;i<t.length;i++){var c=t.charCodeAt(i);if(c<0x300||c>0x36f)o+=t[i];}return o.replace(/đ/g,"d");}
 function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 function ini(n){var p=String(n||"").replace(/^(Bà|Ông|Cô|Chú|Anh|Chị|Em|Thầy|Gia đình|Ms\.|Mr\.)\s+/,"").trim().split(/\s+/);return(((p[p.length-2]||p[0]||"")[0]||"")+((p[p.length-1]||"")[0]||"")).toUpperCase();}
 function isKanji(n){return /[぀-ヿ㐀-䶿一-鿿]/.test(String(n||""));}
-function came(g){var c=CK[g.id];return c&&c.at?c.at:"";}
+function came(g){return g._came||"";}
 function fmt(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+function fmtCame(c){return c&&c!=="1"?fmt(c):"✓";}
 var st={q:"",quick:"",f:""},curId=null;
-function counter(){$("#cDone").textContent=G.filter(came).length;}
+function counter(){$("#cDone").textContent=G.filter(came).length;var tot=$("#cTot");if(tot)tot.textContent=G.length;}
 function match(g){
  if(st.f==="came"&&!came(g))return false;if(st.f==="no"&&came(g))return false;
  if(st.quick==="vip"&&String(g.vip||"").indexOf("VIP")===-1&&String(g.vip||"").indexOf("VVIP")===-1)return false;
@@ -107,15 +115,15 @@ function match(g){
  if(st.quick==="noi"&&String(g.phanloai||"").indexOf("Nội")===-1)return false;
  if(st.quick==="ngoai"&&String(g.phanloai||"").indexOf("Ngoại")===-1)return false;
  if(st.q){var h=norm(g.name+" "+g.title+" "+g.org);if(h.indexOf(norm(st.q))===-1)return false;}return true;}
-function av(g,big){return g.photo?'<img src="'+esc("photos/"+g.photo)+'" onerror="this.remove()">'+esc(ini(g.name)):esc(ini(g.name));}
+function av(g,big){return g.photo?'<img src="'+esc(g.photo)+'" onerror="this.remove()">'+esc(ini(g.name)):esc(ini(g.name));}
 function renderList(){var rows=G.filter(match);
  $("#hint").textContent=(st.q||st.quick||st.f)?t("res",{n:rows.length}):t("total",{n:G.length});
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);
   return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'"><span class="sd'+(cm?" came":"")+'"></span>'
    +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+esc(g.name)+'</div><div class="n2">'+esc(g.title||g.org||"")+'</div></div>'
-   +(cm?'<span class="gt">&#9711; '+cm+'</span>':'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>')+'</div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
-function openPf(id){var g=G.filter(function(x){return x.id===id;})[0];if(!g)return;curId=id;var cm=came(g);var dcls=g.diet==="Món chay"?"chay":"";
- var ciBox=cm?'<div class="cidone"><div class="t">&#9711; '+t("cidone",{t:cm})+'</div></div><button class="undo" data-undo="'+esc(g.id)+'">'+t("undo")+'</button>'
+   +(cm?'<span class="gt">&#9711; '+fmtCame(cm)+'</span>':'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>')+'</div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
+function openPf(id){var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls=g.diet==="Món chay"?"chay":"";
+ var ciBox=cm?'<div class="cidone"><div class="t">&#9711; '+t("cidone",{t:fmtCame(cm)})+(g._by?' · '+esc(g._by):'')+'</div></div>'
    :'<button class="cib" data-ci="'+esc(g.id)+'">&#9711;&nbsp; '+t("cibtn")+'</button>';
  $("#pfBody").innerHTML='<div class="pf-av">'+av(g,1)+'</div><div class="pf-nm">'+esc(g.name)+'</div><div class="pf-rl"><b>'+esc(g.title||"—")+'</b>'+(g.org?'<br>'+esc(g.org):'')+'</div>'
   +'<div class="th"><div class="c"><div class="k">'+t("ban")+'</div><div class="v num">'+esc(g.table)+'</div></div><div class="c"><div class="k">'+t("ghe")+'</div><div class="v num">'+esc(g.seat)+'</div></div></div>'
@@ -124,15 +132,15 @@ function openPf(id){var g=G.filter(function(x){return x.id===id;})[0];if(!g)retu
   +'<div class="ir"><span class="k">'+t("vaitro")+'</span><span class="v">'+esc(g.role||"—")+(g.note?' · '+esc(g.note):'')+'</span></div>'
   +'<div class="ir"><span class="k">'+t("sdt")+'</span><span class="v">'+t("sdthide")+'</span></div>'
   +'<div class="ir"><span class="k">'+t("makhach")+'</span><span class="v">'+esc(g.id)+'</span></div></div>'+ciBox;
- $("#pf").classList.add("show");document.body.style.overflow="hidden";}
+ $("#pf").classList.add("show");document.body.style.overflow="hidden";if(!g._enriched)enrich(g,id);}
+async function enrich(g,id){try{var j=await jget("/crm/guests/"+id);g._enriched=true;if(j.photos&&j.photos[0])g.photo=j.photos[0].url;var p=parseNote(j.guest&&j.guest.note);g.diet=p.diet||"";g.role=p.role||"";g.handler=p.handler||"";g.seat=p.seat||"";if(curId===id)openPf(id);}catch(e){g._enriched=true;}}
 function setLang(l){LANG=l;localStorage.setItem("ci_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";
  document.querySelectorAll("[data-i]").forEach(function(el){var k=el.getAttribute("data-i");var v=t(k);if(v)el.textContent=v;});
  $("#q").placeholder=t("search");$("#langBtn").textContent=l==="jp"?"Tiếng Việt":"日本語";renderList();if(curId)openPf(curId);}
 $("#list").addEventListener("click",function(e){var c=e.target.closest(".gc");if(c)openPf(c.getAttribute("data-id"));});
 $("#pfBack").addEventListener("click",function(){$("#pf").classList.remove("show");document.body.style.overflow="";curId=null;});
 $("#pfBody").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
- if(b.getAttribute("data-ci")){var id=b.getAttribute("data-ci");CK[id]={at:fmt(new Date().toISOString())};saveCi(CK);counter();openPf(id);renderList();}
- if(b.getAttribute("data-undo")){var id=b.getAttribute("data-undo");if(confirm(t("undo")+"?")){delete CK[id];saveCi(CK);counter();openPf(id);renderList();}}});
+ if(b.getAttribute("data-ci")){var id=b.getAttribute("data-ci");b.disabled=true;jpost("/crm/guests/"+id+"/check-in").then(function(r){var g=byId(id);if(g)g._came=(r.body&&r.body.at)||g._came||"1";counter();openPf(id);renderList();}).catch(function(){b.disabled=false;});}});
 $("#q").addEventListener("input",function(e){st.q=e.target.value;renderList();});
 $("#quick").addEventListener("click",function(e){var b=e.target.closest(".qb");if(!b)return;var q=b.getAttribute("data-q");st.quick=(st.quick===q?"":q);document.querySelectorAll(".qb").forEach(function(x){x.classList.remove("on");});if(st.quick)b.classList.add("on");renderList();});
 document.querySelectorAll(".fb").forEach(function(b){b.addEventListener("click",function(){var f=b.getAttribute("data-f");st.f=(st.f===f?"":f);document.querySelectorAll(".fb").forEach(function(x){x.classList.remove("on");});if(st.f)b.classList.add("on");renderList();});});
@@ -140,5 +148,12 @@ $("#lichBtn").addEventListener("click",function(){$("#sheet").classList.add("sho
 $("#schClose").addEventListener("click",function(){$("#sheet").classList.remove("show");});
 $("#sheet").addEventListener("click",function(e){if(e.target===this)this.classList.remove("show");});
 $("#langBtn").addEventListener("click",function(){setLang(LANG==="jp"?"vn":"jp");});
-counter();setLang(LANG);
+// --- auth-gate (fail-closed: 401 hoặc network lỗi → màn đăng nhập, KHÔNG render khách) ---
+function gate(html){document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#eee;background:#0b1a30">'+html+'</div>';}
+async function boot(){
+ try{await jget("/crm/me");}catch(e){return gate('<div><div style="font-size:44px">🔒</div><h2 style="margin:8px 0">Cần đăng nhập CRM</h2><p style="color:#b9b096;max-width:330px">Trang điểm danh Tọa đàm dùng dữ liệu thật từ <b>/crm</b>. Đăng nhập OTP rồi quay lại.</p><a href="/crm" style="display:inline-block;margin-top:14px;background:#d8b876;color:#1a1204;padding:11px 22px;border-radius:8px;text-decoration:none;font-weight:700">Đăng nhập /crm →</a></div>');}
+ try{var j=await jget("/crm/guests?session="+SESSION+"&limit=1000");G=(j.rows||[]).map(mapRow);}catch(e){return gate('<div><h2>Lỗi tải dữ liệu</h2><p style="color:#b9b096">Kiểm tra kết nối rồi thử lại.</p><button onclick="location.reload()" style="margin-top:12px;background:#d8b876;color:#1a1204;padding:10px 20px;border:0;border-radius:8px;font-weight:700;cursor:pointer">Tải lại</button></div>');}
+ counter();setLang(LANG);
+}
+boot();
 </script></body></html>

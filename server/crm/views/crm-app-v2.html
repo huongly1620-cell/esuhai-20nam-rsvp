@@ -199,7 +199,9 @@
   function schedule(){clearTimeout(tmr);tmr=setTimeout(load,220);}
   async function load(){
     try{
-      var j=await jget("/crm/guests?limit=300&mine="+state.mine+"&q="+encodeURIComponent(state.q));
+      var url="/crm/guests?limit=1000&mine="+state.mine+"&q="+encodeURIComponent(state.q);
+      if(state.tab==="toadam")url+="&session=toa-dam";else if(state.tab==="gala")url+="&session=gala";
+      var j=await jget(url);
       rows=(j.rows||[]).map(function(g){g.__pn=normPhone(g.phone);return g;});
       // trùng SĐT (che vẫn xác định được vì mask xác định)
       var cnt={}; rows.forEach(function(g){if(g.phone)cnt[g.phone]=(cnt[g.phone]||0)+1;});
@@ -217,12 +219,13 @@
     });
   }
   function renderList(){
-    if(state.tab!=="all"){
-      $("#list").innerHTML='<div class="empty">Chưa có dữ liệu <b>buổi</b> ('+(state.tab==="toadam"?"Tọa đàm":"Gala")+') cho danh sách này.<br>CRM chưa lưu buổi tham dự theo từng khách — cần vé schema riêng.<br><br>Dùng tab <b>Tất cả</b> để tìm + điểm danh.</div>';
-      return;
-    }
     var fs=filtered();
-    if(!fs.length){ $("#list").innerHTML='<div class="empty">'+(rows.length?"Không có khách khớp bộ lọc.":"Chưa có khách. Nhập từ khóa hoặc Import.")+'</div>'; return; }
+    if(!fs.length){
+      var msg=state.tab!=="all"
+        ? "Chưa có khách gắn buổi <b>"+(state.tab==="toadam"?"Tọa đàm":"Gala")+"</b> (theo tag import). Khách thiếu tag buổi ở tab <b>Tất cả</b> — không tự gán."
+        : (rows.length?"Không có khách khớp bộ lọc.":"Chưa có khách. Nhập từ khóa hoặc Import.");
+      $("#list").innerHTML='<div class="empty">'+msg+'</div>'; return;
+    }
     $("#list").innerHTML=fs.map(function(g){
       var st=g.checked_in?'<span class="st-dot came"></span>':'<span class="st-dot"></span>';
       var tags=(g.table_no?'<span class="tag ban">Bàn '+esc(g.table_no)+'</span>':'')
@@ -307,7 +310,7 @@
   }
   /* ---- export client-CSV (từ rows đã tải; SĐT che như trên màn) ---- */
   function exportCSV(){
-    var fs=state.tab==="all"?filtered():rows;
+    var fs=filtered();
     if(!fs.length){alert("Không có dữ liệu để xuất.");return;}
     var head=["Họ tên","SĐT (che)","Đơn vị","Chức danh","Số bàn","Đã đến","Điểm danh bởi","Lúc"];
     var lines=[head.join(",")];
@@ -318,7 +321,7 @@
 
   /* ---- init + events ---- */
   $("#q").addEventListener("input",function(){state.q=this.value;schedule();});
-  $$(".tab",$("#tabs")).forEach(function(el){el.addEventListener("click",function(){$$(".tab").forEach(function(t){t.classList.remove("on");});el.classList.add("on");state.tab=el.getAttribute("data-tab");renderList();});});
+  $$(".tab",$("#tabs")).forEach(function(el){el.addEventListener("click",function(){$$(".tab").forEach(function(t){t.classList.remove("on");});el.classList.add("on");state.tab=el.getAttribute("data-tab");load();});});
   $$(".qb",$("#quick")).forEach(function(el){el.addEventListener("click",function(){
     var f=el.getAttribute("data-f");
     if(f==="mine"){state.mine=state.mine==="1"?"0":"1";el.classList.toggle("on");load();return;}

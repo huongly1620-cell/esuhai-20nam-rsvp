@@ -274,7 +274,9 @@
       +'<button class="btn block" id="iSave" style="margin-top:8px">Lưu ghi chú</button>'+inter
       +'<div class="sec">Ảnh</div><div class="thumbs">'+photos+'</div>'
       +'<label class="btn block" style="margin-top:8px">📷 Chụp / tải ảnh<input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none"></label>'
-      +'<div class="sec">Sửa thông tin</div>'
+      +'<div class="sec">Sửa thông tin'+(isBtl?' <span class="hint" style="text-transform:none">— BTL: sửa tên/chức danh để gộp/khử trùng</span>':'')+'</div>'
+      +(isBtl?'<div class="fld2"><input class="f" id="eName" placeholder="Họ tên" value="'+esc(g.full_name||"")+'"></div>':'')
+      +(isBtl?'<div class="fld2"><input class="f" id="eTitle" placeholder="Chức danh" value="'+esc(g.title||"")+'"></div>':'')
       +'<div class="fld2"><input class="f" id="ePhone" placeholder="SĐT" value="'+esc(g.phone||"")+'"></div>'
       +'<div class="fld2"><input class="f" id="eOrg" placeholder="Đơn vị" value="'+esc(g.org||"")+'"></div>'
       +'<div class="fld2"><input class="f" id="eNote" placeholder="Ghi chú nội bộ" value="'+esc(g.note||"")+'"></div>'
@@ -284,7 +286,7 @@
     var m=function(t,c){var e=$("#gMsg");if(e){e.textContent=t;e.className="msg"+(c?" "+c:"");}};
     var ci2=$("#ciBtn"); if(ci2)ci2.addEventListener("click",async function(){ci2.disabled=true;var r=await jsend("/crm/guests/"+g.id+"/check-in","POST",{});if(r.body.already)m("Đã điểm danh bởi "+r.body.by+" lúc "+fmt(r.body.at),"ok");await load();openGuest(g.id);});
     $("#iSave").addEventListener("click",async function(){var b=$("#iBody").value.trim();if(!b){m("Nhập nội dung.","err");return;}var r=await jsend("/crm/guests/"+g.id+"/interactions","POST",{kind:$("#iKind").value,body:b});if(r.ok)openGuest(g.id);else m(r.body.error||"Lỗi.","err");});
-    $("#eSave").addEventListener("click",async function(){var r=await jsend("/crm/guests/"+g.id,"PATCH",{phone:$("#ePhone").value,org:$("#eOrg").value,note:$("#eNote").value});if(r.ok){m("Đã lưu.","ok");await load();openGuest(g.id);}else m(r.body.error||"Lỗi.","err");});
+    $("#eSave").addEventListener("click",async function(){var body={phone:$("#ePhone").value,org:$("#eOrg").value,note:$("#eNote").value};if(isBtl){if($("#eName"))body.full_name=$("#eName").value;if($("#eTitle"))body.title=$("#eTitle").value;}var r=await jsend("/crm/guests/"+g.id,"PATCH",body);if(r.ok){m("Đã lưu.","ok");await load();openGuest(g.id);}else m(r.body.error||"Lỗi.","err");});
     var del=$("#delBtn"); if(del)del.addEventListener("click",async function(){if(!confirm("Xóa khách "+g.full_name+"?"))return;var r=await jsend("/crm/guests/"+g.id,"DELETE");if(r.ok){curId=null;$("#detail").innerHTML='<div class="empty">Đã xóa. Chọn khách khác.</div>';await load();}else m(r.body.error||"Lỗi xóa.","err");});
     $("#photoInput").addEventListener("change",async function(){var f=this.files&&this.files[0];if(!f)return;m("Đang tải ảnh…","ok");var fd=new FormData();fd.append("photo",f);try{var r=await api("/crm/guests/"+g.id+"/photos",{method:"POST",body:fd});var jj=await r.json().catch(function(){return {};});if(r.ok)openGuest(g.id);else m(jj.error||"Lỗi tải ảnh.","err");}catch(e){m("Lỗi tải ảnh.","err");}});
   }

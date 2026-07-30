@@ -44,10 +44,19 @@ async function putObject(guestId, buffer, contentType) {
   return key;
 }
 
+// Put at a caller-specified deterministic key (batch import idempotency).
+// Unlike putObject (random UUID), the caller controls the key so re-running an
+// import maps to the same object instead of creating duplicates.
+async function putObjectAt(objectKey, buffer, contentType) {
+  const c = getClient();
+  await c.putObject(BUCKET, objectKey, buffer, buffer.length, { 'Content-Type': contentType || 'application/octet-stream' });
+  return objectKey;
+}
+
 // Short-lived presigned GET — private bucket, never public list.
 async function presignGet(objectKey) {
   const c = getClient();
   return c.presignedGetObject(BUCKET, objectKey, PRESIGN_TTL);
 }
 
-module.exports = { isConfigured, ensureBucket, putObject, presignGet, BUCKET };
+module.exports = { isConfigured, ensureBucket, putObject, putObjectAt, presignGet, BUCKET };

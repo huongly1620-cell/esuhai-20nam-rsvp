@@ -5,6 +5,15 @@
 
 ## Deploy log — mới nhất
 
+**2026-07-30 · E08-D020 Wire check-in + tab buổi → /crm API — ✅ LIVE trên production (SHA `ee82bbc`)**
+Wave A: 2 page check-in + tab Tọa đàm/Gala đọc SoT Postgres qua `/crm/*`, filter buổi bằng **tag** (`toa-dam`/`gala`, không ALTER schema). Gate 1 PASS (5 chốt + fail-closed) · **Gate 2 §B7 PASS 15/15** (QC độc lập, 0 PII, không substring-bleed, fail-closed) · `railway up` · AC-15 smoke prod xanh.
+- `GET /crm/guests`: **+field `tags`** · **+param `session=toa-dam|gala`** (match CSV chính xác, invalid→400) · cap limit 200→1000. POST check-in **không đổi**.
+- `checkin-toadam/gala.html`: auth-gate client `/crm/me` **fail-closed** (401/network→màn đăng nhập, 0 render khách) · fetch `?session=` · điểm danh POST check-in (bỏ localStorage) · counter thật (bỏ /16,/99) · bỏ nút Huỷ (API 1 chiều) · banner nhẹ "Đã nối /crm" · `var G=[]`.
+- `crm-app-v2.html`: tab buổi refetch `session=`; bỏ copy cứng; thiếu tag → không đoán.
+- **Contract additive** (`tags`+`session=`); **không ALTER schema** (cột `sessions` = Wave B).
+- Rollback: `git revert ee82bbc`; `/crm` tab Tất cả luôn là fallback.
+⏳ Xác nhận người thật: đăng nhập `/crm` → mở 2 page check-in thấy khách theo buổi + điểm danh (authed không probe được ngoài). Khách chưa gắn tag buổi **không** tự hiện ở Tọa đàm/Gala (đúng — BTL/nạp file có cột Buổi).
+
 **2026-07-30 · E08-D019 Một SoT: cắt 3 page mock — ✅ LIVE trên production (SHA `2ade14e`)**
 SoT = `/crm` + Postgres. Gate 1 PASS (rỗng data · redirect 302 · banner) · **Gate 2 §B7 PASS 7/7** (QC độc lập ≠ worker, 0 tên khách còn nhúng) · `railway up` · smoke prod xanh.
 - `crm.html` → **302 → /crm** (route trước static); `var SEED=[]`.

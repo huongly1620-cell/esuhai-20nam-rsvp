@@ -5,6 +5,14 @@
 
 ## Deploy log — mới nhất
 
+**2026-07-31 · E08-D021 Avatar ảnh khách ở danh sách — ✅ LIVE trên production (SHA `6b50bf1`)**
+Đưa ảnh MinIO đã có lên avatar list `/crm` (3 tab + detail header) + 2 check-in. Gate 1 PASS (4 chốt) · **Gate 2 §B7 PASS 14/15** (QC độc lập, no-N+1 chứng minh bằng log query, null-not-empty đúng) · deploy trước 9h (đúng nhịp) · AC-15 smoke prod xanh.
+- `GET /crm/guests`: **+field `photo_url`** qua `LEFT JOIN LATERAL` (ảnh mới nhất) — **1 query, không N+1**. Không ảnh → `null`. Additive (D020 giữ nguyên).
+- `crm-app-v2.html` + 2 check-in: avatar render `<img loading=lazy onerror=remove>` → fallback initials; CSS `.av img`/`.dav img` object-fit cover, kích thước cố định.
+- Bảo mật giữ: ảnh vẫn `/crm/photos/:id` `requireCrmAuth` (no-cookie 401), không route public, không lộ object key. Không ALTER schema.
+- **Prod verify:** 154 khách active · **41 có `photo_url`** (27%) · phần còn lại initials tới khi bổ sung ảnh (Wave C).
+- Rollback: `git revert 6b50bf1` → avatar về initials, không đụng điểm danh.
+
 **2026-07-30 · E08-D020 Wire check-in + tab buổi → /crm API — ✅ LIVE trên production (SHA `ee82bbc`)**
 Wave A: 2 page check-in + tab Tọa đàm/Gala đọc SoT Postgres qua `/crm/*`, filter buổi bằng **tag** (`toa-dam`/`gala`, không ALTER schema). Gate 1 PASS (5 chốt + fail-closed) · **Gate 2 §B7 PASS 15/15** (QC độc lập, 0 PII, không substring-bleed, fail-closed) · `railway up` · AC-15 smoke prod xanh.
 - `GET /crm/guests`: **+field `tags`** · **+param `session=toa-dam|gala`** (match CSV chính xác, invalid→400) · cap limit 200→1000. POST check-in **không đổi**.

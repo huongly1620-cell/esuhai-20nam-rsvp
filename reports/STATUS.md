@@ -3,6 +3,23 @@
 > Product: `LandingPage_KhachMoi_0808` · Spec: `Projects_S2-coord/.../specs/2026-07-24-rsvp-railway-mvp.md`
 > Nhánh deploy: `main` · Gate: **FULL** · Worker: PM-con-Kha (R1)
 
+## Deploy log — mới nhất
+
+**2026-07-30 · tip FE Ly (LIGHT `ly-fe-checkin-crm-deploy`) — SHA live `5f13eb4`**
+Pull `--ff-only` (behind 6 → tip) + `railway up esuhai-web`. 3 trang FE mới của Ly (không đụng BE).
+
+| AC | Kết quả |
+|---|---|
+| AC-2 `checkin-toadam.html` | ✅ 200 · title "Check-in Tọa đàm · Gala 20 Năm" |
+| AC-3 `checkin-gala.html` | ✅ 200 · title "Check-in Gala · Gala 20 Năm" |
+| AC-4 `crm.html` (mock) | ✅ 200 · title "CRM Khách mời · Gala 20 Năm ESUHAI" |
+| AC-5 regress BE | ✅ /health ok · dang-ky 200 · /admin login (api 401) · /crm (CRM thật) 200 · /api/rsvp 400 |
+| AC-6 STATUS | ✅ (mục này) |
+| AC-7 §B7 | Self-QC LIGHT (worker=PM-con-Kha) — QC độc lập tuỳ chọn: mở 3 URL mobile soi theme |
+
+⚠️ `crm.html` = **mock** (chưa nối `/crm/*` API) — CRM thật vẫn ở `/crm`. Nối API = việc SAU (OUT phiếu này).
+Deploy = CLI `railway up` (push `main` KHÔNG tự lên web). Trước đó: `fd800ab` (CR xếp bàn ↔ check-in, Gate 2 PASS).
+
 | Mốc | Trạng thái | Ghi chú |
 |---|---|---|
 | DoR | ✅ CLOSED 2026-07-24 | E08-D004 |

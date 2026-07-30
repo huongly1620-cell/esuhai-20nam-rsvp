@@ -5,6 +5,23 @@
 
 ## Deploy log — mới nhất
 
+**2026-07-30 · E08-D017 CRM UI theo mockup Ly — CODE DONE, chờ Gate 2 (CHƯA deploy, CHƯA flip)**
+Port giao diện mockup `crm.html` lên `/crm` thật, **giữ nguyên app** (OTP/RBAC/check-in/interactions/photos/import/audit). Gate 1 PASS (AC-12=A · export=client-CSV · rollback CRM_UI+/crm/classic).
+
+- **File:** MỚI `server/crm/views/crm-app-v2.html` (UI mockup + nối `/crm/*` API thật) · sửa `server/crm/index.js` (route theo env **`CRM_UI`**, mặc định `classic`; thêm `/crm/classic`). **KHÔNG** đụng `auth.js`/`guests.js`/`audit.js`/`import.js`/schema/contract.
+- **Self-QC (worker=PM-con-Kha, Postgres 16 Docker cục bộ, 2 role):**
+
+| Nhóm AC | Kết quả |
+|---|---|
+| A giao diện + nav | ✅ `/crm` (CRM_UI=new) render v2 · nav → `/admin`,`/xep-ban.html`,`/checkin-toadam.html`,`/checkin-gala.html` (bỏ `/check-in.html` cũ) |
+| B nối dữ liệu thật (AC-5..10) | ✅ list `GET /crm/guests` · detail `:id` (table_no+điểm danh ai/lúc+interactions+ảnh) · check-in ghi **actor=staff** · repeat→already · interaction · PATCH · mine=1 · import/audit (btl) |
+| C số liệu trung thực (AC-11..13) | ✅ dashboard "đón tiếp" tính từ rows thật (đã đến/chưa) · **AC-12=A**: tab Tọa đàm/Gala báo *"chưa có dữ liệu buổi — cần schema"* (0 bịa) · checklist gắn nhãn *"ghi nhớ trên máy này"* |
+| D bảo mật/vận hành (AC-14..18) | ✅ no-cookie→401 · **AC-15 staff gọi thẳng API btl (POST guests/DELETE/import/audit/export) → 403 ở SERVER** · rollback: mặc định `CRM_UI` unset → `/crm`=classic, `/crm/classic` luôn classic · regress /health·/admin API 401·dang-ky·2 check-in·/api/rsvp |
+
+Smoke tự động: **30/31 PASS** (1 "fail" là assertion sai của tôi — probe trang `/admin` (200, đúng là trang login) thay vì API `/admin/api/*`; đã xác nhận thủ công API no-auth → **401**). `grep localStorage crm-app-v2.html` → **chỉ `crm_theme` + `crm_chk`** (0 dữ liệu khách).
+- **AC-12:** đã mở vé schema follow-up (draft) `specs/2026-07-30-crm-schema-buoi-followup.md`.
+- **CÒN LẠI:** Gate 2 (actor khác) đọc code + chạy thật + thử rollback → PASS mới `railway up` + set env `CRM_UI=new`. **`/crm` production vẫn classic tới lúc đó.**
+
 **2026-07-30 · tip FE Ly (LIGHT `ly-fe-checkin-crm-deploy`) — SHA live `5f13eb4`**
 Pull `--ff-only` (behind 6 → tip) + `railway up esuhai-web`. 3 trang FE mới của Ly (không đụng BE).
 

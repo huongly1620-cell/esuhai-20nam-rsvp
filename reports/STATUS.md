@@ -5,8 +5,10 @@
 
 ## Deploy log — mới nhất
 
-**2026-07-30 · E08-D017 CRM UI theo mockup Ly — CODE DONE, chờ Gate 2 (CHƯA deploy, CHƯA flip)**
-Port giao diện mockup `crm.html` lên `/crm` thật, **giữ nguyên app** (OTP/RBAC/check-in/interactions/photos/import/audit). Gate 1 PASS (AC-12=A · export=client-CSV · rollback CRM_UI+/crm/classic).
+**2026-07-30 · E08-D017 CRM UI theo mockup Ly — ✅ LIVE, đã flip `CRM_UI=new` (SHA `f32d795`)**
+Port giao diện mockup `crm.html` lên `/crm` thật, **giữ nguyên app** (OTP/RBAC/check-in/interactions/photos/import/audit). Gate 1 PASS · **Gate 2 §B7 PASS** (QC độc lập ≠ worker, smoke 2 role 25/25) · push `f32d795` · `railway up` (deploy behavior-neutral) · set env **`CRM_UI=new`** flip · live regress AC-18 xanh.
+Đường lùi 1 phút: xoá/để `CRM_UI` khác `new` (hoặc `=classic`) → `/crm` về shell cũ; `/crm/classic` luôn có sẵn.
+⏳ **Chờ 1 xác nhận người thật:** anh/allowlist đăng nhập `/crm` thấy UI mới (marker authed không probe được từ ngoài vì cần OTP).
 
 - **File:** MỚI `server/crm/views/crm-app-v2.html` (UI mockup + nối `/crm/*` API thật) · sửa `server/crm/index.js` (route theo env **`CRM_UI`**, mặc định `classic`; thêm `/crm/classic`). **KHÔNG** đụng `auth.js`/`guests.js`/`audit.js`/`import.js`/schema/contract.
 - **Self-QC (worker=PM-con-Kha, Postgres 16 Docker cục bộ, 2 role):**

@@ -5,10 +5,14 @@
 
 ## Deploy log — mới nhất
 
-**2026-07-30 · E08-D018 data 116 + ảnh TGĐ — code DONE (`2466207`), Gate 2 PASS(code)/HOLD(prod). CHƯA deploy, CHƯA chạy prod.**
-Merge importer + loader ảnh + BTL sửa tên/chức danh. Gate 2 (anh Kha, §B7): merge không nhân đôi ✅; dry **trên prod** = 104 update·10 insert·2 ambiguous, prod vẫn sạch (`kcode=0`, ảnh TGĐ=0); K103 loại, Kha-May bỏ, key tất định ✅; staff DELETE vẫn 403 ✅. Log: coord `review-logs/2026-07-30-crm-data-anh-ly-gate2.md`.
-⛔ **HOLD prod** tới khi: (a) anh đăng nhập xác nhận UI D017; (b) **Ly chốt danh sách cuối** + anh ra lệnh rõ.
-**Runbook prod (chỉ khi được lệnh):** `railway up` (UI nút BTL) → `DATABASE_URL=… node server/crm/import-tgd-116.js --commit` → `DATABASE_URL=… MINIO_*=… node server/crm/load-tgd-photos.js --commit` → smoke. Cả 2 script idempotent, re-run an toàn khi có bản mới.
+**2026-07-30 · E08-D018 data 116 + ảnh TGĐ — ✅ LIVE trên production (SHA `1d4229d` + UI deploy)**
+anh xác nhận UI D017 OK + lệnh chạy (Ly chưa chốt, chấp nhận vì script idempotent). Đã chạy prod:
+- **Merge importer** `--commit`: 104 update · 10 insert · 2 ambiguous(→BTL). Guests **144 → 154** (+10, KHÔNG nhân đôi 260); **114 kcode-tagged**. Dry prod khớp Gate 2.
+- **Loader ảnh** `--commit`: **42 ảnh / 40 khách** lên MinIO prod; rerun idempotent (0 new / 42 already); K103 loại, Kha-May bỏ.
+- **UI** deploy: BTL thêm ô sửa Họ tên/Chức danh (khử ~13 ca fuzzy + 2 ambiguous).
+- Smoke prod: presigned GET ảnh **200/1.2MB**; regress AC-18 xanh; staff-only gates 401/403 giữ.
+🔁 **Re-run khi Ly gửi bản mới:** chạy lại 2 script `--commit` — an toàn (match kcode-tag, object_key tất định).
+Còn lại: BTL rà tay ~10 dòng insert nghi-trùng + 2 ambiguous ngay trên UI.
 
 **2026-07-30 · E08-D017 CRM UI theo mockup Ly — ✅ LIVE, đã flip `CRM_UI=new` (SHA `f32d795`)**
 Port giao diện mockup `crm.html` lên `/crm` thật, **giữ nguyên app** (OTP/RBAC/check-in/interactions/photos/import/audit). Gate 1 PASS · **Gate 2 §B7 PASS** (QC độc lập ≠ worker, smoke 2 role 25/25) · push `f32d795` · `railway up` (deploy behavior-neutral) · set env **`CRM_UI=new`** flip · live regress AC-18 xanh.

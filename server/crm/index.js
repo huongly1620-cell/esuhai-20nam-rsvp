@@ -4,6 +4,7 @@ const path = require('path');
 const auth = require('./auth');
 const audit = require('./audit');
 const guests = require('./guests');
+const stats = require('./stats');
 const photos = require('./photos');
 const importer = require('./import');
 
@@ -33,6 +34,7 @@ function mount(app) {
 
   auth.mount(app);                                  // /auth/* + /crm/me
   guests.mount(app, auth.requireCrmAuth, auth.requireRole);
+  stats.mount(app, auth.requireCrmAuth);
   photos.mount(app, auth.requireCrmAuth);
   importer.mount(app, auth.requireCrmAuth, auth.requireRole);
   audit.mount(app, auth.requireCrmAuth, auth.requireRole);

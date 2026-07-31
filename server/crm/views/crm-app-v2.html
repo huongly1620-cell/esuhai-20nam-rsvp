@@ -37,6 +37,27 @@
   .bar-row{margin-bottom:12px}.bar-row .t{display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:5px}.bar-row .t .nm{display:flex;gap:7px;align-items:center}
   .sw{width:9px;height:9px;border-radius:2px}.bar-track{height:9px;border-radius:5px;background:rgba(150,150,150,.18);overflow:hidden}.bar-fill{height:100%;border-radius:5px;transition:width .5s}
   .hint{color:var(--muted);font-size:.74rem;margin-top:8px;line-height:1.5}
+  /* ---- KPI mời ↔ đăng ký ↔ buổi (E08-D016) ---- */
+  .kpi{margin-bottom:14px}
+  .kpi .khead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .kpi .scope{font-size:.68rem;color:var(--gold);border:1px solid var(--line);border-radius:20px;padding:2px 9px;text-transform:uppercase;letter-spacing:.04em}
+  .kgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  @media(min-width:700px){.kgrid{grid-template-columns:repeat(4,1fr)}}
+  .kbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--inp)}
+  .kbox .kn{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15}
+  .kbox .kl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-top:2px}
+  .kbox .ks{font-size:.72rem;color:var(--muted2);margin-top:4px}
+  .ksec{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+  .ksec>h4{margin:0 0 8px;font-size:.72rem;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:inherit;font-weight:700}
+  .kpart{display:grid;gap:8px}
+  .kp{border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+  .kp .kpt{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .kp .kpn{font-size:1.12rem;font-weight:700;font-variant-numeric:tabular-nums}
+  .kp .kpl{font-size:.78rem}
+  .kp .kpd{font-size:.72rem;color:var(--muted);margin-top:3px}
+  .ksum{margin-top:10px;font-size:.8rem;line-height:1.7}
+  .ksum b{font-variant-numeric:tabular-nums}
+  .kwarn{margin-top:10px;border:1px solid var(--amber);border-radius:10px;padding:9px 12px;font-size:.76rem;color:var(--amber)}
   .chk{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:.85rem;cursor:pointer}
   .chk:last-child{border-bottom:0}.chk .box{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line2);flex:none;display:grid;place-items:center;color:var(--green-ok)}
   .chk.done .box{background:rgba(67,224,141,.15);border-color:var(--green-ok)}.chk.done .lb{color:var(--muted);text-decoration:line-through}
@@ -103,11 +124,15 @@
 
 <div class="dash">
   <div class="cd"><div class="lbl" id="cdLbl">ĐẾM NGƯỢC</div><div class="t" id="cdT">—</div></div>
+  <div class="card kpi" id="kpiCard" style="display:none">
+    <div class="khead"><h3>Mời &#183; Đăng ký &#183; Buổi</h3><span class="scope">Toàn bộ danh sách</span></div>
+    <div id="kpiBody"></div>
+  </div>
   <div class="dgrid">
     <div class="card">
       <h3>Tình hình đón tiếp</h3>
       <div id="reception"></div>
-      <div class="hint">* Phân bổ theo <b>buổi</b> (Tọa đàm/Gala) chưa có trong dữ liệu CRM — cần bổ sung schema (đã mở vé). Không hiển thị số đoán.</div>
+      <div class="hint">* Khối này tính trên <b>danh sách đang lọc</b>. Số toàn cục xem ở khối «Mời &#183; Đăng ký &#183; Buổi» phía trên.</div>
     </div>
     <div class="card">
       <div class="chkhead"><h3>Việc cần chuẩn bị</h3><span class="pg" id="chkpg"></span></div>
@@ -245,6 +270,74 @@
     var came=rows.filter(function(g){return g.checked_in;}).length;
     $("#stats").innerHTML='<b>'+rows.length+'</b> khách · đã đến <b>'+came+'</b>';
   }
+  /* ---- KPI toàn cục (/crm/stats) — E08-D016 pha 1 ----
+     Số ở đây là TOÀN BỘ danh sách, không phụ thuộc tab/bộ lọc đang chọn (AC-9).
+     Buổi chia thành ba nhóm RỜI NHAU cộng đúng «Tổng mời» (AC-3b/AC-6b):
+       danh sách (tag) + bản đăng ký (form) + thật sự chưa rõ.
+     `tiec-toi`/`dang-ky` trong tags là KÊNH MỜI, không phải buổi — nhóm 2 lấy
+     buổi từ rsvp_submissions.sessions, server đã xử lý. */
+  async function loadStats(){
+    try{ var s=await jget("/crm/stats"); renderKpi(s); }
+    catch(e){ /* KPI hỏng không được làm chết màn điểm danh */ }
+  }
+  function renderKpi(s){
+    if(!s||!s.ok)return;
+    var sl=s.sessionList||{}, fk=s.sessionFormKnown||{}, ig=s.integrity||{};
+    // Thiếu trường (proxy cắt / deploy lệch version) thì ẩn khối, đừng in "undefined".
+    var need=[s.invited,s.invitedTgd,s.rsvpSubmissions,s.rsvpGuests,s.linked,s.unlinked,s.sessionUnknown,
+              sl.tagged,sl.anyGala,sl.anyToaDam,sl.both,sl.onlyGala,fk.total,fk.gala,fk.toaDamGala];
+    if(need.some(function(x){return typeof x!=="number"||!isFinite(x);}))return;
+    // Tọa đàm phải cộng CẢ nhóm chọn riêng Tọa đàm trên form (fk.toaDamOnly) —
+    // dang-ky.html cho chọn riêng buổi này, bỏ sót là đếm thiếu mà không báo.
+    var fkGala=(fk.gala||0)+(fk.toaDamGala||0);
+    var fkTd=(fk.toaDamGala||0)+(fk.toaDamOnly||0);
+    var galaTotal=(sl.anyGala||0)+fkGala;
+    var tdTotal=(sl.anyToaDam||0)+fkTd;
+
+    var top=''
+      +box(s.invited,'Tổng khách mời','trong đó '+s.invitedTgd+' từ DS Sếp')
+      +box(s.rsvpSubmissions,'Lượt đăng ký (form)',s.rsvpGuests+' người xác nhận')
+      +box(s.linked,'Mời đã nối form','ghép được thẻ mời ↔ bản đăng ký')
+      +box(s.unlinked,'Mời chưa nối form','chưa ghép được');
+
+    var part=''
+      +part1('Buổi theo danh sách',sl.tagged,'Chỉ Gala '+sl.onlyGala+' &#183; Cả hai buổi '+sl.both+(sl.onlyToaDam?' &#183; Chỉ Tọa đàm '+sl.onlyToaDam:''))
+      +part1('Buổi theo bản đăng ký',fk.total,'Gala '+fk.gala+' &#183; Tọa đàm&#183;Gala '+fk.toaDamGala+(fk.toaDamOnly?' &#183; Chỉ Tọa đàm '+fk.toaDamOnly:'')+(fk.unspecified?' &#183; chưa nêu buổi '+fk.unspecified:''))
+      +part1('Thật sự chưa rõ buổi',s.sessionUnknown,'không có trên danh sách mời và cũng chưa nối được bản đăng ký');
+
+    // AC-6c: dòng tổng CHỈ hiện khi ba nhóm đã chứng minh rời nhau, và luôn nêu
+    // đủ thành phần. Giao > 0 ⇒ hạ dòng tổng + báo, không im lặng cộng chồng.
+    // Ba trạng thái, không phải hai: true → hiện tổng · false → cảnh báo thật ·
+    // thiếu/không phải boolean (server cũ, proxy cắt) → im lặng, KHÔNG hiện tổng
+    // mà cũng KHÔNG báo động giả.
+    var sum;
+    if(ig.disjoint===true)
+      sum='<div class="ksum">Dự <b>Gala '+galaTotal+'</b> = '+sl.anyGala+' từ danh sách + '+fkGala+' từ đăng ký'
+         +'<br>Dự <b>Tọa đàm '+tdTotal+'</b> = '+sl.anyToaDam+' từ danh sách + '+fkTd+' từ đăng ký</div>';
+    else if(ig.disjoint===false)
+      sum='<div class="kwarn">&#9888; Có '+(typeof ig.overlapTagAndForm==="number"?ig.overlapTagAndForm:"một số")+' khách vừa có buổi trên danh sách vừa có bản đăng ký — hai nguồn không còn rời nhau, nên <b>không hiện số tổng theo buổi</b> (cộng vào sẽ đếm trùng). Cần rà lại dữ liệu.</div>';
+    else
+      sum='<div class="hint">Chưa kiểm được hai nguồn có trùng người không, nên không hiện số tổng theo buổi.</div>';
+
+    var warn = (ig.partitionOk===false
+      ? '<div class="kwarn">&#9888; Ba nhóm buổi cộng lại không bằng tổng khách mời — số đang lệch, đừng dùng để báo cáo cho tới khi rà xong.</div>' : '')
+      +(ig.bucketsOk===false
+      ? '<div class="kwarn">&#9888; Chi tiết buổi của nhóm «theo bản đăng ký» không cộng đủ '+fk.total+' — có thẻ khách không rơi vào buổi nào. Số chi tiết đang thiếu.</div>' : '');
+
+    $("#kpiBody").innerHTML=
+      '<div class="kgrid">'+top+'</div>'
+      +'<div class="hint">Chưa nối ≠ chưa đăng ký — chỉ là chưa ghép được thẻ mời với bản đăng ký (thiếu SĐT / khác tên).</div>'
+      +'<div class="ksec"><h4>Chia theo buổi</h4><div class="kpart">'+part+'</div>'
+      +sum+warn
+      +'<div class="hint">Một khách có thể dự cả hai buổi — các số buổi có thể lồng nhau.'
+      +'<br><b>Buổi theo bản đăng ký</b> — Nhóm này chưa có buổi trên danh sách mời; buổi lấy từ bản đăng ký của khách.'
+      +'<br><b>Thật sự chưa rõ buổi</b> — Chưa rõ buổi: không có trên danh sách mời và cũng chưa nối được bản đăng ký.'
+      +'<br>Buổi theo danh sách và buổi theo đăng ký là hai nguồn khác nhau — số tổng chỉ ghép khi đã kiểm không trùng người.</div></div>';
+    $("#kpiCard").style.display="";
+
+    function box(n,l,s2){return '<div class="kbox"><div class="kn num">'+n+'</div><div class="kl">'+l+'</div><div class="ks">'+s2+'</div></div>';}
+    function part1(l,n,d){return '<div class="kp"><div class="kpt"><span class="kpl">'+l+'</span><span class="kpn num">'+n+'</span></div><div class="kpd">'+d+'</div></div>';}
+  }
   function renderReception(){
     var total=rows.length, came=rows.filter(function(g){return g.checked_in;}).length, pct=total?Math.round(came/total*100):0;
     $("#reception").innerHTML=
@@ -343,6 +436,7 @@
     me.email=j.email;me.role=j.role;$("#roleTag").textContent=j.role;
     if(j.role==="btl"){$("#addBtn").style.display="";$("#importBtn").style.display="";$("#auditBtn").style.display="";}
     load();
+    loadStats();   // toàn cục — không gọi lại theo tab/bộ lọc (AC-9)
   }).catch(function(){});
 })();
 </script>

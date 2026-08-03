@@ -148,8 +148,9 @@
   .grab{width:42px;height:4px;border-radius:4px;background:var(--line2);margin:0 auto 8px}@media(min-width:640px){.grab{display:none}}
   .close{position:absolute;right:12px;top:12px;z-index:2}
   .pf-b{text-align:center}
-  .pf-av{width:190px;height:190px;border-radius:18px;margin:6px auto 0;display:grid;place-items:center;overflow:hidden;background:linear-gradient(155deg,#17475c,#0d2648);border:2px solid var(--gold);color:var(--gold-b);font-family:"Playfair Display",serif;font-size:3.3rem;box-shadow:var(--shadow)}
+  .pf-av{width:190px;aspect-ratio:1;height:auto;border-radius:18px;margin:6px auto 0;display:grid;place-items:center;overflow:hidden;background:linear-gradient(155deg,#17475c,#0d2648);border:2px solid var(--gold);color:var(--gold-b);font-family:"Playfair Display",serif;font-size:3.3rem;box-shadow:var(--shadow)}
   :root[data-theme=light] .pf-av{background:linear-gradient(155deg,#e8ddc2,#d8c9a4);color:#6a4e12}
+  .pf-av.is-group{width:100%;max-width:330px}.pf-av.is-group img{background:#0a1626}.pf-av .cap{position:absolute;bottom:0;left:0;right:0;font-size:.6rem;background:rgba(0,0,0,.55);color:#fff;padding:2px;text-align:center}.pf-av{position:relative}
   .pf-av img{width:100%;height:100%;object-fit:cover}
   .pf-nm{font-family:"Playfair Display",serif;font-size:1.58rem;font-weight:700;color:var(--text);margin-top:14px;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
   .pf-rl{color:var(--muted);font-size:.9rem;margin-top:4px}
@@ -190,7 +191,7 @@
       <span class="role" id="roleTag">—</span>
       <div class="top-r">
         <button class="lang" id="langBtn">日本語</button>
-        <button class="icobtn" id="themeBtn" title="Sáng/Tối">&#9789;</button>
+        <button class="icobtn" id="themeBtn" title="Sáng/Tối">🌙</button>
         <div class="menu" id="menu"><button class="icobtn" id="menuBtn">⋯</button>
           <div class="menu-pop">
             <div class="cap" data-i="cap_data">Dữ liệu</div>
@@ -287,6 +288,8 @@
  function hhmm(iso){if(!iso)return "";try{var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}catch(_){return "";}}
  function ini(n){var p=String(n||"").replace(/^(Bà|Ông|Cô|Chú|Anh|Chị|Em|Thầy|Gia đình|Ms\.|Mr\.)\s+/,"").trim().split(/\s+/);return(((p[p.length-2]||p[0]||"")[0]||"")+((p[p.length-1]||"")[0]||"")).toUpperCase();}
  function noAcc(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").toLowerCase();}
+ function fitImg(im,big){var r=im.naturalWidth/im.naturalHeight;if(!r||!isFinite(r))return;if(big){var fr=im.parentNode;var ok=(r>=0.66&&r<=2.4);fr.style.aspectRatio=Math.max(0.66,Math.min(2.4,r)).toFixed(3);im.style.objectFit=ok?"cover":"contain";if(r>1.25){fr.classList.add("is-group");im.style.objectFit="contain";}}else{im.style.objectFit=r>1.25?"contain":"cover";}}
+ function wireImgs(root,big){(root||document).querySelectorAll(big?".pf-av img":".av img").forEach(function(im){if(im.complete&&im.naturalWidth)fitImg(im,big);else im.addEventListener("load",function(){fitImg(im,big);});});}
  function maskPhone(p){var d=String(p||"").replace(/\D/g,"");if(!d)return "—";if(d.length<=3)return d;var x="";for(var i=0;i<d.length-3;i++)x+="x";return x+d.slice(-3);}
  function stripHon(n){return String(n||"").replace(/^(Bà|Ông|Cô|Chú|Anh|Chị|Em|Thầy|Gia đình|Ms\.|Mr\.)\s+/,"").trim();}
  function genderOf(g){var n=String(g.full_name||"");if(/^\s*(Bà|Cô|Chị)\s/.test(n))return "nu";if(/^\s*(Ông|Anh|Chú|Thầy)\s/.test(n))return "nam";return "";}
@@ -351,6 +354,7 @@
       +'<div class="nm"><div class="n1">'+esc(g.full_name)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+(isDup(g)?' <span class="tag dup">⚠ TRÙNG</span>':'')+'</div><div class="n2">'+esc([g.org,g.title].filter(Boolean).join(" · ")||"—")+'</div></div>'
       +'<div class="rb">'+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')+(g.checked_in?'<span class="tag in">✓ '+hhmm(g.checked_in_at)+'</span>':(g.table_no?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':''))+'</div></div>';
    }).join("");
+   wireImgs($("#list"),false);
  }
  /* ---- hồ sơ khách (giữ nguyên endpoint) — SĐT ẩn khi hiển thị ---- */
  async function openGuest(id){try{var j=await jget("/crm/guests/"+id);curId=id;renderGuest(j);$("#sheet").classList.add("show");}catch(e){}}
@@ -380,7 +384,7 @@
       +'<button class="btn danger block" id="delBtn" style="margin-top:8px">'+tt("del")+'</button>'
       +'</div></div>';
    }
-   $("#sheetBody").innerHTML=html+'<div class="msg" id="gMsg"></div>';
+   $("#sheetBody").innerHTML=html+'<div class="msg" id="gMsg"></div>';wireImgs($("#sheetBody"),true);
    var ciBtn=$("#ciBtn");if(ciBtn)ciBtn.addEventListener("click",async function(){ciBtn.disabled=true;var r=await jsend("/crm/guests/"+g.id+"/check-in","POST",{});toast(r.body.already?"Đã điểm danh trước đó":tt("done_toast"),"ok");openGuest(g.id);loadAll();});
    $("#photoInput").addEventListener("change",async function(){var fl=this.files&&this.files[0];if(!fl)return;gmsg("Đang tải ảnh…","ok");var fd=new FormData();fd.append("photo",fl);try{var r=await api("/crm/guests/"+g.id+"/photos",{method:"POST",body:fd});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else{var jj=await r.json().catch(function(){return {};});gmsg(jj.error||"Lỗi tải ảnh.","err");}}catch(e){gmsg("Lỗi tải ảnh.","err");}});
    if(isBtl){
@@ -436,7 +440,7 @@
  $("#expBtn2").addEventListener("click",openExport);
  $("#sort").addEventListener("change",function(e){state.sort=e.target.value;renderList();});
  $("#langBtn").addEventListener("click",function(){setLang(LANG==="jp"?"vn":"jp");});
- $("#themeBtn").addEventListener("click",function(){var d=document.documentElement.getAttribute("data-theme")==="light"?"":"light";if(d)document.documentElement.setAttribute("data-theme",d);else document.documentElement.removeAttribute("data-theme");localStorage.setItem("crm_theme",d);this.innerHTML=d?"&#9788;":"&#9789;";});
+ $("#themeBtn").addEventListener("click",function(){var d=document.documentElement.getAttribute("data-theme")==="light"?"":"light";if(d)document.documentElement.setAttribute("data-theme",d);else document.documentElement.removeAttribute("data-theme");localStorage.setItem("crm_theme",d);this.innerHTML=d?"☀️":"🌙";});
  $("#venueEdit").addEventListener("click",function(e){e.stopPropagation();openCfg();});
  $("#sheetClose").addEventListener("click",function(){$("#sheet").classList.remove("show");curId=null;});
  $("#sheet2Close").addEventListener("click",function(){$("#sheet2").classList.remove("show");});
@@ -449,7 +453,7 @@
  var toTop=$("#toTop");window.addEventListener("scroll",function(){toTop.classList.toggle("show",window.scrollY>420);});
  toTop.addEventListener("click",function(){window.scrollTo({top:0,behavior:"smooth"});});
  /* ---- init ---- */
- if(localStorage.getItem("crm_theme")==="light"){document.documentElement.setAttribute("data-theme","light");$("#themeBtn").innerHTML="&#9788;";}
+ if(localStorage.getItem("crm_theme")==="light"){document.documentElement.setAttribute("data-theme","light");$("#themeBtn").innerHTML="☀️";}
  setLang(LANG);tickCd();setInterval(tickCd,1000);
  jget("/crm/me").then(function(j){me.email=j.email;me.role=j.role;$("#roleTag").textContent=j.role;if(j.role==="btl"){$("#addBtn").style.display="";$("#importBtn").style.display="";$("#auditBtn").style.display="";$("#cfgBtn").style.display="";$("#venueEdit").style.display="";$("#impBtn2").style.display="";}}).catch(function(){});
  loadAll();

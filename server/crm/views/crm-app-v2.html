@@ -214,8 +214,11 @@
   .ci-off{margin-top:12px;border:1px dashed var(--line);border-radius:11px;padding:11px 13px;
     font-size:.78rem;color:var(--muted);line-height:1.5;text-align:center}
 
-  .av img.landscape,.dav img.landscape,.thumbs img.landscape,.pf-av img.landscape{object-fit:contain;background:#0b1a29}
-  .av.landscape{width:86px}
+  /* AC-D0 (anh chốt 19:30): avatar ở DANH SÁCH giữ VUÔNG MỘT CỠ — không nới
+     ngang. Danh sách là lưới quét nhanh, thẻ so le bề rộng làm mắt PG mất nhịp.
+     Luật ngang/dọc (AC-D1/D2) chỉ áp ở CHI TIẾT và 2 trang cửa, nơi ảnh đủ to
+     để nhận mặt và việc không cắt mất người mới có nghĩa. */
+  .dav img.landscape,.thumbs img.landscape,.pf-av img.landscape{object-fit:contain;background:#0b1a29}
   .thumbs img.landscape{width:124px}
   .pf-av.landscape{width:100%;max-width:260px}
 

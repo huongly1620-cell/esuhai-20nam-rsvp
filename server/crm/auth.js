@@ -72,7 +72,41 @@ function parseCookies(req) {
   (req.headers.cookie || '').split(';').forEach((c) => { const i = c.indexOf('='); if (i > -1) out[c.slice(0, i).trim()] = decodeURIComponent(c.slice(i + 1).trim()); });
   return out;
 }
-function currentActor(req) { return verifyToken(parseCookies(req)[COOKIE]); }
+// ---- smoke bearer lane (E08-D024) ----
+// Second auth lane, for the agent that smokes /crm after a deploy. People keep
+// using OTP email; this lane exists only because the agent has no mailbox.
+//
+// Disabled unless CRM_SMOKE_BEARER is set, so unsetting the variable is a
+// complete kill-switch. Role is deliberately 'staff', not 'btl': the smoke
+// needs none of the btl-only lanes (delete guest, mass import, full-PII audit
+// CSV), and running as staff lets the smoke assert RBAC is still intact —
+// DELETE must answer 403. A leaked token must not be able to empty the guest
+// list four days before the event.
+const SMOKE_EMAIL = 'crm-smoke-agent@esuhai.local';
+const SMOKE_MIN_LEN = 32;
+let smokeWarned = false;
+
+function bearerActor(req) {
+  const want = process.env.CRM_SMOKE_BEARER;
+  if (!want) return null;
+  if (want.length < SMOKE_MIN_LEN) {
+    // Refuse to honour a weak token rather than silently accepting it.
+    if (!smokeWarned) { smokeWarned = true; console.error('[crm-auth] CRM_SMOKE_BEARER quá ngắn (<' + SMOKE_MIN_LEN + ') — nhánh smoke bị tắt.'); }
+    return null;
+  }
+  const hdr = req.headers.authorization || '';
+  if (hdr.slice(0, 7) !== 'Bearer ') return null;
+  const a = Buffer.from(hdr.slice(7).trim(), 'utf8');
+  const b = Buffer.from(want, 'utf8');
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  return { email: SMOKE_EMAIL, role: 'staff' };
+}
+
+// Cookie first (unchanged OTP path), bearer only as fallback. Putting it here
+// rather than in requireCrmAuth means /crm picks the app shell for the smoke
+// agent too (index.js decides via currentActor), so Playwright can open the
+// real UI with an Authorization header — no session cookie has to be minted.
+function currentActor(req) { return verifyToken(parseCookies(req)[COOKIE]) || bearerActor(req); }
 
 // ---- RBAC middleware ----
 function requireCrmAuth(req, res, next) {

@@ -75,8 +75,10 @@
     box-shadow:0 6px 22px rgba(0,0,0,.45)}
   .ci-toast.bad{background:#2d1113;color:#ffd9dc;border-color:#7c2b31}
 
-  .av img.landscape,.pf-av img.landscape{object-fit:contain;background:#0b1a29}
-  .av.landscape{width:78px}
+  /* AC-D0: list ở CẢ 2 trang cửa cũng vuông một cỡ — spec nêu đích danh
+     "list trên 2 trang check-in". Đây là màn PG quét liên tục dưới áp lực hàng
+     người, thẻ so le bề rộng còn hại hơn ở /crm. Luật ngang/dọc chỉ ở HỒ SƠ. */
+  .pf-av img.landscape{object-fit:contain;background:#0b1a29}
   .pf-av.landscape{width:100%;max-width:250px}
 
   .pv-sub{display:block;font-size:.86em;opacity:.72;line-height:1.35;margin-top:1px}
@@ -172,7 +174,7 @@ function renderList(){var rows=G.filter(match);
  $("#hint").textContent=(st.q||st.quick||st.f)?t("res",{n:rows.length}):t("total",{n:G.length});
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);
   return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'"><span class="sd'+(cm?" came":"")+'"></span>'
-   +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+esc(g.name)+'</div><div class="n2">'+esc(g.title||g.org||"")+'</div></div>'
+   +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+pairVJ(g.name,g.name_jp)+'</div><div class="n2">'+pairVJ(g.title||g.org||"",g.title_jp||g.org_jp||"")+'</div></div>'
    +(cm?'<span class="gt">&#9711; '+fmtCame(cm)+'</span>':'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>')+'</div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
 
 /* E08-D028 AC-C — chụp ảnh khách tại cửa → kệ MinIO.

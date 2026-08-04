@@ -146,7 +146,9 @@ function match(g){
  if(st.quick==="nhat"&&!(isKanji(g.name)||isKanji(g.name_jp||"")))return false;
  if(st.quick==="noi"&&String(g.phanloai||"").indexOf("Nội")===-1)return false;
  if(st.quick==="ngoai"&&String(g.phanloai||"").indexOf("Ngoại")===-1)return false;
- if(st.q){var h=norm(g.name+" "+g.title+" "+g.org);if(h.indexOf(norm(st.q))===-1)return false;}return true;}
+ // E08-D028 AC-E5: index cả ba field JP. Gate 2 toàn tip: gõ 千葉 / 鶴雅 / 取締役
+ // trên cửa ra 0 kết quả trong khi /crm ra có — cửa chỉ index 3 field VN.
+ if(st.q){var h=norm(g.name+" "+g.title+" "+g.org+" "+(g.name_jp||"")+" "+(g.title_jp||"")+" "+(g.org_jp||""));if(h.indexOf(norm(st.q))===-1)return false;}return true;}
 
 /* E08-D028 AC-D — ảnh ngang không bị cắt mất người. Đo naturalWidth/Height khi
    ảnh load (CSS không đọc được tỉ lệ gốc); w/h >= 1.25 → nới bề rộng, giữ

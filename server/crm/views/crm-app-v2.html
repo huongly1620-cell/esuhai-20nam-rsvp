@@ -556,6 +556,9 @@ function pairVJ(vn,jp){
  }
  /* ---- hồ sơ khách (giữ nguyên endpoint) — SĐT ẩn khi hiển thị ---- */
  async function openGuest(id){try{var j=await jget("/crm/guests/"+id);curId=id;renderGuest(j);$("#sheet").classList.add("show");}catch(e){}}
+// onload="imgFit(this)" trong HTML chạy ở GLOBAL scope, không thấy hàm nằm
+// trong IIFE — phải phơi ra window. Smoke bắt được: "imgFit is not defined".
+window.imgFit=imgFit;
  function renderGuest(j){
    var g=j.guest,ci=j.checkIn;var canDel=(me.role==="btl");
    var pu=(j.photos&&j.photos[0])?j.photos[0].url:"";

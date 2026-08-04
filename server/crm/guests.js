@@ -15,6 +15,9 @@ function mount(app, requireCrmAuth, requireRole) {
   // Session tags written by the D018 importer (Wave A uses tags, not a schema
   // column — see E08-D020). Only these two are filterable; anything else 400s.
   const SESSION_TAGS = { 'toa-dam': 'toa-dam', gala: 'gala' };
+  // Buổi khai trên form nằm ở `rsvp_submissions.sessions` dạng chữ:
+  // "Gala" · "Tọa đàm · Gala". Khớp bằng ILIKE trên chuỗi đó.
+  const SESSION_SQL_PATTERN = { 'toa-dam': '%ọa đàm%', gala: '%ala%' };
 
   app.get('/crm/guests', requireCrmAuth, async (req, res) => {
     const q = String(req.query.q || '').trim();
@@ -30,9 +33,24 @@ function mount(app, requireCrmAuth, requireRole) {
         conds.push(`(g.full_name ILIKE $${params.length} OR g.phone_norm ILIKE $${params.length} OR g.org ILIKE $${params.length})`);
       }
       if (session) {
-        // exact tag match inside the comma-separated tags string (no substring bleed).
+        // MỘT SoT (E08-D028 AC-A): buổi = tag danh sách ∪ buổi khai trên form,
+        // đúng luật KPI /crm/stats đang dùng.
+        //
+        // Trước đây chỉ lọc theo tag. Nhưng D026 gỡ tag buổi khỏi khách đã có
+        // bản đăng ký (D016 luật 5 — ba nhóm phải rời nhau, buổi của họ đọc từ
+        // form), nên bộ lọc này giấu mất họ: đo trên prod Gala 303 trong khi
+        // thực tế 350 — 47 khách đã đăng ký KHÔNG hiện ở trang check-in, PG tra
+        // không ra và màn không có dấu hiệu gì.
         params.push('%,' + SESSION_TAGS[session] + ',%');
-        conds.push(`(',' || COALESCE(g.tags,'') || ',') ILIKE $${params.length}`);
+        const tagIdx = params.length;
+        params.push(SESSION_SQL_PATTERN[session]);
+        const formIdx = params.length;
+        conds.push(`(
+          (',' || COALESCE(g.tags,'') || ',') ILIKE $${tagIdx}
+          OR (g.response_id IS NOT NULL AND EXISTS (
+                SELECT 1 FROM rsvp_submissions s
+                WHERE s.id = g.response_id AND s.sessions ILIKE $${formIdx}))
+        )`);
       }
       if (mine) {
         params.push(req.actor.email);
@@ -40,7 +58,19 @@ function mount(app, requireCrmAuth, requireRole) {
       }
       params.push(limit);
       const r = await pool.query(
+        // du_toa_dam / du_gala: buổi HIỆU LỰC của khách = tag danh sách ∪ buổi
+        // khai trên form. Trả sẵn từ máy chủ để tab, ?session= và KPI dùng CHUNG
+        // một luật — trước đây client tự đếm tag nên nói 303 trong khi KPI nói
+        // 350, và 47 khách đã đăng ký biến mất khỏi tab Gala.
         `SELECT g.id, g.full_name, g.phone, g.org, g.title, g.table_no, g.tags, g.note,
+                ((',' || COALESCE(g.tags,'') || ',') ILIKE '%,toa-dam,%'
+                 OR (g.response_id IS NOT NULL AND EXISTS (
+                       SELECT 1 FROM rsvp_submissions s WHERE s.id = g.response_id
+                         AND s.sessions ILIKE '%ọa đàm%'))) AS du_toa_dam,
+                ((',' || COALESCE(g.tags,'') || ',') ILIKE '%,gala,%'
+                 OR (g.response_id IS NOT NULL AND EXISTS (
+                       SELECT 1 FROM rsvp_submissions s WHERE s.id = g.response_id
+                         AND s.sessions ILIKE '%ala%'))) AS du_gala,
                 (g.response_id IS NOT NULL) AS from_rsvp,
                 (ci.guest_id IS NOT NULL) AS checked_in, ci.checked_in_at, ci.actor_email AS checked_in_by,
                 CASE WHEN p.id IS NULL THEN NULL ELSE '/crm/photos/' || p.id END AS photo_url

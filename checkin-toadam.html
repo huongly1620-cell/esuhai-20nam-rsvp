@@ -41,7 +41,11 @@
  .gm{flex:1;min-width:0}.gm .n1{font-family:serif;font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gm .n2{font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .tb{font-size:.64rem;font-weight:700;color:var(--acc);border:1px solid var(--line2);border-radius:8px;padding:3px 7px;white-space:nowrap;text-align:center}.tb b{font-family:serif;font-size:.88rem;display:block}
  .gt{color:var(--green-ok);font-size:.68rem;font-weight:700;white-space:nowrap}
- .pf{position:fixed;inset:0;z-index:60;background:linear-gradient(180deg,#0b1a30,#08111F);transform:translateY(100%);transition:transform .3s;overflow-y:auto}.pf.show{transform:translateY(0)}
+ /* E08-D028 CỬA-1: banner cụm cửa dùng z-index 99999 nên đè kín nút «←».
+    QC quét 648 điểm trên nút → 0 điểm chạm được; ngón tay thật không đóng
+    được hồ sơ, mỗi khách xong phải tải lại trang. Hồ sơ là lớp phủ toàn
+    màn nên phải nằm TRÊN banner. */
+ .pf{position:fixed;inset:0;z-index:100000;background:linear-gradient(180deg,#0b1a30,#08111F);transform:translateY(100%);transition:transform .3s;overflow-y:auto}.pf.show{transform:translateY(0)}
  .pf-bar{position:sticky;top:0;display:flex;align-items:center;gap:10px;padding:12px 14px;background:linear-gradient(180deg,rgba(8,17,31,.95),transparent);border-bottom:1px solid var(--line)}
  .pf-back{border:0;background:rgba(255,255,255,.08);color:var(--cream);width:38px;height:38px;border-radius:50%;font-size:1.1rem;cursor:pointer}
  .pf-b{padding:22px 18px 46px;max-width:520px;margin:0 auto;text-align:center}
@@ -102,7 +106,7 @@
 <input type="file" id="cam" accept="image/*" capture="environment">
 <script>
 var G=[];var SESSION="toa-dam";var SESS="Tọa đàm"; /* E08-D020: SoT = /crm API, filter theo tag buổi */
-var T={"vn": {"ci": "CHECK-IN · Tọa đàm", "lich": "📅 Lịch trình", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Tọa đàm", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)", "makhach": "Mã khách", "cambtn":"Chụp ảnh khách","cam_up":"Đang tải ảnh…","cam_ok":"Đã lưu ảnh ✓","cam_fail":"Không lưu được ảnh","cam_net":"Lỗi mạng — ảnh chưa lưu. Điểm danh vẫn giữ.","cam_auth":"Phiên đã hết hạn — đăng nhập lại để gửi ảnh","cam_notimg":"File không phải ảnh","cam_heic":"Ảnh dạng HEIC không hiện được. Vào Cài đặt → Camera → Định dạng → chọn Tương thích nhất, rồi chụp lại.","cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in", "close": "Đóng"}, "jp": {"ci": "受付 · 座談会", "lich": "📅 式次第", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "座談会 ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)", "makhach": "ゲストID", "cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消", "close": "閉じる"}};var LANG=localStorage.getItem("ci_lang")||"vn";
+var T={"vn": {"ci": "CHECK-IN · Tọa đàm", "lich": "📅 Lịch trình", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Tọa đàm", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)", "makhach": "Mã khách", "ci_fail":"Máy chủ từ chối — CHƯA điểm danh được, thử lại","ci_auth":"Phiên hết hạn — đăng nhập lại rồi điểm danh","ci_404":"Không tìm thấy khách này trên máy chủ","ci_net":"Mất mạng — CHƯA điểm danh được, thử lại","cambtn":"Chụp ảnh khách","cam_up":"Đang tải ảnh…","cam_ok":"Đã lưu ảnh ✓","cam_fail":"Không lưu được ảnh","cam_net":"Lỗi mạng — ảnh chưa lưu. Điểm danh vẫn giữ.","cam_auth":"Phiên đã hết hạn — đăng nhập lại để gửi ảnh","cam_notimg":"File không phải ảnh","cam_heic":"Ảnh dạng HEIC không hiện được. Vào Cài đặt → Camera → Định dạng → chọn Tương thích nhất, rồi chụp lại.","cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in", "close": "Đóng"}, "jp": {"ci": "受付 · 座談会", "lich": "📅 式次第", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "座談会 ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)", "makhach": "ゲストID", "cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消", "close": "閉じる"}};var LANG=localStorage.getItem("ci_lang")||"vn";
 function t(k,rep){var s=(T[LANG]&&T[LANG][k])||T.vn[k]||k;if(rep)for(var x in rep)s=s.replace("{"+x+"}",rep[x]);return s;}
 // --- API layer (SoT = /crm + Postgres) — thay hẳn localStorage check-in ---
 async function api(u,o){o=o||{};o.credentials="same-origin";return fetch(u,o);}
@@ -221,7 +225,21 @@ $("#list").addEventListener("click",function(e){var c=e.target.closest(".gc");if
 $("#pfBack").addEventListener("click",function(){$("#pf").classList.remove("show");document.body.style.overflow="";curId=null;});
 $("#pfBody").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
  if(b.getAttribute("data-cam")){camFor=b.getAttribute("data-cam");var ci=document.getElementById("cam");if(ci){ci.value="";ci.click();}return;}
-  if(b.getAttribute("data-ci")){var id=b.getAttribute("data-ci");b.disabled=true;jpost("/crm/guests/"+id+"/check-in").then(function(r){var g=byId(id);if(g)g._came=(r.body&&r.body.at)||g._came||"1";counter();openPf(id);renderList();}).catch(function(){b.disabled=false;});}});
+  if(b.getAttribute("data-ci")){var id=b.getAttribute("data-ci");b.disabled=true;
+    /* E08-D028 CỬA-2: jpost() KHÔNG ném lỗi khi máy chủ từ chối — nó trả
+       {ok:false,status}. Bản cũ bỏ qua r.ok rồi rơi về || "1" nên màn hiện
+       «Đã check-in ✓», bộ đếm +1, thẻ chuyển «đã đến» TRONG KHI DB không có
+       dòng nào. Ở cửa nghĩa là PG tưởng đã ghi, khách được cho vào, và không
+       ai biết dữ liệu đã mất. Chỉ đánh dấu khi máy chủ XÁC NHẬN. */
+    jpost("/crm/guests/"+id+"/check-in").then(function(r){
+      if(!r.ok){
+        b.disabled=false;
+        toast(r.status===401?t("ci_auth"):(r.status===404?t("ci_404"):t("ci_fail")+" ("+r.status+")"),1);
+        return;
+      }
+      var g=byId(id); if(g)g._came=(r.body&&r.body.at)||"1";
+      counter();openPf(id);renderList();
+    }).catch(function(){b.disabled=false;toast(t("ci_net"),1);});}});
 $("#q").addEventListener("input",function(e){st.q=e.target.value;renderList();});
 $("#quick").addEventListener("click",function(e){var b=e.target.closest(".qb");if(!b)return;var q=b.getAttribute("data-q");st.quick=(st.quick===q?"":q);document.querySelectorAll(".qb").forEach(function(x){x.classList.remove("on");});if(st.quick)b.classList.add("on");renderList();});
 document.querySelectorAll(".fb").forEach(function(b){b.addEventListener("click",function(){var f=b.getAttribute("data-f");st.f=(st.f===f?"":f);document.querySelectorAll(".fb").forEach(function(x){x.classList.remove("on");});if(st.f)b.classList.add("on");renderList();});});

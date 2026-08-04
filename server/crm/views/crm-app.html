@@ -102,6 +102,22 @@
   .addtask button{border:1px solid var(--line2);background:var(--gold-soft);color:var(--gold-b);border-radius:9px;padding:0 14px;font:inherit;font-weight:700;cursor:pointer}
 
   /* ── FILTER BAR (sticky) ── */
+  .dash{margin:14px 0 0}
+  .dsteps{display:flex;margin:14px 0 0;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:15px 6px}
+  .dstep{flex:1;text-align:center;position:relative;cursor:pointer}
+  .dstep::before{content:"";position:absolute;top:22px;right:50%;width:100%;height:3px;background:var(--line2);z-index:1;border-radius:3px}
+  .dstep:first-child::before{display:none}.dstep.done::before{background:var(--ok)}
+  .dstep .node{width:44px;height:44px;border-radius:50%;border:2px solid var(--line2);background:var(--panel2);display:grid;place-items:center;margin:0 auto;font-weight:800;color:var(--muted);position:relative;z-index:2;transition:.18s;font-size:1.1rem}
+  .dstep.done .node{background:var(--ok);border-color:var(--ok);color:#04220f}
+  .dstep.active .node{border-color:var(--gold);color:var(--gold-b);box-shadow:0 0 0 4px var(--gold-soft);transform:scale(1.06)}
+  .dstep .lbl{font-size:.64rem;font-weight:800;letter-spacing:.03em;margin-top:8px;color:var(--muted);text-transform:uppercase}
+  .dstep.active .lbl{color:var(--gold-b)}.dstep.done .lbl{color:var(--text)}
+  .dstep .dpct{font-size:.74rem;font-weight:800;color:var(--gold-b);margin-top:3px}
+  .dphase{overflow:hidden}.dphase.open{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:15px;margin-top:10px;animation:fade .2s}
+  .dph-h{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:800;text-align:center;margin-bottom:13px}
+  .live-big{text-align:center;font-size:.95rem;color:var(--muted);margin-bottom:13px}.live-big .num{font-family:"Playfair Display",serif;font-size:1.9rem;font-weight:800;color:var(--ok)}
+  .dbtn{display:block;width:100%;text-align:center;border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:11px;padding:12px;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;margin-top:10px;text-decoration:none}.dbtn:hover{background:var(--hover)}
+  .dbtn.link{color:var(--gold-b)}.dlinks{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.dlinks .dbtn{margin-top:0}
   .fbar{position:sticky;top:0;z-index:30;margin-top:16px;padding-top:10px;background:linear-gradient(180deg,var(--bg2) 72%,transparent)}
   :root[data-theme=light] .fbar{background:linear-gradient(180deg,var(--bg1) 72%,transparent)}
   .tabs{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.tabs::-webkit-scrollbar{display:none}
@@ -234,27 +250,14 @@
   </div>
 
   <div class="wrap">
-    <section class="ov" id="ov">
-      <div class="ov-head" id="ovHead">
-        <span class="ico">◈</span><h3 data-i="ov_h">Tổng quan &amp; chuẩn bị</h3>
-        <div class="mini"><span class="pill" id="mToa">Tọa đàm —</span><span class="pill" id="mGala">Gala —</span></div>
-        <span class="chev">▾</span>
+    <section class="dash">
+      <div class="cd2">
+        <div class="cdbox toa"><div class="tag2" data-i="toa_full">TỌA ĐÀM CHUYÊN ĐỀ</div><div class="cd-big num" id="cdToa">—</div><div class="hh" id="hhToa">—</div><div class="cdv"><span class="pin">📍</span><span id="venueToaTxt">—</span></div></div>
+        <div class="cdbox gala"><div class="tag2" data-i="gala_full">GALA TRI ÂN</div><div class="cd-big num" id="cdGala">—</div><div class="hh" id="hhGala">—</div><div class="cdv"><span class="pin">📍</span><span id="venueGalaTxt">—</span></div></div>
+        <button class="venue-edit" id="venueEdit" style="display:none" data-i="venue_edit">✎ Sửa địa điểm &amp; giờ</button>
       </div>
-      <div class="ov-wrap"><div class="ov-body"><div class="ov-in">
-        <div class="cd2">
-          <div class="cdbox toa"><div class="tag2" data-i="toa_full">TỌA ĐÀM CHUYÊN ĐỀ</div><div class="cd-big num" id="cdToa">—</div><div class="hh" id="hhToa">—</div><div class="cdv"><span class="pin">📍</span><span id="venueToaTxt">—</span></div></div>
-          <div class="cdbox gala"><div class="tag2" data-i="gala_full">GALA TRI ÂN</div><div class="cd-big num" id="cdGala">—</div><div class="hh" id="hhGala">—</div><div class="cdv"><span class="pin">📍</span><span id="venueGalaTxt">—</span></div></div>
-          <button class="venue-edit" id="venueEdit" style="display:none" data-i="venue_edit">✎ Sửa địa điểm & giờ</button>
-        </div>
-        <div><div class="bar-h" data-i="buoi_h">Buổi tham dự (theo số khách)</div><div id="buoi"></div></div>
-        <div class="chk-card chk-open" id="chkCard">
-          <div class="chk-toggle" id="chkToggle"><span class="chev">▸</span><div class="bar-h" data-i="prep_h">Việc cần chuẩn bị</div><span class="pg num" id="chkpg"></span></div>
-          <div class="chk-body">
-            <div class="chk-list" id="chklist"></div>
-            <div class="addtask"><input id="taskInput" placeholder="Thêm việc cần làm…" data-iph="ph_task"><button id="taskAdd">＋</button></div>
-          </div>
-        </div>
-      </div></div></div>
+      <div class="dsteps" id="dsteps"></div>
+      <div class="dphase" id="dphase"></div>
     </section>
 
     <div class="fbar">
@@ -286,14 +289,14 @@
  "use strict";
  var $=function(s,r){return (r||document).querySelector(s);};
  var me={email:"",role:"staff"};
- var ALL=[], state={tab:"all",q:"",wait:false,dup:false,sort:"name"}, curId=null, DUP={}, curStep=null, curJ=null;
+ var ALL=[], state={tab:"all",q:"",wait:false,dup:false,thanks:false,dphase:null,sort:"name"}, curId=null, DUP={}, curStep=null, curJ=null;
  /* ── event config (địa điểm + giờ chỉnh được) ── */
  var CFG_DEF={venueToa:"(Bấm ✎ để nhập địa điểm Tọa đàm)",venueGala:"GEM Center · Sảnh Pollux, Tầng 3",toa:"2026-08-08T14:30",gala:"2026-08-08T17:00"};
  function loadCfg(){try{return Object.assign({},CFG_DEF,JSON.parse(localStorage.getItem("crm_event_cfg")||"{}"));}catch(e){return Object.assign({},CFG_DEF);}}
  function saveCfg(c){localStorage.setItem("crm_event_cfg",JSON.stringify(c));CFG=c;}
  var CFG=loadCfg();
- var T={vn:{cap_data:"Dữ liệu",cap_sys:"Hệ thống",add:"＋ Thêm khách",import:"⬆ Nhập CSV/Excel",exp_csv:"⬇ Xuất CSV",exp_xls:"⬇ Xuất Excel",cfg:"⚙ Cài đặt sự kiện",audit:"☰ Nhật ký",logout:"⏻ Đăng xuất",arrived:"Đã đến",toa_s:"Tọa đàm",gala_s:"Gala",ov_h:"Tổng quan & chuẩn bị",toa_full:"TỌA ĐÀM CHUYÊN ĐỀ",gala_full:"GALA TRI ÂN",venue_lbl:"Địa điểm:",edit:"Sửa",buoi_h:"Buổi tham dự (theo số khách)",prep_h:"Việc cần chuẩn bị",ph_task:"Thêm việc cần làm…",ph_search:"Tìm tên / SĐT / đơn vị…",tab_all:"Tất cả",tab_toa:"Tọa đàm",tab_gal:"Gala",only_wait:"◔ Chưa đến",s_name:"Theo tên",s_vip:"VIP trước",s_tbl:"Theo bàn",s_st:"Chưa đến trước",notfound:"Không tìm thấy khách phù hợp.",done_w:"xong",ban:"Bàn",ghe:"Ghế",hang:"Hạng",buoi:"Buổi",phutrach:"Phụ trách",gioitinh:"Giới tính",contact:"Liên hệ",toa:"Tọa đàm chuyên đề",gal:"Gala Lễ kỷ niệm",ci_btn:"◯ Điểm danh — Khách đã đến",ci_on:"Đã điểm danh ·",inter_h:"Ghi nhận & tương tác",kind_call:"gọi",kind_meet:"gặp",kind_photo:"gửi ảnh",kind_other:"khác",edit_h:"Sửa thông tin",save:"Lưu",photo_h:"Ảnh khách",photo_up:"📷 Chụp / tải ảnh lên",no_photo:"Chưa có ảnh.",del:"Xoá khách này",showing:"Hiển thị",of:"trên",arr2:"đã đến",done_toast:"Đã điểm danh ✓",saved:"Đã lưu ✓",exported:"Đã xuất file ✓",cfg_saved:"Đã lưu cài đặt ✓",days:"ngày",over:"Đã diễn ra",cfg_h:"Cài đặt sự kiện",cfg_venue:"Địa điểm",cfg_toa:"Giờ Tọa đàm",cfg_gala:"Giờ Gala",cfg_venue_toa:"Địa điểm Tọa đàm",cfg_venue_gala:"Địa điểm Gala",venue_edit:"✎ Sửa địa điểm & giờ",only_dup:"⚠ Trùng",imp_btn:"⬆ Import",exp_btn:"⬇ Xuất",exp_choose:"Xuất danh sách khách",dup_warn:"Có khách khác TRÙNG TÊN — vui lòng kiểm tra!",mgr_h:"Thông tin quản lý (chỉ BTL)",recq_h:"Ghi nhận tại quầy",gift_in:"Quà khách tặng",gift_out:"Quà đáp lễ",note:"Ghi chú",gift_in_ph:"Quà khách tặng là gì? (giỏ hoa, tranh…)",gift_out_ph:"Loại quà đáp lễ (引き出物)…",gift_pending:"Danh sách quà đang chờ chị Thúy Hà xác nhận",note_ph:"Ghi chú thêm tại quầy…",rec_savebtn:"Lưu ghi nhận",pe_h:"Sau sự kiện · お礼 (hậu đãi)",pe_note_ph:"Chi tiết áp cho mục bấm bên dưới (kênh · ngày)…",pe_thu:"Thư cảm ơn",pe_anh:"Hình ảnh cảm ơn",pe_qua:"Quà đáp lễ",pe_mark:"Đánh dấu",pe_done:"Đã làm",ph_truoc:"Trước sự kiện",ph_truoc_s:"Chuẩn bị",ph_trong:"Trong sự kiện",ph_trong_s:"Đón tiếp",ph_sau:"Sau sự kiện",ph_sau_s:"お礼 tri ân",hidden:"(ẩn)"},
-   jp:{cap_data:"データ",cap_sys:"システム",add:"＋ ゲスト追加",import:"⬆ CSV/Excel取込",exp_csv:"⬇ CSV出力",exp_xls:"⬇ Excel出力",cfg:"⚙ イベント設定",audit:"☰ 監査ログ",logout:"⏻ ログアウト",arrived:"受付済",toa_s:"座談会",gala_s:"ガラ",ov_h:"概要と準備",toa_full:"座談会",gala_full:"ガラ晩餐会",venue_lbl:"会場:",edit:"編集",buoi_h:"ご出席セッション(人数)",prep_h:"開催前の準備事項",ph_task:"作業を追加…",ph_search:"氏名/電話/所属で検索…",tab_all:"すべて",tab_toa:"座談会",tab_gal:"ガラ",only_wait:"◔ 未受付",s_name:"氏名順",s_vip:"VIP優先",s_tbl:"テーブル順",s_st:"未受付優先",notfound:"該当するゲストが見つかりません。",done_w:"完了",ban:"テーブル",ghe:"お席",hang:"ランク",buoi:"セッション",phutrach:"ご担当",gioitinh:"性別",contact:"ご連絡先",toa:"座談会",gal:"ガラ晩餐会",ci_btn:"◯ 受付 — ご来場",ci_on:"受付済 ·",inter_h:"記録・応対",kind_call:"電話",kind_meet:"面談",kind_photo:"写真送付",kind_other:"その他",edit_h:"情報を編集",save:"保存",photo_h:"ゲスト写真",photo_up:"📷 写真を撮影/アップロード",no_photo:"写真なし。",del:"このゲストを削除",showing:"表示",of:"／",arr2:"受付済",done_toast:"受付完了 ✓",saved:"保存しました ✓",exported:"ファイルを出力 ✓",cfg_saved:"設定を保存 ✓",days:"日",over:"開催済み",cfg_h:"イベント設定",cfg_venue:"会場",cfg_toa:"座談会 開始",cfg_gala:"ガラ 開始",cfg_venue_toa:"座談会 会場",cfg_venue_gala:"ガラ 会場",venue_edit:"✎ 会場・時刻を編集",only_dup:"⚠ 重複",imp_btn:"⬆ 取込",exp_btn:"⬇ 出力",exp_choose:"ゲスト一覧を出力",dup_warn:"同姓同名のゲストがいます — ご確認ください！",mgr_h:"管理情報 (BTLのみ)",recq_h:"受付での記録",gift_in:"ゲストからの贈り物",gift_out:"引き出物・返礼品",note:"備考",gift_in_ph:"贈り物の内容（花かご・絵画など）",gift_out_ph:"引き出物の種類…",gift_pending:"記念品リストはトゥイ・ハさん確認待ち",note_ph:"受付メモ…",rec_savebtn:"記録を保存",pe_h:"開催後 · お礼",pe_note_ph:"下のボタンに適用する詳細（手段・日付）…",pe_thu:"お礼状",pe_anh:"写真送付",pe_qua:"返礼品",pe_mark:"記録",pe_done:"完了",ph_truoc:"開催前",ph_truoc_s:"準備",ph_trong:"開催中",ph_trong_s:"受付",ph_sau:"開催後",ph_sau_s:"お礼",hidden:"(非表示)"}};
+ var T={vn:{cap_data:"Dữ liệu",cap_sys:"Hệ thống",add:"＋ Thêm khách",import:"⬆ Nhập CSV/Excel",exp_csv:"⬇ Xuất CSV",exp_xls:"⬇ Xuất Excel",cfg:"⚙ Cài đặt sự kiện",audit:"☰ Nhật ký",logout:"⏻ Đăng xuất",arrived:"Đã đến",toa_s:"Tọa đàm",gala_s:"Gala",ov_h:"Tổng quan & chuẩn bị",toa_full:"TỌA ĐÀM CHUYÊN ĐỀ",gala_full:"GALA TRI ÂN",venue_lbl:"Địa điểm:",edit:"Sửa",buoi_h:"Buổi tham dự (theo số khách)",prep_h:"Việc cần chuẩn bị",ph_task:"Thêm việc cần làm…",ph_search:"Tìm tên / SĐT / đơn vị…",tab_all:"Tất cả",tab_toa:"Tọa đàm",tab_gal:"Gala",only_wait:"◔ Chưa đến",s_name:"Theo tên",s_vip:"VIP trước",s_tbl:"Theo bàn",s_st:"Chưa đến trước",notfound:"Không tìm thấy khách phù hợp.",done_w:"xong",ban:"Bàn",ghe:"Ghế",hang:"Hạng",buoi:"Buổi",phutrach:"Phụ trách",gioitinh:"Giới tính",contact:"Liên hệ",toa:"Tọa đàm chuyên đề",gal:"Gala Lễ kỷ niệm",ci_btn:"◯ Điểm danh — Khách đã đến",ci_on:"Đã điểm danh ·",inter_h:"Ghi nhận & tương tác",kind_call:"gọi",kind_meet:"gặp",kind_photo:"gửi ảnh",kind_other:"khác",edit_h:"Sửa thông tin",save:"Lưu",photo_h:"Ảnh khách",photo_up:"📷 Chụp / tải ảnh lên",no_photo:"Chưa có ảnh.",del:"Xoá khách này",showing:"Hiển thị",of:"trên",arr2:"đã đến",done_toast:"Đã điểm danh ✓",saved:"Đã lưu ✓",exported:"Đã xuất file ✓",cfg_saved:"Đã lưu cài đặt ✓",days:"ngày",over:"Đã diễn ra",cfg_h:"Cài đặt sự kiện",cfg_venue:"Địa điểm",cfg_toa:"Giờ Tọa đàm",cfg_gala:"Giờ Gala",cfg_venue_toa:"Địa điểm Tọa đàm",cfg_venue_gala:"Địa điểm Gala",venue_edit:"✎ Sửa địa điểm & giờ",only_dup:"⚠ Trùng",imp_btn:"⬆ Import",exp_btn:"⬇ Xuất",exp_choose:"Xuất danh sách khách",dup_warn:"Có khách khác TRÙNG TÊN — vui lòng kiểm tra!",mgr_h:"Thông tin quản lý (chỉ BTL)",recq_h:"Ghi nhận tại quầy",gift_in:"Quà khách tặng",gift_out:"Quà đáp lễ",note:"Ghi chú",gift_in_ph:"Quà khách tặng là gì? (giỏ hoa, tranh…)",gift_out_ph:"Loại quà đáp lễ (引き出物)…",gift_pending:"Danh sách quà đang chờ chị Thúy Hà xác nhận",note_ph:"Ghi chú thêm tại quầy…",rec_savebtn:"Lưu ghi nhận",pe_h:"Sau sự kiện · お礼 (hậu đãi)",pe_note_ph:"Chi tiết áp cho mục bấm bên dưới (kênh · ngày)…",pe_thu:"Thư cảm ơn",pe_anh:"Hình ảnh cảm ơn",pe_qua:"Quà đáp lễ",pe_mark:"Đánh dấu",pe_done:"Đã làm",ph_truoc:"Trước sự kiện",ph_truoc_s:"Chuẩn bị",ph_trong:"Trong sự kiện",ph_trong_s:"Đón tiếp",ph_sau:"Sau sự kiện",ph_sau_s:"お礼 tri ân",hidden:"(ẩn)",live_checkin:"Điểm danh trực tiếp",not_yet:"chưa đến",see_notarrived:"Xem khách chưa đến",thanked:"đã cảm ơn",sau_hint:"Đánh dấu お礼 trong hồ sơ từng khách; tiến độ cập nhật ở đây.",see_notthanked:"Xem khách chưa cảm ơn",ci_toa:"Check-in Tọa đàm",ci_gala:"Check-in Gala"},
+   jp:{cap_data:"データ",cap_sys:"システム",add:"＋ ゲスト追加",import:"⬆ CSV/Excel取込",exp_csv:"⬇ CSV出力",exp_xls:"⬇ Excel出力",cfg:"⚙ イベント設定",audit:"☰ 監査ログ",logout:"⏻ ログアウト",arrived:"受付済",toa_s:"座談会",gala_s:"ガラ",ov_h:"概要と準備",toa_full:"座談会",gala_full:"ガラ晩餐会",venue_lbl:"会場:",edit:"編集",buoi_h:"ご出席セッション(人数)",prep_h:"開催前の準備事項",ph_task:"作業を追加…",ph_search:"氏名/電話/所属で検索…",tab_all:"すべて",tab_toa:"座談会",tab_gal:"ガラ",only_wait:"◔ 未受付",s_name:"氏名順",s_vip:"VIP優先",s_tbl:"テーブル順",s_st:"未受付優先",notfound:"該当するゲストが見つかりません。",done_w:"完了",ban:"テーブル",ghe:"お席",hang:"ランク",buoi:"セッション",phutrach:"ご担当",gioitinh:"性別",contact:"ご連絡先",toa:"座談会",gal:"ガラ晩餐会",ci_btn:"◯ 受付 — ご来場",ci_on:"受付済 ·",inter_h:"記録・応対",kind_call:"電話",kind_meet:"面談",kind_photo:"写真送付",kind_other:"その他",edit_h:"情報を編集",save:"保存",photo_h:"ゲスト写真",photo_up:"📷 写真を撮影/アップロード",no_photo:"写真なし。",del:"このゲストを削除",showing:"表示",of:"／",arr2:"受付済",done_toast:"受付完了 ✓",saved:"保存しました ✓",exported:"ファイルを出力 ✓",cfg_saved:"設定を保存 ✓",days:"日",over:"開催済み",cfg_h:"イベント設定",cfg_venue:"会場",cfg_toa:"座談会 開始",cfg_gala:"ガラ 開始",cfg_venue_toa:"座談会 会場",cfg_venue_gala:"ガラ 会場",venue_edit:"✎ 会場・時刻を編集",only_dup:"⚠ 重複",imp_btn:"⬆ 取込",exp_btn:"⬇ 出力",exp_choose:"ゲスト一覧を出力",dup_warn:"同姓同名のゲストがいます — ご確認ください！",mgr_h:"管理情報 (BTLのみ)",recq_h:"受付での記録",gift_in:"ゲストからの贈り物",gift_out:"引き出物・返礼品",note:"備考",gift_in_ph:"贈り物の内容（花かご・絵画など）",gift_out_ph:"引き出物の種類…",gift_pending:"記念品リストはトゥイ・ハさん確認待ち",note_ph:"受付メモ…",rec_savebtn:"記録を保存",pe_h:"開催後 · お礼",pe_note_ph:"下のボタンに適用する詳細（手段・日付）…",pe_thu:"お礼状",pe_anh:"写真送付",pe_qua:"返礼品",pe_mark:"記録",pe_done:"完了",ph_truoc:"開催前",ph_truoc_s:"準備",ph_trong:"開催中",ph_trong_s:"受付",ph_sau:"開催後",ph_sau_s:"お礼",hidden:"(非表示)",live_checkin:"リアルタイム受付",not_yet:"未受付",see_notarrived:"未受付のゲストを表示",thanked:"お礼済",sau_hint:"各ゲストの情報でお礼を記録すると、ここに反映されます。",see_notthanked:"お礼未済のゲストを表示",ci_toa:"座談会 受付",ci_gala:"ガラ 受付"}};
  var LANG=localStorage.getItem("crm_lang")||"vn";
  function tt(k){return (T[LANG]&&T[LANG][k])||T.vn[k]||k;}
  /* ── checklist (thêm/xoá/tick tự do) ── */
@@ -333,25 +336,39 @@
    catch(e){if(e.message!=="unauth")$("#list").innerHTML='<div class="empty"><div class="em-ic">⚠️</div>Lỗi tải dữ liệu.</div>';}
  }
  function tabCount(t){return ALL.filter(function(g){return t==="toa"?hasTag(g,"toa-dam"):t==="gal"?hasTag(g,"gala"):true;}).length;}
+ function checkedIn(g){return g.checked_in;}
  function renderDash(){
-   var toa=tabCount("toa"),gal=tabCount("gal"),inN=ALL.filter(function(g){return g.checked_in;}).length,tot=ALL.length;
+   var toa=tabCount("toa"),gal=tabCount("gal"),inN=ALL.filter(checkedIn).length,tot=ALL.length;
    $("#cIn").textContent=inN;$("#cTot").textContent=" / "+tot;
    var pct=tot?Math.round(inN/tot*100):0;$("#ringPct").textContent=pct+"%";$("#ring").style.setProperty("--p",(pct*3.6)+"deg");
    $("#ctAll").textContent=tot;$("#ctToa").textContent=toa;$("#ctGal").textContent=gal;
-   $("#mToa").textContent=tt("toa_s")+" "+toa;$("#mGala").textContent="Gala "+gal;
    $("#venueToaTxt").textContent=CFG.venueToa;$("#venueGalaTxt").textContent=CFG.venueGala;
-   var mx=Math.max(toa,gal,1);
-   $("#buoi").innerHTML=[[tt("toa"),toa,"var(--green)"],[tt("gal"),gal,"var(--blue)"]].map(function(r){return '<div class="bar-row"><div class="t"><span class="nm"><span class="sw" style="background:'+r[2]+'"></span>'+r[0]+'</span><b class="num">'+r[1]+'</b></div><div class="bar-track"><div class="bar-fill" style="width:'+(r[1]/mx*100)+'%;background:'+r[2]+'"></div></div></div>';}).join("");
-   renderTasks();
+   var prepDone=0;for(var i=0;i<TASKS.length;i++)if(TASKS[i].d)prepDone++;
+   var thanked=ALL.filter(function(g){return hasTag(g,"cam-on");}).length;
+   var steps=[["truoc","1",tt("ph_truoc"),prepDone,TASKS.length],["trong","2",tt("ph_trong"),inN,tot],["sau","3",tt("ph_sau"),thanked,inN]];
+   $("#dsteps").innerHTML=steps.map(function(st){var full=st[4]>0&&st[3]>=st[4];return '<div class="dstep'+(full?" done":"")+(state.dphase===st[0]?" active":"")+'" data-dstep="'+st[0]+'"><div class="node">'+(full?"✓":st[1])+'</div><div class="lbl">'+st[2]+'</div><div class="dpct num">'+st[3]+"/"+st[4]+'</div></div>';}).join("");
+   renderDphase();
  }
- function renderTasks(){
-   var n=0;$("#chklist").innerHTML=TASKS.map(function(x,i){if(x.d)n++;var lb=(LANG==="jp"&&x.tj)?x.tj:x.t;return '<div class="chk'+(x.d?" done":"")+'"><span class="box" data-tk="'+i+'">'+(x.d?"&#10003;":"")+'</span><span class="lb" data-tk="'+i+'">'+esc(lb)+'</span><button class="del" data-tkdel="'+i+'">✕</button></div>';}).join("");
-   $("#chkpg").textContent=n+"/"+TASKS.length+" "+tt("done_w");
+ function barHTML(nm,v,mx,col){return '<div class="bar-row"><div class="t"><span class="nm"><span class="sw" style="background:'+col+'"></span>'+nm+'</span><b class="num">'+v+'</b></div><div class="bar-track"><div class="bar-fill" style="width:'+(mx?v/mx*100:0)+'%;background:'+col+'"></div></div></div>';}
+ function renderDphase(){
+   var el=$("#dphase");if(!state.dphase){el.className="dphase";el.innerHTML="";return;}
+   el.className="dphase open";
+   if(state.dphase==="truoc"){
+     var items=TASKS.map(function(t,i){var lb=(LANG==="jp"&&t.tj)?t.tj:t.t;return '<div class="chk'+(t.d?" done":"")+'"><span class="box" data-tk="'+i+'">'+(t.d?"&#10003;":"")+'</span><span class="lb" data-tk="'+i+'">'+esc(lb)+'</span><button class="del" data-tkdel="'+i+'">✕</button></div>';}).join("");
+     el.innerHTML='<div class="dph-h">① '+tt("ph_truoc")+' — '+tt("prep_h")+'</div><div class="chk-list">'+items+'</div><div class="addtask"><input id="taskInput" placeholder="'+tt("ph_task")+'"><button id="taskAdd">＋</button></div>';
+   }else if(state.dphase==="trong"){
+     var toa=tabCount("toa"),gal=tabCount("gal"),inN=ALL.filter(checkedIn).length,tot=ALL.length,mx=Math.max(toa,gal,1);
+     el.innerHTML='<div class="dph-h">② '+tt("ph_trong")+' — '+tt("live_checkin")+'</div><div class="live-big"><span class="num">'+inN+'</span> / '+tot+' '+tt("arrived")+' · <span style="color:var(--amber)">'+(tot-inN)+' '+tt("not_yet")+'</span></div>'+barHTML(tt("toa"),toa,mx,"var(--green)")+barHTML(tt("gal"),gal,mx,"var(--blue)")+'<button class="dbtn" id="goWait">◔ '+tt("see_notarrived")+'</button><div class="dlinks"><a class="dbtn link" href="/checkin-toadam.html">🔗 '+tt("ci_toa")+'</a><a class="dbtn link" href="/checkin-gala.html">🔗 '+tt("ci_gala")+'</a></div>';
+   }else{
+     var inN2=ALL.filter(checkedIn).length;var thanked=ALL.filter(function(g){return hasTag(g,"cam-on");}).length;
+     el.innerHTML='<div class="dph-h">③ '+tt("ph_sau")+' · お礼</div><div class="live-big"><span class="num">'+thanked+'</span> / '+inN2+' '+tt("thanked")+'</div><div class="rec-note" style="text-align:center;color:var(--muted)">'+tt("sau_hint")+'</div><button class="dbtn" id="goThanks">✉️ '+tt("see_notthanked")+'</button>';
+   }
  }
  function match(g){
    if(state.tab==="toa"&&!hasTag(g,"toa-dam"))return false;
    if(state.tab==="gal"&&!hasTag(g,"gala"))return false;
    if(state.wait&&g.checked_in)return false;
+   if(state.thanks&&(!g.checked_in||hasTag(g,"cam-on")))return false;
    if(state.dup&&!isDup(g))return false;
    if(state.q){var s=noAcc(state.q);if(noAcc(g.full_name+" "+(g.org||"")+" "+(g.title||"")+" "+(g.phone||"")).indexOf(s)===-1)return false;}
    return true;
@@ -418,7 +435,7 @@
    var ciBtn=$("#ciBtn");if(ciBtn)ciBtn.addEventListener("click",async function(){ciBtn.disabled=true;var r=await jsend("/crm/guests/"+g.id+"/check-in","POST",{});toast(r.body.already?"Đã điểm danh trước đó":tt("done_toast"),"ok");openGuest(g.id);loadAll();});
    var pin=$("#photoInput");if(pin)pin.addEventListener("change",async function(){var f=this.files&&this.files[0];if(!f)return;gmsg("Đang tải ảnh…","ok");var fd=new FormData();fd.append("photo",f);try{var r=await api("/crm/guests/"+g.id+"/photos",{method:"POST",body:fd});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else{var jj=await r.json().catch(function(){return {};});gmsg(jj.error||"Lỗi tải ảnh.","err");}}catch(e){gmsg("Lỗi tải ảnh.","err");}});
    var rs=$("#recSave");if(rs)rs.addEventListener("click",async function(){var gi=($("#giftIn").value||"").trim(),go=($("#giftOut").value||"").trim(),nn=($("#recNote").value||"").trim();var ts=[];if(gi)ts.push(jsend("/crm/guests/"+g.id+"/interactions","POST",{kind:"Quà khách tặng",body:gi}));if(go)ts.push(jsend("/crm/guests/"+g.id+"/interactions","POST",{kind:"Quà đáp lễ",body:go}));if(nn)ts.push(jsend("/crm/guests/"+g.id+"/interactions","POST",{kind:"Ghi chú",body:nn}));if(!ts.length){gmsg("Chưa nhập gì.","err");return;}rs.disabled=true;Promise.all(ts).then(function(){toast(tt("saved"),"ok");openGuest(g.id);});});
-   document.querySelectorAll(".pe").forEach(function(btn){btn.addEventListener("click",async function(){var k=btn.getAttribute("data-pe");var body=(($("#peNote")||{}).value||"").trim()||"Đã thực hiện";var r=await jsend("/crm/guests/"+g.id+"/interactions","POST",{kind:k,body:body});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);}else gmsg(r.body.error||"Lỗi.","err");});});
+   document.querySelectorAll(".pe").forEach(function(btn){btn.addEventListener("click",async function(){var k=btn.getAttribute("data-pe");var body=(($("#peNote")||{}).value||"").trim()||"Đã thực hiện";var r=await jsend("/crm/guests/"+g.id+"/interactions","POST",{kind:k,body:body});if(r.ok){var tg=tagList(g);if(tg.indexOf("cam-on")<0){tg.push("cam-on");await jsend("/crm/guests/"+g.id,"PATCH",{tags:tg.join(",")});}toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else gmsg(r.body.error||"Lỗi.","err");});});
    var pr=$("#phReveal");if(pr)pr.addEventListener("click",function(){var mm=$("#phMask");if(pr.getAttribute("data-on")){mm.textContent=maskPhone(g.phone);pr.removeAttribute("data-on");pr.textContent="👁";}else{mm.textContent=g.phone;pr.setAttribute("data-on","1");pr.textContent="🙈";}});
    var es=$("#eSave");if(es)es.addEventListener("click",async function(){var r=await jsend("/crm/guests/"+g.id,"PATCH",{phone:$("#ePhone").value,org:$("#eOrg").value,title:$("#eTitle").value,note:$("#eNote").value});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else gmsg(r.body.error||"Lỗi.","err");});
    var delBtn=$("#delBtn");if(delBtn)delBtn.addEventListener("click",async function(){if(!confirm("Xoá khách "+g.full_name+"?"))return;var r=await jsend("/crm/guests/"+g.id,"DELETE");if(r.ok){$("#sheet").classList.remove("show");toast("Đã xoá","ok");loadAll();}else gmsg(r.body.error||"Lỗi.","err");});
@@ -446,17 +463,16 @@
  function hhLabel(iso){try{var d=new Date(iso.replace(" ","T"));var dd=d.toLocaleDateString(LANG==="jp"?"ja-JP":"vi-VN",{day:"2-digit",month:"2-digit"});return dd+" · "+P(d.getHours())+":"+P(d.getMinutes());}catch(e){return "";}}
  function tickCd(){var pt=cdParts(CFG.toa),pg=cdParts(CFG.gala);$("#cdToa").textContent=cdText(pt,true);$("#cdGala").textContent=cdText(pg,true);$("#cdmToa").textContent=cdMini(pt);$("#cdmGala").textContent=cdMini(pg);$("#hhToa").textContent=hhLabel(CFG.toa);$("#hhGala").textContent=hhLabel(CFG.gala);}
  /* ---- events ---- */
- $("#ovHead").addEventListener("click",function(){$("#ov").classList.toggle("open");});
- $("#chkToggle").addEventListener("click",function(e){e.stopPropagation();$("#chkCard").classList.toggle("chk-open");});
- $("#chklist").addEventListener("click",function(e){
-   var tk=e.target.getAttribute("data-tk");if(tk!=null){TASKS[+tk].d=!TASKS[+tk].d;saveTasks();renderTasks();return;}
-   var dl2=e.target.getAttribute("data-tkdel");if(dl2!=null){TASKS.splice(+dl2,1);saveTasks();renderTasks();}
- });
- function addTask(){var v=$("#taskInput").value.trim();if(!v)return;TASKS.push({t:v,d:false});saveTasks();renderTasks();$("#taskInput").value="";$("#chkCard").classList.add("chk-open");}
- $("#taskAdd").addEventListener("click",addTask);
- $("#taskInput").addEventListener("keydown",function(e){if(e.key==="Enter")addTask();});
+ function addTask(){var el=$("#taskInput");if(!el)return;var v=el.value.trim();if(!v)return;TASKS.push({t:v,d:false});saveTasks();renderDash();}
+ document.addEventListener("keydown",function(e){if(e.target&&e.target.id==="taskInput"&&e.key==="Enter")addTask();});
  document.addEventListener("click",function(e){
-   var tab=e.target.closest(".tab");if(tab){state.tab=tab.getAttribute("data-tab");document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("on");});tab.classList.add("on");renderList();return;}
+   var ds=e.target.closest(".dstep");if(ds){var k=ds.getAttribute("data-dstep");state.dphase=state.dphase===k?null:k;renderDash();return;}
+   var tk=e.target.closest("[data-tk]");if(tk){var it=+tk.getAttribute("data-tk");TASKS[it].d=!TASKS[it].d;saveTasks();renderDash();return;}
+   var tkd=e.target.closest("[data-tkdel]");if(tkd){TASKS.splice(+tkd.getAttribute("data-tkdel"),1);saveTasks();renderDash();return;}
+   if(e.target.id==="taskAdd"){addTask();return;}
+   if(e.target.id==="goWait"){state.wait=true;state.thanks=false;var cw=$("#chipWait");if(cw)cw.classList.add("on");renderList();var l=document.querySelector(".list");if(l)l.scrollIntoView({behavior:"smooth"});return;}
+   if(e.target.id==="goThanks"){state.thanks=true;state.wait=false;var cw2=$("#chipWait");if(cw2)cw2.classList.remove("on");renderList();var l2=document.querySelector(".list");if(l2)l2.scrollIntoView({behavior:"smooth"});return;}
+   var tab=e.target.closest(".tab");if(tab){state.tab=tab.getAttribute("data-tab");state.wait=false;state.thanks=false;var cw3=$("#chipWait");if(cw3)cw3.classList.remove("on");document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("on");});tab.classList.add("on");renderList();return;}
    var g=e.target.closest(".g");if(g){openGuest(g.getAttribute("data-id"));return;}
    if(!e.target.closest("#menu"))$("#menu").classList.remove("open");
  });

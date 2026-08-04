@@ -8,7 +8,8 @@
   },
   "type": "commonjs",
   "scripts": {
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "smoke:crm": "node tools/smoke-crm.js"
   },
   "dependencies": {
     "express": "^4.21.2",

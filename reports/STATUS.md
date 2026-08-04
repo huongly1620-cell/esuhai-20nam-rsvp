@@ -5,6 +5,26 @@
 
 ## Deploy log — mới nhất
 
+**2026-08-04 · E08-D025 `npm run smoke:crm` — bộ smoke một lệnh cho /crm**
+Gói chuỗi smoke Bearer (D024) thành một lệnh chạy trước/sau mọi deploy CRM. **43 phép kiểm**, một dòng cuối `PASS`/`FAIL` + exit 0/1.
+```bash
+export CRM_SMOKE_BEARER=$(railway variables --service esuhai-web --json | node -pe 'JSON.parse(require("fs").readFileSync(0)).CRM_SMOKE_BEARER')
+export DATABASE_URL=$(railway variables --service Postgres --json | node -pe 'JSON.parse(require("fs").readFileSync(0)).DATABASE_PUBLIC_URL')  # tuỳ chọn: bật đối chiếu SQL
+npm run smoke:crm     # → PASS — 43/43 phép kiểm · <url>
+```
+
+- **401 trên TỪNG route bảo vệ** — `/crm/me`, `/crm/guests`, `/crm/guests/:id`, `/crm/stats`, `/crm/photos/:id`, `/crm/audit`, mỗi route × 3 kiểu header sai. Auth gắn **per-route** (không có guard bao trùm), bỏ sót một route là rò tên + SĐT toàn bộ khách. Cộng `/crm` và `/crm/classic` phải **đúng là trang login**.
+- **200** dương tính (`/crm/me` role=staff · guests · stats) · **số thẻ khớp `invited`** · `stats` còn tươi (`asOf` < 2 phút).
+- **403** RBAC 5 đường btl-only.
+- **Phân hoạch buổi:** bất biến nội tại + **sàn/trần ghim** (`SMOKE_INVITED_FLOOR` 170 · `SMOKE_UNKNOWN_CEILING` 30) + **đối chiếu SQL độc lập** khi có `DATABASE_URL`.
+- **UI thật** qua Playwright: `#kpiCard` hiện · số thẻ khớp `invited` · **số trên ô KPI** khớp `invited` · số ảnh khớp API · 0 lỗi JS.
+- Biến: `CRM_BASE_URL` (mặc định prod) · `SMOKE_EXPECT_INVITED` ghim số khách · `SMOKE_INVITED_FLOOR` / `SMOKE_UNKNOWN_CEILING` chỉnh mỏ neo · `SMOKE_SKIP_UI=1` bỏ phần trình duyệt (**dòng cuối ghi rõ là đã bỏ**).
+- Token **chỉ** từ env, không in ra đâu, không commit. Script **chỉ đọc**, không tạo/xoá khách. Trình duyệt **chặn mọi origin ngoài** (`fonts.googleapis.com`) để token không rời hạ tầng mình.
+- Chạy **không** `DATABASE_URL` vẫn được, nhưng dòng cuối ghi **MỨC GIẢM: chưa đối chiếu nguồn độc lập** — đừng đọc chữ PASS đó thành "dữ liệu đã xác minh".
+- **Không thêm dependency npm** — dùng `python3` + playwright có sẵn, tránh kéo browser vào build prod sát ngày lễ.
+- Đã tự phá để chắc nó biết FAIL, tái hiện đúng kịch bản QC: mất auth ở `/crm/guests` → **6 phép kiểm đỏ** · mất 172/173 khách → đỏ ở sàn · phân hoạch D016 lệch (tổng không đổi) → đỏ ở trần · không token / sai URL / ghim sai số → exit 1.
+
+
 **2026-07-31 · E08-D021 Avatar ảnh khách ở danh sách — ✅ LIVE trên production (SHA `6b50bf1`)**
 Đưa ảnh MinIO đã có lên avatar list `/crm` (3 tab + detail header) + 2 check-in. Gate 1 PASS (4 chốt) · **Gate 2 §B7 PASS 14/15** (QC độc lập, no-N+1 chứng minh bằng log query, null-not-empty đúng) · deploy trước 9h (đúng nhịp) · AC-15 smoke prod xanh.
 - `GET /crm/guests`: **+field `photo_url`** qua `LEFT JOIN LATERAL` (ảnh mới nhất) — **1 query, không N+1**. Không ảnh → `null`. Additive (D020 giữ nguyên).

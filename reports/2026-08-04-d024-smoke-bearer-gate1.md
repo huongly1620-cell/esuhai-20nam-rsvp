@@ -25,6 +25,22 @@ Việc smoke **không cần đường nào trong số đó**. Check-in (`POST /c
 
 `staff` đủ cho toàn bộ smoke: `/crm/me` · `/crm/guests` (có `photo_url`) · `/crm/stats` · check-in · HTML shell có `#kpiCard`.
 
+### ⚠️ Rủi ro tồn dư của `staff` — phải ghi ra, không được để trống
+
+Chọn `staff` **thu hẹp** rủi ro chứ không xoá. Token rò vẫn:
+
+| Còn làm được | Đường |
+|---|---|
+| **Sửa** họ tên / SĐT / email / đơn vị / chức danh / note / tags của **mọi khách** | `PATCH /crm/guests/:id` |
+| Tạo **check-in giả** | `POST /crm/guests/:id/check-in` |
+| Ghi tương tác | `POST /crm/guests/:id/interactions` |
+| **Tải ảnh lên** MinIO | `POST /crm/photos` |
+| **Đọc** toàn bộ 173 tên + đơn vị + chức danh + note + số bàn, và **43 SĐT thô chưa mask** | `GET /crm/guests` |
+
+Không làm được: xoá khách · import đè · xuất CSV toàn bộ PII · đọc nhật ký.
+
+**Kết luận:** `staff` là mức đúng cho vé này, nhưng đây **vẫn là quyền ghi**. Muốn triệt để thì cần role thứ ba `smoke` chỉ-đọc — ngoài phạm vi vé, ghi vào mục theo dõi.
+
 **Thêm một lợi ích thật:** với `staff`, smoke có thể **khẳng định RBAC còn nguyên** — `DELETE` phải trả **403**. Với `btl` thì không kiểm được điều đó, vì nó xoá thật.
 
 ## 3. Thiết kế đề xuất

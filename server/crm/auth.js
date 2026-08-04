@@ -86,8 +86,28 @@ const SMOKE_EMAIL = 'crm-smoke-agent@esuhai.local';
 const SMOKE_MIN_LEN = 32;
 let smokeWarned = false;
 
+// The cookie lane leaves a `login_success` row when a session opens; the bearer
+// lane had no equivalent, so a token could read all 173 guests — names, orgs,
+// raw phones — and leave zero trace (only write endpoints call logAudit).
+// A second auth lane into real PII must be visible in the audit log even when
+// it only reads. Throttled so a smoke run writes one row, not one per request.
+const SMOKE_AUDIT_EVERY_MS = 10 * 60 * 1000;
+let smokeAuditAt = 0;
+function noteSmokeAuth(req) {
+  const now = Date.now();
+  if (now - smokeAuditAt < SMOKE_AUDIT_EVERY_MS) return;
+  smokeAuditAt = now;
+  // fire-and-forget: audit must never break or slow the request it describes
+  Promise.resolve()
+    .then(() => logAudit(pool, {
+      actor_email: SMOKE_EMAIL, event_type: 'smoke_auth', target_type: 'session',
+      meta: { path: String(req.originalUrl || req.url || '').slice(0, 200) }, ip: ipOf(req),
+    }))
+    .catch(() => {});
+}
+
 function bearerActor(req) {
-  const want = process.env.CRM_SMOKE_BEARER;
+  const want = (process.env.CRM_SMOKE_BEARER || '').trim();  // biến dán tay dễ dính \n
   if (!want) return null;
   if (want.length < SMOKE_MIN_LEN) {
     // Refuse to honour a weak token rather than silently accepting it.
@@ -99,6 +119,7 @@ function bearerActor(req) {
   const a = Buffer.from(hdr.slice(7).trim(), 'utf8');
   const b = Buffer.from(want, 'utf8');
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  noteSmokeAuth(req);
   return { email: SMOKE_EMAIL, role: 'staff' };
 }
 

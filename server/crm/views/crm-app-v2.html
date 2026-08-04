@@ -481,7 +481,11 @@
    $("#list").innerHTML=rows.map(function(g){
      var vip=vipOf(g),vr=vipRank(g);
      return '<div class="g'+(g.checked_in?" done":"")+'" data-id="'+g.id+'">'
-      +'<div class="av">'+(g.photo_url?'<img src="'+esc(g.photo_url)+'" onerror="this.remove()">':esc(ini(g.full_name)))+'<span class="sd'+(g.checked_in?" in":"")+'"></span></div>'
+      // loading="lazy" + decoding="async": danh sách kéo cả 401 thẻ một lượt,
+      // ảnh là object GỐC (293 MB tổng, 17 tấm > 5 MB, lớn nhất 20 MB). Không
+      // lazy thì trình duyệt tải hết ngay khi mở màn — wifi hội trường 08/08.
+      // Thumb ở màn chi tiết (:497) vốn đã có lazy; đây là đồng bộ lại.
+      +'<div class="av">'+(g.photo_url?'<img src="'+esc(g.photo_url)+'" loading="lazy" decoding="async" onerror="this.remove()">':esc(ini(g.full_name)))+'<span class="sd'+(g.checked_in?" in":"")+'"></span></div>'
       +'<div class="nm"><div class="n1">'+esc(g.full_name)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+(isDup(g)?' <span class="tag dup">⚠ TRÙNG</span>':'')+'</div><div class="n2">'+esc([g.org,g.title].filter(Boolean).join(" · ")||"—")+'</div></div>'
       +'<div class="rb">'+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')+(g.checked_in?'<span class="tag in">✓ '+hhmm(g.checked_in_at)+'</span>':(g.table_no?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':''))+'</div></div>';
    }).join("");

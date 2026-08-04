@@ -5,6 +5,48 @@
 
 ## Deploy log — mới nhất
 
+## 🧊 FREEZE tới sau lễ 08/08 (Sponsor 04/08 14:48 — "đóng vá → rà lễ")
+
+**Chỉ nhận hotfix CHẶN CỬA** (lễ tân không tra được khách / không điểm danh được / `/crm` không mở). Mọi thứ khác chờ sau lễ.
+
+**Cấm chạy** trừ khi có lệnh và có người ngồi cạnh: `import-vnjb.js --commit` · `backfill-rsvp.js` · `import-tgd-116.js --commit` · mọi script trong scratchpad.
+
+**HOLD — nợ đã biết, cố ý không sửa:**
+
+| Nợ | Vì sao hoãn được |
+|---|---|
+| **D026 §3a chưa có phanh** — đúng 1 thẻ là nối, bất kể có phải cùng người | 0 ca trên dữ liệu hôm nay; rủi ro là tương lai |
+| **D026 khách trùng tên trong CÙNG một lượt đăng ký** bị nuốt thành 1 thẻ | hiếm; đầu người ở cửa hụt so với `guest_count`, lễ tân thêm tay được |
+| **D026 audit lần dọn** chỉ ghi số tổng, không ghi từng cặp | không ảnh hưởng vận hành; chỉ khó hoàn tác chính xác |
+| **D025 `PROTECTED` phủ 6/14 route** — 4 đường GHI chưa thử 401 | bộ smoke vẫn bắt được 43 thứ; đây là chưa kín, không phải sai |
+
+### E08-D026 — Gate 2 **PASS có điều kiện** (04/08)
+
+QC độc lập chấm FAIL với 3 blocker, **cả 3 đã vá và verify trên prod**:
+
+| Blocker | Verify sau vá |
+|---|---|
+| Dọn 25 thẻ đôi làm **23 khách đã đăng ký mất SĐT** → tra ở cửa không ra | active có SĐT **42** (đúng mốc Gate 1) · thẻ ẩn giữ số **0** · thử `?q=<số>` **ra thẻ** |
+| Mìn `uq_crm_guests_phone_norm` không có `deleted_at` → 409 mà không thấy thẻ nào giữ số | thẻ ẩn giữ số **0** — mìn đã tháo |
+| Làn `ext_id` thiếu `deleted_at IS NULL` → backfill ghi vào thẻ đã ẩn, hỏng im lặng | thêm mệnh đề |
+| Luật chuẩn hoá tên viết **hai bản** (SQL + JS) lệch 12/23 ca → **4 thẻ "Thầy TS."/"GS. TS." không tra tới được** | bỏ bản SQL, lọc bằng chính `nameKey()` — parity theo cấu tạo |
+| (mức cao) chữ khách gõ trên form **đè tên + đơn vị SoT** của Ly | thẻ `vnjb` thì SoT thắng |
+
+Test 14 ca PASS (thêm 4 ca từ kịch bản QC; harness cũ dùng hàm khoá giả nên 10 ca xanh trước đó không chứng minh gì về parity). Smoke **43/43**.
+
+**Điều kiện của PASS:** 4 nợ ở bảng HOLD trên vẫn mở, đã ghi thành vé sau lễ.
+
+### E08-D027 — Gate 2 **PASS** (04/08)
+
+QC đo bằng Chromium thật: **179/179** thẻ ảnh có `loading="lazy" decoding="async"`, `onerror` còn đủ, UI 179 = API 179, 0 lỗi JS. Mở màn chỉ bay **9/179** request ảnh (5%), cuộn hết mới đủ — lazy hiệu lực thật. Không đụng API/URL.
+
+### Số đứng trước lễ
+
+**376 khách** · **Dự Gala 350** · **Dự Tọa đàm 156** (giao = 0, cộng gộp hợp lệ) · 179 có ảnh · 42 có SĐT · 120 có số bàn · **68 thẻ trùng tên / 28 người** chờ BTL rà · 13 báo không dự · 11 chưa rõ buổi.
+
+Checklist rà lễ cho anh + chị Ly: [`reports/2026-08-04-checklist-ra-le.md`](2026-08-04-checklist-ra-le.md)
+
+
 **2026-08-04 · E08-D022 Pha 2 — nạp SoT 331 khách + 166 ảnh — ✅ ĐÃ GHI PROD**
 SoT: **chỉ** sheet visible `Khách Việt Nam+Nhat Ban` (7 sheet còn lại ẩn; importer tự dừng nếu sheet SoT bị ẩn).
 Kết quả: **173 → 401 khách active** · **44 → 210 ảnh** (186 khách active có ảnh) · smoke **PASS 43/43**.

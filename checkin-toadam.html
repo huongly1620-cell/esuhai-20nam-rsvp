@@ -139,7 +139,10 @@ function counter(){var done=G.filter(came).length;$("#cDone").textContent=done;
  var tot=$("#cTot");if(tot)tot.textContent=G.length;}
 function match(g){
  if(st.f==="came"&&!came(g))return false;if(st.f==="no"&&came(g))return false;
- if(st.quick==="vip"&&String(g.vip||"").indexOf("VIP")===-1&&String(g.vip||"").indexOf("VVIP")===-1)return false;
+ // E08-D028 AC-F0: vipOf() bắt tag bằng regex /^V?VIP/i nên trả về đúng tag chữ
+ // thường `vip` mà import-vnjb ghi (48 thẻ) — nhưng indexOf ở đây PHÂN BIỆT hoa
+ // thường, nên nút ★VIP chỉ ra 5 thẻ di sản `VIP` của tgd116, giấu 48 VIP thật.
+ if(st.quick==="vip"&&!/vip/i.test(String(g.vip||"")))return false;
  if(st.quick==="nhat"&&!(isKanji(g.name)||isKanji(g.name_jp||"")))return false;
  if(st.quick==="noi"&&String(g.phanloai||"").indexOf("Nội")===-1)return false;
  if(st.quick==="ngoai"&&String(g.phanloai||"").indexOf("Ngoại")===-1)return false;

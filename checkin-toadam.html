@@ -71,8 +71,10 @@
     box-shadow:0 6px 22px rgba(0,0,0,.45)}
   .ci-toast.bad{background:#2d1113;color:#ffd9dc;border-color:#7c2b31}
 </style></head><body>
-<!-- E08-D019 một SoT: bản thiết kế, không phải công cụ điểm danh thật -->
-<div style="position:sticky;top:0;z-index:99999;background:#0f955a;color:#fff;font-family:system-ui,'Segoe UI',Arial,sans-serif;padding:8px 14px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:13px;font-weight:600">✔ Đã nối <b>/crm</b> · dữ liệu SoT · điểm danh ghi thật<a href="/crm" style="background:rgba(255,255,255,.9);color:#0f955a;text-decoration:none;padding:4px 10px;border-radius:6px;font-weight:700">Mở /crm</a></div>
+<!-- E08-D028 AC-B3: đây là DỤNG CỤ CỬA thật — điểm danh ghi thẳng vào
+     Postgres qua POST /crm/guests/:id/check-in. Không còn là bản thiết kế
+     (câu đó có từ D019, đã sai từ khi D020 nối API). -->
+<div style="position:sticky;top:0;z-index:99999;background:#0f955a;color:#fff;font-family:system-ui,'Segoe UI',Arial,sans-serif;padding:8px 14px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:13px;font-weight:600">✔ Cửa <b>Tọa đàm</b> · điểm danh ghi thẳng vào /crm · <span id="bnTot">…</span><a href="/crm" style="background:rgba(255,255,255,.9);color:#0f955a;text-decoration:none;padding:4px 10px;border-radius:6px;font-weight:700">Mở /crm</a></div>
 <header class="top"><div class="top-in">
   <img class="logo" src="logo-esuhai-mark.png" alt=""><div class="ttl" data-i="ci">CHECK-IN · Tọa đàm</div>
   <button class="lang" id="langBtn">日本語</button>
@@ -114,7 +116,12 @@ function came(g){return g._came||"";}
 function fmt(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
 function fmtCame(c){return c&&c!=="1"?fmt(c):"✓";}
 var st={q:"",quick:"",f:""},curId=null;
-function counter(){$("#cDone").textContent=G.filter(came).length;var tot=$("#cTot");if(tot)tot.textContent=G.length;}
+function counter(){$("#cDone").textContent=G.filter(came).length;var tot=$("#cTot");if(tot)tot.textContent=G.length;
+ // E08-D028 AC-B3: banner ghi tổng khách của ĐÚNG buổi này, để PG thấy ngay
+ // nếu con số bất thường (trước D028, 47 khách đã đăng ký bị bộ lọc giấu mất
+ // và trên màn không có dấu hiệu nào).
+ var bn=document.getElementById("bnTot");
+ if(bn)bn.textContent=G.length+" khách · "+G.filter(came).length+" đã đến";}
 function match(g){
  if(st.f==="came"&&!came(g))return false;if(st.f==="no"&&came(g))return false;
  if(st.quick==="vip"&&String(g.vip||"").indexOf("VIP")===-1&&String(g.vip||"").indexOf("VVIP")===-1)return false;

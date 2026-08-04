@@ -573,14 +573,13 @@ window.imgFit=imgFit;
    var pu=(j.photos&&j.photos[0])?j.photos[0].url:"";
    var ph=noteF(g,"S2 phụ trách")||noteF(g,"phụ trách"),gt=noteF(g,"Giới tính");
    var contact=[maskPhone(g.phone),g.email].filter(Boolean).join(" · ")||"—";
-   // E08-D028 AC-B2 (Sponsor chốt): điểm danh CHÍNH là ở 2 trang cửa. Trên /crm
-   // ẩn nút hành động với `staff` để hai màn không bấm chồng nhau; `btl` vẫn
-   // thấy để còn đường cứu hộ khi trang cửa trục trặc giữa buổi.
+   // E08-D028 B2 (anh chốt 20:07, siết hơn bản trước): /crm KHÔNG có nút điểm
+   // danh với BẤT KỲ role nào — kể cả btl. Điểm danh chỉ ở 2 trang cửa, một
+   // đường duy nhất, không ai bấm chồng ai.
    // KẾT QUẢ đã điểm danh (ai / lúc nào) vẫn hiện với MỌI role — đó là thông
    // tin, không phải hành động.
    var ciBlock=ci?'<div class="ci-on">◯ '+tt("ci_on")+' <b>'+esc(ci.actor_email)+'</b><br>'+esc(fmt(ci.checked_in_at))+'</div>'
-     :(me.role==="btl"?'<button class="btn green block" id="ciBtn">'+tt("ci_btn")+'</button>'
-                      :'<div class="ci-off">'+tt("ci_at_door")+'</div>');
+     :'<div class="ci-off">'+tt("ci_at_door")+'</div>';
    var thumbs=(j.photos||[]).map(function(p){return '<img src="'+esc(p.url)+'" loading="lazy" onload="imgFit(this)">';}).join("")||'<span style="color:var(--muted);font-size:.8rem">'+tt("no_photo")+'</span>';
    var inter=(j.interactions||[]).map(function(x){return '<div class="inter"><div>'+esc(x.body)+'</div><div class="m">'+esc(x.kind)+' · '+esc(x.actor_email)+' · '+esc(fmt(x.created_at))+'</div></div>';}).join("");
    $("#sheetBody").innerHTML=

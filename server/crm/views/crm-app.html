@@ -425,8 +425,7 @@ window.imgFit=imgFit;
    // điểm danh hành động (điểm danh chính ở 2 trang cửa), btl vẫn thấy để cứu hộ.
    // KẾT QUẢ đã điểm danh vẫn hiện với mọi role.
    var ciBlock=ci?'<div class="ci-on">◯ '+tt("ci_on")+' <b>'+esc(ci.actor_email)+'</b><br>'+esc(fmt(ci.checked_in_at))+'</div>'
-     :(me.role==="btl"?'<button class="btn green block" id="ciBtn">'+tt("ci_btn")+'</button>'
-                      :'<div class="ci-off">'+tt("ci_at_door")+'</div>');
+     :'<div class="ci-off">'+tt("ci_at_door")+'</div>';
    var thumbs=(j.photos||[]).map(function(p){return '<img src="'+esc(p.url)+'" loading="lazy" onload="imgFit(this)">';}).join("")||'<span style="color:var(--muted);font-size:.8rem">'+tt("no_photo")+'</span>';
    var inter=(j.interactions||[]).map(function(x){return '<div class="inter"><div>'+esc(x.body)+'</div><div class="m">'+esc(x.kind)+' · '+esc(x.actor_email)+' · '+esc(fmt(x.created_at))+'</div></div>';}).join("");
    $("#sheetBody").innerHTML=

@@ -30,6 +30,7 @@ const crypto = require('crypto');
 const XLSX = require('xlsx');
 const { pool } = require('../db');
 const storage = require('./storage');
+const { logAudit } = require('./audit');
 
 const COMMIT = process.argv.includes('--commit');
 const WB = process.env.VNJB_XLSX
@@ -63,15 +64,30 @@ function codeOf(r) {
     .digest('hex').slice(0, 10);
 }
 
-function tagsOf(r) {
+// Bỏ dấu tiếng Việt TRƯỚC khi slug hoá. Nếu không, "PTGĐ" → "ptg-" và
+// "Đối tác/Khách hàng" → "-i-t-c-kh-ch-h-ng" — tag rác hiện nguyên xi trên /crm,
+// lại còn tách một chức danh làm hai (`pl:ptg-` và `pl:ptgd` cùng là PTGĐ).
+function slug(s) {
+  return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '').slice(0, 24);
+}
+
+// `hasForm`: khách đã có bản đăng ký thì buổi đọc từ form (D016 luật 5 — ba nhóm
+// phải RỜI NHAU). Gắn thêm tag buổi cho họ làm giao ≠ 0, KPI phải hạ dòng
+// "Dự Gala". Đã sửa tay một lần trên prod; đưa vào code để chạy lại tái tạo được
+// đúng trạng thái đó thay vì phá lại.
+function tagsOf(r, hasForm) {
   const t = ['vnjb'];
   const td = ox(r[C.toadam]); const ga = ox(r[C.gala]);
-  if (td === 'o') t.push('toa-dam');
-  if (ga === 'o') t.push('gala');
+  if (!hasForm) {
+    if (td === 'o') t.push('toa-dam');
+    if (ga === 'o') t.push('gala');
+  }
   if (td === 'x' && ga === 'x') t.push('khong-du');           // đã trả lời KHÔNG dự
   if (td === '' && ga === '') t.push('chua-ro-buoi');          // chưa trả lời
   const vip = norm(r[C.vip]); if (/vip/i.test(vip)) t.push('vip');
-  const pl = norm(r[C.phanloai]); if (pl) t.push('pl:' + pl.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 24));
+  const pl = norm(r[C.phanloai]); if (pl) { const s = slug(pl); if (s) t.push('pl:' + s); }
   return t;
 }
 
@@ -95,12 +111,18 @@ function buildPhotoIndex() {
   return { files, idx };
 }
 
+// Trình duyệt không hiển thị được HEIC/CR2 → thẻ khách có bản ghi ảnh nhưng vẫn
+// ra initials, và smoke báo lệch UI/API. Bỏ qua ở khâu chọn thay vì tải lên rồi
+// sửa tay (bản đầu phải chuyển 3 file bằng `sips` sau khi đã up).
+const BROWSER_OK = /\.(jpe?g|png|webp|jfif)$/i;
+
 function pickPhoto(idx, cell) {
   if (isNA(cell)) return null;
   const base = norm(cell).toLowerCase();
   const stem = base.replace(/\.[a-z0-9]+$/i, '');
-  const hits = idx.get(base) || idx.get(stem) || idx.get(nameKey(stem));
-  if (!hits || !hits.length) return null;
+  const all = idx.get(base) || idx.get(stem) || idx.get(nameKey(stem));
+  const hits = (all || []).filter((f) => BROWSER_OK.test(f.name));
+  if (!hits.length) return null;
   if (hits.length === 1) return hits[0];
   const rank = (f) => { const i = DIR_PRIORITY.findIndex((d) => f.rel === d || f.rel.startsWith(d + path.sep)); return i < 0 ? 99 : i; };
   return hits.slice().sort((a, b) => rank(a) - rank(b) || a.abs.localeCompare(b.abs))[0];
@@ -134,8 +156,10 @@ function pickPhoto(idx, cell) {
   const plan = { update: [], linkUpdate: [], create: [], photo: [], photoMissing: 0, deactivate: [], keepForm: [] };
 
   for (const [code, r] of byCode) {
-    const tags = tagsOf(r);
     const nk = nameKey(r[C.ten]);
+    // khách này đã có bản đăng ký chưa? (quyết định có gắn tag buổi hay không)
+    const known = byExt.get(code) || ((byName.get(nk) || []).length === 1 ? byName.get(nk)[0] : null);
+    const tags = tagsOf(r, !!(known && known.response_id));
     const rec = {
       code, full_name: norm(r[C.ten]), org: norm(r[C.donvi]), title: norm(r[C.chucvu]),
       table_no: norm(r[C.ban]) || null,
@@ -191,7 +215,14 @@ function pickPhoto(idx, cell) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    // MERGE tag, không ghi đè. Bản đầu dùng `tags = $7` và xoá sạch `tgd116` +
+    // `kcode:Kxxx` trên ~58 thẻ — `kcode` là đường DUY NHẤT truy ngược về cách
+    // đánh số K của chị Ly trên DS Sếp, và ô "trong đó N từ DS Sếp" trên /crm
+    // tụt từ ~114 xuống 30. Cùng khuôn với sync-from-rsvp.js:11.
     const upd = async (id, rec) => {
+      const cur = await client.query('SELECT tags FROM crm_guests WHERE id = $1', [id]);
+      const set = new Set(String((cur.rows[0] || {}).tags || '').split(',').map((s) => s.trim()).filter(Boolean));
+      rec.tags.forEach((t) => set.add(t));
       await client.query(
         `UPDATE crm_guests SET
            full_name = $1,
@@ -202,7 +233,8 @@ function pickPhoto(idx, cell) {
            guest_ext_id = COALESCE(guest_ext_id, $6),
            tags = $7, updated_at = now()
          WHERE id = $8`,
-        [rec.full_name, rec.org, rec.title, rec.note, rec.table_no, rec.code, rec.tags.join(','), id]);
+        [rec.full_name, rec.org, rec.title, rec.note, rec.table_no, rec.code,
+          Array.from(set).join(','), id]);
       nUpd++;
     };
     for (const x of plan.update) await upd(x.id, x.rec);
@@ -244,6 +276,13 @@ function pickPhoto(idx, cell) {
       nPhoto++;
     }
   }
+
+  // Import 72 update + 259 insert + 31 soft-delete + 166 ảnh mà không để lại
+  // dòng audit nào là ngược đúng tinh thần D024. import-tgd-116.js có ghi.
+  await logAudit(pool, {
+    actor_email: ACTOR, event_type: 'import_vnjb', target_type: 'batch',
+    meta: { sheet: SHEET, capNhat: nUpd, taoMoi: nNew, softDelete: nDel, anhTaiLen: nPhoto, anhBoQua: nPhotoSkip },
+  });
 
   const after = await pool.query('SELECT count(*)::int n FROM crm_guests WHERE deleted_at IS NULL');
   const ph = await pool.query('SELECT count(*)::int n FROM crm_photos');

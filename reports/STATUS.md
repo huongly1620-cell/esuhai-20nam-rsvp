@@ -27,6 +27,28 @@ Kết quả: **173 → 401 khách active** · **44 → 210 ảnh** (186 khách a
 1. **12 khách vừa có tag buổi vừa có form** → phá giả định "hai nguồn rời nhau" của D016, KPI phải hạ dòng "Dự Gala". Đã kiểm cả 12 hai nguồn nói **cùng một buổi** → gỡ tag danh sách (lossless, buổi vẫn đọc từ form). **Không** sửa `/crm/stats`.
 2. **2 ảnh HEIC + 1 CR2** trình duyệt không hiện được → chuyển JPEG bằng `sips`, tải lại, xoá bản ghi cũ.
 
+
+### Gate 2 §B7 — **FAIL vòng 1**, 4 lỗi do import đã vá (04/08)
+
+QC độc lập xác nhận **mọi con số báo cáo đều đúng** (đếm lại 331/331 thẻ, 0 lệch tag, 0 lệch `table_no`), nhưng bắt 4 lỗi **chưa khai báo** do chính import gây ra — đã vá, smoke lại **PASS 43/43**:
+
+| Lỗi | Hậu quả | Đã vá |
+|---|---|---|
+| `tags = $7` **ghi đè** thay vì merge | ~58 thẻ mất `tgd116` + `kcode:Kxxx` — `kcode` là đường **duy nhất** truy về cách đánh số K của Ly. Ô "trong đó N từ DS Sếp" trên `/crm` tụt **114 → 30** | dùng merge; phục hồi **89** thẻ `tgd116`+`kcode`, **85** thẻ `ly-tgd` |
+| Chạy lại `--commit` **phá lại D016** | bản vá "gỡ tag buổi khỏi 12 khách có form" chỉ có trên prod, không có trong git → chạy lại là giao ≠ 0, KPI vỡ | `tagsOf(r, hasForm)` — code tái tạo đúng prod |
+| 1 nhóm trùng tên **không có tag** `trung-ten-can-ra` | BTL lọc theo tag để rà sẽ **bỏ sót nguyên nhóm**. Con số thật là **30 người / 93 thẻ**, không phải 29/91 | tag đủ **93** thẻ |
+| Tag `pl:` **mất dấu** | `pl:ptg-` 117 + `pl:ptgd` 28 cùng là PTGĐ; `pl:-i-t-c-kh-ch-h-ng` = Đối tác/Khách hàng — rác hiện nguyên xi trên `/crm` | bỏ dấu trước slug; sửa **268** tag → `pl:ptgd` 145 · `pl:tgd` 102 · `pl:doi-tac-khach-hang` 23 |
+| 1 ảnh gắn cho **2 người khác tên** | một khách đang hiện mặt người khác ở cửa | giữ cho người khớp tên file, **gỡ 8** thẻ còn lại → initials |
+| Import không để lại **dòng audit nào** | 72 update + 259 insert + 31 ẩn + 166 ảnh, không truy được | `logAudit` `import_vnjb` + `repair_gate2` |
+
+Chạy lại importer sau vá: **0 tạo mới, 0 xoá, 401 ổn định, 163 ảnh** (bớt 3 HEIC/CR2 vì trình duyệt không mở được — nay bỏ ở khâu chọn thay vì up rồi sửa tay).
+
+### 🔴 Hai lỗi CHƯA vá — cần quyết định
+
+**1. Mỗi khách SoT đăng ký form từ giờ tới 08/08 đều sinh thẻ trùng.** `rsvp.js:136` gọi `syncFromRsvp` trên **đường ghi live**, không chỉ backfill. 259 thẻ `vnjb-*` mới đều `phone = NULL` → sync tra SĐT trượt, tra ext-id trượt → **INSERT thẻ mới** không ảnh, không số bàn, không tag buổi. Nhịp thật ~5 submission/ngày ≈ **20 thẻ trùng nữa trước lễ**. STATUS cũ chỉ cấm `backfill-rsvp.js` — **đường live chưa được chặn**. Sửa: thêm nhánh tra theo tên chuẩn hoá trong `upsertOne` — **đụng backend LIVE, cần vé + Gate riêng**.
+
+**2. Màn `/crm` kéo 293 MB ảnh gốc, tải nóng.** `crm-app-v2.html` render avatar danh sách **không có `loading="lazy"`** (thumb màn chi tiết thì có), UI gọi `limit=1000` lấy cả 401 thẻ một lượt, `photos.js:49` redirect thẳng tới **object gốc** không có bản thu nhỏ. 37 ảnh > 2 MB, 17 ảnh > 5 MB, lớn nhất 20 MB. Wifi hội trường ngày 08/08.
+
 ### ⛔ Cấm sau import này
 
 **KHÔNG chạy `server/crm/backfill-rsvp.js`** cho tới khi có vé sửa `sync-from-rsvp.js`.

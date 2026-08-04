@@ -395,6 +395,11 @@ async function saveQuay(id,btn){
    if(!r.ok){btn.disabled=false;
      toast(r.status===401?t("ci_auth"):t("q_fail")+" ("+r.status+")",1);return;}
   }
+  /* Phải xoá CẢ Ô TRÊN MÀN, không chỉ bản nháp trong bộ nhớ: enrich() gọi lại
+     openPf(), mà openPf() mở đầu bằng grabDraft() — nó đọc lại đúng ba ô vẫn
+     còn chữ và dựng lại bản nháp vừa xoá. Ở cửa nghĩa là PG lưu xong thấy chữ
+     còn nguyên, tưởng chưa lưu, bấm lần nữa → hai dòng ghi nhận trùng. */
+  ["qTang","qDap","qNote"].forEach(function(k){var el=document.getElementById(k);if(el)el.value="";});
   g._q={};g._enriched=false;toast(t("q_saved"));await enrich(g,id);
  }catch(e){btn.disabled=false;toast(t("q_net"),1);}}
 function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls=g.diet==="Món chay"?"chay":"";

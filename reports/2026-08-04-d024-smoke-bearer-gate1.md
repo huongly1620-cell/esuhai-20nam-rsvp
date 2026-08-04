@@ -68,3 +68,35 @@ Prod sau deploy: 4 ca trên + `/crm/me` `/crm/guests` `/crm/stats` 200 + `/crm` 
 ## 6. Cấm (theo phiếu, em giữ)
 
 Không `OTP_DELIVERY=console` trên prod · không hard-code token · không in token ra STATUS/chat/Signal · STATUS chỉ ghi "đã cấu hình".
+
+---
+
+# KẾT QUẢ — LIVE
+
+`14e959a` (lane Bearer) + `887c8eb` (audit + trim) · deploy `108eab43` SUCCESS 04/08 11:11 · `railway up --service esuhai-web` (CR-25, service ID `2f54e6bc` đối chiếu trước khi đẩy).
+
+**Secret:** `CRM_SMOKE_BEARER` **đã cấu hình** trên service `esuhai-web` (32 byte ngẫu nhiên, 43 ký tự base64url). Giá trị **không** nằm trong repo, commit, report, hay chat — anh xem trong Railway dashboard. Tắt lane: đặt biến rỗng.
+
+## Verify prod
+
+| | |
+|---|---|
+| Không header · Bearer sai · scheme `Basic` | **401** |
+| `/crm/me` · `/crm/guests` · `/crm/stats` | **200** |
+| `DELETE /crm/guests/:id` · `GET /crm/audit` · `POST /crm/import` · `POST /crm/guests` | **403** — RBAC còn nguyên |
+| `/crm` không auth | trang login, **0 tên khách** |
+| Actor | `crm-smoke-agent@esuhai.local` / `staff` |
+
+**UI thật trên prod qua Playwright + header Bearer** (thứ trước đây phải chờ người): `#kpiCard` hiện · **173 thẻ khách · 41 ảnh** · pill `Dự Tọa đàm 24 / Dự Gala 155` · khối buổi `107 + 48 + 18` · nút 日本語 còn · **0 lỗi JS**. Đây cũng là smoke BTL còn thiếu của **D022 Pha 1** — nay đã đóng.
+
+## Gate 2 — QC độc lập PASS, 2 việc đã xử lý
+
+1. **Lane Bearer mù với audit khi chỉ đọc.** QC kéo trọn 173 khách (tên, đơn vị, SĐT thô) mà `crm_audit_events` tăng **0 dòng** — vì chỉ endpoint **ghi** mới gọi `logAudit`. Yêu cầu số 3 của phiếu vì thế chưa từng chứng minh được. **Đã sửa:** ghi event `smoke_auth` khi Bearer xác thực thành công, throttle 10 phút. Verify prod: 1 request → 1 dòng; thêm 5 request → vẫn **1 dòng** (không spam).
+2. **Rủi ro tồn dư của `staff` chưa ghi ra giấy.** QC đúng — bảng rủi ro cũ chỉ liệt kê hậu quả của `btl`. Đã bổ sung §2 ở trên.
+
+QC còn báo 5 mục thông tin, em **không** sửa trong vé này: `.trim()` làm `Bearer  <tok>` thừa space vẫn nhận (RFC 7235 cho phép OWS, token vẫn phải đúng từng byte) · `SMOKE_MIN_LEN` đếm độ dài chứ không phải entropy · `smokeWarned` là latch (restart là reset) · token không có TTL/rotate/rate-limit · `CRM_ALLOWLIST` là **biến chết**, không file .js nào tham chiếu (allowlist thật nằm ở bảng `staff_users`) — cái cuối đáng dọn, ngoài vé.
+
+## Theo dõi
+
+- Muốn triệt để thì cần role thứ ba **`smoke` chỉ-đọc** — `staff` vẫn cho sửa khách, tạo check-in giả, tải ảnh, đọc 43 SĐT thô.
+- Chưa có quy trình **xoay token**. Sau lễ nên đặt lịch, hoặc xoá biến khi hết mùa sự kiện.

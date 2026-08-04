@@ -150,7 +150,7 @@ function openPf(id){var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls
    :'<button class="cib" data-ci="'+esc(g.id)+'">&#9711;&nbsp; '+t("cibtn")+'</button>';
  $("#pfBody").innerHTML='<div class="pf-av">'+av(g,1)+'</div><div class="pf-nm">'+esc(g.name)+'</div><div class="pf-rl"><b>'+esc(g.title||"—")+'</b>'+(g.org?'<br>'+esc(g.org):'')+'</div>'
   +''
-  +'<div class="facts">'+(g.vip?'<div class="ft"><div class="k">'+t("hang")+'</div><div class="v">'+esc(g.vip)+'</div></div>':'')+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(g.buoi)+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(g.diet||"—")+'</div></div></div>'
+  +'<div class="facts">'+(g.vip?'<div class="ft"><div class="k">'+t("hang")+'</div><div class="v">'+esc(g.vip)+'</div></div>':'')+'</div>'
   +'<div class="info"><div class="ir"><span class="k">'+t("phutrach")+'</span><span class="v">'+esc(g.handler||"—")+'</span></div>'
   
   

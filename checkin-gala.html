@@ -4,7 +4,7 @@
 <style>
  :root{--gold:#d8b876;--gold-b:#f4e2b0;--cream:#f5efe1;--muted:#b9b096;--muted2:#8f886f;
   --line:rgba(216,184,118,.2);--line2:rgba(216,184,118,.42);--card:rgba(255,255,255,.04);--green-ok:#43e08d;--amber:#f0b34a;--bg1:#0b1a30;--bg2:#0b2330;--bg3:#08111F;--topbg:rgba(8,17,31,.95);--topbg2:rgba(8,17,31,.7);--pf1:#0b1a30;--pf2:#08111F;--inp:rgba(5,13,24,.6);--panel:rgba(5,13,24,.5);--sheet1:#0b2330;--sheet2:#08111F;--srbg:rgba(11,26,48,.96);--srbg2:rgba(11,26,48,.6);
-  --acc:#2E7FCC;--acc-dim:rgba(46,127,204,.12);--acc-glow:rgba(46,127,204,.3);}
+  --acc:#2E7FCC;--acc-dk:#173f6b;--acc-dim:rgba(46,127,204,.12);--acc-glow:rgba(46,127,204,.3);}
  :root[data-theme=light]{--cream:#241f16;--muted:#6a6250;--muted2:#8a8270;--line:rgba(120,92,36,.2);--line2:rgba(120,92,36,.34);--card:rgba(255,255,255,.85);--gold-b:#8a6414;--bg1:#f6f1e6;--bg2:#efe8d8;--bg3:#e8e0cd;--topbg:rgba(246,241,230,.95);--topbg2:rgba(246,241,230,.7);--pf1:#f6f1e6;--pf2:#ece3d1;--inp:#fff;--panel:#fff;--sheet1:#fbf7ee;--sheet2:#f2ead8;--srbg:rgba(246,241,230,.96);--srbg2:rgba(246,241,230,.6)}
  :root[data-theme=light] .av,:root[data-theme=light] .pf-av{background:linear-gradient(160deg,#e6dcc4,#d3c4a0);color:#6a4e12}
  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -50,10 +50,10 @@
  .pf-av{width:190px;aspect-ratio:1;height:auto;position:relative;border-radius:18px;margin:0 auto;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,#123f50,#0b2340);border:2px solid var(--acc);color:var(--gold-b);font-family:serif;font-size:3.4rem;box-shadow:0 12px 34px rgba(0,0,0,.4)}.pf-av img{width:100%;height:100%;object-fit:cover}.pf-av.is-group{width:100%;max-width:330px}.av img+.ini,.pf-av img+.ini{display:none}
  .pf-nm{font-family:serif;font-size:1.7rem;color:var(--cream);margin-top:14px;line-height:1.2}
  .pf-rl{color:var(--muted);font-size:.92rem;margin-top:4px}.pf-rl b{color:var(--cream)}
- .th{margin:0;display:inline-flex;gap:22px;border:1.5px solid var(--acc);border-radius:16px;background:var(--acc-dim);padding:12px 26px}
- .th .c .k{font-size:.58rem;text-transform:uppercase;letter-spacing:.16em;color:var(--muted)}.th .c .v{font-family:serif;font-size:2.4rem;color:var(--acc);line-height:1}
+ .th{margin:0;display:inline-flex;gap:22px;border:1.5px solid var(--acc);border-radius:16px;background:linear-gradient(160deg,var(--acc),var(--acc-dk));box-shadow:0 7px 22px var(--acc-glow);padding:12px 30px}
+ .th .c .k{font-size:.6rem;text-transform:uppercase;letter-spacing:.18em;color:rgba(255,255,255,.78)}.th .c .v{font-family:"Playfair Display",serif;font-size:3rem;font-weight:800;background:linear-gradient(180deg,#ffe9a8,#d8a93e);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1;filter:drop-shadow(0 2px 5px rgba(0,0,0,.6))}
  .posrow{display:flex;gap:16px;align-items:center;justify-content:center;margin:16px 0}
- .seat-c{width:78px;height:78px;border-radius:50%;border:2.5px solid var(--acc);background:var(--acc-dim);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;flex:none}.seat-c .sk{font-size:.5rem;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:2px}.seat-c b{font-family:serif;font-size:2rem;color:var(--acc)}
+ .seat-c{width:88px;height:88px;border-radius:50%;border:2.5px solid var(--acc);background:linear-gradient(160deg,var(--acc),var(--acc-dk));box-shadow:0 7px 22px var(--acc-glow);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;flex:none}.seat-c .sk{font-size:.52rem;letter-spacing:.16em;color:rgba(255,255,255,.78);text-transform:uppercase;margin-bottom:3px}.seat-c b{font-family:"Playfair Display",serif;font-size:2.6rem;font-weight:800;background:linear-gradient(180deg,#ffe9a8,#d8a93e);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 5px rgba(0,0,0,.55))}
  .facts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
  .ft{border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-size:.8rem;background:var(--panel)}.ft .k{font-size:.55rem;text-transform:uppercase;color:var(--muted2)}.ft .v{color:var(--cream);font-weight:600}.ft.chay .v{color:var(--green-ok)}
  .info{text-align:left;border-top:1px solid var(--line);margin-top:6px}
@@ -152,7 +152,7 @@ function openPf(id){var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls
    :'<button class="cib" data-ci="'+esc(g.id)+'">&#9711;&nbsp; '+t("cibtn")+'</button>';
  $("#pfBody").innerHTML='<div class="pf-av">'+av(g,1)+'</div><div class="pf-nm">'+esc(g.name)+'</div><div class="pf-rl"><b>'+esc(g.title||"—")+'</b>'+(g.org?'<br>'+esc(g.org):'')+'</div>'
   +'<div class="posrow"><div class="th"><div class="c"><div class="k">'+t("ban")+'</div><div class="v num">'+esc(g.table||"—")+'</div></div></div><div class="seat-c"><span class="sk">'+t("ghe")+'</span><b class="num">'+esc(g.seat||"—")+'</b></div></div>'
-  +'<div class="facts">'+(g.vip?'<div class="ft"><div class="k">'+t("hang")+'</div><div class="v">'+esc(g.vip)+'</div></div>':'')+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(g.buoi)+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(g.diet||"—")+'</div></div></div>'
+  +'<div class="facts">'+(g.vip?'<div class="ft"><div class="k">'+t("hang")+'</div><div class="v">'+esc(g.vip)+'</div></div>':'')+'</div>'
   +'<div class="info"><div class="ir"><span class="k">'+t("phutrach")+'</span><span class="v">'+esc(g.handler||"—")+'</span></div>'
   
   

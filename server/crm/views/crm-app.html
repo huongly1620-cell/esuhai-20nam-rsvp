@@ -309,7 +309,10 @@
  /* ---- tags/note helpers ---- */
  function tagList(g){return String(g.tags||"").split(",").map(function(s){return s.trim();}).filter(Boolean);}
  function hasTag(g,x){return tagList(g).indexOf(x)>=0;}
- function buoiOf(g){var t=hasTag(g,"toa-dam"),ga=hasTag(g,"gala");return t&&ga?tt("toa")+" + "+tt("gal"):t?tt("toa"):ga?tt("gal"):"—";}
+ // Buổi HIỆU LỰC do máy chủ tính (tag ∪ form) — E08-D028. Làn rollback cũng
+ // phải đếm đúng: lật CRM_UI=classic mà vẫn đếm tag là mất 47 khách Gala.
+ function duBuoi(g,t){return t==="toa"?!!g.du_toa_dam:t==="gal"?!!g.du_gala:true;}
+ function buoiOf(g){var t=!!g.du_toa_dam,ga=!!g.du_gala;return t&&ga?tt("toa")+" + "+tt("gal"):t?tt("toa"):ga?tt("gal"):"—";}
  function vipOf(g){var m=tagList(g).filter(function(x){return /vip/i.test(x)&&x.toLowerCase()!=="khách vip";});return m[0]||"";}
  function vipRank(g){var v=noAcc(vipOf(g)).replace(/[^0-9]/g,"");return v?parseInt(v,10):(vipOf(g)?1:99);}
  function noteF(g,label){var m=new RegExp(label+"\\s*[:：]\\s*([^·]+)").exec(g.note||"");return m?m[1].trim():"";}
@@ -320,7 +323,7 @@
    try{var j=await jget("/crm/guests?mine=0&limit=1000");ALL=j.rows||[];computeDup();renderDash();renderList();}
    catch(e){if(e.message!=="unauth")$("#list").innerHTML='<div class="empty"><div class="em-ic">⚠️</div>Lỗi tải dữ liệu.</div>';}
  }
- function tabCount(t){return ALL.filter(function(g){return t==="toa"?hasTag(g,"toa-dam"):t==="gal"?hasTag(g,"gala"):true;}).length;}
+ function tabCount(t){return ALL.filter(function(g){return duBuoi(g,t);}).length;}
  function renderDash(){
    var toa=tabCount("toa"),gal=tabCount("gal"),inN=ALL.filter(function(g){return g.checked_in;}).length,tot=ALL.length;
    $("#cIn").textContent=inN;$("#cTot").textContent=" / "+tot;
@@ -337,8 +340,7 @@
    $("#chkpg").textContent=n+"/"+TASKS.length+" "+tt("done_w");
  }
  function match(g){
-   if(state.tab==="toa"&&!hasTag(g,"toa-dam"))return false;
-   if(state.tab==="gal"&&!hasTag(g,"gala"))return false;
+   if(state.tab!=="all"&&!duBuoi(g,state.tab))return false;
    if(state.wait&&g.checked_in)return false;
    if(state.dup&&!isDup(g))return false;
    if(state.q){var s=noAcc(state.q);if(noAcc(g.full_name+" "+(g.org||"")+" "+(g.title||"")+" "+(g.phone||"")).indexOf(s)===-1)return false;}

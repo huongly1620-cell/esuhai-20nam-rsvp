@@ -100,7 +100,21 @@ function mount(app, requireCrmAuth, requireRole) {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
     try {
-      const g = await pool.query('SELECT * FROM crm_guests WHERE id = $1 AND deleted_at IS NULL', [id]);
+      // du_toa_dam / du_gala phải có ở ĐÂY nữa, không chỉ ở list. Hồ sơ khách
+      // đọc từ endpoint này; thiếu hai field thì `buoiOf()` ra "—" cho MỌI
+      // khách — nặng hơn cả trạng thái trước vé. Dùng chung SESSION_RE.
+      const g = await pool.query(
+        `SELECT *,
+           ((',' || COALESCE(tags,'') || ',') ILIKE '%,toa-dam,%'
+            OR (response_id IS NOT NULL AND EXISTS (
+                  SELECT 1 FROM rsvp_submissions s WHERE s.id = crm_guests.response_id
+                    AND s.sessions ~* $2))) AS du_toa_dam,
+           ((',' || COALESCE(tags,'') || ',') ILIKE '%,gala,%'
+            OR (response_id IS NOT NULL AND EXISTS (
+                  SELECT 1 FROM rsvp_submissions s WHERE s.id = crm_guests.response_id
+                    AND s.sessions ~* $3))) AS du_gala
+         FROM crm_guests WHERE id = $1 AND deleted_at IS NULL`,
+        [id, SESSION_RE['toa-dam'], SESSION_RE.gala]);
       if (!g.rows[0]) return res.status(404).json({ ok: false, error: 'not found' });
       const ci = await pool.query('SELECT actor_email, checked_in_at, note FROM crm_check_ins WHERE guest_id = $1', [id]);
       const asg = await pool.query('SELECT staff_email, assigned_at FROM crm_assignments WHERE guest_id = $1', [id]);
@@ -113,6 +127,7 @@ function mount(app, requireCrmAuth, requireRole) {
           id: row.id, full_name: row.full_name, phone: row.phone, email: row.email,
           org: row.org, title: row.title, note: row.note, tags: row.tags,
           table_no: row.table_no, response_id: row.response_id, created_at: row.created_at,
+          du_toa_dam: row.du_toa_dam, du_gala: row.du_gala,
         },
         checkIn: ci.rows[0] || null,
         assignments: asg.rows,

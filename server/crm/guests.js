@@ -15,9 +15,15 @@ function mount(app, requireCrmAuth, requireRole) {
   // Session tags written by the D018 importer (Wave A uses tags, not a schema
   // column — see E08-D020). Only these two are filterable; anything else 400s.
   const SESSION_TAGS = { 'toa-dam': 'toa-dam', gala: 'gala' };
-  // Buổi khai trên form nằm ở `rsvp_submissions.sessions` dạng chữ:
-  // "Gala" · "Tọa đàm · Gala". Khớp bằng ILIKE trên chuỗi đó.
-  const SESSION_SQL_PATTERN = { 'toa-dam': '%ọa đàm%', gala: '%ala%' };
+  // Buổi khai trên form nằm ở `rsvp_submissions.sessions` — **free text** người
+  // dùng gõ trên form công khai (rsvp.js không whitelist). Sau E08-D028 chuỗi
+  // này QUYẾT ĐỊNH ai lên /checkin-gala.html, nên phải khớp có BIÊN TỪ:
+  // '%ala%' cũ khớp cả "Salad" và "Balalaika".
+  // Một hằng dùng chung cho ?session= và cho field du_* — không viết hai bản.
+  const SESSION_RE = {
+    'toa-dam': '(^|[^[:alpha:]])(t[oọ]a[ ]?đ[aà]m|toa dam)([^[:alpha:]]|$)',
+    gala: '(^|[^[:alpha:]])gala([^[:alpha:]]|$)',
+  };
 
   app.get('/crm/guests', requireCrmAuth, async (req, res) => {
     const q = String(req.query.q || '').trim();
@@ -43,13 +49,13 @@ function mount(app, requireCrmAuth, requireRole) {
         // không ra và màn không có dấu hiệu gì.
         params.push('%,' + SESSION_TAGS[session] + ',%');
         const tagIdx = params.length;
-        params.push(SESSION_SQL_PATTERN[session]);
+        params.push(SESSION_RE[session]);
         const formIdx = params.length;
         conds.push(`(
           (',' || COALESCE(g.tags,'') || ',') ILIKE $${tagIdx}
           OR (g.response_id IS NOT NULL AND EXISTS (
                 SELECT 1 FROM rsvp_submissions s
-                WHERE s.id = g.response_id AND s.sessions ILIKE $${formIdx}))
+                WHERE s.id = g.response_id AND s.sessions ~* $${formIdx}))
         )`);
       }
       if (mine) {
@@ -66,11 +72,11 @@ function mount(app, requireCrmAuth, requireRole) {
                 ((',' || COALESCE(g.tags,'') || ',') ILIKE '%,toa-dam,%'
                  OR (g.response_id IS NOT NULL AND EXISTS (
                        SELECT 1 FROM rsvp_submissions s WHERE s.id = g.response_id
-                         AND s.sessions ILIKE '%ọa đàm%'))) AS du_toa_dam,
+                         AND s.sessions ~* '${SESSION_RE['toa-dam']}'))) AS du_toa_dam,
                 ((',' || COALESCE(g.tags,'') || ',') ILIKE '%,gala,%'
                  OR (g.response_id IS NOT NULL AND EXISTS (
                        SELECT 1 FROM rsvp_submissions s WHERE s.id = g.response_id
-                         AND s.sessions ILIKE '%ala%'))) AS du_gala,
+                         AND s.sessions ~* '${SESSION_RE.gala}'))) AS du_gala,
                 (g.response_id IS NOT NULL) AS from_rsvp,
                 (ci.guest_id IS NOT NULL) AS checked_in, ci.checked_in_at, ci.actor_email AS checked_in_by,
                 CASE WHEN p.id IS NULL THEN NULL ELSE '/crm/photos/' || p.id END AS photo_url

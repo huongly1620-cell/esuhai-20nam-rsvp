@@ -180,7 +180,15 @@
   .cknav a{font-size:.72rem;font-weight:600;text-decoration:none;color:var(--gold);
     border:1px solid var(--line);border-radius:20px;padding:4px 11px;white-space:nowrap;transition:.15s}
   .cknav a:hover{background:var(--gold-soft,rgba(200,160,80,.12))}
-  @media(max-width:520px){.cknav a{padding:4px 8px;font-size:.68rem}}
+  /* Ở màn hẹp `.top-in` là flex nowrap, nên nav mới đẩy tràn header 163px:
+     nút 日本語, đổi giao diện và ⋯ (chứa Đăng xuất) văng ra ngoài màn. PG dùng
+     điện thoại là mất luôn đường đăng xuất và đổi ngôn ngữ. Cho header xuống
+     dòng và nav chiếm trọn một hàng. */
+  @media(max-width:640px){
+    .top-in{flex-wrap:wrap}
+    .cknav{flex-basis:100%;margin-left:0;order:9;justify-content:center;padding-top:2px}
+    .cknav a{padding:4px 10px;font-size:.7rem;flex:1;text-align:center}
+  }
   .kpi{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px;margin:2px 0 4px}
   .kpi .hint{color:var(--muted);font-size:.74rem;line-height:1.55;margin-top:8px}
   .kpi .hint b{color:var(--muted2);font-weight:600}
@@ -338,7 +346,10 @@
  /* ---- tags/note helpers ---- */
  function tagList(g){return String(g.tags||"").split(",").map(function(s){return s.trim();}).filter(Boolean);}
  function hasTag(g,x){return tagList(g).indexOf(x)>=0;}
- function buoiOf(g){var t=hasTag(g,"toa-dam"),ga=hasTag(g,"gala");return t&&ga?tt("toa")+" + "+tt("gal"):t?tt("toa"):ga?tt("gal"):"—";}
+ // Buổi trên HỒ SƠ và trong file Xuất phải dùng buổi HIỆU LỰC như tab, không
+ // đọc tag. Nếu không, 47 khách đã đăng ký hiện trong tab Gala nhưng hồ sơ ghi
+ // "BUỔI: —" và CSV cũng "—" (E08-D028 L3).
+ function buoiOf(g){var t=!!g.du_toa_dam,ga=!!g.du_gala;return t&&ga?tt("toa")+" + "+tt("gal"):t?tt("toa"):ga?tt("gal"):"—";}
  function vipOf(g){var m=tagList(g).filter(function(x){return /vip/i.test(x)&&x.toLowerCase()!=="khách vip";});return m[0]||"";}
  function vipRank(g){var v=noAcc(vipOf(g)).replace(/[^0-9]/g,"");return v?parseInt(v,10):(vipOf(g)?1:99);}
  function noteF(g,label){var m=new RegExp(label+"\\s*[:：]\\s*([^·]+)").exec(g.note||"");return m?m[1].trim():"";}

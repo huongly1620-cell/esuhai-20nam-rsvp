@@ -70,6 +70,10 @@
     padding:11px 17px;font-size:.84rem;max-width:88vw;text-align:center;display:none;
     box-shadow:0 6px 22px rgba(0,0,0,.45)}
   .ci-toast.bad{background:#2d1113;color:#ffd9dc;border-color:#7c2b31}
+
+  .av img.landscape,.pf-av img.landscape{object-fit:contain;background:#0b1a29}
+  .av.landscape{width:78px}
+  .pf-av.landscape{width:100%;max-width:250px}
 </style></head><body>
 <!-- E08-D028 AC-B3: đây là DỤNG CỤ CỬA thật — điểm danh ghi thẳng vào
      Postgres qua POST /crm/guests/:id/check-in. Không còn là bản thiết kế
@@ -132,7 +136,14 @@ function match(g){
  if(st.quick==="noi"&&String(g.phanloai||"").indexOf("Nội")===-1)return false;
  if(st.quick==="ngoai"&&String(g.phanloai||"").indexOf("Ngoại")===-1)return false;
  if(st.q){var h=norm(g.name+" "+g.title+" "+g.org);if(h.indexOf(norm(st.q))===-1)return false;}return true;}
-function av(g,big){return g.photo?'<img src="'+esc(g.photo)+'" onerror="this.remove()">'+esc(ini(g.name)):esc(ini(g.name));}
+
+/* E08-D028 AC-D — ảnh ngang không bị cắt mất người. Đo naturalWidth/Height khi
+   ảnh load (CSS không đọc được tỉ lệ gốc); w/h >= 1.25 → nới bề rộng, giữ
+   chiều cao, object-fit:contain. */
+function imgFit(el){try{if(!el||!el.naturalWidth||!el.naturalHeight)return;
+  if(el.naturalWidth/el.naturalHeight>=1.25){el.classList.add("landscape");
+    if(el.parentNode&&el.parentNode.classList)el.parentNode.classList.add("landscape");}}catch(e){}}
+function av(g,big){return g.photo?'<img src="'+esc(g.photo)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">'+esc(ini(g.name)):esc(ini(g.name));}
 function renderList(){var rows=G.filter(match);
  $("#hint").textContent=(st.q||st.quick||st.f)?t("res",{n:rows.length}):t("total",{n:G.length});
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);

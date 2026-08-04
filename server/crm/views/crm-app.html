@@ -184,6 +184,11 @@
   }
   .ci-off{margin-top:12px;border:1px dashed var(--line);border-radius:11px;padding:11px 13px;
     font-size:.78rem;color:var(--muted);line-height:1.5;text-align:center}
+
+  .av img.landscape,.dav img.landscape,.thumbs img.landscape,.pf-av img.landscape{object-fit:contain;background:#0b1a29}
+  .av.landscape{width:86px}
+  .thumbs img.landscape{width:124px}
+  .pf-av.landscape{width:100%;max-width:260px}
 </style>
 </head>
 <body>
@@ -348,6 +353,21 @@
    if(state.q){var s=noAcc(state.q);if(noAcc(g.full_name+" "+(g.org||"")+" "+(g.title||"")+" "+(g.phone||"")).indexOf(s)===-1)return false;}
    return true;
  }
+
+/* E08-D028 AC-D — ảnh ngang / nhiều người không bị cắt mất người.
+   Không có metadata kích thước trong crm_photos, nên phải đo phía client bằng
+   naturalWidth/naturalHeight khi ảnh load xong (CSS không đọc được tỉ lệ gốc).
+   w/h >= 1.25 → khổ ngang: nới BỀ RỘNG khung, GIỮ NGUYÊN chiều cao để không
+   giật layout, và đổi sang object-fit:contain để không crop. */
+function imgFit(el){
+  try{
+    if(!el||!el.naturalWidth||!el.naturalHeight)return;
+    if(el.naturalWidth/el.naturalHeight>=1.25){
+      el.classList.add("landscape");
+      if(el.parentNode&&el.parentNode.classList)el.parentNode.classList.add("landscape");
+    }
+  }catch(e){}
+}
  function renderList(){
    var rows=ALL.filter(match);
    if(state.sort==="vip")rows.sort(function(a,b){return vipRank(a)-vipRank(b)||String(a.full_name).localeCompare(String(b.full_name),"vi");});
@@ -360,7 +380,7 @@
    $("#list").innerHTML=rows.map(function(g){
      var vip=vipOf(g),vr=vipRank(g);
      return '<div class="g'+(g.checked_in?" done":"")+'" data-id="'+g.id+'">'
-      +'<div class="av">'+(g.photo_url?'<img src="'+esc(g.photo_url)+'" onerror="this.remove()">':esc(ini(g.full_name)))+'<span class="sd'+(g.checked_in?" in":"")+'"></span></div>'
+      +'<div class="av">'+(g.photo_url?'<img src="'+esc(g.photo_url)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">':esc(ini(g.full_name)))+'<span class="sd'+(g.checked_in?" in":"")+'"></span></div>'
       +'<div class="nm"><div class="n1">'+esc(g.full_name)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+(isDup(g)?' <span class="tag dup">⚠ TRÙNG</span>':'')+'</div><div class="n2">'+esc([g.org,g.title].filter(Boolean).join(" · ")||"—")+'</div></div>'
       +'<div class="rb">'+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')+(g.checked_in?'<span class="tag in">✓ '+hhmm(g.checked_in_at)+'</span>':(g.table_no?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':''))+'</div></div>';
    }).join("");
@@ -378,7 +398,7 @@
    var ciBlock=ci?'<div class="ci-on">◯ '+tt("ci_on")+' <b>'+esc(ci.actor_email)+'</b><br>'+esc(fmt(ci.checked_in_at))+'</div>'
      :(me.role==="btl"?'<button class="btn green block" id="ciBtn">'+tt("ci_btn")+'</button>'
                       :'<div class="ci-off">'+tt("ci_at_door")+'</div>');
-   var thumbs=(j.photos||[]).map(function(p){return '<img src="'+esc(p.url)+'" loading="lazy">';}).join("")||'<span style="color:var(--muted);font-size:.8rem">'+tt("no_photo")+'</span>';
+   var thumbs=(j.photos||[]).map(function(p){return '<img src="'+esc(p.url)+'" loading="lazy" onload="imgFit(this)">';}).join("")||'<span style="color:var(--muted);font-size:.8rem">'+tt("no_photo")+'</span>';
    var inter=(j.interactions||[]).map(function(x){return '<div class="inter"><div>'+esc(x.body)+'</div><div class="m">'+esc(x.kind)+' · '+esc(x.actor_email)+' · '+esc(fmt(x.created_at))+'</div></div>';}).join("");
    $("#sheetBody").innerHTML=
      '<div class="pf-av">'+(pu?'<img src="'+esc(pu)+'" onerror="this.remove()">':esc(ini(g.full_name)))+'</div>'

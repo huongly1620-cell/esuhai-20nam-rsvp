@@ -154,8 +154,8 @@ function openPf(id){var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls
   +'<div class="posrow"><div class="th"><div class="c"><div class="k">'+t("ban")+'</div><div class="v num">'+esc(g.table||"—")+'</div></div></div><div class="seat-c"><span class="sk">'+t("ghe")+'</span><b class="num">'+esc(g.seat||"—")+'</b></div></div>'
   +'<div class="facts">'+(g.vip?'<div class="ft"><div class="k">'+t("hang")+'</div><div class="v">'+esc(g.vip)+'</div></div>':'')+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(g.buoi)+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(g.diet||"—")+'</div></div></div>'
   +'<div class="info"><div class="ir"><span class="k">'+t("phutrach")+'</span><span class="v">'+esc(g.handler||"—")+'</span></div>'
-  +'<div class="ir"><span class="k">'+t("vaitro")+'</span><span class="v">'+esc(g.role||"—")+(g.note?' · '+esc(g.note):'')+'</span></div>'
-  +'<div class="ir"><span class="k">'+t("sdt")+'</span><span class="v">'+t("sdthide")+'</span></div>'
+  
+  
   +'<div class="ir"><span class="k">'+t("makhach")+'</span><span class="v">'+esc(g.id)+'</span></div></div>'+ciBox+recHTML(g);
  wireImgs(".pf-av img",true);$("#pf").classList.add("show");document.body.style.overflow="hidden";if(!g._enriched)enrich(g,id);}
 async function enrich(g,id){try{var j=await jget("/crm/guests/"+id);g._enriched=true;g._photos=j.photos||[];g._inter=j.interactions||[];if(j.photos&&j.photos[0])g.photo=j.photos[0].url;var p=parseNote(j.guest&&j.guest.note);g.diet=p.diet||"";g.role=p.role||"";g.handler=p.handler||"";g.seat=p.seat||"";if(curId===id)openPf(id);}catch(e){g._enriched=true;}}

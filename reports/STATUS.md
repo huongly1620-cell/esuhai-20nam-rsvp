@@ -5,6 +5,40 @@
 
 ## Deploy log — mới nhất
 
+**2026-08-04 · E08-D022 Pha 2 — nạp SoT 331 khách + 166 ảnh — ✅ ĐÃ GHI PROD**
+SoT: **chỉ** sheet visible `Khách Việt Nam+Nhat Ban` (7 sheet còn lại ẩn; importer tự dừng nếu sheet SoT bị ẩn).
+Kết quả: **173 → 401 khách active** · **44 → 210 ảnh** (186 khách active có ảnh) · smoke **PASS 43/43**.
+
+| | |
+|---|---|
+| Cập nhật (nối theo tên 1-1) | 72 |
+| Tạo mới | 259 — trong đó **31** gắn `trung-ten-can-ra` |
+| Soft-delete khách thừa | 31 (**không** có form) |
+| Giữ lại vì có form | **10** — chốt Sponsor, xem ⚠ dưới |
+| Ảnh tải lên MinIO | 166 |
+
+- **Mã idempotent:** `vnjb-<sha1(tên|đơn vị|chức vụ)[0..9]>`. **Không** dùng STT — Ly chèn/xoá một dòng là STT đổi hết, lần chạy sau nhân đôi toàn bộ. Chạy lại đã kiểm: **0 tạo mới, 0 xoá, 401 ổn định**.
+- **SĐT:** sheet SoT không có cột nào; importer **không có câu lệnh ghi nào chạm `phone`**. 43 số trước import còn nguyên (42 active + 1 nằm trên khách thừa đã ẩn, khôi phục được).
+- **Buổi:** `o`=dự, `x`=không. 13 khách `x` cả hai → tag `khong-du`; 11 khách trống cả hai → `chua-ro-buoi`. **Hai nhóm này khác nhau** — một bên đã trả lời không dự, một bên chưa trả lời.
+- **Ảnh trùng thư mục:** ưu tiên TGĐ → TTLK → KOKATEAM.
+
+**Smoke bắt 2 lỗi sau import, đã sửa:**
+
+1. **12 khách vừa có tag buổi vừa có form** → phá giả định "hai nguồn rời nhau" của D016, KPI phải hạ dòng "Dự Gala". Đã kiểm cả 12 hai nguồn nói **cùng một buổi** → gỡ tag danh sách (lossless, buổi vẫn đọc từ form). **Không** sửa `/crm/stats`.
+2. **2 ảnh HEIC + 1 CR2** trình duyệt không hiện được → chuyển JPEG bằng `sips`, tải lại, xoá bản ghi cũ.
+
+### ⛔ Cấm sau import này
+
+**KHÔNG chạy `server/crm/backfill-rsvp.js`** cho tới khi có vé sửa `sync-from-rsvp.js`.
+Lý do: `sync-from-rsvp.js:26` tra khách theo `phone_norm ... AND deleted_at IS NULL`, nên khách đã soft-delete **không được tìm thấy** → rơi xuống nhánh `INSERT` tạo bản ghi mới không mang tag. Backfill sẽ hồi sinh 31 khách thừa vừa ẩn.
+
+### Nợ vé
+
+- **Vé sync-rsvp:** cho `sync-from-rsvp.js` tôn trọng cờ ngoài-SoT → mới deactivate được 10 khách form ngoài danh sách (Pha 2 cố ý **không** làm).
+- **Vé D016 KPI:** thêm nhóm `khong-du` vào `/crm/stats`. Hiện 13 khách đã báo **không dự** đang bị đếm chung ô "Thật sự chưa rõ buổi" — nhãn đó sai với họ.
+- **Ảnh quá nặng:** lớn nhất **19.9 MB**, 41 ảnh > 2 MB, trung bình 1.5 MB. Màn `/crm` là mobile, Lễ tân dùng wifi hội trường ngày 08/08 → nên có bản thu nhỏ.
+
+
 **2026-08-04 · E08-D025 `npm run smoke:crm` — bộ smoke một lệnh cho /crm**
 Gói chuỗi smoke Bearer (D024) thành một lệnh chạy trước/sau mọi deploy CRM. **43 phép kiểm**, một dòng cuối `PASS`/`FAIL` + exit 0/1.
 ```bash

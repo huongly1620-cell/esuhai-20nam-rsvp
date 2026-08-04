@@ -67,9 +67,20 @@
  .sr{padding:2px 14px 8px;position:sticky;top:52px;z-index:20;background:linear-gradient(180deg,var(--sr1),var(--sr2));backdrop-filter:blur(8px)}
  .sr .box{position:relative}.sr input{width:100%;font:inherit;font-size:1rem;color:var(--cream);background:rgba(5,13,24,.6);border:1.5px solid var(--line);border-radius:12px;padding:13px 14px 13px 42px;outline:none}
  .sr input:focus{border-color:var(--acc)}.sr .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
- .quick{display:flex;gap:7px;padding:6px 14px 2px;overflow-x:auto;scrollbar-width:none}.quick::-webkit-scrollbar{display:none}
- .qb{flex:none;border:1px solid var(--line);background:rgba(5,13,24,.4);color:var(--muted);border-radius:20px;padding:7px 13px;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap}
+ /* padding-top 11px là CHỖ ĐỨNG cho stick: .quick cuộn ngang nên overflow-y
+    tính là auto, stick nhô lên khỏi mép hộp sẽ bị cắt hoặc đẻ ra thanh cuộn dọc. */
+ .quick{display:flex;gap:9px;padding:11px 14px 2px;overflow-x:auto;scrollbar-width:none}.quick::-webkit-scrollbar{display:none}
+ .qb{position:relative;flex:none;border:1px solid var(--line);background:rgba(5,13,24,.4);color:var(--muted);border-radius:20px;padding:7px 13px;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap}
  .qb.on{border-color:var(--acc);background:var(--acc);color:#04121f}
+ /* Stick đếm: PG nhìn một cái là biết cửa này có bao nhiêu VIP, bao nhiêu người
+    nhà — không phải bấm từng nút. Số 0 VẪN hiện (Sponsor chốt): nút ra rỗng mà
+    không có số trông như nút hỏng; có số 0 thì rõ là «không có khách», không
+    phải «nút chết». */
+ .qn{position:absolute;top:-7px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;
+   background:var(--acc);color:#04121f;font-size:.6rem;font-weight:800;line-height:18px;text-align:center;
+   font-variant-numeric:tabular-nums;box-shadow:0 0 0 2px var(--bg1)}
+ .qb.on .qn{background:var(--bg1);color:var(--acc)}
+ .qn.zero{background:var(--line2);color:var(--bg1)}
  .hint{color:var(--muted2);font-size:.78rem;text-align:center;padding:6px}
  .list{padding:4px 14px 40px;display:flex;flex-direction:column;gap:8px}
  .gc{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px 11px;cursor:pointer}
@@ -229,16 +240,33 @@ async function refresh(manual){
   if(manual)toast(t("rf_ok"));
  }catch(e){if(manual)toast(t("rf_fail"),1);}
  finally{pollBusy=false;var b2=$("#rfBtn");if(b2)b2.classList.remove("busy");}}
+/* MỘT luật lọc nhanh dùng chung cho danh sách và cho stick đếm. Tách hai bản
+   là cách chắc chắn để số trên nút nói khác danh sách nút mở ra — đúng lớp lỗi
+   «tab một đằng KPI một nẻo» của AC-A. */
+function quickOk(g,q){
+ if(!q)return true;
+ if(q==="vip")return /vip/i.test(String(g.vip||""));
+ if(q==="nhat")return isKanji(g.name)||isKanji(g.name_jp||"");
+ if(q==="noi")return g.phanloai==="Nội";
+ if(q==="ngoai")return g.phanloai==="Ngoại";
+ if(q==="gdtgd")return g.phanloai==="Gia đình TGĐ";
+ return true;}
+/* Đếm trên TẬP BUỔI (G, đã lọc ?session=) — cố ý KHÔNG trừ theo ô tìm hay theo
+   nút ĐÃ ĐẾN/CHƯA ĐẾN: stick trả lời «cửa này có bao nhiêu VIP», một con số ổn
+   định, chứ không nhấp nháy theo từng chữ PG gõ. */
+function quickCounts(){
+ document.querySelectorAll("#quick .qb").forEach(function(b){
+  var q=b.getAttribute("data-q"),n=0;
+  for(var i=0;i<G.length;i++)if(quickOk(G[i],q))n++;
+  var s=b.querySelector(".qn");
+  if(!s){s=document.createElement("span");s.className="qn";b.appendChild(s);}
+  s.textContent=n;s.className="qn"+(n?"":" zero");});}
 function match(g){
  if(st.f==="came"&&!came(g))return false;if(st.f==="no"&&came(g))return false;
  // E08-D028 AC-F0: vipOf() bắt tag bằng regex /^V?VIP/i nên trả về đúng tag chữ
  // thường `vip` mà import-vnjb ghi (48 thẻ) — nhưng indexOf ở đây PHÂN BIỆT hoa
  // thường, nên nút ★VIP chỉ ra 5 thẻ di sản `VIP` của tgd116, giấu 48 VIP thật.
- if(st.quick==="vip"&&!/vip/i.test(String(g.vip||"")))return false;
- if(st.quick==="nhat"&&!(isKanji(g.name)||isKanji(g.name_jp||"")))return false;
- if(st.quick==="noi"&&g.phanloai!=="Nội")return false;
- if(st.quick==="ngoai"&&g.phanloai!=="Ngoại")return false;
- if(st.quick==="gdtgd"&&g.phanloai!=="Gia đình TGĐ")return false;
+ if(!quickOk(g,st.quick))return false;
  // E08-D028 AC-E5: index cả ba field JP. Gate 2 toàn tip: gõ 千葉 / 鶴雅 / 取締役
  // trên cửa ra 0 kết quả trong khi /crm ra có — cửa chỉ index 3 field VN.
  if(st.q){var h=norm(g.name+" "+g.title+" "+g.org+" "+(g.name_jp||"")+" "+(g.title_jp||"")+" "+(g.org_jp||""));if(h.indexOf(norm(st.q))===-1)return false;}return true;}
@@ -275,7 +303,7 @@ function badges(g,skipVip){var b=[],h=hangOf(g);
  if(isKanji(g.name_jp||"")||isKanji(g.name))b.push('<span class="bg bg-jp">'+t("b_jp")+'</span>');
  return b.length?'<div class="bgs">'+b.join("")+'</div>':"";}
 function av(g,big){return g.photo?'<img src="'+esc(g.photo)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">'+esc(ini(g.name)):esc(ini(g.name));}
-function renderList(){var rows=G.filter(match);
+function renderList(){quickCounts();var rows=G.filter(match);
  $("#hint").textContent=(st.q||st.quick||st.f)?t("res",{n:rows.length}):t("total",{n:G.length});
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);
   return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'"><span class="sd'+(cm?" came":"")+'"></span>'

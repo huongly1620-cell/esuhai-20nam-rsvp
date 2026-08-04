@@ -95,6 +95,14 @@ CREATE TABLE IF NOT EXISTS crm_auth_codes (
 
 -- Seating table number (from Ly's xep-ban tool), shown at check-in. CRM table only.
 ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS table_no TEXT;
+
+-- E08-D028 AC-E: tên / chức vụ / đơn vị tiếng Nhật cho PG Nhật.
+-- Additive, nullable — KHÔNG đè field VN. Chỉ nạp ô có ký tự Nhật thật; cột K
+-- của sheet SoT có 186 ô nhưng chỉ 63 ô là kanji, 123 ô còn lại là tên Việt
+-- viết latin, nạp thẳng sẽ cho PG Nhật thấy tên Việt gắn nhãn "tiếng Nhật".
+ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS name_jp  TEXT;
+ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS title_jp TEXT;
+ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS org_jp   TEXT;
 `;
 
 async function migrateCrm() {

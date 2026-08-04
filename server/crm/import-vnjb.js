@@ -43,6 +43,7 @@ const ACTOR = 'import-vnjb-0408';
 const DIR_PRIORITY = ['KHÁCH VIỆT - TGĐ', 'KHÁCH VIỆT NAM - TTLK', 'KOKATEAM'];
 
 const C = { stt: 0, tinh: 1, phanloai: 2, vip: 4, donvi: 5, chucvu: 6, ten: 7,
+  donviJP: 8, chucvuJP: 9, tenJP: 10,
   lydo: 11, phutrach: 12, toadam: 16, gala: 17, ban: 18, file: 31, ghichu: 32 };
 
 const norm = (s) => String(s == null ? '' : s).normalize('NFC').replace(/\s+/g, ' ').trim();
@@ -54,6 +55,12 @@ function nameKey(s) {
 }
 const ox = (v) => { const s = norm(v).toLowerCase(); return s === 'o' ? 'o' : (s === 'x' ? 'x' : (s ? '?' : '')); };
 const isNA = (v) => { const s = norm(v).toLowerCase(); return !s || s === 'n/a' || s === 'na' || s === 'x' || s === '-'; };
+// Chỉ nhận ô THẬT SỰ có chữ Nhật (hiragana/katakana/kanji). Cột "Họ và tên
+// (tiếng Nhật)" của sheet có 186 ô nhưng 123 ô là tên Việt viết latin — nạp
+// thẳng thì PG Nhật thấy tên tiếng Việt gắn nhãn tiếng Nhật.
+const HAS_JP = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/;
+const jpOnly = (v) => { const x = norm(v); return x && HAS_JP.test(x) ? x : null; };
+
 const extOf = (f) => (String(f).match(/\.[A-Za-z0-9]+$/) || ['.jpg'])[0].toLowerCase();
 const ctype = (f) => ({ '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
   '.heic': 'image/heic', '.webp': 'image/webp', '.jfif': 'image/jpeg', '.cr2': 'image/x-canon-cr2' })[extOf(f)] || 'application/octet-stream';
@@ -166,6 +173,7 @@ function pickPhoto(idx, cell) {
       note: [norm(r[C.lydo]) && 'Lý do mời: ' + norm(r[C.lydo]),
         norm(r[C.phutrach]) && 'S2 phụ trách: ' + norm(r[C.phutrach]),
         norm(r[C.ghichu]) && 'Ghi chú: ' + norm(r[C.ghichu])].filter(Boolean).join(' · ') || null,
+      name_jp: jpOnly(r[C.tenJP]), title_jp: jpOnly(r[C.chucvuJP]), org_jp: jpOnly(r[C.donviJP]),
       tags, photo: pickPhoto(idx, r[C.file]),
     };
     if (!rec.photo && !isNA(r[C.file])) plan.photoMissing++;
@@ -231,21 +239,26 @@ function pickPhoto(idx, cell) {
            note  = COALESCE($4, note),
            table_no = COALESCE($5, table_no),
            guest_ext_id = COALESCE(guest_ext_id, $6),
-           tags = $7, updated_at = now()
+           tags = $7,
+           name_jp  = COALESCE($9,  name_jp),
+           title_jp = COALESCE($10, title_jp),
+           org_jp   = COALESCE($11, org_jp),
+           updated_at = now()
          WHERE id = $8`,
         [rec.full_name, rec.org, rec.title, rec.note, rec.table_no, rec.code,
-          Array.from(set).join(','), id]);
+          Array.from(set).join(','), id, rec.name_jp, rec.title_jp, rec.org_jp]);
       nUpd++;
     };
     for (const x of plan.update) await upd(x.id, x.rec);
     for (const x of plan.linkUpdate) await upd(x.id, x.rec);
     for (const rec of plan.create) {
       const r = await client.query(
-        `INSERT INTO crm_guests (guest_ext_id, full_name, org, title, note, table_no, tags)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
+        `INSERT INTO crm_guests (guest_ext_id, full_name, org, title, note, table_no, tags, name_jp, title_jp, org_jp)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
          ON CONFLICT (guest_ext_id) DO UPDATE SET full_name = EXCLUDED.full_name, updated_at = now()
          RETURNING id`,
-        [rec.code, rec.full_name, rec.org, rec.title, rec.note, rec.table_no, rec.tags.join(',')]);
+        [rec.code, rec.full_name, rec.org, rec.title, rec.note, rec.table_no, rec.tags.join(','),
+          rec.name_jp, rec.title_jp, rec.org_jp]);
       rec._id = r.rows[0].id; nNew++;
     }
     if (plan.deactivate.length) {

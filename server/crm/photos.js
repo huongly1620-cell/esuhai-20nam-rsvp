@@ -26,12 +26,28 @@ function mount(app, requireCrmAuth) {
     try {
       const g = await pool.query('SELECT id FROM crm_guests WHERE id = $1 AND deleted_at IS NULL', [id]);
       if (!g.rows[0]) return res.status(404).json({ ok: false, error: 'not found' });
+
+      // E08-D028 AC-G4: ảnh gắn vào một ghi nhận tại quầy (ảnh QUÀ) thay vì ảnh
+      // chân dung khách. Cột `crm_photos.interaction_id` đã có sẵn từ đầu nhưng
+      // chưa dòng code nào set — 202/202 ảnh trên prod đang NULL. Phải phân biệt
+      // được, vì avatar khách ở CẢ 4 màn là ẢNH MỚI NHẤT của thẻ: ảnh cái hộp
+      // quà sẽ thế chỗ mặt khách trên mọi danh sách, và không có route xoá ảnh
+      // để lùi lại.
+      let interId = null;
+      if (req.body && req.body.interaction_id) {
+        const q = await pool.query(
+          'SELECT id FROM crm_interactions WHERE id = $1 AND guest_id = $2',
+          [parseInt(req.body.interaction_id, 10) || 0, id]);
+        if (!q.rows[0]) return res.status(400).json({ ok: false, error: 'Ghi nhận không thuộc khách này.' });
+        interId = q.rows[0].id;
+      }
+
       const key = await storage.putObject(id, req.file.buffer, ct);
       const r = await pool.query(
-        `INSERT INTO crm_photos (guest_id, object_key, content_type, size, uploaded_by)
-         VALUES ($1,$2,$3,$4,$5) RETURNING id`,
-        [id, key, ct, req.file.size, req.actor.email]);
-      await logAudit(pool, { actor_email: req.actor.email, event_type: 'photo_upload', target_type: 'guest', target_id: id, meta: { key }, ip: ipOf(req) });
+        `INSERT INTO crm_photos (guest_id, object_key, content_type, size, uploaded_by, interaction_id)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+        [id, key, ct, req.file.size, req.actor.email, interId]);
+      await logAudit(pool, { actor_email: req.actor.email, event_type: 'photo_upload', target_type: 'guest', target_id: id, meta: { key, interaction_id: interId }, ip: ipOf(req) });
       return res.status(201).json({ ok: true, id: String(r.rows[0].id), url: '/crm/photos/' + r.rows[0].id });
     } catch (err) {
       console.error('[crm-photos] upload failed:', err.message);

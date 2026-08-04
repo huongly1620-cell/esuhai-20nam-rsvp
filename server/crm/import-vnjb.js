@@ -46,13 +46,8 @@ const C = { stt: 0, tinh: 1, phanloai: 2, vip: 4, donvi: 5, chucvu: 6, ten: 7,
   donviJP: 8, chucvuJP: 9, tenJP: 10,
   lydo: 11, phutrach: 12, toadam: 16, gala: 17, ban: 18, file: 31, ghichu: 32 };
 
-const norm = (s) => String(s == null ? '' : s).normalize('NFC').replace(/\s+/g, ' ').trim();
-const HONOR = /^(anh|chị|chi|ông|ong|bà|ba|cô|co|chú|chu|thầy|thay|em|mr|mrs|ms|dr|gs|ts)\.?\s+/i;
-function nameKey(s) {
-  let x = norm(s).toLowerCase();
-  for (let i = 0; i < 3; i++) x = x.replace(HONOR, '');
-  return x.trim();
-}
+// Một định nghĩa dùng chung với script backfill tag — xem đầu vnjb-keys.js.
+const { norm, nameKey, codeOfParts, hangTags } = require('./vnjb-keys');
 const ox = (v) => { const s = norm(v).toLowerCase(); return s === 'o' ? 'o' : (s === 'x' ? 'x' : (s ? '?' : '')); };
 const isNA = (v) => { const s = norm(v).toLowerCase(); return !s || s === 'n/a' || s === 'na' || s === 'x' || s === '-'; };
 // Chỉ nhận ô THẬT SỰ có chữ Nhật (hiragana/katakana/kanji). Cột "Họ và tên
@@ -65,11 +60,7 @@ const extOf = (f) => (String(f).match(/\.[A-Za-z0-9]+$/) || ['.jpg'])[0].toLower
 const ctype = (f) => ({ '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
   '.heic': 'image/heic', '.webp': 'image/webp', '.jfif': 'image/jpeg', '.cr2': 'image/x-canon-cr2' })[extOf(f)] || 'application/octet-stream';
 
-function codeOf(r) {
-  return 'vnjb-' + crypto.createHash('sha1')
-    .update(nameKey(r[C.ten]) + '|' + nameKey(r[C.donvi]) + '|' + nameKey(r[C.chucvu]))
-    .digest('hex').slice(0, 10);
-}
+function codeOf(r) { return codeOfParts(r[C.ten], r[C.donvi], r[C.chucvu]); }
 
 // Bỏ dấu tiếng Việt TRƯỚC khi slug hoá. Nếu không, "PTGĐ" → "ptg-" và
 // "Đối tác/Khách hàng" → "-i-t-c-kh-ch-h-ng" — tag rác hiện nguyên xi trên /crm,
@@ -93,7 +84,7 @@ function tagsOf(r, hasForm) {
   }
   if (td === 'x' && ga === 'x') t.push('khong-du');           // đã trả lời KHÔNG dự
   if (td === '' && ga === '') t.push('chua-ro-buoi');          // chưa trả lời
-  const vip = norm(r[C.vip]); if (/vip/i.test(vip)) t.push('vip');
+  for (const x of hangTags(r[C.vip])) t.push(x);
   const pl = norm(r[C.phanloai]); if (pl) { const s = slug(pl); if (s) t.push('pl:' + s); }
   return t;
 }

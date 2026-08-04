@@ -368,6 +368,10 @@
  // "BUỔI: —" và CSV cũng "—" (E08-D028 L3).
  function buoiOf(g){var t=!!g.du_toa_dam,ga=!!g.du_gala;return t&&ga?tt("toa")+" + "+tt("gal"):t?tt("toa"):ga?tt("gal"):"—";}
  function vipOf(g){var m=tagList(g).filter(function(x){return /vip/i.test(x)&&x.toLowerCase()!=="khách vip";});return m[0]||"";}
+ /* AC-F2: tag trong DB là chữ THƯỜNG `vip` (import-vnjb ghi 48 thẻ) — cột
+    "Hạng" và badge không được hiện chữ thường. Chuẩn hoá lúc HIỂN THỊ; xếp
+    hạng vẫn dùng vipOf để không đổi thứ tự đã có. */
+ function vipLbl(g){var v=vipOf(g);return /^v?vip/i.test(v)?v.toUpperCase():v;}
  function vipRank(g){var v=noAcc(vipOf(g)).replace(/[^0-9]/g,"");return v?parseInt(v,10):(vipOf(g)?1:99);}
  function noteF(g,label){var m=new RegExp(label+"\\s*[:：]\\s*([^·]+)").exec(g.note||"");return m?m[1].trim():"";}
  /* ---- toast ---- */
@@ -552,7 +556,7 @@ function pairVJ(vn,jp){
    var nd=ALL.filter(isDup).length;$("#statline").innerHTML=tt("showing")+' <b>'+rows.length+'</b> '+tt("of")+' '+ALL.length+' · <span class="ok">'+inShown+'</span> '+tt("arr2")+(nd?' · <span style="color:var(--red-b)">⚠ '+nd+(LANG==="jp"?" 件重複":" trùng")+'</span>':'');
    if(!rows.length){$("#list").innerHTML='<div class="empty"><div class="em-ic">🔍</div>'+tt("notfound")+'</div>';return;}
    $("#list").innerHTML=rows.map(function(g){
-     var vip=vipOf(g),vr=vipRank(g);
+     var vip=vipLbl(g),vr=vipRank(g);
      return '<div class="g'+(g.checked_in?" done":"")+'" data-id="'+g.id+'">'
       // loading="lazy" + decoding="async": danh sách kéo cả 401 thẻ một lượt,
       // ảnh là object GỐC (293 MB tổng, 17 tấm > 5 MB, lớn nhất 20 MB). Không
@@ -586,7 +590,7 @@ window.imgFit=imgFit;
      '<div class="pf-av">'+(pu?'<img src="'+esc(pu)+'" loading="lazy" onload="imgFit(this)" onerror="this.remove()">':esc(ini(g.full_name)))+'</div>'
     +'<div class="pf-nm">'+pairVJ(g.full_name,g.name_jp)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+'</div><div class="pf-rl">'+(pairVJ([g.org,g.title].filter(Boolean).join(" · "),[g.org_jp,g.title_jp].filter(Boolean).join(" · "))||"—")+'</div>'
     +(isDup(g)?'<div class="dupwarn">⚠ '+tt("dup_warn")+'</div>':'')+'<div class="th"><div><div class="k">'+tt("ban")+'</div><div class="v num">'+esc(g.table_no||"—")+'</div></div></div>'
-    +'<div class="facts"><div class="ft"><div class="k">'+tt("buoi")+'</div><div class="v">'+esc(buoiOf(g))+'</div></div>'+(vipOf(g)?'<div class="ft"><div class="k">'+tt("hang")+'</div><div class="v">'+esc(vipOf(g))+'</div></div>':'')+(gt?'<div class="ft"><div class="k">'+tt("gioitinh")+'</div><div class="v">'+esc(gt)+'</div></div>':'')+'</div>'
+    +'<div class="facts"><div class="ft"><div class="k">'+tt("buoi")+'</div><div class="v">'+esc(buoiOf(g))+'</div></div>'+(vipLbl(g)?'<div class="ft"><div class="k">'+tt("hang")+'</div><div class="v">'+esc(vipLbl(g))+'</div></div>':'')+(gt?'<div class="ft"><div class="k">'+tt("gioitinh")+'</div><div class="v">'+esc(gt)+'</div></div>':'')+'</div>'
     +'<div class="info"><div class="ir"><span class="k">'+tt("contact")+'</span><span class="v">'+esc(contact)+'</span></div>'
     +(ph?'<div class="ir"><span class="k">'+tt("phutrach")+'</span><span class="v">'+esc(ph)+'</span></div>':'')+'</div>'
     +'<div style="margin-top:12px">'+ciBlock+'</div>'
@@ -609,7 +613,7 @@ window.imgFit=imgFit;
  function openCfg(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:12px">'+tt("cfg_h")+'</h2><div class="sec" style="margin-top:4px">'+tt("toa_full")+'</div><div class="fld"><div class="lab">'+tt("cfg_venue_toa")+'</div><input class="f" id="cVenueToa" value="'+esc(CFG.venueToa)+'"></div><div class="fld"><div class="lab">'+tt("cfg_toa")+'</div><input class="f" id="cToa" type="datetime-local" value="'+esc(CFG.toa)+'"></div><div class="sec">'+tt("gala_full")+'</div><div class="fld"><div class="lab">'+tt("cfg_venue_gala")+'</div><input class="f" id="cVenueGala" value="'+esc(CFG.venueGala)+'"></div><div class="fld"><div class="lab">'+tt("cfg_gala")+'</div><input class="f" id="cGala" type="datetime-local" value="'+esc(CFG.gala)+'"></div><button class="btn gold block" id="cSave" style="margin-top:6px">'+tt("save")+'</button><p style="color:var(--muted);font-size:.76rem;margin-top:10px">Lưu trên trình duyệt này. (Muốn đồng bộ mọi máy → cần Kha thêm bảng cấu hình backend.)</p>';$("#cSave").addEventListener("click",function(){saveCfg({venueToa:$("#cVenueToa").value.trim()||CFG_DEF.venueToa,venueGala:$("#cVenueGala").value.trim()||CFG_DEF.venueGala,toa:$("#cToa").value||CFG_DEF.toa,gala:$("#cGala").value||CFG_DEF.gala});$("#sheet2").classList.remove("show");renderDash();tickCd();toast(tt("cfg_saved"),"ok");});$("#sheet2").classList.add("show");}
  function openExport(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:6px">'+tt("exp_choose")+'</h2><p style="color:var(--muted);font-size:.82rem;margin-bottom:14px">'+ALL.length+' khách · SĐT đã ẩn</p><button class="btn gold block" id="doCsv">⬇ CSV (.csv)</button><button class="btn block" id="doXls" style="margin-top:9px">⬇ Excel (.xls)</button>';$("#doCsv").addEventListener("click",function(){exportCSV();$("#sheet2").classList.remove("show");});$("#doXls").addEventListener("click",function(){exportXls();$("#sheet2").classList.remove("show");});$("#sheet2").classList.add("show");}
  /* ---- xuất CSV / Excel (client-side, SĐT đã ẩn) ---- */
- function guestRows(){return ALL.map(function(g){return [g.full_name,g.org||"",g.title||"",buoiOf(g),vipOf(g),g.table_no||"",maskPhone(g.phone),g.checked_in?"Đã đến":"Chưa đến",g.checked_in?hhmm(g.checked_in_at):"",noteF(g,"S2 phụ trách")||noteF(g,"phụ trách")];});}
+ function guestRows(){return ALL.map(function(g){return [g.full_name,g.org||"",g.title||"",buoiOf(g),vipLbl(g),g.table_no||"",maskPhone(g.phone),g.checked_in?"Đã đến":"Chưa đến",g.checked_in?hhmm(g.checked_in_at):"",noteF(g,"S2 phụ trách")||noteF(g,"phụ trách")];});}
  var EXP_HDR=["Họ tên","Đơn vị","Chức danh","Buổi","Hạng VIP","Bàn","SĐT (ẩn)","Trạng thái","Giờ đến","Phụ trách"];
  function dl(name,content,mime){var b=new Blob([content],{type:mime});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},400);toast(tt("exported"),"ok");}
  function exportCSV(){var lines=[EXP_HDR].concat(guestRows()).map(function(r){return r.map(function(c){c=String(c==null?"":c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(",");}).join("\r\n");dl("DS_khach_ESUHAI20_"+ymd()+".csv","\uFEFF"+lines,"text/csv;charset=utf-8");}

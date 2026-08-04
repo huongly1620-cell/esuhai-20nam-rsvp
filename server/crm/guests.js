@@ -85,7 +85,13 @@ function mount(app, requireCrmAuth, requireRole) {
          ${join}
          LEFT JOIN crm_check_ins ci ON ci.guest_id = g.id
          LEFT JOIN LATERAL (
-           SELECT ph.id FROM crm_photos ph WHERE ph.guest_id = g.id ORDER BY ph.created_at DESC LIMIT 1
+           -- AC-G4: ảnh có interaction_id là ảnh QUÀ chụp tại quầy, không phải
+           -- chân dung khách. Không loại ra thì tấm quà chụp sau cùng sẽ thành
+           -- avatar của khách trên mọi danh sách. 202 ảnh cũ đều NULL nên điều
+           -- kiện này không đổi gì với dữ liệu đang có.
+           SELECT ph.id FROM crm_photos ph
+            WHERE ph.guest_id = g.id AND ph.interaction_id IS NULL
+            ORDER BY ph.created_at DESC LIMIT 1
          ) p ON TRUE
          ${'WHERE ' + conds.join(' AND ')}
          ORDER BY g.full_name ASC LIMIT $${params.length}`, params);
@@ -120,7 +126,7 @@ function mount(app, requireCrmAuth, requireRole) {
       const ci = await pool.query('SELECT actor_email, checked_in_at, note FROM crm_check_ins WHERE guest_id = $1', [id]);
       const asg = await pool.query('SELECT staff_email, assigned_at FROM crm_assignments WHERE guest_id = $1', [id]);
       const inter = await pool.query('SELECT id, actor_email, kind, body, created_at FROM crm_interactions WHERE guest_id = $1 ORDER BY created_at DESC LIMIT 100', [id]);
-      const photos = await pool.query('SELECT id, object_key, content_type, uploaded_by, created_at FROM crm_photos WHERE guest_id = $1 ORDER BY created_at DESC LIMIT 100', [id]);
+      const photos = await pool.query('SELECT id, object_key, content_type, uploaded_by, created_at, interaction_id FROM crm_photos WHERE guest_id = $1 ORDER BY created_at DESC LIMIT 100', [id]);
       const row = g.rows[0];
       return res.json({
         ok: true,
@@ -134,7 +140,10 @@ function mount(app, requireCrmAuth, requireRole) {
         checkIn: ci.rows[0] || null,
         assignments: asg.rows,
         interactions: inter.rows,
-        photos: photos.rows.map((p) => ({ id: p.id, url: '/crm/photos/' + p.id, content_type: p.content_type, uploaded_by: p.uploaded_by, created_at: p.created_at })),
+        // interaction_id: ảnh nào là ảnh QUÀ (gắn vào một ghi nhận tại quầy),
+        // ảnh nào là chân dung khách. Màn cửa lấy avatar = tấm ĐẦU TIÊN có
+        // interaction_id rỗng, khớp đúng luật của list ở trên.
+        photos: photos.rows.map((p) => ({ id: p.id, url: '/crm/photos/' + p.id, content_type: p.content_type, uploaded_by: p.uploaded_by, created_at: p.created_at, interaction_id: p.interaction_id })),
       });
     } catch (err) {
       console.error('[crm-guests] detail failed:', err.message);

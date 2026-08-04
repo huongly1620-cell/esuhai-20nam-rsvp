@@ -4,10 +4,11 @@
 <style>
  :root{--gold:#d8b876;--gold-b:#f4e2b0;--cream:#f5efe1;--muted:#b9b096;--muted2:#8f886f;
   --line:rgba(216,184,118,.2);--line2:rgba(216,184,118,.42);--card:rgba(255,255,255,.04);--green-ok:#43e08d;--amber:#f0b34a;
+  --bg1:#0b1a30;--bg2:#0b2330;--bg3:#08111F;--sr1:rgba(11,26,48,.96);--sr2:rgba(11,26,48,.6);--ph1:#123f50;--ph2:#0b2340;
   --acc:#2E7FCC;--acc-dim:rgba(46,127,204,.12);--acc-glow:rgba(46,127,204,.3);}
  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
  body{margin:0;font-family:"Be Vietnam Pro","Segoe UI",system-ui,Arial,sans-serif;color:var(--cream);line-height:1.45;overflow-x:hidden;
-  background:radial-gradient(800px 460px at 88% -8%,var(--acc-glow),transparent 60%),linear-gradient(170deg,#0b1a30,#0b2330 55%,#08111F) fixed}
+  background:radial-gradient(800px 460px at 88% -8%,var(--acc-glow),transparent 60%),linear-gradient(170deg,var(--bg1),var(--bg2) 55%,var(--bg3)) fixed}
  body.jp{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo","Noto Sans JP",sans-serif;letter-spacing:.02em}
  h1,h2,h3{font-family:"Playfair Display","Cambria",Georgia,serif;font-weight:600;margin:0}
  body.jp h2,body.jp .cn,body.jp .th .v,body.jp .v.big{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif}
@@ -24,10 +25,46 @@
  .big .cs{font-size:.74rem;color:var(--muted)}
  .big{cursor:pointer;transition:.15s}.big.on{box-shadow:0 0 0 2px var(--acc) inset}
  .big.b-no{border-color:var(--line)}.big.b-no .cn{color:var(--cream,#e8dcc0)}
+ /* E08-D028 CỬA-4 (nợ Gate 2): hai máy cùng một cửa đều đứng yên ở con số lúc
+    mở trang — máy A điểm danh xong, máy B vẫn hiện số cũ tới hết buổi. Nút ↻
+    và dòng giờ cập nhật để PG biết số đang cũ hay mới; polling lo phần còn lại. */
+ /* Nút ↻ nằm ở THANH ĐẦU TRANG, không chen vào cụm hero: chen vào .cnt thì ở
+    320px khối «ĐÃ ĐẾN» bị bóp còn 77px trong khi «CHƯA ĐẾN» giữ 165px (chuỗi
+    «282/352» ở cỡ chữ 2.7rem không co được), header cao 207→267px và màn hết
+    một thẻ khách. Dòng «Cập nhật …» cũng để NGOÀI header sticky vì header cao
+    thêm là đè thêm lên ô tìm. */
+ #rfBtn{font-size:1rem;line-height:1;color:var(--acc);border-color:var(--line2)}#rfBtn.busy{opacity:.45}
+ .upd{text-align:center;color:var(--muted2);font-size:.7rem;padding:2px 14px 4px;min-height:1em}
+ /* AC-F5 — nhãn nhận diện ngay trên LIST. Trước đây hạng VIP và quan hệ gia
+    đình chỉ hiện khi mở hồ sơ, nên PG phải bấm từng thẻ mới biết ai là VIP hay
+    người nhà TGĐ — đúng thứ cần biết TRƯỚC khi chào. */
+ .bgs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+ .bg{font-size:.6rem;font-weight:800;letter-spacing:.03em;border-radius:6px;padding:2px 6px;white-space:nowrap;line-height:1.5}
+ .bg-vip{color:#2a1e05;background:linear-gradient(180deg,#f0d999,#cfa758)}
+ .bg-gd{color:var(--acc);border:1px solid var(--line2);background:var(--acc-dim)}
+ .bg-jp{color:var(--muted);border:1px solid var(--line)}
+ /* AC-F7 (mock Ly): hồ sơ có pill HẠNG riêng dưới cụm BÀN/GHẾ. */
+ .hangp{display:inline-block;margin:2px auto 12px;border:1px solid var(--line2);border-radius:11px;padding:5px 14px;background:rgba(5,13,24,.5)}
+ .hangp .k{display:block;font-size:.52rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted2)}
+ .hangp b{font-size:1rem;color:var(--gold-b)}
+ .pf-b .bgs{justify-content:center;margin:0 0 12px}
+ /* AC-G4 (mock Ly) — khối GHI NHẬN TẠI QUẦY dưới CTA điểm danh. */
+ .quay{margin-top:22px;border-top:1px solid var(--line);padding-top:16px;text-align:left}
+ .quay h4{color:var(--acc);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin:0 0 12px;font-family:inherit;font-weight:800}
+ .qf{margin-bottom:14px}
+ .qf label{display:block;font-size:.8rem;font-weight:700;color:var(--cream);margin-bottom:6px}
+ .qf textarea,.qf input{width:100%;font:inherit;font-size:.92rem;color:var(--cream);background:rgba(5,13,24,.6);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none;resize:vertical}
+ .qf textarea:focus,.qf input:focus{border-color:var(--acc)}
+ .qnote{font-size:.72rem;color:var(--amber);margin-top:6px}
+ .qh{margin-top:18px;border-top:1px dashed var(--line);padding-top:12px}
+ .qhh{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px}
+ .qhr{font-size:.84rem;color:var(--cream);padding:7px 0;border-bottom:1px dashed var(--line)}
+ .qhr b{color:var(--acc)}
+ .qhm{font-size:.7rem;color:var(--muted2);margin-top:2px}
  .fb{border:1px solid var(--line);background:rgba(5,13,24,.5);color:var(--muted);border-radius:20px;padding:9px 14px;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap}
  .fb .mk{width:15px;height:15px;border-radius:50%;border:2px solid currentColor;display:inline-block;flex:none}.fb .xx{font-size:1rem}
  .fb.came.on{background:var(--green-ok);border-color:var(--green-ok);color:#042a17}.fb.no.on{background:var(--amber);border-color:var(--amber);color:#2a1e05}
- .sr{padding:2px 14px 8px;position:sticky;top:52px;z-index:20;background:linear-gradient(180deg,rgba(11,26,48,.96),rgba(11,26,48,.6));backdrop-filter:blur(8px)}
+ .sr{padding:2px 14px 8px;position:sticky;top:52px;z-index:20;background:linear-gradient(180deg,var(--sr1),var(--sr2));backdrop-filter:blur(8px)}
  .sr .box{position:relative}.sr input{width:100%;font:inherit;font-size:1rem;color:var(--cream);background:rgba(5,13,24,.6);border:1.5px solid var(--line);border-radius:12px;padding:13px 14px 13px 42px;outline:none}
  .sr input:focus{border-color:var(--acc)}.sr .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
  .quick{display:flex;gap:7px;padding:6px 14px 2px;overflow-x:auto;scrollbar-width:none}.quick::-webkit-scrollbar{display:none}
@@ -38,7 +75,7 @@
  .gc{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px 11px;cursor:pointer}
  .gc.done{border-color:rgba(67,224,141,.4);background:rgba(67,224,141,.06)}
  .sd{width:9px;height:9px;border-radius:50%;flex:none;background:var(--amber)}.sd.came{background:var(--green-ok)}
- .av{width:46px;height:46px;border-radius:10px;flex:none;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,#123f50,#0b2340);border:1px solid var(--line2);color:var(--gold-b);font-family:serif;font-size:1rem}.av img{width:100%;height:100%;object-fit:cover}
+ .av{width:46px;height:46px;border-radius:10px;flex:none;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,var(--ph1),var(--ph2));border:1px solid var(--line2);color:var(--gold-b);font-family:serif;font-size:1rem}.av img{width:100%;height:100%;object-fit:cover}
  .gm{flex:1;min-width:0}.gm .n1{font-family:serif;font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gm .n2{font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .tb{font-size:.64rem;font-weight:700;color:var(--acc);border:1px solid var(--line2);border-radius:8px;padding:3px 7px;white-space:nowrap;text-align:center}.tb b{font-family:serif;font-size:.88rem;display:block}
  .gt{color:var(--green-ok);font-size:.68rem;font-weight:700;white-space:nowrap}
@@ -46,11 +83,11 @@
     QC quét 648 điểm trên nút → 0 điểm chạm được; ngón tay thật không đóng
     được hồ sơ, mỗi khách xong phải tải lại trang. Hồ sơ là lớp phủ toàn
     màn nên phải nằm TRÊN banner. */
- .pf{position:fixed;inset:0;z-index:100000;background:linear-gradient(180deg,#0b1a30,#08111F);transform:translateY(100%);transition:transform .3s;overflow-y:auto}.pf.show{transform:translateY(0)}
+ .pf{position:fixed;inset:0;z-index:100000;background:linear-gradient(180deg,var(--bg1),var(--bg3));transform:translateY(100%);transition:transform .3s;overflow-y:auto}.pf.show{transform:translateY(0)}
  .pf-bar{position:sticky;top:0;display:flex;align-items:center;gap:10px;padding:12px 14px;background:linear-gradient(180deg,rgba(8,17,31,.95),transparent);border-bottom:1px solid var(--line)}
  .pf-back{border:0;background:rgba(255,255,255,.08);color:var(--cream);width:38px;height:38px;border-radius:50%;font-size:1.1rem;cursor:pointer}
  .pf-b{padding:22px 18px 46px;max-width:520px;margin:0 auto;text-align:center}
- .pf-av{width:190px;height:190px;border-radius:18px;margin:0 auto;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,#123f50,#0b2340);border:2px solid var(--acc);color:var(--gold-b);font-family:serif;font-size:3.4rem;box-shadow:0 12px 34px rgba(0,0,0,.4)}.pf-av img{width:100%;height:100%;object-fit:cover}
+ .pf-av{width:190px;height:190px;border-radius:18px;margin:0 auto;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,var(--ph1),var(--ph2));border:2px solid var(--acc);color:var(--gold-b);font-family:serif;font-size:3.4rem;box-shadow:0 12px 34px rgba(0,0,0,.4)}.pf-av img{width:100%;height:100%;object-fit:cover}
  .pf-nm{font-family:serif;font-size:1.7rem;color:#fff;margin-top:14px;line-height:1.2}
  .pf-rl{color:var(--muted);font-size:.92rem;margin-top:4px}.pf-rl b{color:var(--cream)}
  .th{margin:16px auto;display:inline-flex;gap:22px;border:1.5px solid var(--acc);border-radius:16px;background:var(--acc-dim);padding:12px 26px}
@@ -63,14 +100,19 @@
  .cidone{border:1.5px solid rgba(67,224,141,.5);border-radius:14px;padding:15px;background:rgba(67,224,141,.08);margin-top:20px}.cidone .t{color:var(--green-ok);font-weight:700}
  .undo{margin-top:10px;width:100%;border:1px solid rgba(226,58,46,.3);background:transparent;color:#ff9a8f;border-radius:11px;padding:11px;font:inherit;font-weight:600;cursor:pointer}
  .sheet{position:fixed;inset:0;z-index:70;background:rgba(5,13,24,.75);display:none;align-items:flex-end}.sheet.show{display:flex}
- .sheet-in{background:linear-gradient(180deg,#0b2330,#08111F);width:100%;max-height:82vh;overflow:auto;border-radius:18px 18px 0 0;border-top:2px solid var(--acc);padding:20px 18px 40px}
+ .sheet-in{background:linear-gradient(180deg,var(--bg2),var(--bg3));width:100%;max-height:82vh;overflow:auto;border-radius:18px 18px 0 0;border-top:2px solid var(--acc);padding:20px 18px 40px}
  @media(min-width:600px){.sheet{align-items:center}.sheet-in{max-width:520px;margin:0 auto;border-radius:16px}.cnt .big .cn{font-size:3rem}}
  .sheet h3{color:var(--acc);font-size:1.2rem;text-align:center;margin-bottom:4px}.sheet .sub{text-align:center;color:var(--muted);font-size:.82rem;margin-bottom:14px}
  .si{display:flex;gap:12px;padding:11px 0;border-bottom:1px dashed var(--line)}.si .tm{font-family:serif;color:var(--acc);font-size:1.05rem;flex:none;width:80px}.si .d .n{color:var(--cream);font-weight:600}.si .d .s{color:var(--muted2);font-size:.78rem}
  input[type=file]{display:none}
 
   .camb{margin-top:8px;background:transparent;border:1px solid var(--line);color:var(--acc)}
-  .ci-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:99;
+  /* E08-D028: bản vá CỬA-1 nâng .pf lên z-index 100000, vô tình chôn toast
+     (99) xuống DƯỚI lớp hồ sơ đục kín màn. Mọi lời báo lỗi đều bắn TỪ TRONG hồ
+     sơ — check-in bị máy chủ từ chối, ảnh không lưu được — nên PG bấm mà không
+     thấy gì xảy ra. CỬA-2 đã chặn được «báo xanh giả» nhưng thay bằng im lặng.
+     Toast phải nằm TRÊN hồ sơ. */
+  .ci-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:100001;
     background:#0e2a1c;color:#d8f5e6;border:1px solid #1f6b45;border-radius:11px;
     padding:11px 17px;font-size:.84rem;max-width:88vw;text-align:center;display:none;
     box-shadow:0 6px 22px rgba(0,0,0,.45)}
@@ -79,7 +121,7 @@
   /* AC-D0: list ở CẢ 2 trang cửa cũng vuông một cỡ — spec nêu đích danh
      "list trên 2 trang check-in". Đây là màn PG quét liên tục dưới áp lực hàng
      người, thẻ so le bề rộng còn hại hơn ở /crm. Luật ngang/dọc chỉ ở HỒ SƠ. */
-  .pf-av img.landscape{object-fit:contain;background:#0b1a29}
+  .pf-av img.landscape{object-fit:contain;background:var(--bg1)}
   .pf-av.landscape{width:100%;max-width:250px}
 
   .pv-sub{display:block;font-size:.86em;opacity:.72;line-height:1.35;margin-top:1px}
@@ -91,16 +133,17 @@
 <header class="top"><div class="top-in">
   <img class="logo" src="logo-esuhai-mark.png" alt=""><div class="ttl" data-i="ci">CHECK-IN · Gala</div>
   <button class="lang" id="langBtn">日本語</button>
+  <button class="lich" id="rfBtn" aria-label="Tải lại số" title="Tải lại số">&#8635;</button>
   <button class="lich" id="lichBtn" data-i="lich">📅 Lịch trình</button>
 </div>
 <div class="cnt">
   <div class="big b-came" data-f="came"><div class="cl" data-i="came_label">ĐÃ ĐẾN</div><div class="cn"><span id="cDone">0</span></div><div class="cs" data-i="guests">Gala</div></div>
   <div class="big b-no" data-f="no"><div class="cl" data-i="btn_no">CHƯA ĐẾN</div><div class="cn"><span id="cLeft">0</span><b>/<span id="cTot">0</span></b></div><div class="cs" data-i="guests">Gala</div></div>
-</div></header>
+</div></header><div class="upd" id="upd"></div>
 <div class="sr"><div class="box"><span class="ic">&#8981;</span><input id="q" type="search" placeholder="Gõ tên khách (không dấu cũng được)…"></div></div>
 <div class="quick" id="quick">
   <button class="qb" data-q="vip" data-i="vip">★ VIP</button><button class="qb" data-q="nhat" data-i="nhat">🎌 Khách Nhật</button>
-  <button class="qb" data-q="noi" data-i="noi">Gia đình-Nội</button><button class="qb" data-q="ngoai" data-i="ngoai">Gia đình-Ngoại</button>
+  <button class="qb" data-q="noi" data-i="noi">Gia đình-Nội</button><button class="qb" data-q="ngoai" data-i="ngoai">Gia đình-Ngoại</button><button class="qb" data-q="gdtgd" data-i="gdtgd">Gia đình TGĐ</button>
 </div>
 <div class="hint" id="hint"></div><main class="list" id="list"></main>
 <section class="pf" id="pf"><div class="pf-bar"><button class="pf-back" id="pfBack">&#8592;</button><span data-i="pf" style="color:var(--acc);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase">Hồ sơ khách</span></div><div class="pf-b" id="pfBody"></div></section>
@@ -110,7 +153,7 @@
 <input type="file" id="pick" accept="image/*">
 <script>
 var G=[];var SESSION="gala";var SESS="Gala"; /* E08-D020: SoT = /crm API, filter theo tag buổi */
-var T={"vn": {"ci": "CHECK-IN · Gala", "lich": "📅 Lịch trình", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Gala", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)", "makhach": "Mã khách", "ci_fail":"Máy chủ từ chối — CHƯA điểm danh được, thử lại","ci_auth":"Phiên hết hạn — đăng nhập lại rồi điểm danh","ci_404":"Không tìm thấy khách này trên máy chủ","ci_net":"Mất mạng — CHƯA điểm danh được, thử lại","cambtn":"Chụp ảnh khách","pickbtn":"Thêm hình từ thiết bị","cam_up":"Đang tải ảnh…","cam_ok":"Đã lưu ảnh ✓","cam_fail":"Không lưu được ảnh","cam_net":"Lỗi mạng — ảnh chưa lưu. Điểm danh vẫn giữ.","cam_auth":"Phiên đã hết hạn — đăng nhập lại để gửi ảnh","cam_notimg":"File không phải ảnh","cam_heic":"Ảnh dạng HEIC không hiện được. Vào Cài đặt → Camera → Định dạng → chọn Tương thích nhất, rồi chụp lại.","cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in", "close": "Đóng"}, "jp": {"ci": "受付 · ガラ", "lich": "📅 式次第", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "ガラ ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)", "makhach": "ゲストID", "cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消", "close": "閉じる"}};var LANG=localStorage.getItem("ci_lang")||"vn";
+var T={"vn": {"ci": "CHECK-IN · Gala", "lich": "📅 Lịch trình", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Gala", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)", "makhach": "Mã khách", "ci_fail":"Máy chủ từ chối — CHƯA điểm danh được, thử lại","ci_auth":"Phiên hết hạn — đăng nhập lại rồi điểm danh","ci_404":"Không tìm thấy khách này trên máy chủ","ci_net":"Mất mạng — CHƯA điểm danh được, thử lại","cambtn":"Chụp ảnh khách","pickbtn":"Thêm hình từ thiết bị","cam_up":"Đang tải ảnh…","cam_ok":"Đã lưu ảnh ✓","cam_fail":"Không lưu được ảnh","cam_net":"Lỗi mạng — ảnh chưa lưu. Điểm danh vẫn giữ.","cam_auth":"Phiên đã hết hạn — đăng nhập lại để gửi ảnh","cam_notimg":"File không phải ảnh","cam_heic":"Ảnh dạng HEIC không hiện được. Vào Cài đặt → Camera → Định dạng → chọn Tương thích nhất, rồi chụp lại.","cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in", "close": "Đóng","quay_h":"Ghi nhận tại quầy","q_anh":"Ảnh khách","q_tang":"🎁 Quà khách tặng","q_tang_ph":"Quà khách tặng là gì? (giỏ hoa, tranh…)","q_camqua":"Chụp ảnh quà","q_dap":"🎀 Quà đáp lễ","q_dap_ph":"Loại quà đáp lễ (引き出物)…","q_dap_note":"⌛ Danh sách quà đáp lễ đang chờ chị Thúy Hà xác nhận","q_note":"📝 Ghi chú","q_note_ph":"Ghi chú thêm tại quầy…","q_save":"Lưu ghi nhận","q_saved":"Đã lưu ghi nhận ✓","q_empty":"Chưa có gì để lưu","q_fail":"Máy chủ từ chối — CHƯA lưu được","q_net":"Mất mạng — CHƯA lưu được","q_hist":"Lịch sử tại quầy","gdtgd":"Gia đình TGĐ","b_noi":"Nội","b_ngoai":"Ngoại","b_tgd":"GĐ TGĐ","b_jp":"🎌 Nhật","rf_ok":"Đã cập nhật số ✓","rf_fail":"Không tải lại được — kiểm tra mạng","upd":"Cập nhật {t}"}, "jp": {"ci": "受付 · ガラ", "lich": "📅 式次第", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "ガラ ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)", "makhach": "ゲストID", "cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消", "close": "閉じる","quay_h":"受付での記録","q_anh":"ゲスト写真","q_tang":"🎁 ゲストからの贈り物","q_tang_ph":"贈り物の内容(花かご・絵画など)","q_camqua":"贈り物を撮影","q_dap":"🎀 引出物","q_dap_ph":"引出物の種類…","q_dap_note":"⌛ 引出物リストは確認待ちです","q_note":"📝 メモ","q_note_ph":"受付でのメモ…","q_save":"記録を保存","q_saved":"記録を保存しました ✓","q_empty":"保存する内容がありません","q_fail":"サーバーが拒否 — 保存できません","q_net":"通信エラー — 保存できません","q_hist":"受付の記録","gdtgd":"社長ご家族","b_noi":"内","b_ngoai":"外","b_tgd":"社長ご家族","b_jp":"🎌 日本","rf_ok":"更新しました ✓","rf_fail":"更新できません — 通信をご確認ください","upd":"{t} 更新"}};var LANG=localStorage.getItem("ci_lang")||"vn";
 function t(k,rep){var s=(T[LANG]&&T[LANG][k])||T.vn[k]||k;if(rep)for(var x in rep)s=s.replace("{"+x+"}",rep[x]);return s;}
 // --- API layer (SoT = /crm + Postgres) — thay hẳn localStorage check-in ---
 async function api(u,o){o=o||{};o.credentials="same-origin";return fetch(u,o);}
@@ -118,12 +161,15 @@ async function jget(u){var r=await api(u);if(!r.ok)throw{status:r.status};return
 async function jpost(u){var r=await api(u,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});var j={};try{j=await r.json();}catch(e){}return{ok:r.ok,status:r.status,body:j};}
 function tagArr(s){return String(s||"").split(",").map(function(x){return x.trim();}).filter(Boolean);}
 function vipOf(a){for(var i=0;i<a.length;i++)if(/^V?VIP/i.test(a[i]))return a[i];return"";}
+/* AC-F2/F7: DB lưu tag chữ THƯỜNG `vip` (import-vnjb ghi 48 thẻ) — màn cửa
+   không được hiện chữ thường. Chuẩn hoá lúc HIỂN THỊ, không đụng dữ liệu. */
+function hangOf(g){var v=String(g.vip||"");return /^v?vip/i.test(v)?v.toUpperCase():v;}
 // E08-D028 Đ1: buổi HIỆU LỰC do máy chủ tính (tag ∪ form). Đọc tag thì khách
 // đã đăng ký qua form (đã bị D026 gỡ tag) ra rỗng, dù họ đang đứng trong đúng
 // danh sách buổi này — cùng loại lỗi N1 trên /crm.
 function buoiOf(r){var b=[];if(r&&r.du_toa_dam)b.push("Tọa đàm");if(r&&r.du_gala)b.push("Gala");return b.join(" + ");}
 function parseNote(s){var o={};String(s||"").split(" · ").forEach(function(p){var k=(p.split(":")[0]||"").trim(),v=p.slice(p.indexOf(":")+1).trim();if(/Ẩm thực/.test(k))o.diet=v;else if(/Vai trò/.test(k))o.role=v;else if(/^S2/.test(k))o.handler=v;else if(/Số bàn/.test(k))o.seat=v;});return o;}
-function mapRow(r){var a=tagArr(r.tags);return{id:String(r.id),name:r.full_name,title:r.title||"",org:r.org||"",table:r.table_no||"",_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(r),du_toa_dam:!!r.du_toa_dam,du_gala:!!r.du_gala,name_jp:r.name_jp||"",title_jp:r.title_jp||"",org_jp:r.org_jp||"",phanloai:(a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),seat:"",diet:"",handler:"",role:"",note:"",photo:r.photo_url||"",_enriched:false};}
+function mapRow(r){var a=tagArr(r.tags);return{id:String(r.id),name:r.full_name,title:r.title||"",org:r.org||"",table:r.table_no||"",_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(r),du_toa_dam:!!r.du_toa_dam,du_gala:!!r.du_gala,name_jp:r.name_jp||"",title_jp:r.title_jp||"",org_jp:r.org_jp||"",phanloai:(a.indexOf("Gia đình TGĐ")>-1?"Gia đình TGĐ":a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),seat:"",diet:"",handler:"",role:"",note:"",photo:r.photo_url||"",_enriched:false};}
 function byId(id){for(var i=0;i<G.length;i++)if(G[i].id===String(id))return G[i];return null;}
 function $(s){return document.querySelector(s);}
 function norm(s){var t=String(s||"").toLowerCase().normalize("NFD"),o="";for(var i=0;i<t.length;i++){var c=t.charCodeAt(i);if(c<0x300||c>0x36f)o+=t[i];}return o.replace(/đ/g,"d");}
@@ -134,9 +180,55 @@ function came(g){return g._came||"";}
 function fmt(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
 function fmtCame(c){return c&&c!=="1"?fmt(c):"✓";}
 var st={q:"",quick:"",f:""},curId=null;
-function counter(){var done=G.filter(came).length;$("#cDone").textContent=done;
+function counter(){var done=G.filter(came).length;
+ var dn=$("#cDone");if(!dn)return;dn.textContent=done;
  var lf=$("#cLeft");if(lf)lf.textContent=G.length-done;
- var tot=$("#cTot");if(tot)tot.textContent=G.length;}
+ var tot=$("#cTot");if(tot)tot.textContent=G.length;
+ var u=$("#upd");if(u)u.textContent=lastSync?t("upd",{t:fmt(new Date(lastSync).toISOString())}):"";}
+
+/* E08-D028 CỬA-4 (nợ Gate 2 toàn tip) — số ĐÃ ĐẾN / CHƯA ĐẾN trước đây là ảnh
+   chụp lúc mở trang và không bao giờ đổi. Một cửa có nhiều máy: máy A điểm danh
+   40 khách thì máy B vẫn hiện 0, và không ai biết con số nào đúng. Nạp lại nhẹ
+   mỗi 25s + khi tab sáng lại + nút ↻ bấm tay. Không websocket (Sponsor chốt P1+P2). */
+var POLL_MS=25000,pollBusy=false,mutSeq=0,lastSync=0,lastSig="",DEAD=false;
+/* Chữ ký phải gồm MỌI thứ list vẽ ra, không chỉ cờ đã-đến: máy A chụp ảnh cho
+   khách thì máy B phải thấy: nếu chữ ký bỏ qua ảnh, list máy B đứng nguyên cho
+   tới khi tình cờ có một lần điểm danh làm đổi chữ ký. */
+function sig(){return G.map(function(g){return g.id+(came(g)?"1":"0")+"|"+(g.photo||"")+"|"+(g.table||"");}).join(",");}
+function merge(rows){
+ var old={};G.forEach(function(g){old[g.id]=g;});
+ G=rows.map(function(r){var n=mapRow(r),o=old[n.id];
+  if(o){
+   /* Giữ phần CHỈ có ở máy này: enrich() (ghế/ẩm thực/phụ trách/vai trò) đọc từ
+      endpoint chi tiết, list không trả về — nạp lại mà không giữ thì mở lại hồ
+      sơ nào cũng thấy «—» cho tới khi enrich chạy lại. */
+   n._enriched=o._enriched;n.seat=o.seat;n.diet=o.diet;n.handler=o.handler;n.role=o.role;
+   if(!n.photo&&o.photo)n.photo=o.photo;
+   /* Máy chủ là SoT cho «đã đến». Chỉ giữ dấu cũ khi máy chủ trả về rỗng: cửa
+      không có nút huỷ điểm danh, nên thẻ tự lật ngược «đã đến» → «chưa đến»
+      chỉ có thể là đọc trượt — mà ở cửa, lật ngược hại hơn giữ nguyên. */
+   if(!n._came&&o._came){n._came=o._came;n._by=o._by;}}
+  return n;});}
+async function refresh(manual){
+ if(pollBusy||DEAD)return;
+ /* Đang mở hồ sơ thì KHÔNG nạp lại: PG đang thao tác trên một thẻ cụ thể, list
+    nhảy dưới tay là cách nhanh nhất để điểm danh nhầm người. Đóng hồ sơ sẽ
+    kích một vòng bù ngay. */
+ if(!manual&&(curId||document.hidden))return;
+ pollBusy=true;var b=$("#rfBtn");if(b)b.classList.add("busy");
+ var seq=mutSeq;
+ try{
+  var j=await jget("/crm/guests?session="+SESSION+"&limit=1000");
+  /* Có điểm danh xảy ra TRONG lúc request đang bay → dữ liệu vừa nhận là ảnh
+     chụp TRƯỚC lần ghi đó; đắp vào sẽ xoá dấu vừa ghi trên màn. Bỏ vòng này. */
+  if(seq!==mutSeq)return;
+  merge(j.rows||[]);lastSync=Date.now();counter();
+  /* Chỉ vẽ lại khi tập khách hoặc trạng thái đến THỰC SỰ đổi — tránh đập
+     innerHTML mỗi 25s dưới ngón tay PG khi chẳng có gì mới. */
+  var s=sig();if(s!==lastSig){lastSig=s;renderList();}
+  if(manual)toast(t("rf_ok"));
+ }catch(e){if(manual)toast(t("rf_fail"),1);}
+ finally{pollBusy=false;var b2=$("#rfBtn");if(b2)b2.classList.remove("busy");}}
 function match(g){
  if(st.f==="came"&&!came(g))return false;if(st.f==="no"&&came(g))return false;
  // E08-D028 AC-F0: vipOf() bắt tag bằng regex /^V?VIP/i nên trả về đúng tag chữ
@@ -144,8 +236,9 @@ function match(g){
  // thường, nên nút ★VIP chỉ ra 5 thẻ di sản `VIP` của tgd116, giấu 48 VIP thật.
  if(st.quick==="vip"&&!/vip/i.test(String(g.vip||"")))return false;
  if(st.quick==="nhat"&&!(isKanji(g.name)||isKanji(g.name_jp||"")))return false;
- if(st.quick==="noi"&&String(g.phanloai||"").indexOf("Nội")===-1)return false;
- if(st.quick==="ngoai"&&String(g.phanloai||"").indexOf("Ngoại")===-1)return false;
+ if(st.quick==="noi"&&g.phanloai!=="Nội")return false;
+ if(st.quick==="ngoai"&&g.phanloai!=="Ngoại")return false;
+ if(st.quick==="gdtgd"&&g.phanloai!=="Gia đình TGĐ")return false;
  // E08-D028 AC-E5: index cả ba field JP. Gate 2 toàn tip: gõ 千葉 / 鶴雅 / 取締役
  // trên cửa ra 0 kết quả trong khi /crm ra có — cửa chỉ index 3 field VN.
  if(st.q){var h=norm(g.name+" "+g.title+" "+g.org+" "+(g.name_jp||"")+" "+(g.title_jp||"")+" "+(g.org_jp||""));if(h.indexOf(norm(st.q))===-1)return false;}return true;}
@@ -173,24 +266,32 @@ function pairVJ(vn,jp){
   var top=(LANG==="jp")?b:a, bot=(LANG==="jp")?a:b;
   return esc(top)+'<span class="pv-sub">'+esc(bot)+'</span>';
 }
+/* AC-F5 — nhãn nhận diện trên list: hạng VIP · quan hệ gia đình · khách Nhật.
+   `skipVip` dùng cho hồ sơ, nơi HẠNG đã có pill riêng (AC-F7). */
+function badges(g,skipVip){var b=[],h=hangOf(g);
+ if(h&&!skipVip)b.push('<span class="bg bg-vip">'+esc(h)+'</span>');
+ var p=g.phanloai;
+ if(p)b.push('<span class="bg bg-gd">'+esc(t(p==="Nội"?"b_noi":(p==="Ngoại"?"b_ngoai":"b_tgd")))+'</span>');
+ if(isKanji(g.name_jp||"")||isKanji(g.name))b.push('<span class="bg bg-jp">'+t("b_jp")+'</span>');
+ return b.length?'<div class="bgs">'+b.join("")+'</div>':"";}
 function av(g,big){return g.photo?'<img src="'+esc(g.photo)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">'+esc(ini(g.name)):esc(ini(g.name));}
 function renderList(){var rows=G.filter(match);
  $("#hint").textContent=(st.q||st.quick||st.f)?t("res",{n:rows.length}):t("total",{n:G.length});
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);
   return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'"><span class="sd'+(cm?" came":"")+'"></span>'
-   +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+pairVJ(g.name,g.name_jp)+'</div><div class="n2">'+pairVJ(g.title||g.org||"",g.title_jp||g.org_jp||"")+'</div></div>'
-   +(cm?'<span class="gt">&#9711; '+fmtCame(cm)+'</span>':'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>')+'</div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
+   +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+pairVJ(g.name,g.name_jp)+'</div><div class="n2">'+pairVJ(g.title||g.org||"",g.title_jp||g.org_jp||"")+'</div>'+badges(g)+'</div>'
+   +(cm?'<span class="gt">&#9711; '+fmtCame(cm)+'</span>':(g.table?'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>':''))+'</div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
 
 /* E08-D028 AC-C — chụp ảnh khách tại cửa → kệ MinIO.
    AC-C2 (Sponsor chốt): ĐIỂM DANH và ẢNH độc lập. Ảnh fail → báo đỏ, KHÔNG
    đụng tới trạng thái đã điểm danh. Ở cửa, thứ phải đúng là khách đã vào;
    ảnh là thứ chụp lại được, điểm danh thì không. */
-var camFor=null;
+var camFor=null,camQua=false;
 function toast(msg,bad){var el=document.getElementById("ciToast");
   if(!el){el=document.createElement("div");el.id="ciToast";document.body.appendChild(el);}
   el.className="ci-toast"+(bad?" bad":"");el.textContent=msg;el.style.display="block";
   clearTimeout(el._t);el._t=setTimeout(function(){el.style.display="none";},4200);}
-async function sendPhoto(id,file){
+async function sendPhoto(id,file,asGift){
   if(!file)return;
   if(!/^image\//.test(file.type||"")){toast(t("cam_notimg"),1);return;}
   // HEIC/HEIF: API cho qua nhưng TRÌNH DUYỆT KHÔNG HIỂN THỊ ĐƯỢC — Pha 2 đã phải
@@ -198,41 +299,132 @@ async function sendPhoto(id,file){
   // hơn là không lưu. Từ chối kèm hướng dẫn đổi cài đặt máy.
   if(/heic|heif/i.test(file.type||'')||/\.(heic|heif)$/i.test(file.name||'')){toast(t('cam_heic'),1);return;}
   toast(t("cam_up"));
+  /* Ảnh quà phải gắn vào một ghi nhận: nếu tải lên trần như ảnh khách thì nó
+     thành ẢNH MỚI NHẤT của thẻ, mà avatar ở cả 4 màn lấy đúng ảnh mới nhất —
+     cái hộp quà sẽ thế chỗ mặt khách trên mọi danh sách, và không có route xoá
+     ảnh để lùi lại. */
+  var interId=null;
+  if(asGift){
+    grabDraft();var gq=byId(id);
+    var bd=String((gq&&gq._q&&gq._q.tang)||"").trim()||t("q_camqua");
+    try{
+      var ri=await api("/crm/guests/"+id+"/interactions",{method:"POST",
+        headers:{"Content-Type":"application/json"},body:JSON.stringify({kind:"anh-qua",body:bd})});
+      if(!ri.ok){toast(ri.status===401?t("cam_auth"):t("q_fail")+" ("+ri.status+")",1);return;}
+      var ji=await ri.json();interId=ji.id;
+    }catch(e){toast(t("cam_net"),1);return;}
+  }
   var fd=new FormData();fd.append("photo",file);
+  if(interId)fd.append("interaction_id",interId);
   try{
     var r=await api("/crm/guests/"+id+"/photos",{method:"POST",body:fd});
     if(r.status===401){toast(t("cam_auth"),1);return;}
     if(!r.ok){var e={};try{e=await r.json();}catch(_){}toast(e.error||t("cam_fail"),1);return;}
     var j={};try{j=await r.json();}catch(_){}
     var g=byId(id);
-    if(g&&j&&j.url){g.photo=j.url;if(curId===id)openPf(id);renderList();}
+    /* Ảnh quà KHÔNG được thay ảnh đại diện khách — chỉ nạp lại hồ sơ để lịch
+       sử tại quầy hiện thêm dòng vừa ghi. */
+    if(g&&j&&j.url&&!asGift){g.photo=j.url;lastSig=sig();if(curId===id)openPf(id);renderList();}
     else if(g){g._enriched=false;enrich(g,id);}
-    toast(t("cam_ok"));
+    toast(asGift?t("q_saved"):t("cam_ok"));
   }catch(err){toast(t("cam_net"),1);}
 }
 
-function openPf(id){var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls=g.diet==="Món chay"?"chay":"";
+/* Ô «GHẾ» trước đây in ra g.seat — mà g.seat KHÔNG phải số ghế: parseNote bắt
+   khoá «Số bàn (SoT)» của lô tgd116, tức một SỐ BÀN thứ hai. Đo prod: 0/378
+   khách có đồng thời BÀN và «ghế», 30 khách chỉ có số bàn trong note còn cột
+   table_no rỗng. Vậy: gộp hai nguồn đó làm BÀN, và chỉ hiện GHẾ khi thật sự có
+   dữ liệu ghế (hiện chưa có nguồn nào — spec cấm tự xếp bàn/ghế). */
+function thBox(g){var ban=g.table||g.seat||"",ghe=g.ghe||"";
+ if(!ban&&!ghe)return "";
+ return '<div class="th">'
+  +(ban?'<div class="c"><div class="k">'+t("ban")+'</div><div class="v num">'+esc(ban)+'</div></div>':'')
+  +(ghe?'<div class="c"><div class="k">'+t("ghe")+'</div><div class="v num">'+esc(ghe)+'</div></div>':'')+'</div>';}
+
+/* ─────────── AC-G4 · GHI NHẬN TẠI QUẦY (mock Ly 04/08) ───────────
+   Lưu THẬT, không phải vỏ: `POST /crm/guests/:id/interactions` đã có sẵn
+   (server/crm/guests.js), nhận {kind, body}, mọi tài khoản đã đăng nhập POST
+   được — PG role staff không cần quyền btl. Dòng lịch sử cũng có sẵn: endpoint
+   chi tiết trả `interactions[]` kèm actor_email + created_at.
+   KHÔNG nhét quà vào `crm_guests.note`: importer ghi `note = COALESCE($4,note)`
+   nên một lượt import/backfill sau này sẽ xoá sạch, và note không có ai-lúc-nào
+   để dựng lịch sử. */
+var KIND={"qua-tang":"q_tang","qua-dap-le":"q_dap","ghi-chu-quay":"q_note","anh-qua":"q_camqua"};
+function kindLbl(k){return KIND[k]?t(KIND[k]):String(k||"");}
+function who(e){return String(e||"").split("@")[0];}
+/* Giữ chữ PG đang gõ: openPf() vẽ lại toàn bộ #pfBody mỗi lần điểm danh xong
+   hoặc enrich() trả về, mà textarea nằm trong đó — không cất đi thì mất trắng. */
+function grabDraft(){if(!curId)return;var g=byId(curId);if(!g)return;
+ var a=document.getElementById("qTang"),b=document.getElementById("qDap"),c=document.getElementById("qNote");
+ if(a||b||c)g._q={tang:a?a.value:"",dap:b?b.value:"",note:c?c.value:""};}
+function histHtml(g){var L=g._inter||[];if(!L.length)return "";
+ return '<div class="qh"><div class="qhh">'+t("q_hist")+'</div>'+L.slice(0,12).map(function(x){
+  return '<div class="qhr"><b>'+esc(kindLbl(x.kind))+':</b> '+esc(x.body||"")
+   +'<div class="qhm">'+esc(who(x.actor_email))+' · '+fmt(x.created_at)+'</div></div>';}).join("")+'</div>';}
+function quayHtml(g){var q=g._q||{};
+ return '<div class="quay"><h4>'+t("quay_h")+'</h4>'
+  +'<div class="qf"><label>'+t("q_anh")+'</label>'
+   +'<button class="cib camb" data-cam="'+esc(g.id)+'">&#128247;&nbsp; '+t("cambtn")+'</button>'
+   +'<button class="cib camb" data-pick="'+esc(g.id)+'">&#128193;&nbsp; '+t("pickbtn")+'</button></div>'
+  +'<div class="qf"><label>'+t("q_tang")+'</label>'
+   +'<textarea id="qTang" rows="2" placeholder="'+esc(t("q_tang_ph"))+'">'+esc(q.tang||"")+'</textarea>'
+   +'<button class="cib camb" data-camqua="'+esc(g.id)+'">&#128247;&nbsp; '+t("q_camqua")+'</button></div>'
+  +'<div class="qf"><label>'+t("q_dap")+'</label>'
+   +'<input id="qDap" placeholder="'+esc(t("q_dap_ph"))+'" value="'+esc(q.dap||"")+'">'
+   +'<div class="qnote">'+esc(t("q_dap_note"))+'</div></div>'
+  +'<div class="qf"><label>'+t("q_note")+'</label>'
+   +'<textarea id="qNote" rows="2" placeholder="'+esc(t("q_note_ph"))+'">'+esc(q.note||"")+'</textarea></div>'
+  +'<button class="cib" data-save="'+esc(g.id)+'">&#128190;&nbsp; '+t("q_save")+'</button>'
+  +histHtml(g)+'</div>';}
+async function saveQuay(id,btn){
+ grabDraft();var g=byId(id);if(!g)return;var q=g._q||{};
+ var jobs=[];
+ if(String(q.tang||"").trim())jobs.push(["qua-tang",q.tang.trim()]);
+ if(String(q.dap||"").trim())jobs.push(["qua-dap-le",q.dap.trim()]);
+ if(String(q.note||"").trim())jobs.push(["ghi-chu-quay",q.note.trim()]);
+ if(!jobs.length){toast(t("q_empty"),1);return;}
+ btn.disabled=true;
+ try{
+  for(var i=0;i<jobs.length;i++){
+   var r=await api("/crm/guests/"+id+"/interactions",{method:"POST",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({kind:jobs[i][0],body:jobs[i][1]})});
+   /* Đúng lớp lỗi CỬA-2, lặp lại ở nút mới: fetch KHÔNG ném khi máy chủ trả
+      4xx/5xx. Bỏ qua r.ok thì PG thấy «Đã lưu ✓» trong khi bảng ghi nhận
+      trống trơn — và quà thì không ghi lại được sau khi khách đã đi. */
+   if(!r.ok){btn.disabled=false;
+     toast(r.status===401?t("ci_auth"):t("q_fail")+" ("+r.status+")",1);return;}
+  }
+  g._q={};g._enriched=false;toast(t("q_saved"));await enrich(g,id);
+ }catch(e){btn.disabled=false;toast(t("q_net"),1);}}
+function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls=g.diet==="Món chay"?"chay":"";
  var ciBox=cm?'<div class="cidone"><div class="t">&#9711; '+t("cidone",{t:fmtCame(cm)})+(g._by?' · '+esc(g._by):'')+'</div></div>'
    :'<button class="cib" data-ci="'+esc(g.id)+'">&#9711;&nbsp; '+t("cibtn")+'</button>';
- ciBox+='<button class="cib camb" data-cam="'+esc(g.id)+'">&#128247;&nbsp; '+t("cambtn")+'</button>'
-      +'<button class="cib camb" data-pick="'+esc(g.id)+'">&#128193;&nbsp; '+t("pickbtn")+'</button>';
+ ciBox+=quayHtml(g);
  $("#pfBody").innerHTML='<div class="pf-av">'+av(g,1)+'</div><div class="pf-nm">'+pairVJ(g.name,g.name_jp)+'</div><div class="pf-rl"><b>'+(pairVJ(g.title,g.title_jp)||"—")+'</b>'+((g.org||g.org_jp)?'<br>'+pairVJ(g.org,g.org_jp):'')+'</div>'
-  +'<div class="th"><div class="c"><div class="k">'+t("ban")+'</div><div class="v num">'+esc(g.table)+'</div></div><div class="c"><div class="k">'+t("ghe")+'</div><div class="v num">'+esc(g.seat)+'</div></div></div>'
-  +'<div class="facts">'+(g.vip?'<div class="ft"><div class="k">'+t("hang")+'</div><div class="v">'+esc(g.vip)+'</div></div>':'')+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(g.buoi)+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(g.diet||"—")+'</div></div></div>'
+  +thBox(g)
+  +(hangOf(g)?'<div class="hangp"><span class="k">'+t("hang")+'</span><b>'+esc(hangOf(g))+'</b></div>':'')+badges(g,1)
+  +'<div class="facts">'+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(g.buoi)+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(g.diet||"—")+'</div></div></div>'
   +'<div class="info"><div class="ir"><span class="k">'+t("phutrach")+'</span><span class="v">'+esc(g.handler||"—")+'</span></div>'
   +'<div class="ir"><span class="k">'+t("vaitro")+'</span><span class="v">'+esc(g.role||"—")+(g.note?' · '+esc(g.note):'')+'</span></div>'
   +'<div class="ir"><span class="k">'+t("sdt")+'</span><span class="v">'+t("sdthide")+'</span></div>'
   +'<div class="ir"><span class="k">'+t("makhach")+'</span><span class="v">'+esc(g.id)+'</span></div></div>'+ciBox;
  $("#pf").classList.add("show");document.body.style.overflow="hidden";if(!g._enriched)enrich(g,id);}
-async function enrich(g,id){try{var j=await jget("/crm/guests/"+id);g._enriched=true;if(j.photos&&j.photos[0])g.photo=j.photos[0].url;var p=parseNote(j.guest&&j.guest.note);g.diet=p.diet||"";g.role=p.role||"";g.handler=p.handler||"";g.seat=p.seat||"";if(curId===id)openPf(id);}catch(e){g._enriched=true;}}
+async function enrich(g,id){try{var j=await jget("/crm/guests/"+id);g._enriched=true;
+ /* Ảnh có interaction_id là ảnh QUÀ chụp tại quầy — không phải mặt khách. */
+ var pf=(j.photos||[]).filter(function(p){return !p.interaction_id;});
+ if(pf[0])g.photo=pf[0].url;
+ g._inter=j.interactions||[];var p=parseNote(j.guest&&j.guest.note);g.diet=p.diet||"";g.role=p.role||"";g.handler=p.handler||"";g.seat=p.seat||"";if(curId===id)openPf(id);}catch(e){g._enriched=true;}}
 function setLang(l){LANG=l;localStorage.setItem("ci_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";
  document.querySelectorAll("[data-i]").forEach(function(el){var k=el.getAttribute("data-i");var v=t(k);if(v)el.textContent=v;});
  $("#q").placeholder=t("search");$("#langBtn").textContent=l==="jp"?"Tiếng Việt":"日本語";renderList();if(curId)openPf(curId);}
 $("#list").addEventListener("click",function(e){var c=e.target.closest(".gc");if(c)openPf(c.getAttribute("data-id"));});
-$("#pfBack").addEventListener("click",function(){$("#pf").classList.remove("show");document.body.style.overflow="";curId=null;});
+$("#pfBack").addEventListener("click",function(){$("#pf").classList.remove("show");document.body.style.overflow="";curId=null;refresh();});
 $("#pfBody").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
- if(b.getAttribute("data-cam")){camFor=b.getAttribute("data-cam");var ci=document.getElementById("cam");if(ci){ci.value="";ci.click();}return;}
-  if(b.getAttribute("data-pick")){camFor=b.getAttribute("data-pick");var pk=document.getElementById("pick");if(pk){pk.value="";pk.click();}return;}
+ if(b.getAttribute("data-cam")){camQua=false;camFor=b.getAttribute("data-cam");var ci=document.getElementById("cam");if(ci){ci.value="";ci.click();}return;}
+  if(b.getAttribute("data-pick")){camQua=false;camFor=b.getAttribute("data-pick");var pk=document.getElementById("pick");if(pk){pk.value="";pk.click();}return;}
+  if(b.getAttribute("data-camqua")){camQua=true;camFor=b.getAttribute("data-camqua");var cq=document.getElementById("cam");if(cq){cq.value="";cq.click();}return;}
+  if(b.getAttribute("data-save")){saveQuay(b.getAttribute("data-save"),b);return;}
   if(b.getAttribute("data-ci")){var id=b.getAttribute("data-ci");b.disabled=true;
     /* E08-D028 CỬA-2: jpost() KHÔNG ném lỗi khi máy chủ từ chối — nó trả
        {ok:false,status}. Bản cũ bỏ qua r.ok rồi rơi về || "1" nên màn hiện
@@ -246,7 +438,8 @@ $("#pfBody").addEventListener("click",function(e){var b=e.target.closest("button
         return;
       }
       var g=byId(id); if(g)g._came=(r.body&&r.body.at)||"1";
-      counter();openPf(id);renderList();
+      mutSeq++;                       /* CỬA-4: vô hiệu mọi vòng poll đang bay */
+      lastSync=Date.now();counter();openPf(id);renderList();lastSig=sig();
     }).catch(function(){b.disabled=false;toast(t("ci_net"),1);});}});
 $("#q").addEventListener("input",function(e){st.q=e.target.value;renderList();});
 $("#quick").addEventListener("click",function(e){var b=e.target.closest(".qb");if(!b)return;var q=b.getAttribute("data-q");st.quick=(st.quick===q?"":q);document.querySelectorAll(".qb").forEach(function(x){x.classList.remove("on");});if(st.quick)b.classList.add("on");renderList();});
@@ -255,15 +448,22 @@ $("#lichBtn").addEventListener("click",function(){$("#sheet").classList.add("sho
 $("#schClose").addEventListener("click",function(){$("#sheet").classList.remove("show");});
 $("#sheet").addEventListener("click",function(e){if(e.target===this)this.classList.remove("show");});
 $("#langBtn").addEventListener("click",function(){setLang(LANG==="jp"?"vn":"jp");});
+$("#rfBtn").addEventListener("click",function(){refresh(1);});
+/* Tab nền không poll (tiết kiệm pin + tải máy chủ); sáng lại thì bù ngay một vòng. */
+document.addEventListener("visibilitychange",function(){if(!document.hidden)refresh();});
+setInterval(function(){refresh();},POLL_MS);
 // --- auth-gate (fail-closed: 401 hoặc network lỗi → màn đăng nhập, KHÔNG render khách) ---
-function gate(html){document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#eee;background:#0b1a30">'+html+'</div>';}
+/* gate() THAY RUỘT <body> — mọi phần tử hero biến mất. Vòng poll kế tiếp sẽ
+   ném lỗi ở counter() rồi bị catch của refresh() nuốt im, và trang chết vẫn
+   tiếp tục gõ máy chủ mỗi 25 giây. Dựng cờ để dừng hẳn. */
+function gate(html){DEAD=true;document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#eee;background:#0b1a30">'+html+'</div>';}
 async function boot(){
  try{await jget("/crm/me");}catch(e){return gate('<div><div style="font-size:44px">🔒</div><h2 style="margin:8px 0">Cần đăng nhập CRM</h2><p style="color:#b9b096;max-width:330px">Trang điểm danh Gala dùng dữ liệu thật từ <b>/crm</b>. Đăng nhập OTP rồi quay lại.</p><a href="/crm" style="display:inline-block;margin-top:14px;background:#d8b876;color:#1a1204;padding:11px 22px;border-radius:8px;text-decoration:none;font-weight:700">Đăng nhập /crm →</a></div>');}
  try{var j=await jget("/crm/guests?session="+SESSION+"&limit=1000");G=(j.rows||[]).map(mapRow);}catch(e){return gate('<div><h2>Lỗi tải dữ liệu</h2><p style="color:#b9b096">Kiểm tra kết nối rồi thử lại.</p><button onclick="location.reload()" style="margin-top:12px;background:#d8b876;color:#1a1204;padding:10px 20px;border:0;border-radius:8px;font-weight:700;cursor:pointer">Tải lại</button></div>');}
- counter();setLang(LANG);
+ lastSync=Date.now();counter();setLang(LANG);lastSig=sig();
 }
 boot();
 /* E08-D028 AC-C: #cam vốn là input chết — không listener nào. Gắn ở đây. */
 (function(){["cam","pick"].forEach(function(id){var el=document.getElementById(id);
-    if(el)el.addEventListener("change",function(){if(camFor&&el.files&&el.files[0])sendPhoto(camFor,el.files[0]);camFor=null;});});})();
+    if(el)el.addEventListener("change",function(){var q=camQua;if(camFor&&el.files&&el.files[0])sendPhoto(camFor,el.files[0],q);camFor=null;camQua=false;});});})();
 </script></body></html>

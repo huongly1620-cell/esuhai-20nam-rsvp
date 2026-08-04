@@ -72,7 +72,62 @@ function parseCookies(req) {
   (req.headers.cookie || '').split(';').forEach((c) => { const i = c.indexOf('='); if (i > -1) out[c.slice(0, i).trim()] = decodeURIComponent(c.slice(i + 1).trim()); });
   return out;
 }
-function currentActor(req) { return verifyToken(parseCookies(req)[COOKIE]); }
+// ---- smoke bearer lane (E08-D024) ----
+// Second auth lane, for the agent that smokes /crm after a deploy. People keep
+// using OTP email; this lane exists only because the agent has no mailbox.
+//
+// Disabled unless CRM_SMOKE_BEARER is set, so unsetting the variable is a
+// complete kill-switch. Role is deliberately 'staff', not 'btl': the smoke
+// needs none of the btl-only lanes (delete guest, mass import, full-PII audit
+// CSV), and running as staff lets the smoke assert RBAC is still intact —
+// DELETE must answer 403. A leaked token must not be able to empty the guest
+// list four days before the event.
+const SMOKE_EMAIL = 'crm-smoke-agent@esuhai.local';
+const SMOKE_MIN_LEN = 32;
+let smokeWarned = false;
+
+// The cookie lane leaves a `login_success` row when a session opens; the bearer
+// lane had no equivalent, so a token could read all 173 guests — names, orgs,
+// raw phones — and leave zero trace (only write endpoints call logAudit).
+// A second auth lane into real PII must be visible in the audit log even when
+// it only reads. Throttled so a smoke run writes one row, not one per request.
+const SMOKE_AUDIT_EVERY_MS = 10 * 60 * 1000;
+let smokeAuditAt = 0;
+function noteSmokeAuth(req) {
+  const now = Date.now();
+  if (now - smokeAuditAt < SMOKE_AUDIT_EVERY_MS) return;
+  smokeAuditAt = now;
+  // fire-and-forget: audit must never break or slow the request it describes
+  Promise.resolve()
+    .then(() => logAudit(pool, {
+      actor_email: SMOKE_EMAIL, event_type: 'smoke_auth', target_type: 'session',
+      meta: { path: String(req.originalUrl || req.url || '').slice(0, 200) }, ip: ipOf(req),
+    }))
+    .catch(() => {});
+}
+
+function bearerActor(req) {
+  const want = (process.env.CRM_SMOKE_BEARER || '').trim();  // biến dán tay dễ dính \n
+  if (!want) return null;
+  if (want.length < SMOKE_MIN_LEN) {
+    // Refuse to honour a weak token rather than silently accepting it.
+    if (!smokeWarned) { smokeWarned = true; console.error('[crm-auth] CRM_SMOKE_BEARER quá ngắn (<' + SMOKE_MIN_LEN + ') — nhánh smoke bị tắt.'); }
+    return null;
+  }
+  const hdr = req.headers.authorization || '';
+  if (hdr.slice(0, 7) !== 'Bearer ') return null;
+  const a = Buffer.from(hdr.slice(7).trim(), 'utf8');
+  const b = Buffer.from(want, 'utf8');
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  noteSmokeAuth(req);
+  return { email: SMOKE_EMAIL, role: 'staff' };
+}
+
+// Cookie first (unchanged OTP path), bearer only as fallback. Putting it here
+// rather than in requireCrmAuth means /crm picks the app shell for the smoke
+// agent too (index.js decides via currentActor), so Playwright can open the
+// real UI with an Authorization header — no session cookie has to be minted.
+function currentActor(req) { return verifyToken(parseCookies(req)[COOKIE]) || bearerActor(req); }
 
 // ---- RBAC middleware ----
 function requireCrmAuth(req, res, next) {

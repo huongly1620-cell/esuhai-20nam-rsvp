@@ -63,6 +63,13 @@
  .sheet h3{color:var(--acc);font-size:1.2rem;text-align:center;margin-bottom:4px}.sheet .sub{text-align:center;color:var(--muted);font-size:.82rem;margin-bottom:14px}
  .si{display:flex;gap:12px;padding:11px 0;border-bottom:1px dashed var(--line)}.si .tm{font-family:serif;color:var(--acc);font-size:1.05rem;flex:none;width:80px}.si .d .n{color:var(--cream);font-weight:600}.si .d .s{color:var(--muted2);font-size:.78rem}
  input[type=file]{display:none}
+
+  .camb{margin-top:8px;background:transparent;border:1px solid var(--line);color:var(--acc)}
+  .ci-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:99;
+    background:#0e2a1c;color:#d8f5e6;border:1px solid #1f6b45;border-radius:11px;
+    padding:11px 17px;font-size:.84rem;max-width:88vw;text-align:center;display:none;
+    box-shadow:0 6px 22px rgba(0,0,0,.45)}
+  .ci-toast.bad{background:#2d1113;color:#ffd9dc;border-color:#7c2b31}
 </style></head><body>
 <!-- E08-D019 một SoT: bản thiết kế, không phải công cụ điểm danh thật -->
 <div style="position:sticky;top:0;z-index:99999;background:#0f955a;color:#fff;font-family:system-ui,'Segoe UI',Arial,sans-serif;padding:8px 14px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:13px;font-weight:600">✔ Đã nối <b>/crm</b> · dữ liệu SoT · điểm danh ghi thật<a href="/crm" style="background:rgba(255,255,255,.9);color:#0f955a;text-decoration:none;padding:4px 10px;border-radius:6px;font-weight:700">Mở /crm</a></div>
@@ -86,7 +93,7 @@
 <input type="file" id="cam" accept="image/*" capture="environment">
 <script>
 var G=[];var SESSION="toa-dam";var SESS="Tọa đàm"; /* E08-D020: SoT = /crm API, filter theo tag buổi */
-var T={"vn": {"ci": "CHECK-IN · Tọa đàm", "lich": "📅 Lịch trình", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Tọa đàm", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)", "makhach": "Mã khách", "cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in", "close": "Đóng"}, "jp": {"ci": "受付 · 座談会", "lich": "📅 式次第", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "座談会 ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)", "makhach": "ゲストID", "cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消", "close": "閉じる"}};var LANG=localStorage.getItem("ci_lang")||"vn";
+var T={"vn": {"ci": "CHECK-IN · Tọa đàm", "lich": "📅 Lịch trình", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Tọa đàm", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)", "makhach": "Mã khách", "cambtn":"Chụp ảnh khách","cam_up":"Đang tải ảnh…","cam_ok":"Đã lưu ảnh ✓","cam_fail":"Không lưu được ảnh","cam_net":"Lỗi mạng — ảnh chưa lưu. Điểm danh vẫn giữ.","cam_auth":"Phiên đã hết hạn — đăng nhập lại để gửi ảnh","cam_notimg":"File không phải ảnh","cam_heic":"Ảnh dạng HEIC không hiện được. Vào Cài đặt → Camera → Định dạng → chọn Tương thích nhất, rồi chụp lại.","cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in", "close": "Đóng"}, "jp": {"ci": "受付 · 座談会", "lich": "📅 式次第", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "座談会 ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)", "makhach": "ゲストID", "cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消", "close": "閉じる"}};var LANG=localStorage.getItem("ci_lang")||"vn";
 function t(k,rep){var s=(T[LANG]&&T[LANG][k])||T.vn[k]||k;if(rep)for(var x in rep)s=s.replace("{"+x+"}",rep[x]);return s;}
 // --- API layer (SoT = /crm + Postgres) — thay hẳn localStorage check-in ---
 async function api(u,o){o=o||{};o.credentials="same-origin";return fetch(u,o);}
@@ -122,9 +129,41 @@ function renderList(){var rows=G.filter(match);
   return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'"><span class="sd'+(cm?" came":"")+'"></span>'
    +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+esc(g.name)+'</div><div class="n2">'+esc(g.title||g.org||"")+'</div></div>'
    +(cm?'<span class="gt">&#9711; '+fmtCame(cm)+'</span>':'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>')+'</div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
+
+/* E08-D028 AC-C — chụp ảnh khách tại cửa → kệ MinIO.
+   AC-C2 (Sponsor chốt): ĐIỂM DANH và ẢNH độc lập. Ảnh fail → báo đỏ, KHÔNG
+   đụng tới trạng thái đã điểm danh. Ở cửa, thứ phải đúng là khách đã vào;
+   ảnh là thứ chụp lại được, điểm danh thì không. */
+var camFor=null;
+function toast(msg,bad){var el=document.getElementById("ciToast");
+  if(!el){el=document.createElement("div");el.id="ciToast";document.body.appendChild(el);}
+  el.className="ci-toast"+(bad?" bad":"");el.textContent=msg;el.style.display="block";
+  clearTimeout(el._t);el._t=setTimeout(function(){el.style.display="none";},4200);}
+async function sendPhoto(id,file){
+  if(!file)return;
+  if(!/^image\//.test(file.type||"")){toast(t("cam_notimg"),1);return;}
+  // HEIC/HEIF: API cho qua nhưng TRÌNH DUYỆT KHÔNG HIỂN THỊ ĐƯỢC — Pha 2 đã phải
+  // dọn 3 tấm kiểu này. Lưu vào thì thẻ có ảnh mà màn vẫn ra chữ viết tắt, tệ
+  // hơn là không lưu. Từ chối kèm hướng dẫn đổi cài đặt máy.
+  if(/heic|heif/i.test(file.type||'')||/\.(heic|heif)$/i.test(file.name||'')){toast(t('cam_heic'),1);return;}
+  toast(t("cam_up"));
+  var fd=new FormData();fd.append("photo",file);
+  try{
+    var r=await api("/crm/guests/"+id+"/photos",{method:"POST",body:fd});
+    if(r.status===401){toast(t("cam_auth"),1);return;}
+    if(!r.ok){var e={};try{e=await r.json();}catch(_){}toast(e.error||t("cam_fail"),1);return;}
+    var j={};try{j=await r.json();}catch(_){}
+    var g=byId(id);
+    if(g&&j&&j.url){g.photo=j.url;if(curId===id)openPf(id);renderList();}
+    else if(g){g._enriched=false;enrich(g,id);}
+    toast(t("cam_ok"));
+  }catch(err){toast(t("cam_net"),1);}
+}
+
 function openPf(id){var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls=g.diet==="Món chay"?"chay":"";
  var ciBox=cm?'<div class="cidone"><div class="t">&#9711; '+t("cidone",{t:fmtCame(cm)})+(g._by?' · '+esc(g._by):'')+'</div></div>'
    :'<button class="cib" data-ci="'+esc(g.id)+'">&#9711;&nbsp; '+t("cibtn")+'</button>';
+ ciBox+='<button class="cib camb" data-cam="'+esc(g.id)+'">&#128247;&nbsp; '+t("cambtn")+'</button>';
  $("#pfBody").innerHTML='<div class="pf-av">'+av(g,1)+'</div><div class="pf-nm">'+esc(g.name)+'</div><div class="pf-rl"><b>'+esc(g.title||"—")+'</b>'+(g.org?'<br>'+esc(g.org):'')+'</div>'
   +'<div class="th"><div class="c"><div class="k">'+t("ban")+'</div><div class="v num">'+esc(g.table)+'</div></div><div class="c"><div class="k">'+t("ghe")+'</div><div class="v num">'+esc(g.seat)+'</div></div></div>'
   +'<div class="facts">'+(g.vip?'<div class="ft"><div class="k">'+t("hang")+'</div><div class="v">'+esc(g.vip)+'</div></div>':'')+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(g.buoi)+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(g.diet||"—")+'</div></div></div>'
@@ -140,7 +179,8 @@ function setLang(l){LANG=l;localStorage.setItem("ci_lang",l);document.body.class
 $("#list").addEventListener("click",function(e){var c=e.target.closest(".gc");if(c)openPf(c.getAttribute("data-id"));});
 $("#pfBack").addEventListener("click",function(){$("#pf").classList.remove("show");document.body.style.overflow="";curId=null;});
 $("#pfBody").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
- if(b.getAttribute("data-ci")){var id=b.getAttribute("data-ci");b.disabled=true;jpost("/crm/guests/"+id+"/check-in").then(function(r){var g=byId(id);if(g)g._came=(r.body&&r.body.at)||g._came||"1";counter();openPf(id);renderList();}).catch(function(){b.disabled=false;});}});
+ if(b.getAttribute("data-cam")){camFor=b.getAttribute("data-cam");var ci=document.getElementById("cam");if(ci){ci.value="";ci.click();}return;}
+  if(b.getAttribute("data-ci")){var id=b.getAttribute("data-ci");b.disabled=true;jpost("/crm/guests/"+id+"/check-in").then(function(r){var g=byId(id);if(g)g._came=(r.body&&r.body.at)||g._came||"1";counter();openPf(id);renderList();}).catch(function(){b.disabled=false;});}});
 $("#q").addEventListener("input",function(e){st.q=e.target.value;renderList();});
 $("#quick").addEventListener("click",function(e){var b=e.target.closest(".qb");if(!b)return;var q=b.getAttribute("data-q");st.quick=(st.quick===q?"":q);document.querySelectorAll(".qb").forEach(function(x){x.classList.remove("on");});if(st.quick)b.classList.add("on");renderList();});
 document.querySelectorAll(".fb").forEach(function(b){b.addEventListener("click",function(){var f=b.getAttribute("data-f");st.f=(st.f===f?"":f);document.querySelectorAll(".fb").forEach(function(x){x.classList.remove("on");});if(st.f)b.classList.add("on");renderList();});});
@@ -156,4 +196,7 @@ async function boot(){
  counter();setLang(LANG);
 }
 boot();
+/* E08-D028 AC-C: #cam vốn là input chết — không listener nào. Gắn ở đây. */
+(function(){var ci=document.getElementById("cam");
+  if(ci)ci.addEventListener("change",function(){if(camFor&&ci.files&&ci.files[0])sendPhoto(camFor,ci.files[0]);camFor=null;});})();
 </script></body></html>

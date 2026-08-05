@@ -161,10 +161,14 @@
   .fld{margin:9px 0;text-align:left}.fld .lab{font-size:.68rem;color:var(--muted);margin-bottom:4px}
   /* E08-D031 — trạng thái THAM DỰ. Trục khác hẳn «đã đến»: đây là khách CÓ dự
      sự kiện không (số vào báo cáo BTC), kia là đã tới cửa chưa. */
-  .attb{font-size:.62rem;font-weight:800;border-radius:6px;padding:2px 7px;white-space:nowrap;letter-spacing:.02em}
-  .attb.khong{color:#2a1e05;background:var(--amber)}
-  .attb.cho{color:var(--muted);border:1px dashed var(--line2)}
-  .attb.du{color:#04240f;background:var(--green,#43e08d)}
+  /* E08-D033 — ba HÌNH khác nhau, màu chỉ là lớp thứ hai (AC-4). */
+  .attb{display:inline-block;font-size:.62rem;font-weight:800;padding:2px 7px;white-space:nowrap;letter-spacing:.02em;vertical-align:middle}
+  .attb.khong{color:#2a1e05;background:var(--amber);border:1px solid var(--amber);border-radius:3px}
+  .attb.cho{color:var(--muted);background:transparent;border:1.5px dashed var(--line2);border-radius:999px}
+  /* nhóm bình thường: chỉ một chấm TRÒN ĐẶC, không chữ — 320 dòng mà gắn chữ
+     là nhồi thêm một cột vào hàng vốn đã có VIP + giờ đến / số bàn. */
+  .attd{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green,#43e08d);
+    border:1px solid rgba(0,0,0,.45);vertical-align:middle;flex:none}
   .attsel{width:100%;font:inherit;font-size:.92rem;color:var(--cream,#eee);background:rgba(5,13,24,.5);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:6px}
   .thumbs{display:flex;gap:8px;flex-wrap:wrap}.thumbs img{width:70px;height:70px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
   /* E08-D028 L-01: dải ảnh hồ sơ trộn ảnh mặt khách với ảnh QUÀ chụp tại quầy
@@ -425,9 +429,14 @@ async function addShrunk(fd,file){
  function attOf(g){return g&&g.att_status?g.att_status:"";}
  function attLbl(a){return a==="du"?tt("att_du"):(a==="khong"?tt("att_khong"):(a==="cho"?tt("att_cho"):""));}
  function attBadge(g){var a=attOf(g);
-   /* Trên LIST chỉ gắn nhãn khi KHÁC «có dự» — 320/344 khách là có dự, gắn hết
-      thì nhãn thành nhiễu và che mất đúng hai nhóm cần chú ý. */
-   if(a!=="khong"&&a!=="cho")return "";
+   /* E08-D033 — MỌI dòng đều có dấu, không chỉ 24 dòng bất thường.
+   Lựa chọn cũ (ẩn nhóm «có dự» cho đỡ nhiễu) khiến 320/344 dòng trống trơn:
+   mở đúng một khách bình thường là không thấy gì, tưởng dữ liệu thiếu.
+   Nay nhóm bình thường mang một CHẤM nhỏ, hai nhóm bất thường giữ CHỮ nên vẫn
+   nổi hơn. Ba hình khác nhau (chấm đặc · khối góc vuông · khung nét đứt) để còn
+   đọc được khi in đen trắng hoặc với người nhìn kém màu — AC-4. */
+   if(a==="du")return '<span class="attd du" title="'+esc(attLbl(a))+'" aria-label="'+esc(attLbl(a))+'"></span>';
+   if(a!=="khong"&&a!=="cho")return "";   /* field thiếu (máy chủ cũ) → không bịa */
    return '<span class="attb '+a+'">'+esc(attLbl(a))+'</span>';}
  async function setAtt(id,status,el){
    if(status==="khong"&&!confirm(tt("att_ask"))){if(el)el.value=el.getAttribute("data-cur")||"";return;}

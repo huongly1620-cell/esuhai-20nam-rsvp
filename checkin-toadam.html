@@ -45,8 +45,11 @@
  .bg-jp{color:var(--muted);border:1px solid var(--line)}
  /* E08-D031 — trạng thái THAM DỰ. Khác trục với «đã đến»: đây là khách CÓ dự
     sự kiện không (số vào báo cáo BTC), kia là đã tới cửa chưa. */
- .bg-att-khong{color:#2a1e05;background:#f0b34a}
- .bg-att-cho{color:var(--muted);border:1px dashed var(--line2)}
+ /* E08-D033 — ba HÌNH khác nhau, màu chỉ là lớp thứ hai (AC-4). */
+ .bg-att-khong{color:#2a1e05;background:#f0b34a;border:1px solid #f0b34a;border-radius:3px}
+ .bg-att-cho{color:var(--muted);background:transparent;border:1.5px dashed var(--line2);border-radius:999px}
+ .attd{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green-ok);
+   border:1px solid rgba(0,0,0,.45);vertical-align:middle;flex:none;align-self:center}
  .attbox{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
  .attbox .k{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted2);text-align:center;margin-bottom:8px}
  .attrow{display:flex;gap:9px}
@@ -377,9 +380,14 @@ async function addShrunk(fd,file){
    «Huỷ tham dự» KHÔNG phải «chưa đến». Gộp hai thứ này là hỏng cả hai con số. */
 function attLbl(g){var a=g.att||"";return a==="du"?t("att_du"):(a==="khong"?t("att_khong"):(a==="cho"?t("att_cho"):""));}
 function attBadge(g){var a=g.att||"";
- /* Trên LIST chỉ gắn nhãn khi KHÁC «có dự»: 320/344 khách là có dự, gắn hết thì
-    nhãn thành nhiễu và che mất đúng hai nhóm cần chú ý. */
- if(a!=="khong"&&a!=="cho")return "";
+ /* E08-D033 — MỌI dòng đều có dấu, không chỉ 24 dòng bất thường.
+   Lựa chọn cũ (ẩn nhóm «có dự» cho đỡ nhiễu) khiến 320/344 dòng trống trơn:
+   mở đúng một khách bình thường là không thấy gì, tưởng dữ liệu thiếu.
+   Nay nhóm bình thường mang một CHẤM nhỏ, hai nhóm bất thường giữ CHỮ nên vẫn
+   nổi hơn. Ba hình khác nhau (chấm đặc · khối góc vuông · khung nét đứt) để còn
+   đọc được khi in đen trắng hoặc với người nhìn kém màu — AC-4. */
+ if(a==="du")return '<span class="attd du" title="'+esc(attLbl(g))+'" aria-label="'+esc(attLbl(g))+'"></span>';
+ if(a!=="khong"&&a!=="cho")return "";   /* field thiếu (máy chủ cũ) → không bịa */
  return '<span class="bg bg-att-'+a+'">'+esc(attLbl(g))+'</span>';}
 function attBox(g){var a=g.att||"";
  return '<div class="attbox"><div class="k">'+t("att_h")+'</div><div class="attrow">'

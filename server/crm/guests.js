@@ -349,9 +349,12 @@ function mount(app, requireCrmAuth, requireRole) {
         if (!b.rows[0]) { await client.query('ROLLBACK'); return res.status(404).json({ ok: false, error: 'not found' }); }
         before = b.rows[0];
         await client.query(
-          `UPDATE crm_guests SET att_override = $2,
-                  att_override_at = CASE WHEN $2 IS NULL THEN NULL ELSE now() END,
-                  att_override_by = CASE WHEN $2 IS NULL THEN NULL ELSE $3 END,
+          // Ép kiểu: `$2 IS NULL` trần thì Postgres không suy được kiểu tham số
+          // và câu lệnh hỏng ngay khi chạy — node --check lẫn boot đều không bắt
+          // được, chỉ gọi thật mới lộ.
+          `UPDATE crm_guests SET att_override = $2::text,
+                  att_override_at = CASE WHEN $2::text IS NULL THEN NULL ELSE now() END,
+                  att_override_by = CASE WHEN $2::text IS NULL THEN NULL ELSE $3::text END,
                   updated_at = now()
             WHERE id = $1`, [id, status, req.actor.email]);
         const a = await client.query(

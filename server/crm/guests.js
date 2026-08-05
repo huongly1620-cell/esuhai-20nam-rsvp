@@ -1,7 +1,7 @@
 'use strict';
 
 const { pool } = require('../db');
-const { logAudit } = require('./audit');
+const { logAudit, hashIp } = require('./audit');
 const { ipOf } = require('./auth');
 // E08-D031: một luật trạng thái tham dự dùng chung cho list · detail · stats.
 const att = require('./attendance');
@@ -275,6 +275,68 @@ function mount(app, requireCrmAuth, requireRole) {
     } catch (err) {
       console.error('[crm-guests] check-in failed:', err.message);
       return res.status(500).json({ ok: false, error: 'check-in error' });
+    }
+  });
+
+  // ---- huỷ check-in (btl) — E08-D036 ----
+  // Bảng có `guest_id UNIQUE` nên huỷ = XOÁ DÒNG, không có cột đánh dấu. Sponsor
+  // chốt hướng xoá thật vì `crm_check_ins` bị ĐỌC ở 5 chỗ (stats · list · hồ sơ ·
+  // hai chỗ trong tuyến check-in); đánh dấu huỷ thì cả 5 phải thêm bộ lọc, sót
+  // một chỗ là khách đã huỷ vẫn hiện ✓ hoặc KPI lệch danh sách. Xoá dòng thì cả
+  // 5 chỗ tự đúng, không sửa câu đọc nào.
+  //
+  // Cái giá của xoá thật: giờ đến gốc mất vĩnh viễn ⇒ AC-7 bắt audit phải là bản
+  // sao ĐỦ để dựng lại. Nên ở đây KHÔNG dùng logAudit(): hàm đó nuốt lỗi có chủ
+  // đích (audit.js: "Never let audit failure break the main action") — đúng với
+  // mọi tuyến khác, nhưng ở tuyến này nó lật ngược thành: ghi audit hỏng mà
+  // DELETE vẫn commit ⇒ mất dữ liệu vĩnh viễn, IM LẶNG. Ghi thẳng bằng
+  // client.query trong cùng giao dịch để lỗi ném ra ngoài và cuốn DELETE theo
+  // (AC-16).
+  app.delete('/crm/guests/:id/check-in', requireCrmAuth, requireRole('btl'), async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      // FOR UPDATE OF ci: khoá đúng dòng check-in (không khoá cả thẻ khách) để
+      // hai người cùng bấm huỷ thì người thứ hai đọc được trạng thái đã xoá,
+      // không phải cùng xoá một dòng hai lần (AC-9).
+      const cur = await client.query(
+        `SELECT ci.actor_email, ci.checked_in_at, ci.note, g.full_name
+           FROM crm_check_ins ci JOIN crm_guests g ON g.id = ci.guest_id
+          WHERE ci.guest_id = $1 FOR UPDATE OF ci`, [id]);
+      if (!cur.rows[0]) {
+        // AC-8: khách chưa check-in (hoặc vừa bị người khác huỷ) — trả lời hiền,
+        // không 500. Màn cứ vẽ lại theo sự thật là xong.
+        await client.query('COMMIT');
+        client.release();
+        return res.status(200).json({ ok: true, already: false });
+      }
+      const c0 = cur.rows[0];
+      // AC-7 — chép đủ để dựng lại dòng đã mất, và ĐỨNG MỘT MÌNH được: tên khách
+      // chép theo giá trị, không chỉ id, để nhật ký còn đọc được cả khi thẻ khách
+      // sau này đổi tên hoặc bị xoá.
+      await client.query(
+        `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)
+         VALUES ($1,'check_in_undo','guest',$2,$3::jsonb,$4)`,
+        [req.actor.email, String(id),
+          JSON.stringify({
+            guest_id: id,
+            guest_ten: c0.full_name,
+            cu_checked_in_at: c0.checked_in_at,
+            cu_actor_email: c0.actor_email,
+            cu_note: c0.note || null,
+          }),
+          hashIp(ipOf(req))]);
+      await client.query('DELETE FROM crm_check_ins WHERE guest_id = $1', [id]);
+      await client.query('COMMIT');
+      client.release();
+      return res.status(200).json({ ok: true, already: true, cu: { at: c0.checked_in_at, by: c0.actor_email } });
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      client.release();
+      console.error('[crm-guests] check-in undo failed:', err.message);
+      return res.status(500).json({ ok: false, error: 'undo error' });
     }
   });
 

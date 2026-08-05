@@ -67,7 +67,7 @@ function mount(app) {
   auth.mount(app);                                  // /auth/* + /crm/me
   guests.mount(app, auth.requireCrmAuth, auth.requireRole);
   stats.mount(app, auth.requireCrmAuth);
-  photos.mount(app, auth.requireCrmAuth);
+  photos.mount(app, auth.requireCrmAuth, auth.requireRole);
   importer.mount(app, auth.requireCrmAuth, auth.requireRole);
   audit.mount(app, auth.requireCrmAuth, auth.requireRole);
   // E08-D032 — hai lệnh TÁCH BẠCH: /crm/import-update/dry-run và /commit.

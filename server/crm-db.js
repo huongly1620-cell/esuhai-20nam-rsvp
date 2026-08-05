@@ -125,6 +125,14 @@ ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS att_override_by TEXT;
 -- Nullable: khong co ghe thi KHONG hien o Ghe, tuyet doi khong roi ve so ban.
 ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS seat_no TEXT;
 
+-- E08-D040 · ghim mềm. Nullable, KHÔNG mặc định: NULL = lùi về hành vi cũ
+-- (tấm chân dung mới nhất), nên xấu nhất là y như hôm nay.
+-- ON DELETE SET NULL: xoá đúng tấm đang ghim thì cột tự về NULL và avatar lùi
+-- về tấm còn lại, không thẻ nào mất mặt (§3g).
+-- CHỈ có DDL ở đây. Backfill nằm ở script CLI chạy tay — nhét vào đây thì mỗi
+-- lần app restart tối 08/08 là ghim luôn tấm PG vừa chụp (M1).
+ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS avatar_photo_id BIGINT REFERENCES crm_photos(id) ON DELETE SET NULL;
+
 ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS thumb_key    TEXT;
 ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS thumb_size   INTEGER;
 ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS preview_key  TEXT;

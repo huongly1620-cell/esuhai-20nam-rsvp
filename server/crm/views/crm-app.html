@@ -407,7 +407,16 @@
  function renderGuest(j){
    curJ=j;
    var g=j.guest,ci=j.checkIn;var isBtl=(me.role==="btl");
-   var pu=(j.photos&&j.photos[0])?j.photos[0].url:"";
+   /* E08-D040 M7 — R1 phát hiện ở Gate 1: dòng này lấy thẳng photos[0] KHÔNG
+      lọc, trong khi API trả ORDER BY created_at DESC ⇒ ngay khi vé này cho chụp
+      ảnh quà, bó hoa thành mặt khách. Và classic không phải màn chết — nó là LÀN
+      LÙI (/crm/classic luôn phục vụ bản cũ), tức là sẽ sai đúng lúc cần nhất.
+      CR-30 cấm vá classic trước lễ, nhưng CR-30 lập khi classic là NỢ CÓ SẴN,
+      không phải khi một vé mới ĐẺ RA lỗi cho nó. Chép đúng bộ lọc của v2. */
+   var pcl=(j.photos||[]).filter(function(p){return !p.interaction_id;});
+   var pgh=j.guest&&j.guest.avatar_photo_id;
+   var pcc=(pgh&&pcl.filter(function(p){return String(p.id)===String(pgh);})[0])||pcl[0];
+   var pu=pcc?pcc.url:"";
    var ph=noteF(g,"S2 phụ trách")||noteF(g,"phụ trách");
    var INTER=(j.interactions||[]);
    var thumbs=(j.photos||[]).map(function(p){return '<img src="'+esc(p.url)+'" loading="lazy">';}).join("")||'<span style="color:var(--muted2);font-size:.78rem">'+tt("no_photo")+'</span>';

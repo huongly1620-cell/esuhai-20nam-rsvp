@@ -97,9 +97,21 @@ function mount(app, requireCrmAuth, requireRole) {
            -- chân dung khách. Không loại ra thì tấm quà chụp sau cùng sẽ thành
            -- avatar của khách trên mọi danh sách. 202 ảnh cũ đều NULL nên điều
            -- kiện này không đổi gì với dữ liệu đang có.
-           SELECT ph.id FROM crm_photos ph
-            WHERE ph.guest_id = g.id AND ph.interaction_id IS NULL
-            ORDER BY ph.created_at DESC LIMIT 1
+           -- E08-D040: COALESCE cắt ngắn ⇒ thẻ ĐÃ GHIM không chạy câu con thứ hai.
+           -- Đo trên prod: nhánh ghim là Index Scan khoá chính (2 buffers, 0,048 ms)
+           -- so với nhánh lùi 5 buffers / 0,104 ms ⇒ sau backfill màn danh sách RẺ
+           -- HƠN hôm nay. Nhánh lùi giữ NGUYÊN VĂN câu đang chạy ⇒ kế hoạch truy vấn
+           -- không đổi, vẫn dùng idx_crm_photos_guest (guest_id, created_at DESC).
+           SELECT COALESCE(
+             -- M2 + M3 kiểm ngay trong nhánh ghim: ảnh quà hoặc ảnh của khách khác
+             -- thì ra NULL ⇒ TỰ LÙI về tấm chân dung mới nhất, không bao giờ hiện
+             -- nhầm mặt. PATCH vẫn chặn ở đầu vào — đây là lớp cuối.
+             (SELECT ap.id FROM crm_photos ap
+               WHERE ap.id = g.avatar_photo_id AND ap.guest_id = g.id AND ap.interaction_id IS NULL),
+             (SELECT ph.id FROM crm_photos ph
+               WHERE ph.guest_id = g.id AND ph.interaction_id IS NULL
+               ORDER BY ph.created_at DESC LIMIT 1)
+           ) AS id
          ) p ON TRUE
          ${'WHERE ' + conds.join(' AND ')}
          ORDER BY g.full_name ASC LIMIT $${params.length}`, params);
@@ -155,6 +167,10 @@ function mount(app, requireCrmAuth, requireRole) {
           att_override: row.att_override || null,
           att_override_by: row.att_override_by || null,
           att_override_at: row.att_override_at || null,
+          // E08-D040 — màn cần biết tấm nào ĐANG ghim: để chọn đúng ảnh hồ sơ và
+          // để đánh dấu nút «Đặt làm ảnh đại diện». Truy vấn hồ sơ dùng SELECT *
+          // nên cột mới tự có, không phải sửa danh sách cột.
+          avatar_photo_id: row.avatar_photo_id || null,
         },
         checkIn: ci.rows[0] || null,
         assignments: asg.rows,
@@ -275,6 +291,44 @@ function mount(app, requireCrmAuth, requireRole) {
     } catch (err) {
       console.error('[crm-guests] check-in failed:', err.message);
       return res.status(500).json({ ok: false, error: 'check-in error' });
+    }
+  });
+
+  // ---- ghim ảnh đại diện (btl) — E08-D040 ----
+  // Quyền đổi avatar nằm ở CRM, KHÔNG ở cửa: ở cửa lúc đông rất dễ bấm nhầm, mà
+  // avatar là thứ chị Ly chuẩn bị trước. Cửa chỉ chụp và xem.
+  app.patch("/crm/guests/:id/avatar", requireCrmAuth, requireRole("btl"), async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ ok: false, error: "bad id" });
+    const raw = req.body && req.body.photo_id;
+    // photo_id = null ⇒ BỎ ghim, avatar lùi về tấm mới nhất. Giữ đường lùi để còn
+    // sửa được khi ghim nhầm.
+    const pid = (raw === null || raw === "" || raw === undefined) ? null : parseInt(raw, 10);
+    if (pid !== null && !pid) return res.status(400).json({ ok: false, error: "bad photo_id" });
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const cu = (await client.query("SELECT avatar_photo_id FROM crm_guests WHERE id = $1 AND deleted_at IS NULL FOR UPDATE", [id])).rows[0];
+      if (!cu) { await client.query("ROLLBACK"); client.release(); return res.status(404).json({ ok: false, error: "not found" }); }
+      if (pid !== null) {
+        const ph = (await client.query("SELECT id, guest_id, interaction_id FROM crm_photos WHERE id = $1", [pid])).rows[0];
+        if (!ph) { await client.query("ROLLBACK"); client.release(); return res.status(404).json({ ok: false, error: "Không thấy ảnh." }); }
+        // M3 — ảnh phải thuộc ĐÚNG khách này, nếu không thì ghim được mặt người
+        // khác lên thẻ. M2 — ảnh quà (có interaction_id) không làm avatar được.
+        if (String(ph.guest_id) !== String(id)) { await client.query("ROLLBACK"); client.release(); return res.status(400).json({ ok: false, error: "Ảnh này không thuộc khách đó." }); }
+        if (ph.interaction_id) { await client.query("ROLLBACK"); client.release(); return res.status(400).json({ ok: false, error: "Ảnh quà không dùng làm ảnh đại diện được." }); }
+      }
+      await client.query("UPDATE crm_guests SET avatar_photo_id = $1, updated_at = now() WHERE id = $2", [pid, id]);
+      await logAudit(client, { actor_email: req.actor.email, event_type: "avatar_set", target_type: "guest", target_id: id,
+        meta: { cu: cu.avatar_photo_id || null, moi: pid }, ip: ipOf(req) });
+      await client.query("COMMIT");
+      client.release();
+      return res.json({ ok: true, avatar_photo_id: pid });
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => {});
+      client.release();
+      console.error("[crm-guests] avatar set failed:", err.message);
+      return res.status(500).json({ ok: false, error: "avatar error" });
     }
   });
 

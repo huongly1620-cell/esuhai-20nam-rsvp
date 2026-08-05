@@ -1,7 +1,7 @@
 'use strict';
 
 const { pool } = require('../db');
-const { logAudit } = require('./audit');
+const { logAudit, hashIp } = require('./audit');
 const { ipOf } = require('./auth');
 const storage = require('./storage');
 
@@ -40,7 +40,7 @@ async function pickPart(files, name, max) {
   return f;
 }
 
-function mount(app, requireCrmAuth) {
+function mount(app, requireCrmAuth, requireRole) {
   // Upload a photo attached to a guest → MinIO object + Postgres metadata.
   // `photo` bắt buộc; `thumb`/`preview` do trình duyệt thu nhỏ sẵn, KHÔNG bắt buộc.
   app.post('/crm/guests/:id/photos', requireCrmAuth,
@@ -162,6 +162,62 @@ function mount(app, requireCrmAuth) {
       if (!res.headersSent) return res.status(500).json({ ok: false, error: 'view error' });
     }
   }
+  // ---- XOÁ ảnh (btl) — E08-D040 §3g ----
+  // Ghim chữa «mặt khách sai». Xoá chữa «tấm này không nên nằm trong hồ sơ này»
+  // — ca thật tối 08/08: cửa đông, PG bấm nhầm thẻ rồi chụp MẶT NGƯỜI KHÁC, mà
+  // vé này còn cho PG xem ĐỦ kho ảnh. Ghim không gỡ được tấm đó.
+  //
+  // XOÁ = GỠ BẢN GHI, KHÔNG GỠ FILE. Object trên MinIO giữ nguyên; audit chép đủ
+  // ba key ⇒ chèn lại một dòng là ảnh trở lại (AC-18 — đường này đã chạy thật để
+  // trả ảnh cho thẻ #305 tối 05/08, không phải thiết kế trên giấy).
+  //
+  // M8 — audit ghi THẲNG bằng client.query trong cùng transaction, KHÔNG qua
+  // logAudit: hàm đó bọc try/catch và chỉ console.error, nghĩa là audit hỏng mà
+  // ảnh vẫn mất. Với xoá thì audit là BẢN GHI DUY NHẤT còn lại ⇒ audit hỏng phải
+  // cuộn luôn DELETE. Nguyên văn chốt D036 — và D036 đã chứng minh bằng dữ liệu
+  // thật: giờ đến gốc của thẻ #248/#29 giờ chỉ còn tồn tại trong audit.
+  app.delete('/crm/photos/:id', requireCrmAuth, requireRole('btl'), async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const p = (await client.query(
+        `SELECT p.id, p.guest_id, p.interaction_id, p.object_key, p.thumb_key, p.preview_key,
+                p.content_type, p.size, p.uploaded_by, p.created_at, g.avatar_photo_id, g.full_name
+           FROM crm_photos p JOIN crm_guests g ON g.id = p.guest_id
+          WHERE p.id = $1 FOR UPDATE OF p`, [id])).rows[0];
+      if (!p) { await client.query('ROLLBACK'); client.release(); return res.status(404).json({ ok: false, error: 'Không thấy ảnh.' }); }
+      // M9 — chép cả avatar_photo_id CŨ: xoá đúng tấm đang ghim thì
+      // ON DELETE SET NULL đưa cột về NULL, không còn dấu vết nó từng được ghim.
+      await client.query(
+        `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)
+         VALUES ($1,'photo_delete','guest',$2,$3::jsonb,$4)`,
+        [req.actor.email, String(p.guest_id),
+          JSON.stringify({
+            photo_id: p.id, guest_id: p.guest_id, guest_ten: p.full_name,
+            object_key: p.object_key, thumb_key: p.thumb_key, preview_key: p.preview_key,
+            content_type: p.content_type, size: p.size,
+            cu_uploaded_by: p.uploaded_by, cu_created_at: p.created_at,
+            interaction_id: p.interaction_id,
+            cu_avatar_photo_id: p.avatar_photo_id || null,
+            ghi_chu: 'Object trên kho GIỮ NGUYÊN — chèn lại một dòng crm_photos với ba key trên là khôi phục.',
+          }), hashIp(ipOf(req))]);
+      // M10 — KHÔNG đụng crm_interactions: dòng đó ghi việc khách TẶNG QUÀ, không
+      // phải ghi cái ảnh. Xoá ảnh không được xoá sự kiện.
+      await client.query('DELETE FROM crm_photos WHERE id = $1', [id]);
+      await client.query('COMMIT');
+      client.release();
+      return res.json({ ok: true, guest_id: String(p.guest_id),
+        la_anh_ghim: String(p.avatar_photo_id || '') === String(p.id) });
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      client.release();
+      console.error('[crm-photos] delete failed:', err.message);
+      return res.status(500).json({ ok: false, error: 'delete error' });
+    }
+  });
+
   app.get('/crm/photos/:id/thumb', requireCrmAuth, (req, res) => serveDerived(req, res, 'thumb_key'));
   app.get('/crm/photos/:id/preview', requireCrmAuth, (req, res) => serveDerived(req, res, 'preview_key'));
 

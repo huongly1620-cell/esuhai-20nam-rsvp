@@ -320,7 +320,9 @@ function mount(app, requireCrmAuth, requireRole) {
   //
   // TUYỆT ĐỐI không đụng `crm_check_ins`: "không tham dự" và "chưa đến" là hai
   // trục khác nhau; gộp chúng là làm hỏng cả hai con số.
-  app.post('/crm/guests/:id/attendance', doorGet, async (req, res) => {
+  // Phương án A: MỌI tài khoản đã đăng nhập đổi được. Cửa nay có OTP nên không
+  // còn đường ẩn danh — requireCrmAuth là đủ và đúng.
+  app.post('/crm/guests/:id/attendance', requireCrmAuth, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
     const raw = req.body && req.body.status;

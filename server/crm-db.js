@@ -112,9 +112,9 @@ ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS org_jp   TEXT;
 -- đường dẫn tự lùi về ảnh gốc (đúng hành vi trước vé). Nhờ vậy deploy được
 -- TRƯỚC khi backfill xong, và backfill dừng giữa chừng không hỏng gì.
 -- E08-D031: trạng thái tham dự sửa TAY. NULL = chưa ai đụng → giá trị suy ra từ
--- tag/form (xem server/crm/attendance.js). Cột riêng chứ KHÔNG sửa `tags`:
--- import merge tag (bản vá sau sự cố Pha 2), nên chiều "tham dự → không dự"
--- phải XOÁ tag buổi và lượt import sau sẽ gắn lại — đúng chiều Ly cần nhất.
+-- tag/form (xem server/crm/attendance.js). Cot rieng chu KHONG sua cot tags:
+-- import merge tag (ban va sau su co Pha 2), nen chieu "tham du -> khong du"
+-- phai XOA tag buoi va luot import sau se gan lai - dung chieu Ly can nhat.
 -- Cột riêng ⇒ import không bao giờ chạm, và xoá override là số trở về nguyên trạng.
 ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS att_override    TEXT;
 ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS att_override_at TIMESTAMPTZ;

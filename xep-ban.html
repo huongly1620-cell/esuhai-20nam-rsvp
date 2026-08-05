@@ -206,7 +206,13 @@ function parseCSV(text){
   if(f.length||row.length){row.push(f);rows.push(row);}
   return rows.filter(function(r){return r.some(function(v){return String(v||"").trim()!=="";});});
 }
-function normh(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g,"");}
+/* E08-D034 — NFD KHÔNG tách được chữ Đ/đ (U+0110/U+0111 là ký tự riêng, không
+   phải D + dấu). Nên "Đơn vị" ra "đonvi", không chứa "donvi" ⇒ iOrg = -1 ⇒ MỌI
+   khách vào công cụ với org = "—", mà packTier gom bàn THEO ĐƠN VỊ — đó là lý do
+   tồn tại của công cụ. Đổi Đ→D TRƯỚC khi NFD, chứ không thêm chuỗi "đonvi" vào
+   danh sách khoá: thêm chuỗi là vá triệu chứng, gặp "Ð" (U+00D0) lại hỏng. */
+function normh(s){return String(s||"").normalize("NFC").replace(/[Đ\u00D0]/g,"D").replace(/[đ\u00F0]/g,"d")
+  .toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g,"");}
 function mapTier(hang){
   var h=normh(hang);
   if(h.indexOf("noibo")>-1||h.indexOf("nhanvien")>-1||h.indexOf("hocvien")>-1||h==="nb"||h.indexOf("btc")>-1) return {cat:"Nội bộ",vip:""};

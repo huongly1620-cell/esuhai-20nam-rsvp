@@ -14,6 +14,9 @@ const upload = multer
 
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 
+// Cùng luật cắt khoảng trắng với guests.js — multipart luôn đưa field text về chuỗi.
+function clean(v) { return typeof v === 'string' ? v.trim() : (v == null ? '' : String(v)); }
+
 // E08-D029 — key của bản dẫn xuất suy TẤT ĐỊNH từ key gốc, không sinh UUID mới.
 // Backfill vì thế chạy lại bao nhiêu lần cũng ra đúng một object, không đẻ rác —
 // cùng bài học với khoá `vnjb-<sha1>` của D022.
@@ -61,6 +64,15 @@ function mount(app, requireCrmAuth) {
       // được, vì avatar khách ở CẢ 4 màn là ẢNH MỚI NHẤT của thẻ: ảnh cái hộp
       // quà sẽ thế chỗ mặt khách trên mọi danh sách, và không có route xoá ảnh
       // để lùi lại.
+      // E08-D028 L-03: bản cũ để CLIENT tạo dòng ghi nhận TRƯỚC rồi mới gửi ảnh.
+      // Ảnh hỏng ở bước sau (MinIO 503 — prod vừa có đúng sự cố đó 8 phút) thì
+      // dòng «Chụp ảnh quà» đã nằm trên thẻ khách mà không có ảnh nào, và KHÔNG
+      // có route xoá interaction để lùi. Nay máy chủ tự tạo dòng ghi nhận, SAU
+      // khi ảnh đã lên kệ, trong cùng một transaction với dòng ảnh: hoặc có cả
+      // hai, hoặc không có gì.
+      const nKind = clean(req.body && req.body.interaction_kind);
+      const nBody = clean(req.body && req.body.interaction_body);
+
       let interId = null;
       if (req.body && req.body.interaction_id) {
         const q = await pool.query(
@@ -88,13 +100,32 @@ function mount(app, requireCrmAuth) {
         tKey = tKey || null; pKey = pKey || null;
       }
 
-      const r = await pool.query(
-        `INSERT INTO crm_photos (guest_id, object_key, content_type, size, uploaded_by, interaction_id,
-                                 thumb_key, thumb_size, preview_key, preview_size)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
-        [id, key, ct, req.file.size, req.actor.email, interId, tKey, tSize, pKey, pSize]);
-      await logAudit(pool, { actor_email: req.actor.email, event_type: 'photo_upload', target_type: 'guest', target_id: id, meta: { key, interaction_id: interId, thumb: !!tKey, preview: !!pKey }, ip: ipOf(req) });
-      return res.status(201).json({ ok: true, id: String(r.rows[0].id), url: '/crm/photos/' + r.rows[0].id });
+      // Ảnh ĐÃ nằm trên kệ trước khi chạm Postgres. Nếu transaction dưới đây
+      // hỏng thì kho thừa một object không ai trỏ tới — vô hại; đổi lại thẻ
+      // khách không bao giờ mang một dòng ghi nhận trỏ vào hư không.
+      let client = await pool.connect();
+      let photoId; let madeInter = false;
+      try {
+        await client.query('BEGIN');
+        if (!interId && nKind && nBody) {
+          const ri = await client.query(
+            'INSERT INTO crm_interactions (guest_id, actor_email, kind, body) VALUES ($1,$2,$3,$4) RETURNING id',
+            [id, req.actor.email, nKind.slice(0, 40), nBody]);
+          interId = ri.rows[0].id; madeInter = true;
+        }
+        const r = await client.query(
+          `INSERT INTO crm_photos (guest_id, object_key, content_type, size, uploaded_by, interaction_id,
+                                   thumb_key, thumb_size, preview_key, preview_size)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+          [id, key, ct, req.file.size, req.actor.email, interId, tKey, tSize, pKey, pSize]);
+        photoId = r.rows[0].id;
+        await client.query('COMMIT');
+      } catch (e) { await client.query('ROLLBACK').catch(() => {}); throw e; }
+      finally { client.release(); }
+
+      await logAudit(pool, { actor_email: req.actor.email, event_type: 'photo_upload', target_type: 'guest', target_id: id, meta: { key, interaction_id: interId, tao_ghi_nhan: madeInter, thumb: !!tKey, preview: !!pKey }, ip: ipOf(req) });
+      return res.status(201).json({ ok: true, id: String(photoId), url: '/crm/photos/' + photoId,
+        interaction_id: interId ? String(interId) : null });
     } catch (err) {
       console.error('[crm-photos] upload failed:', err.message);
       return res.status(500).json({ ok: false, error: 'upload error' });

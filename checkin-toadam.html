@@ -362,26 +362,28 @@ async function sendPhoto(id,file,asGift){
   // hơn là không lưu. Từ chối kèm hướng dẫn đổi cài đặt máy.
   if(/heic|heif/i.test(file.type||'')||/\.(heic|heif)$/i.test(file.name||'')){toast(t('cam_heic'),1);return;}
   toast(t("cam_up"));
-  /* Ảnh quà phải gắn vào một ghi nhận: nếu tải lên trần như ảnh khách thì nó
-     thành ẢNH MỚI NHẤT của thẻ, mà avatar ở cả 4 màn lấy đúng ảnh mới nhất —
-     cái hộp quà sẽ thế chỗ mặt khách trên mọi danh sách, và không có route xoá
-     ảnh để lùi lại. */
-  var interId=null;
-  if(asGift){
-    grabDraft();var gq=byId(id);
-    var bd=String((gq&&gq._q&&gq._q.tang)||"").trim()||t("q_camqua");
-    try{
-      var ri=await api("/crm/guests/"+id+"/interactions",{method:"POST",
-        headers:{"Content-Type":"application/json"},body:JSON.stringify({kind:"anh-qua",body:bd})});
-      if(!ri.ok){toast(ri.status===401?t("cam_auth"):t("q_fail")+" ("+ri.status+")",1);return;}
-      var ji=await ri.json();interId=ji.id;
-    }catch(e){toast(t("cam_net"),1);return;}
-  }
+  /* Ảnh quà phải gắn vào một ghi nhận: tải lên trần như ảnh khách thì nó thành
+     ẢNH MỚI NHẤT của thẻ, mà avatar ở cả 4 màn lấy đúng ảnh mới nhất — cái hộp
+     quà sẽ thế chỗ mặt khách trên mọi danh sách, và không có route xoá ảnh.
+     L-03: bản cũ tạo dòng ghi nhận NGAY Ở ĐÂY rồi mới gửi ảnh, nên ảnh hỏng ở
+     bước sau (MinIO 503 — prod vừa dính đúng 8 phút) để lại dòng «Chụp ảnh quà»
+     không có ảnh nào, và không xoá được. Nay chỉ GỬI KÈM nội dung; máy chủ tạo
+     dòng ghi nhận SAU khi ảnh đã lên kệ, cùng transaction với dòng ảnh. */
   var fd=new FormData();fd.append("photo",file);
   await addShrunk(fd,file);
-  if(interId)fd.append("interaction_id",interId);
+  var giftBody="";
+  if(asGift){
+    grabDraft();var gq=byId(id);
+    giftBody=String((gq&&gq._q&&gq._q.tang)||"").trim()||t("q_camqua");
+    fd.append("interaction_kind","anh-qua");
+    fd.append("interaction_body",giftBody);
+  }
   try{
     var r=await api("/crm/guests/"+id+"/photos",{method:"POST",body:fd});
+    /* Hỏng thì bắt nạp lại lịch sử ở lần mở hồ sơ sau: openPf() chỉ gọi
+       enrich() khi !_enriched, nếu không đánh dấu thì PG đóng-mở lại vẫn thấy
+       lịch sử cũ và không biết trạng thái thật. */
+    var gf=byId(id); if(gf)gf._enriched=false;
     if(r.status===401){toast(t("cam_auth"),1);return;}
     if(!r.ok){var e={};try{e=await r.json();}catch(_){}toast(e.error||t("cam_fail"),1);return;}
     var j={};try{j=await r.json();}catch(_){}
@@ -390,7 +392,13 @@ async function sendPhoto(id,file,asGift){
        sử tại quầy hiện thêm dòng vừa ghi. */
     /* j.url là ảnh GỐC; list phải trỏ bản thu nhỏ, hồ sơ trỏ bản 1024. */
     if(g&&j&&j.url&&!asGift){g.photo=j.url+"/thumb";g.photoBig=j.url+"/preview";lastSig=sig();if(curId===id)openPf(id);renderList();}
-    else if(g){g._enriched=false;enrich(g,id);}
+    else if(g){
+      /* Nội dung quà ĐÃ nằm trên dòng ghi nhận của tấm ảnh vừa lưu. Không xoá ô
+         thì PG bấm tiếp «Lưu ghi nhận» sẽ đẻ thêm một dòng qua-tang cùng nội
+         dung — hai dòng cho một món quà, mà không có route xoá. */
+      if(asGift){var qt=document.getElementById("qTang");if(qt)qt.value="";
+        if(g._q)g._q.tang="";}
+      g._enriched=false;enrich(g,id);}
     toast(asGift?t("q_saved"):t("cam_ok"));
   }catch(err){toast(t("cam_net"),1);}
 }
@@ -443,30 +451,30 @@ function quayHtml(g){var q=g._q||{};
   +histHtml(g)+'</div>';}
 async function saveQuay(id,btn){
  grabDraft();var g=byId(id);if(!g)return;var q=g._q||{};
- var jobs=[];
- if(String(q.tang||"").trim())jobs.push(["qua-tang",q.tang.trim()]);
- if(String(q.dap||"").trim())jobs.push(["qua-dap-le",q.dap.trim()]);
- if(String(q.note||"").trim())jobs.push(["ghi-chu-quay",q.note.trim()]);
- if(!jobs.length){toast(t("q_empty"),1);return;}
+ var items=[];
+ if(String(q.tang||"").trim())items.push({kind:"qua-tang",body:q.tang.trim()});
+ if(String(q.dap||"").trim())items.push({kind:"qua-dap-le",body:q.dap.trim()});
+ if(String(q.note||"").trim())items.push({kind:"ghi-chu-quay",body:q.note.trim()});
+ if(!items.length){toast(t("q_empty"),1);return;}
  btn.disabled=true;
  try{
-  for(var i=0;i<jobs.length;i++){
-   var r=await api("/crm/guests/"+id+"/interactions",{method:"POST",
-     headers:{"Content-Type":"application/json"},
-     body:JSON.stringify({kind:jobs[i][0],body:jobs[i][1]})});
-   /* Đúng lớp lỗi CỬA-2, lặp lại ở nút mới: fetch KHÔNG ném khi máy chủ trả
-      4xx/5xx. Bỏ qua r.ok thì PG thấy «Đã lưu ✓» trong khi bảng ghi nhận
-      trống trơn — và quà thì không ghi lại được sau khi khách đã đi. */
-   if(!r.ok){btn.disabled=false;
-     toast(r.status===401?t("ci_auth"):t("q_fail")+" ("+r.status+")",1);return;}
-  }
+  /* L-02: MỘT request cho cả ba ô, máy chủ ghi trong MỘT transaction. Bản cũ
+     bắn ba POST tuần tự, mỗi cái tự commit: job 1 vào DB rồi job 2 hỏng thì màn
+     báo ĐỎ «CHƯA lưu được» trong khi dòng 1 đã nằm trong bảng, PG bấm lại là
+     ghi trùng — mà không có route xoá interaction. Nay hoặc vào hết, hoặc không
+     dòng nào; bấm lại bao nhiêu lần cũng không đẻ bản sao.
+     Vẫn phải kiểm r.ok: fetch KHÔNG ném khi máy chủ trả 4xx/5xx (lớp lỗi CỬA-2). */
+  var r=await api("/crm/guests/"+id+"/interactions",{method:"POST",
+    headers:{"Content-Type":"application/json"},body:JSON.stringify({items:items})});
+  if(!r.ok){btn.disabled=false;g._enriched=false;
+    toast(r.status===401?t("ci_auth"):t("q_fail")+" ("+r.status+")",1);return;}
   /* Phải xoá CẢ Ô TRÊN MÀN, không chỉ bản nháp trong bộ nhớ: enrich() gọi lại
      openPf(), mà openPf() mở đầu bằng grabDraft() — nó đọc lại đúng ba ô vẫn
      còn chữ và dựng lại bản nháp vừa xoá. Ở cửa nghĩa là PG lưu xong thấy chữ
      còn nguyên, tưởng chưa lưu, bấm lần nữa → hai dòng ghi nhận trùng. */
   ["qTang","qDap","qNote"].forEach(function(k){var el=document.getElementById(k);if(el)el.value="";});
   g._q={};g._enriched=false;toast(t("q_saved"));await enrich(g,id);
- }catch(e){btn.disabled=false;toast(t("q_net"),1);}}
+ }catch(e){btn.disabled=false;g._enriched=false;toast(t("q_net"),1);}}
 function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls=g.diet==="Món chay"?"chay":"";
  var ciBox=cm?'<div class="cidone"><div class="t">&#9711; '+t("cidone",{t:fmtCame(cm)})+(g._by?' · '+esc(g._by):'')+'</div></div>'
    :'<button class="cib" data-ci="'+esc(g.id)+'">&#9711;&nbsp; '+t("cibtn")+'</button>';

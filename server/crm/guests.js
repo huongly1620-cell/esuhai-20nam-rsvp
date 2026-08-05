@@ -254,22 +254,51 @@ function mount(app, requireCrmAuth, requireRole) {
   });
 
   // ---- interaction ----
+  // Nhận MỘT ghi nhận `{kind, body}` (như cũ) HOẶC nhiều ghi nhận cùng lúc
+  // `{items:[{kind, body}, …]}` — nhiều thì ghi trong CÙNG MỘT transaction.
+  //
+  // E08-D028 L-02: bản cũ để client bắn ba POST tuần tự, mỗi cái tự commit. Job
+  // 1 vào DB xong job 2 hỏng thì màn báo ĐỎ «CHƯA lưu được» trong khi dòng 1 ĐÃ
+  // nằm trong bảng; PG bấm lại là ghi trùng. Không có route xoá interaction nên
+  // dòng trùng nằm lại trên thẻ khách VIP và chị Thúy Hà đối soát quà sẽ đếm
+  // sai. Một request + một transaction ⇒ hoặc vào hết, hoặc không dòng nào —
+  // bấm lại bao nhiêu lần cũng không đẻ bản sao.
   app.post('/crm/guests/:id/interactions', requireCrmAuth, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
-    const kind = clean(req.body && req.body.kind) || 'khác';
-    const body = clean(req.body && req.body.body);
-    if (!body) return res.status(400).json({ ok: false, error: 'Thiếu nội dung ghi chú.' });
+
+    const raw = (req.body && Array.isArray(req.body.items)) ? req.body.items : [req.body || {}];
+    if (raw.length > 20) return res.status(400).json({ ok: false, error: 'Quá nhiều ghi nhận trong một lượt.' });
+    const items = raw
+      .map((x) => ({ kind: (clean(x && x.kind) || 'khác').slice(0, 40), body: clean(x && x.body) }))
+      .filter((x) => x.body);
+    if (!items.length) return res.status(400).json({ ok: false, error: 'Thiếu nội dung ghi chú.' });
+
+    let client;
     try {
       const g = await pool.query('SELECT id FROM crm_guests WHERE id = $1 AND deleted_at IS NULL', [id]);
       if (!g.rows[0]) return res.status(404).json({ ok: false, error: 'not found' });
-      const r = await pool.query('INSERT INTO crm_interactions (guest_id, actor_email, kind, body) VALUES ($1,$2,$3,$4) RETURNING id, created_at',
-        [id, req.actor.email, kind.slice(0, 40), body]);
-      await logAudit(pool, { actor_email: req.actor.email, event_type: 'interaction_create', target_type: 'guest', target_id: id, meta: { kind }, ip: ipOf(req) });
-      return res.status(201).json({ ok: true, id: String(r.rows[0].id), created_at: r.rows[0].created_at });
+      client = await pool.connect();
+      const out = [];
+      try {
+        await client.query('BEGIN');
+        for (const it of items) {
+          const r = await client.query(
+            'INSERT INTO crm_interactions (guest_id, actor_email, kind, body) VALUES ($1,$2,$3,$4) RETURNING id, created_at',
+            [id, req.actor.email, it.kind, it.body]);
+          out.push({ id: String(r.rows[0].id), created_at: r.rows[0].created_at, kind: it.kind });
+        }
+        await client.query('COMMIT');
+      } catch (e) { await client.query('ROLLBACK').catch(() => {}); throw e; }
+      await logAudit(pool, { actor_email: req.actor.email, event_type: 'interaction_create', target_type: 'guest', target_id: id, meta: { kinds: items.map((x) => x.kind) }, ip: ipOf(req) });
+      return res.status(201).json({ ok: true, id: out[0].id, created_at: out[0].created_at, items: out });
     } catch (err) {
       console.error('[crm-guests] interaction failed:', err.message);
       return res.status(500).json({ ok: false, error: 'interaction error' });
+    } finally {
+      // D016 B10 đã dạy một lần: quên trả kết nối về pool thì vài chục lượt là
+      // hết pool và MỌI route chết theo, không riêng route này.
+      if (client) client.release();
     }
   });
 }

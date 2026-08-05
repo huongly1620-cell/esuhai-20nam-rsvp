@@ -740,7 +740,11 @@ window.imgFit=imgFit;
    function tomTat(j){
      var x=j.seXoa||{};
      return '<div class="msg ok" style="line-height:1.6">'
-       +'Cập nhật <b>'+j.capNhat+'</b> · tạo mới <b>'+(j.taoMoiDuKien!==undefined?j.taoMoiDuKien:j.taoMoi)+'</b> · không khớp <b>'+j.khongKhop+'</b>'
+       +'Cập nhật <b>'+j.capNhat+'</b> · '+(j.dryRun===false?'đã tạo':'tạo mới')+' <b>'
+       /* Lượt GHI phải hiện SỐ THẬT (j.taoMoi, đếm bằng RETURNING id). Lượt kiểm
+          thử mới hiện số dự kiến. Trước đây ưu tiên taoMoiDuKien mà /commit lúc
+          nào cũng trả trường ấy, nên nhánh số thật không bao giờ chạy. */
+       +(j.dryRun===false?j.taoMoi:(j.taoMoiDuKien!==undefined?j.taoMoiDuKien:j.taoMoi))+'</b> · không khớp <b>'+j.khongKhop+'</b>'
        +'<br>Sẽ xoá: bàn <b>'+(x.ban||0)+'</b> · ghế <b>'+(x.ghe||0)+'</b> · trạng thái <b>'+(x.att||0)+'</b>'
        +(j.loi?'<br>Dòng lỗi: <b>'+j.loi+'</b>':'')
        +(j.ghiChu?'<br><span style="color:var(--muted);font-size:.78rem">'+esc(j.ghiChu)+'</span>':'')

@@ -69,7 +69,7 @@ function mount(app, requireCrmAuth, requireRole) {
         // khai trên form. Trả sẵn từ máy chủ để tab, ?session= và KPI dùng CHUNG
         // một luật — trước đây client tự đếm tag nên nói 303 trong khi KPI nói
         // 350, và 47 khách đã đăng ký biến mất khỏi tab Gala.
-        `SELECT g.id, g.full_name, g.phone, g.org, g.title, g.table_no, g.tags, g.note,
+        `SELECT g.id, g.full_name, g.phone, g.org, g.title, g.table_no, g.seat_no, g.tags, g.note,
                 g.name_jp, g.title_jp, g.org_jp,
                 ((',' || COALESCE(g.tags,'') || ',') ILIKE '%,toa-dam,%'
                  OR (g.response_id IS NOT NULL AND EXISTS (
@@ -142,7 +142,8 @@ function mount(app, requireCrmAuth, requireRole) {
         guest: {
           id: row.id, full_name: row.full_name, phone: row.phone, email: row.email,
           org: row.org, title: row.title, note: row.note, tags: row.tags,
-          table_no: row.table_no, response_id: row.response_id, created_at: row.created_at,
+          table_no: row.table_no, seat_no: row.seat_no || null,
+          response_id: row.response_id, created_at: row.created_at,
           du_toa_dam: row.du_toa_dam, du_gala: row.du_gala,
           name_jp: row.name_jp, title_jp: row.title_jp, org_jp: row.org_jp,
           att_status: row.att_status,

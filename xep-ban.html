@@ -184,8 +184,14 @@ function render(){
 }
 document.getElementById("calc").addEventListener("click",assign);
 document.getElementById("exp").addEventListener("click",function(){
-  var rows=[["Mã khách","Họ tên","Đơn vị","Hạng","Ẩm thực","Số bàn"]];
-  assignment.forEach(function(t){t.seats.forEach(function(g){rows.push([g.id,g.name,g.org,g.vip||g.cat,g.diet,t.no]);});});
+  /* E08-D030 — số ghế = thứ tự khách trong bàn (1…cap). `t.seats` vốn đã là
+     mảng khách của bàn đó, nên ghế chỉ là chỉ số + 1; giữ nguyên logic gom
+     đơn vị/TIERS của chị Ly.
+     Cột "Lượt xếp": chạy lại công cụ với danh sách khác thì cả bàn LẪN ghế đều
+     đổi, mà hiện không có cách nào phân biệt hai lượt xuất. */
+  var lot=new Date().toISOString().slice(0,16).replace("T"," ");
+  var rows=[["Mã khách","Họ tên","Đơn vị","Hạng","Ẩm thực","Số bàn","Số ghế","Lượt xếp"]];
+  assignment.forEach(function(t){t.seats.forEach(function(g,i){rows.push([g.id,g.name,g.org,g.vip||g.cat,g.diet,t.no,i+1,lot]);});});
   var csv="﻿"+rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(",");}).join("\n");
   var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="xep_ban_gala.csv";a.click();
 });

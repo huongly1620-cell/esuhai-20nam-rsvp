@@ -54,6 +54,12 @@
  .attrow button.on{background:var(--acc);border-color:var(--acc);color:#04121f;cursor:default}
  .attrow button.no.on{background:#f0b34a;border-color:#f0b34a;color:#2a1e05}
  .attrow button:disabled{opacity:.6}
+ /* E08-D030 AC-11b: hạng VIP rời khỏi thân hồ sơ, lên GÓC ẢNH — chỗ trống đó
+    dành cho khung Bàn + Ghế, thứ Ly cần đọc nhanh nhất ở cửa. */
+ .pf-av{position:relative}
+ .av-vip{position:absolute;left:-6px;top:-8px;z-index:2;font-size:.64rem;font-weight:800;letter-spacing:.03em;
+   border-radius:8px;padding:3px 8px;color:#2a1e05;background:linear-gradient(180deg,#f0d999,#cfa758);
+   box-shadow:0 2px 8px rgba(0,0,0,.5)}
  /* AC-F7 (mock Ly): hồ sơ có pill HẠNG riêng dưới cụm BÀN/GHẾ. */
  .hangp{display:inline-block;margin:2px auto 12px;border:1px solid var(--line2);border-radius:11px;padding:5px 14px;background:rgba(5,13,24,.5)}
  .hangp .k{display:block;font-size:.52rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted2)}
@@ -191,7 +197,11 @@ function hangOf(g){var v=String(g.vip||"");return /^v?vip/i.test(v)?v.toUpperCas
 // danh sách buổi này — cùng loại lỗi N1 trên /crm.
 function buoiOf(r){var b=[];if(r&&r.du_toa_dam)b.push("Tọa đàm");if(r&&r.du_gala)b.push("Gala");return b.join(" + ");}
 function parseNote(s){var o={};String(s||"").split(" · ").forEach(function(p){var k=(p.split(":")[0]||"").trim(),v=p.slice(p.indexOf(":")+1).trim();if(/Ẩm thực/.test(k))o.diet=v;else if(/Vai trò/.test(k))o.role=v;else if(/^S2/.test(k))o.handler=v;else if(/Số bàn/.test(k))o.seat=v;});return o;}
-function mapRow(r){var a=tagArr(r.tags);return{id:String(r.id),name:r.full_name,title:r.title||"",org:r.org||"",table:r.table_no||"",_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(r),du_toa_dam:!!r.du_toa_dam,du_gala:!!r.du_gala,name_jp:r.name_jp||"",title_jp:r.title_jp||"",org_jp:r.org_jp||"",phanloai:(a.indexOf("Gia đình TGĐ")>-1?"Gia đình TGĐ":a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),ob:a.indexOf("pl:ob")>-1,tagraw:String(r.tags||""),seat:"",diet:"",handler:"",role:"",note:"",photo:r.photo_url||"",photoBig:r.photo_view_url||"",att:r.att_status||"",_enriched:false};}
+function mapRow(r){var a=tagArr(r.tags);return{id:String(r.id),name:r.full_name,title:r.title||"",org:r.org||"",table:r.table_no||"",_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(r),du_toa_dam:!!r.du_toa_dam,du_gala:!!r.du_gala,name_jp:r.name_jp||"",title_jp:r.title_jp||"",org_jp:r.org_jp||"",phanloai:(a.indexOf("Gia đình TGĐ")>-1?"Gia đình TGĐ":a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),ob:a.indexOf("pl:ob")>-1,tagraw:String(r.tags||""),seat:"",diet:"",handler:"",role:"",note:"",photo:r.photo_url||"",photoBig:r.photo_view_url||"",att:r.att_status||"",
+  /* E08-D030: ghế đọc DUY NHẤT từ seat_no. Không có thì để rỗng — thBox tự ẩn
+     ô Ghế. TUYỆT ĐỐI không rớt về số bàn: ô "Ghế" cũ in số bàn thứ hai và đã
+     phải gỡ ở 2a429ab. */
+  ghe:r.seat_no||"",_enriched:false};}
 function byId(id){for(var i=0;i<G.length;i++)if(G[i].id===String(id))return G[i];return null;}
 function $(s){return document.querySelector(s);}
 function norm(s){var t=String(s||"").toLowerCase().normalize("NFD"),o="";for(var i=0;i<t.length;i++){var c=t.charCodeAt(i);if(c<0x300||c>0x36f)o+=t[i];}return o.replace(/đ/g,"d");}
@@ -220,7 +230,7 @@ var POLL_MS=25000,pollBusy=false,mutSeq=0,lastSync=0,lastSig="",DEAD=false;
    khách Nhật — nên chúng cũng phải nằm trong chữ ký. Đo được: bỏ tag VIP của 5
    khách rồi ép một vòng poll, cả badge lẫn stick đều ĐỨNG IM ở số cũ. */
 function sig(){return G.map(function(g){return g.id+(came(g)?"1":"0")+"|"+(g.photo||"")+"|"+(g.table||"")
-  +"|"+(g.vip||"")+"|"+(g.phanloai||"")+"|"+(g.name_jp||"")+"|"+(g.att||"");}).join(",");}
+  +"|"+(g.vip||"")+"|"+(g.phanloai||"")+"|"+(g.name_jp||"")+"|"+(g.att||"")+"|"+(g.ghe||"");}).join(",");}
 function merge(rows){
  var old={};G.forEach(function(g){old[g.id]=g;});
  G=rows.map(function(r){var n=mapRow(r),o=old[n.id];
@@ -229,6 +239,7 @@ function merge(rows){
       endpoint chi tiết, list không trả về — nạp lại mà không giữ thì mở lại hồ
       sơ nào cũng thấy «—» cho tới khi enrich chạy lại. */
    if(!n.att&&o.att)n.att=o.att;
+   if(!n.ghe&&o.ghe)n.ghe=o.ghe;
    n._enriched=o._enriched;n.seat=o.seat;n.diet=o.diet;n.handler=o.handler;n.role=o.role;n._inter=o._inter;
    if(!n.photo&&o.photo){n.photo=o.photo;n.photoBig=o.photoBig;}
    /* Máy chủ là SoT cho «đã đến». Chỉ giữ dấu cũ khi máy chủ trả về rỗng: cửa
@@ -532,9 +543,9 @@ function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came
  var ciBox=cm?'<div class="cidone"><div class="t">&#9711; '+t("cidone",{t:fmtCame(cm)})+(g._by?' · '+esc(g._by):'')+'</div></div>'
    :'<button class="cib" data-ci="'+esc(g.id)+'">&#9711;&nbsp; '+t("cibtn")+'</button>';
  ciBox+=attBox(g)+quayHtml(g);
- $("#pfBody").innerHTML='<div class="pf-av">'+av(g,1)+'</div><div class="pf-nm">'+pairVJ(g.name,g.name_jp)+'</div><div class="pf-rl"><b>'+(pairVJ(g.title,g.title_jp)||"—")+'</b>'+((g.org||g.org_jp)?'<br>'+pairVJ(g.org,g.org_jp):'')+'</div>'
+ $("#pfBody").innerHTML='<div class="pf-av">'+av(g,1)+(hangOf(g)?'<span class="av-vip">'+esc(hangOf(g))+'</span>':'')+'</div><div class="pf-nm">'+pairVJ(g.name,g.name_jp)+'</div><div class="pf-rl"><b>'+(pairVJ(g.title,g.title_jp)||"—")+'</b>'+((g.org||g.org_jp)?'<br>'+pairVJ(g.org,g.org_jp):'')+'</div>'
   +thBox(g)
-  +(hangOf(g)?'<div class="hangp"><span class="k">'+t("hang")+'</span><b>'+esc(hangOf(g))+'</b></div>':'')+badges(g,1)
+  +badges(g,1)
   +'<div class="facts">'+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(g.buoi)+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(g.diet||"—")+'</div></div></div>'
   +'<div class="info"><div class="ir"><span class="k">'+t("phutrach")+'</span><span class="v">'+esc(g.handler||"—")+'</span></div>'
   +'<div class="ir"><span class="k">'+t("vaitro")+'</span><span class="v">'+esc(g.role||"—")+(g.note?' · '+esc(g.note):'')+'</span></div>'

@@ -120,6 +120,11 @@ ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS att_override    TEXT;
 ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS att_override_at TIMESTAMPTZ;
 ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS att_override_by TEXT;
 
+-- E08-D030: so ghe that. He thong truoc do CHI co so ban; o "Ghe" cu in ra
+-- mot so ban thu hai (do prod: 0/378 khach co ca hai) nen da bo o 2a429ab.
+-- Nullable: khong co ghe thi KHONG hien o Ghe, tuyet doi khong roi ve so ban.
+ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS seat_no TEXT;
+
 ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS thumb_key    TEXT;
 ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS thumb_size   INTEGER;
 ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS preview_key  TEXT;

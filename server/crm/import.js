@@ -124,6 +124,55 @@ function importError(res, err, tag) {
 }
 
 function mount(app, requireCrmAuth, requireRole) {
+  // E08-D030 — nạp SỐ BÀN + SỐ GHẾ từ CSV của công cụ xếp bàn, ĐI QUA CRM.
+  // Sponsor chốt 05/08: không vá '/admin/api/import-tables' nữa (đường đó sẽ
+  // chết khi bỏ admin). Khác đường admin ở một chỗ QUAN TRỌNG: admin ghi
+  // `table_no=$1` với `ban || null`, nên MỘT Ô RỖNG XOÁ SẠCH số bàn đang có.
+  // Ở đây COALESCE(NULLIF(...)) — ô rỗng nghĩa là "không đổi", đúng luật merge
+  // D022 và đúng AC-5.
+  app.post('/crm/import-seats', requireCrmAuth, requireRole('btl'), upload.single('file'), async (req, res) => {
+    let client;
+    try {
+      const rows = parseUpload(req);
+      if (!rows || rows.length < 2) return res.status(400).json({ ok: false, error: 'File trống.' });
+      const hdr = rows[0];
+      const iMa = detectCol(hdr, ['makhach', 'maid', 'guest_ext_id']);
+      const iBan = detectCol(hdr, ['soban', 'table']);
+      const iGhe = detectCol(hdr, ['soghe', 'seat']);
+      if (iMa < 0) return res.status(400).json({ ok: false, error: 'Cần cột "Mã khách".' });
+      if (iBan < 0 && iGhe < 0) return res.status(400).json({ ok: false, error: 'Cần ít nhất cột "Số bàn" hoặc "Số ghế".' });
+      let matched = 0; let unmatched = 0; let setBan = 0; let setGhe = 0;
+      client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        for (let r = 1; r < rows.length; r++) {
+          const ma = String(rows[r][iMa] || '').trim();
+          if (!ma) continue;
+          const ban = iBan > -1 ? String(rows[r][iBan] || '').trim() : '';
+          const ghe = iGhe > -1 ? String(rows[r][iGhe] || '').trim() : '';
+          if (ban) setBan++;
+          if (ghe) setGhe++;
+          const byId = ma.startsWith('crm:');
+          const upd = await client.query(
+            `UPDATE crm_guests
+                SET table_no = COALESCE(NULLIF($1, ''), table_no),
+                    seat_no  = COALESCE(NULLIF($2, ''), seat_no),
+                    updated_at = now()
+              WHERE ${byId ? 'id' : 'guest_ext_id'} = $3 AND deleted_at IS NULL`,
+            [ban, ghe, byId ? (parseInt(ma.slice(4), 10) || 0) : ma]);
+          if (upd.rowCount > 0) matched++; else unmatched++;
+        }
+        await client.query('COMMIT');
+      } catch (e) { await client.query('ROLLBACK').catch(() => {}); throw e; }
+      await logAudit(pool, { actor_email: req.actor.email, event_type: 'import_seats',
+        target_type: 'crm_guests', meta: { khop: matched, khongKhop: unmatched, oBan: setBan, oGhe: setGhe }, ip: ipOf(req) });
+      return res.json({ ok: true, matched, unmatched, setBan, setGhe, total: rows.length - 1 });
+    } catch (err) {
+      console.error('[crm-import] seats failed:', err.message);
+      return res.status(500).json({ ok: false, error: 'Nhập Bàn/Ghế lỗi.' });
+    } finally { if (client) client.release(); }
+  });
+
   app.post('/crm/import', requireCrmAuth, requireRole('btl'), upload.single('file'), async (req, res) => {
     try {
       const out = await importRows(parseUpload(req), req.actor.email, ipOf(req));

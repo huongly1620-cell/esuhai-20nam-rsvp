@@ -103,6 +103,18 @@ ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS table_no TEXT;
 ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS name_jp  TEXT;
 ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS title_jp TEXT;
 ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS org_jp   TEXT;
+
+-- E08-D029: bản thu nhỏ cho danh sách (256px) và bản vừa cho hồ sơ (1024px).
+-- Đo 05/08: mở cửa Gala khi chưa cuộn kéo về 13,03 MB vì mỗi avatar là FILE GỐC
+-- (trung bình 1457 KB, lớn nhất 19,87 MB). Cùng ảnh đó thu 256px q75 chỉ còn
+-- ~22 KB — gần như không phụ thuộc cỡ gốc.
+-- Cả bốn cột NULLABLE và chỉ THÊM: khoá NULL nghĩa là chưa có bản dẫn xuất, mọi
+-- đường dẫn tự lùi về ảnh gốc (đúng hành vi trước vé). Nhờ vậy deploy được
+-- TRƯỚC khi backfill xong, và backfill dừng giữa chừng không hỏng gì.
+ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS thumb_key    TEXT;
+ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS thumb_size   INTEGER;
+ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS preview_key  TEXT;
+ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS preview_size INTEGER;
 `;
 
 async function migrateCrm() {

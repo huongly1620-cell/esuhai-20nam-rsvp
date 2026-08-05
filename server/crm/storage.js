@@ -59,4 +59,21 @@ async function presignGet(objectKey) {
   return c.presignedGetObject(BUCKET, objectKey, PRESIGN_TTL);
 }
 
-module.exports = { isConfigured, ensureBucket, putObject, putObjectAt, presignGet, BUCKET };
+// E08-D029 (AC-7 hướng B): đọc object thành STREAM để app đẩy thẳng ra response,
+// bỏ hẳn vòng 302 → presign → MinIO. Cái được không chỉ là bớt một chặng (đo
+// 05/08: 81 ms mỗi ảnh, 165 avatar là ~13 giây thuần round-trip) mà là URL CỐ
+// ĐỊNH nên trình duyệt cache được — cửa poll lại danh sách mỗi 25 giây, với URL
+// presign đổi chữ ký từng lần thì mỗi vòng poll là một lần tải lại toàn bộ ảnh.
+// Stream, KHÔNG nạp cả file vào bộ nhớ.
+async function getObjectStream(objectKey) {
+  const c = getClient();
+  return c.getObject(BUCKET, objectKey);
+}
+
+async function statObject(objectKey) {
+  const c = getClient();
+  return c.statObject(BUCKET, objectKey);
+}
+
+module.exports = { isConfigured, ensureBucket, putObject, putObjectAt, presignGet,
+  getObjectStream, statObject, BUCKET };

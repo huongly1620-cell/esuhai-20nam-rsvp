@@ -180,7 +180,7 @@ function hangOf(g){var v=String(g.vip||"");return /^v?vip/i.test(v)?v.toUpperCas
 // danh sách buổi này — cùng loại lỗi N1 trên /crm.
 function buoiOf(r){var b=[];if(r&&r.du_toa_dam)b.push("Tọa đàm");if(r&&r.du_gala)b.push("Gala");return b.join(" + ");}
 function parseNote(s){var o={};String(s||"").split(" · ").forEach(function(p){var k=(p.split(":")[0]||"").trim(),v=p.slice(p.indexOf(":")+1).trim();if(/Ẩm thực/.test(k))o.diet=v;else if(/Vai trò/.test(k))o.role=v;else if(/^S2/.test(k))o.handler=v;else if(/Số bàn/.test(k))o.seat=v;});return o;}
-function mapRow(r){var a=tagArr(r.tags);return{id:String(r.id),name:r.full_name,title:r.title||"",org:r.org||"",table:r.table_no||"",_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(r),du_toa_dam:!!r.du_toa_dam,du_gala:!!r.du_gala,name_jp:r.name_jp||"",title_jp:r.title_jp||"",org_jp:r.org_jp||"",phanloai:(a.indexOf("Gia đình TGĐ")>-1?"Gia đình TGĐ":a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),seat:"",diet:"",handler:"",role:"",note:"",photo:r.photo_url||"",_enriched:false};}
+function mapRow(r){var a=tagArr(r.tags);return{id:String(r.id),name:r.full_name,title:r.title||"",org:r.org||"",table:r.table_no||"",_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(r),du_toa_dam:!!r.du_toa_dam,du_gala:!!r.du_gala,name_jp:r.name_jp||"",title_jp:r.title_jp||"",org_jp:r.org_jp||"",phanloai:(a.indexOf("Gia đình TGĐ")>-1?"Gia đình TGĐ":a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),seat:"",diet:"",handler:"",role:"",note:"",photo:r.photo_url||"",photoBig:r.photo_view_url||"",_enriched:false};}
 function byId(id){for(var i=0;i<G.length;i++)if(G[i].id===String(id))return G[i];return null;}
 function $(s){return document.querySelector(s);}
 function norm(s){var t=String(s||"").toLowerCase().normalize("NFD"),o="";for(var i=0;i<t.length;i++){var c=t.charCodeAt(i);if(c<0x300||c>0x36f)o+=t[i];}return o.replace(/đ/g,"d");}
@@ -217,8 +217,8 @@ function merge(rows){
    /* Giữ phần CHỈ có ở máy này: enrich() (ghế/ẩm thực/phụ trách/vai trò) đọc từ
       endpoint chi tiết, list không trả về — nạp lại mà không giữ thì mở lại hồ
       sơ nào cũng thấy «—» cho tới khi enrich chạy lại. */
-   n._enriched=o._enriched;n.seat=o.seat;n.diet=o.diet;n.handler=o.handler;n.role=o.role;
-   if(!n.photo&&o.photo)n.photo=o.photo;
+   n._enriched=o._enriched;n.seat=o.seat;n.diet=o.diet;n.handler=o.handler;n.role=o.role;n._inter=o._inter;
+   if(!n.photo&&o.photo){n.photo=o.photo;n.photoBig=o.photoBig;}
    /* Máy chủ là SoT cho «đã đến». Chỉ giữ dấu cũ khi máy chủ trả về rỗng: cửa
       không có nút huỷ điểm danh, nên thẻ tự lật ngược «đã đến» → «chưa đến»
       chỉ có thể là đọc trượt — mà ở cửa, lật ngược hại hơn giữ nguyên. */
@@ -306,7 +306,38 @@ function badges(g,skipVip){var b=[],h=hangOf(g);
  if(p)b.push('<span class="bg bg-gd">'+esc(t(p==="Nội"?"b_noi":(p==="Ngoại"?"b_ngoai":"b_tgd")))+'</span>');
  if(isKanji(g.name_jp||"")||isKanji(g.name))b.push('<span class="bg bg-jp">'+t("b_jp")+'</span>');
  return b.length?'<div class="bgs">'+b.join("")+'</div>':"";}
-function av(g,big){return g.photo?'<img src="'+esc(g.photo)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">'+esc(ini(g.name)):esc(ini(g.name));}
+
+/* E08-D029 — thu nhỏ ảnh NGAY TRÊN MÁY trước khi gửi. Máy chủ cố ý KHÔNG có thư
+   viện ảnh: thêm một phụ thuộc biên dịch gốc (sharp) vào ảnh production ba ngày
+   trước lễ mà build hỏng là cả app không deploy được. Ở đây lỗi chỉ làm mất bản
+   phụ — ảnh gốc vẫn lưu bình thường, màn hình lùi về đúng hành vi cũ.
+   Kèm một cái lợi thứ hai: PG chụp ảnh vài MB rồi tải lên trên chính cái wifi
+   yếu đó; bản 256px chỉ ~22 KB. */
+async function shrinkImg(file,max,q){
+  try{
+    if(!file||!/^image\//.test(file.type||""))return null;
+    if(typeof createImageBitmap!=="function")return null;
+    var bmp=await createImageBitmap(file);
+    var s=Math.min(1,max/Math.max(bmp.width,bmp.height));
+    var nw=Math.max(1,Math.round(bmp.width*s)),nh=Math.max(1,Math.round(bmp.height*s));
+    var cv=document.createElement("canvas");cv.width=nw;cv.height=nh;
+    var cx=cv.getContext("2d");if(!cx)return null;
+    cx.drawImage(bmp,0,0,nw,nh);
+    if(bmp.close)bmp.close();
+    var blob=await new Promise(function(r){cv.toBlob(r,"image/jpeg",q);});
+    /* Ảnh vốn đã nhẹ hơn bản thu nhỏ thì giữ gốc — thêm object chỉ tổ nặng kho. */
+    if(!blob||blob.size>=file.size)return null;
+    return blob;
+  }catch(e){return null;}
+}
+async function addShrunk(fd,file){
+  var th=await shrinkImg(file,256,.75); if(th)fd.append("thumb",th,"t256.jpg");
+  var pv=await shrinkImg(file,1024,.8); if(pv)fd.append("preview",pv,"t1024.jpg");
+  return fd;
+}
+/* big=1 là khối hồ sơ (.pf-av 190px CSS ≈ 570px thiết bị) → dùng bản 1024px;
+   list dùng bản 256px. */
+function av(g,big){var u=(big?(g.photoBig||g.photo):g.photo);return u?'<img src="'+esc(u)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">'+esc(ini(g.name)):esc(ini(g.name));}
 function renderList(){quickCounts();var rows=G.filter(match);
  $("#hint").textContent=(st.q||st.quick||st.f)?t("res",{n:rows.length}):t("total",{n:G.length});
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);
@@ -347,6 +378,7 @@ async function sendPhoto(id,file,asGift){
     }catch(e){toast(t("cam_net"),1);return;}
   }
   var fd=new FormData();fd.append("photo",file);
+  await addShrunk(fd,file);
   if(interId)fd.append("interaction_id",interId);
   try{
     var r=await api("/crm/guests/"+id+"/photos",{method:"POST",body:fd});
@@ -356,7 +388,8 @@ async function sendPhoto(id,file,asGift){
     var g=byId(id);
     /* Ảnh quà KHÔNG được thay ảnh đại diện khách — chỉ nạp lại hồ sơ để lịch
        sử tại quầy hiện thêm dòng vừa ghi. */
-    if(g&&j&&j.url&&!asGift){g.photo=j.url;lastSig=sig();if(curId===id)openPf(id);renderList();}
+    /* j.url là ảnh GỐC; list phải trỏ bản thu nhỏ, hồ sơ trỏ bản 1024. */
+    if(g&&j&&j.url&&!asGift){g.photo=j.url+"/thumb";g.photoBig=j.url+"/preview";lastSig=sig();if(curId===id)openPf(id);renderList();}
     else if(g){g._enriched=false;enrich(g,id);}
     toast(asGift?t("q_saved"):t("cam_ok"));
   }catch(err){toast(t("cam_net"),1);}
@@ -450,7 +483,7 @@ function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came
 async function enrich(g,id){try{var j=await jget("/crm/guests/"+id);g._enriched=true;
  /* Ảnh có interaction_id là ảnh QUÀ chụp tại quầy — không phải mặt khách. */
  var pf=(j.photos||[]).filter(function(p){return !p.interaction_id;});
- if(pf[0])g.photo=pf[0].url;
+ if(pf[0]){g.photo=pf[0].thumb_url||pf[0].url;g.photoBig=pf[0].view_url||pf[0].url;}
  g._inter=j.interactions||[];var p=parseNote(j.guest&&j.guest.note);g.diet=p.diet||"";g.role=p.role||"";g.handler=p.handler||"";g.seat=p.seat||"";if(curId===id)openPf(id);}catch(e){g._enriched=true;}}
 function setLang(l){LANG=l;localStorage.setItem("ci_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";
  document.querySelectorAll("[data-i]").forEach(function(el){var k=el.getAttribute("data-i");var v=t(k);if(v)el.textContent=v;});

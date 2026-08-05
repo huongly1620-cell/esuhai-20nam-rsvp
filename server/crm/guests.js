@@ -80,7 +80,13 @@ function mount(app, requireCrmAuth, requireRole) {
                          AND s.sessions ~* '${SESSION_RE.gala}'))) AS du_gala,
                 (g.response_id IS NOT NULL) AS from_rsvp,
                 (ci.guest_id IS NOT NULL) AS checked_in, ci.checked_in_at, ci.actor_email AS checked_in_by,
-                CASE WHEN p.id IS NULL THEN NULL ELSE '/crm/photos/' || p.id END AS photo_url
+                -- E08-D029 AC-2: danh sách trỏ BẢN THU NHỎ, không phải file gốc.
+                -- Route /thumb tự lùi về gốc khi thẻ chưa có bản dẫn xuất, nên
+                -- không màn nào mất ảnh trong lúc backfill đang chạy dở.
+                CASE WHEN p.id IS NULL THEN NULL ELSE '/crm/photos/' || p.id || '/thumb' END AS photo_url,
+                -- AC-3b: bản vừa (1024px) cho khối hồ sơ; khung .pf-av là 190px
+                -- CSS ≈ 570px thiết bị, dùng thumb 256px sẽ mờ.
+                CASE WHEN p.id IS NULL THEN NULL ELSE '/crm/photos/' || p.id || '/preview' END AS photo_view_url
          FROM crm_guests g
          ${join}
          LEFT JOIN crm_check_ins ci ON ci.guest_id = g.id
@@ -143,7 +149,11 @@ function mount(app, requireCrmAuth, requireRole) {
         // interaction_id: ảnh nào là ảnh QUÀ (gắn vào một ghi nhận tại quầy),
         // ảnh nào là chân dung khách. Màn cửa lấy avatar = tấm ĐẦU TIÊN có
         // interaction_id rỗng, khớp đúng luật của list ở trên.
-        photos: photos.rows.map((p) => ({ id: p.id, url: '/crm/photos/' + p.id, content_type: p.content_type, uploaded_by: p.uploaded_by, created_at: p.created_at, interaction_id: p.interaction_id })),
+        // url = gốc (giữ nguyên cho thư viện ảnh / tải về) · view_url = bản 1024
+        // cho khối hồ sơ · thumb_url = 256 cho dải ảnh nhỏ.
+        photos: photos.rows.map((p) => ({ id: p.id, url: '/crm/photos/' + p.id,
+          view_url: '/crm/photos/' + p.id + '/preview', thumb_url: '/crm/photos/' + p.id + '/thumb',
+          content_type: p.content_type, uploaded_by: p.uploaded_by, created_at: p.created_at, interaction_id: p.interaction_id })),
       });
     } catch (err) {
       console.error('[crm-guests] detail failed:', err.message);

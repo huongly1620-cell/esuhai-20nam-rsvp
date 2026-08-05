@@ -334,6 +334,35 @@
  /* AC-F2: tag trong DB là chữ THƯỜNG `vip` (import-vnjb ghi 48 thẻ) — cột
     "Hạng" và badge không được hiện chữ thường. Chuẩn hoá lúc HIỂN THỊ; xếp
     hạng vẫn dùng vipOf để không đổi thứ tự đã có. */
+
+/* E08-D029 — thu nhỏ ảnh NGAY TRÊN MÁY trước khi gửi. Máy chủ cố ý KHÔNG có thư
+   viện ảnh: thêm một phụ thuộc biên dịch gốc (sharp) vào ảnh production ba ngày
+   trước lễ mà build hỏng là cả app không deploy được. Ở đây lỗi chỉ làm mất bản
+   phụ — ảnh gốc vẫn lưu bình thường, màn hình lùi về đúng hành vi cũ.
+   Kèm một cái lợi thứ hai: PG chụp ảnh vài MB rồi tải lên trên chính cái wifi
+   yếu đó; bản 256px chỉ ~22 KB. */
+async function shrinkImg(file,max,q){
+  try{
+    if(!file||!/^image\//.test(file.type||""))return null;
+    if(typeof createImageBitmap!=="function")return null;
+    var bmp=await createImageBitmap(file);
+    var s=Math.min(1,max/Math.max(bmp.width,bmp.height));
+    var nw=Math.max(1,Math.round(bmp.width*s)),nh=Math.max(1,Math.round(bmp.height*s));
+    var cv=document.createElement("canvas");cv.width=nw;cv.height=nh;
+    var cx=cv.getContext("2d");if(!cx)return null;
+    cx.drawImage(bmp,0,0,nw,nh);
+    if(bmp.close)bmp.close();
+    var blob=await new Promise(function(r){cv.toBlob(r,"image/jpeg",q);});
+    /* Ảnh vốn đã nhẹ hơn bản thu nhỏ thì giữ gốc — thêm object chỉ tổ nặng kho. */
+    if(!blob||blob.size>=file.size)return null;
+    return blob;
+  }catch(e){return null;}
+}
+async function addShrunk(fd,file){
+  var th=await shrinkImg(file,256,.75); if(th)fd.append("thumb",th,"t256.jpg");
+  var pv=await shrinkImg(file,1024,.8); if(pv)fd.append("preview",pv,"t1024.jpg");
+  return fd;
+}
  function vipLbl(g){var v=vipOf(g);return /^v?vip/i.test(v)?v.toUpperCase():v;}
  function vipRank(g){var v=noAcc(vipOf(g)).replace(/[^0-9]/g,"");return v?parseInt(v,10):(vipOf(g)?1:99);}
  function noteF(g,label){var m=new RegExp(label+"\\s*[:：]\\s*([^·]+)").exec(g.note||"");return m?m[1].trim():"";}
@@ -422,7 +451,11 @@ function pairVJ(vn,jp){
 window.imgFit=imgFit;
  function renderGuest(j){
    var g=j.guest,ci=j.checkIn;var canDel=(me.role==="btl");
-   var pu=(j.photos&&j.photos[0])?j.photos[0].url:"";
+   /* Ảnh có interaction_id là ảnh QUÀ chụp tại quầy (E08-D028 AC-G4) — không
+    phải mặt khách; list đã loại chúng ở SQL, khối hồ sơ phải loại y hệt.
+    Dùng bản 1024px cho khung 190px, không kéo file gốc 1–20 MB. */
+ var pav=(j.photos||[]).filter(function(p){return !p.interaction_id;});
+ var pu=pav[0]?(pav[0].view_url||pav[0].url):"";
    var ph=noteF(g,"S2 phụ trách")||noteF(g,"phụ trách"),gt=noteF(g,"Giới tính");
    var contact=[maskPhone(g.phone),g.email].filter(Boolean).join(" · ")||"—";
    // E08-D028 F3: làn rollback phải cùng luật B2 với /crm — staff không thấy nút
@@ -430,7 +463,7 @@ window.imgFit=imgFit;
    // KẾT QUẢ đã điểm danh vẫn hiện với mọi role.
    var ciBlock=ci?'<div class="ci-on">◯ '+tt("ci_on")+' <b>'+esc(ci.actor_email)+'</b><br>'+esc(fmt(ci.checked_in_at))+'</div>'
      :'<div class="ci-off">'+tt("ci_at_door")+'</div>';
-   var thumbs=(j.photos||[]).map(function(p){return '<img src="'+esc(p.url)+'" loading="lazy" onload="imgFit(this)">';}).join("")||'<span style="color:var(--muted);font-size:.8rem">'+tt("no_photo")+'</span>';
+   var thumbs=(j.photos||[]).map(function(p){return '<img src="'+esc(p.thumb_url||p.url)+'" loading="lazy" onload="imgFit(this)">';}).join("")||'<span style="color:var(--muted);font-size:.8rem">'+tt("no_photo")+'</span>';
    var inter=(j.interactions||[]).map(function(x){return '<div class="inter"><div>'+esc(x.body)+'</div><div class="m">'+esc(x.kind)+' · '+esc(x.actor_email)+' · '+esc(fmt(x.created_at))+'</div></div>';}).join("");
    $("#sheetBody").innerHTML=
      '<div class="pf-av">'+(pu?'<img src="'+esc(pu)+'" loading="lazy" onload="imgFit(this)" onerror="this.remove()">':esc(ini(g.full_name)))+'</div>'
@@ -449,7 +482,7 @@ window.imgFit=imgFit;
    $("#iSave").addEventListener("click",async function(){var b=$("#iBody").value.trim();if(!b){gmsg("Nhập nội dung.","err");return;}var r=await jsend("/crm/guests/"+g.id+"/interactions","POST",{kind:$("#iKind").value,body:b});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);}else gmsg(r.body.error||"Lỗi.","err");});
    $("#eSave").addEventListener("click",async function(){var r=await jsend("/crm/guests/"+g.id,"PATCH",{phone:$("#ePhone").value,org:$("#eOrg").value,title:$("#eTitle").value,note:$("#eNote").value});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else gmsg(r.body.error||"Lỗi.","err");});
    var delBtn=$("#delBtn");if(delBtn)delBtn.addEventListener("click",async function(){if(!confirm("Xoá khách "+g.full_name+"?"))return;var r=await jsend("/crm/guests/"+g.id,"DELETE");if(r.ok){$("#sheet").classList.remove("show");toast("Đã xoá","ok");loadAll();}else gmsg(r.body.error||"Lỗi.","err");});
-   $("#photoInput").addEventListener("change",async function(){var f=this.files&&this.files[0];if(!f)return;gmsg("Đang tải ảnh…","ok");var fd=new FormData();fd.append("photo",f);try{var r=await api("/crm/guests/"+g.id+"/photos",{method:"POST",body:fd});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else{var jj=await r.json().catch(function(){return {};});gmsg(jj.error||"Lỗi tải ảnh.","err");}}catch(e){gmsg("Lỗi tải ảnh.","err");}});
+   $("#photoInput").addEventListener("change",async function(){var f=this.files&&this.files[0];if(!f)return;gmsg("Đang tải ảnh…","ok");var fd=new FormData();fd.append("photo",f);await addShrunk(fd,f);try{var r=await api("/crm/guests/"+g.id+"/photos",{method:"POST",body:fd});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else{var jj=await r.json().catch(function(){return {};});gmsg(jj.error||"Lỗi tải ảnh.","err");}}catch(e){gmsg("Lỗi tải ảnh.","err");}});
  }
  function gmsg(t,c){var m=$("#gMsg");if(m){m.textContent=t;m.className="msg"+(c?(" "+c):"");}}
  /* ---- btl: add / import / audit / settings ---- */

@@ -739,6 +739,14 @@ window.imgFit=imgFit;
    var file=null;
    function tomTat(j){
      var x=j.seXoa||{};
+     var cot='';
+     if(j.cotDoc&&j.cotDoc.length){
+       var thieu=j.cotDoc.filter(function(x){return !x.co;});
+       cot='<br>Đọc được cột: '+j.cotDoc.map(function(x){
+         return (x.co?'':'<b style="color:var(--red-b)">')+esc(x.ten)+' '+(x.co?'✅':'❌')+(x.co?'':'</b>');
+       }).join(' · ')
+       +(thieu.length?'<br><b style="color:var(--red-b)">Tiêu đề '+thieu.length+' cột không đọc được — mọi ô của cột đó sẽ BỊ BỎ QUA dù màn báo «cập nhật» bao nhiêu. Sửa lại tên cột cho đúng file gốc rồi kiểm thử lại.</b>':'');
+     }
      return '<div class="msg ok" style="line-height:1.6">'
        +'Cập nhật <b>'+j.capNhat+'</b> · '+(j.dryRun===false?'đã tạo':'tạo mới')+' <b>'
        /* Lượt GHI phải hiện SỐ THẬT (j.taoMoi, đếm bằng RETURNING id). Lượt kiểm
@@ -746,6 +754,7 @@ window.imgFit=imgFit;
           nào cũng trả trường ấy, nên nhánh số thật không bao giờ chạy. */
        +(j.dryRun===false?j.taoMoi:(j.taoMoiDuKien!==undefined?j.taoMoiDuKien:j.taoMoi))+'</b> · không khớp <b>'+j.khongKhop+'</b>'
        +'<br>Sẽ xoá: bàn <b>'+(x.ban||0)+'</b> · ghế <b>'+(x.ghe||0)+'</b> · trạng thái <b>'+(x.att||0)+'</b>'
+       +cot
        +(j.loi?'<br>Dòng lỗi: <b>'+j.loi+'</b>':'')
        +(j.ghiChu?'<br><span style="color:var(--muted);font-size:.78rem">'+esc(j.ghiChu)+'</span>':'')
        +(j.danhSachKhongKhop&&j.danhSachKhongKhop.length?'<br><span style="color:var(--muted);font-size:.76rem">Không khớp: '+j.danhSachKhongKhop.map(function(k){return esc(k.ma);}).slice(0,10).join(", ")+'</span>':'')
@@ -767,7 +776,12 @@ window.imgFit=imgFit;
        /* Chỉ ĐẾN LÚC NÀY nút ghi mới được tạo ra. */
        $("#iuGo").innerHTML='<button class="btn gold block" id="iuCommit" style="margin-top:12px">② Ghi thật vào hệ thống</button>';
        $("#iuCommit").addEventListener("click",async function(){
-         if(!confirm("Ghi thật "+j.capNhat+" cập nhật và "+(j.taoMoiDuKien||0)+" khách mới vào hệ thống?"))return;
+         /* Cảnh báo đỏ nằm ngay trên nút vàng thì vẫn bấm lướt qua được. Đưa
+            tên cột thiếu vào chính câu hỏi — vẫn KHÔNG chặn, chỉ bắt đọc thêm
+            một lần. Đây là lần cuối trước khi ghi. */
+         var mat=(j.cotDoc||[]).filter(function(x){return !x.co;}).map(function(x){return x.ten;});
+         if(!confirm((mat.length?"⚠ Cột "+mat.join(", ")+" KHÔNG đọc được — mọi ô của cột đó sẽ bị bỏ qua.\n\n":"")
+           +"Ghi thật "+j.capNhat+" cập nhật và "+(j.taoMoiDuKien||0)+" khách mới vào hệ thống?"))return;
          this.disabled=true;this.textContent="Đang ghi…";
          var fd2=new FormData();fd2.append("file",file);
          try{
@@ -815,8 +829,17 @@ window.imgFit=imgFit;
    g.guest_ext_id||"", g.full_name, g.org||"", g.title||"",
    g.table_no||"", g.seat_no||"", (ATT_TEXT[attOf(g)]||""), ptOf(g)||""];});}
  function exportUpdateCSV(){
-   var thieu=ALL.filter(function(g){return !g.guest_ext_id;}).length;
-   if(thieu){ toast("Không xuất được: "+thieu+" khách thiếu mã khoá. Đăng nhập bằng tài khoản BTL rồi thử lại.","err"); return; }
+   var ko=ALL.filter(function(g){return !g.guest_ext_id;});
+   if(ko.length){
+     if(me.role!=="btl"||ko.length===ALL.length){
+       toast("Không xuất được: tài khoản này không có quyền xem mã khoá. Cần đăng nhập bằng tài khoản BTL.","err");
+     }else{
+       /* Thẻ thật sự thiếu khoá trong CSDL — đăng nhập lại không chữa được. Gọi
+          đúng tên thẻ để người bấm biết phải xử thẻ nào. */
+       toast(ko.length+" thẻ chưa có mã khoá nên chưa xuất được: "+ko.slice(0,3).map(function(g){return g.full_name;}).join(", ")+(ko.length>3?"…":"")+". Xoá hoặc nhờ BTL cấp mã cho thẻ đó rồi xuất lại.","err");
+     }
+     return;
+   }
    var lines=[UPD_HDR].concat(updRows()).map(function(r){
      return r.map(function(c){c=String(c==null?"":c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(",");
    }).join("\r\n");

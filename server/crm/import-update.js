@@ -146,7 +146,14 @@ async function plan(client, rows) {
   return { capNhat, taoMoi, khongKhop, loi, xoa: { ban: xoaBan, ghe: xoaGhe, att: xoaAtt }, idx };
 }
 
+// Nhãn cột để màn in ra; thứ tự này là thứ tự hiện trên màn.
+const NHAN_COT = { donvi: 'Đơn vị', chuc: 'Chức danh', ban: 'Bàn', ghe: 'Ghế', attn: 'Trạng thái' };
+
 const tomTat = (p) => ({
+  // Cột nào tiêu đề đọc được (true) và cột nào KHÔNG (false). Thiếu cột thì mọi
+  // ô của nó thành rỗng ⇒ «không đổi» ⇒ im lặng bỏ qua, mà ba con số kia không
+  // hề đổi. Đây là chỗ duy nhất phát hiện được, nên luôn trả về.
+  cotDoc: Object.keys(NHAN_COT).map((k) => ({ ten: NHAN_COT[k], co: (p.idx && p.idx[k] > -1) || false })),
   capNhat: p.capNhat.length,
   // Ở lượt GHI, `taoMoi` là số dòng THẬT SỰ chèn được (ON CONFLICT có thể hụt
   // trong im lặng); ở dry-run là số dự kiến.

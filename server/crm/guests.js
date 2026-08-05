@@ -181,13 +181,25 @@ function mount(app, requireCrmAuth, requireRole) {
     if (!name) return res.status(400).json({ ok: false, error: 'Thiếu họ tên.' });
     const phone = clean(b.phone);
     try {
-      const r = await pool.query(
-        `INSERT INTO crm_guests (full_name, phone, phone_norm, email, org, title, note, tags)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-        [name, phone || null, phone ? normPhone(phone) : null, clean(b.email) || null,
-         clean(b.org) || null, clean(b.title) || null, clean(b.note) || null, clean(b.tags) || null]
-      );
-      const id = r.rows[0].id;
+      // E08-D032 — khách thêm tay PHẢI có guest_ext_id. Thiếu một thẻ là nút
+      // «Xuất để CẬP NHẬT» chặn TOÀN BỘ danh sách (thẻ 437, 05/08), và thẻ đó
+      // cũng không đi qua được vòng xuất-sửa-nhập. Khoá lấy từ chính id nên
+      // duy nhất theo cấu tạo — không đụng va chạm như khoá băm từ tên.
+      const cli = await pool.connect();
+      let id;
+      try {
+        await cli.query('BEGIN');
+        const r = await cli.query(
+          `INSERT INTO crm_guests (full_name, phone, phone_norm, email, org, title, note, tags)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+          [name, phone || null, phone ? normPhone(phone) : null, clean(b.email) || null,
+           clean(b.org) || null, clean(b.title) || null, clean(b.note) || null, clean(b.tags) || null]
+        );
+        id = r.rows[0].id;
+        await cli.query('UPDATE crm_guests SET guest_ext_id = $1 WHERE id = $2', ['tay-' + id, id]);
+        await cli.query('COMMIT');
+      } catch (e) { await cli.query('ROLLBACK').catch(() => {}); cli.release(); throw e; }
+      cli.release();
       await logAudit(pool, { actor_email: req.actor.email, event_type: 'guest_create', target_type: 'guest', target_id: id, ip: ipOf(req) });
       return res.status(201).json({ ok: true, id: String(id) });
     } catch (err) {

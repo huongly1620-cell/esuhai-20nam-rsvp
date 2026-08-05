@@ -3,6 +3,8 @@
 const { pool } = require('../db');
 const { logAudit } = require('./audit');
 const { ipOf } = require('./auth');
+// E08-D031: một luật trạng thái tham dự dùng chung cho list · detail · stats.
+const att = require('./attendance');
 
 function normPhone(p) { return String(p || '').replace(/\D/g, ''); }
 function clean(v) { return typeof v === 'string' ? v.trim() : (v == null ? '' : String(v)); }
@@ -20,10 +22,9 @@ function mount(app, requireCrmAuth, requireRole) {
   // này QUYẾT ĐỊNH ai lên /checkin-gala.html, nên phải khớp có BIÊN TỪ:
   // '%ala%' cũ khớp cả "Salad" và "Balalaika".
   // Một hằng dùng chung cho ?session= và cho field du_* — không viết hai bản.
-  const SESSION_RE = {
-    'toa-dam': '(^|[^[:alpha:]])(t[oọ]a[ ]?đ[aà]m|toa dam)([^[:alpha:]]|$)',
-    gala: '(^|[^[:alpha:]])gala([^[:alpha:]]|$)',
-  };
+  // E08-D031 chuyển sang `attendance.js` để `/crm/stats` dùng ĐÚNG chuỗi này,
+  // thay vì mỗi file giữ một bản chép tay rồi lệch nhau lúc nào không ai biết.
+  const SESSION_RE = att.SESSION_RE;
 
   app.get('/crm/guests', requireCrmAuth, async (req, res) => {
     const q = String(req.query.q || '').trim();
@@ -78,6 +79,7 @@ function mount(app, requireCrmAuth, requireRole) {
                  OR (g.response_id IS NOT NULL AND EXISTS (
                        SELECT 1 FROM rsvp_submissions s WHERE s.id = g.response_id
                          AND s.sessions ~* '${SESSION_RE.gala}'))) AS du_gala,
+                ${att.attSql('g', att.duSql('g', 'g.response_id', "'" + SESSION_RE['toa-dam'] + "'", "'" + SESSION_RE.gala + "'"))} AS att_status,
                 (g.response_id IS NOT NULL) AS from_rsvp,
                 (ci.guest_id IS NOT NULL) AS checked_in, ci.checked_in_at, ci.actor_email AS checked_in_by,
                 -- E08-D029 AC-2: danh sách trỏ BẢN THU NHỎ, không phải file gốc.
@@ -125,7 +127,8 @@ function mount(app, requireCrmAuth, requireRole) {
            ((',' || COALESCE(tags,'') || ',') ILIKE '%,gala,%'
             OR (response_id IS NOT NULL AND EXISTS (
                   SELECT 1 FROM rsvp_submissions s WHERE s.id = crm_guests.response_id
-                    AND s.sessions ~* $3))) AS du_gala
+                    AND s.sessions ~* $3))) AS du_gala,
+           ${att.attSql('', att.duSql('', 'crm_guests.response_id', '$2', '$3'))} AS att_status
          FROM crm_guests WHERE id = $1 AND deleted_at IS NULL`,
         [id, SESSION_RE['toa-dam'], SESSION_RE.gala]);
       if (!g.rows[0]) return res.status(404).json({ ok: false, error: 'not found' });
@@ -142,6 +145,10 @@ function mount(app, requireCrmAuth, requireRole) {
           table_no: row.table_no, response_id: row.response_id, created_at: row.created_at,
           du_toa_dam: row.du_toa_dam, du_gala: row.du_gala,
           name_jp: row.name_jp, title_jp: row.title_jp, org_jp: row.org_jp,
+          att_status: row.att_status,
+          att_override: row.att_override || null,
+          att_override_by: row.att_override_by || null,
+          att_override_at: row.att_override_at || null,
         },
         checkIn: ci.rows[0] || null,
         assignments: asg.rows,
@@ -299,6 +306,87 @@ function mount(app, requireCrmAuth, requireRole) {
       // D016 B10 đã dạy một lần: quên trả kết nối về pool thì vài chục lượt là
       // hết pool và MỌI route chết theo, không riêng route này.
       if (client) client.release();
+    }
+  });
+
+  // ---- E08-D031: đổi trạng thái THAM DỰ ----
+  // Sponsor chốt phương án A (05/08): mọi tài khoản đã đăng nhập đổi được —
+  // cửa nay có OTP nên không còn đường ẩn danh, mọi thao tác đều có email đứng
+  // tên. Ba ràng buộc đi kèm, cài ở đây chứ không phải quy ước:
+  //   1. Audit MỌI lần: actor + cũ→mới + thao tác từ đâu.
+  //   2. Ghi vào `att_override`, KHÔNG phá tag gốc ⇒ xoá override là số trở về
+  //      đúng nguyên trạng (gửi status = null để xoá).
+  //   3. BTL xem được danh sách đã sửa tay — route ngay dưới.
+  //
+  // TUYỆT ĐỐI không đụng `crm_check_ins`: "không tham dự" và "chưa đến" là hai
+  // trục khác nhau; gộp chúng là làm hỏng cả hai con số.
+  app.post('/crm/guests/:id/attendance', doorGet, async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
+    const raw = req.body && req.body.status;
+    const status = (raw === null || raw === '' || raw === undefined) ? null : String(raw);
+    if (status !== null && !att.isStatus(status)) {
+      return res.status(400).json({ ok: false, error: 'Trạng thái không hợp lệ (du|khong|cho).' });
+    }
+    // Ghi lại thao tác đến từ màn nào — cùng một người có thể đứng ở /crm hay ở
+    // một trong hai cửa, và khi đối soát số thì cần biết.
+    const src = clean(req.body && req.body.source).slice(0, 24) || 'crm';
+    const duX = att.duSql('', 'crm_guests.response_id', '$2', '$3');
+    let client;
+    try {
+      client = await pool.connect();
+      let before; let after;
+      try {
+        await client.query('BEGIN');
+        // Khoá hàng rồi mới đọc: hai người cùng bấm trên hai máy thì lần ghi sau
+        // phải thấy giá trị của lần trước, không phải giá trị lúc mở trang.
+        const b = await client.query(
+          `SELECT ${att.attSql('', duX)} AS att_status, att_override
+             FROM crm_guests WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`,
+          [id, SESSION_RE['toa-dam'], SESSION_RE.gala]);
+        if (!b.rows[0]) { await client.query('ROLLBACK'); return res.status(404).json({ ok: false, error: 'not found' }); }
+        before = b.rows[0];
+        await client.query(
+          `UPDATE crm_guests SET att_override = $2,
+                  att_override_at = CASE WHEN $2 IS NULL THEN NULL ELSE now() END,
+                  att_override_by = CASE WHEN $2 IS NULL THEN NULL ELSE $3 END,
+                  updated_at = now()
+            WHERE id = $1`, [id, status, req.actor.email]);
+        const a = await client.query(
+          `SELECT ${att.attSql('', duX)} AS att_status FROM crm_guests WHERE id = $1`,
+          [id, SESSION_RE['toa-dam'], SESSION_RE.gala]);
+        after = a.rows[0];
+        await client.query('COMMIT');
+      } catch (e) { await client.query('ROLLBACK').catch(() => {}); throw e; }
+
+      await logAudit(pool, {
+        actor_email: req.actor.email, event_type: 'att_change', target_type: 'guest', target_id: id,
+        meta: { tu: before.att_status, den: after.att_status, override: status, nguon: src },
+        ip: ipOf(req),
+      });
+      return res.json({ ok: true, att_status: after.att_status, att_override: status,
+        truoc: before.att_status });
+    } catch (err) {
+      console.error('[crm-guests] attendance failed:', err.message);
+      return res.status(500).json({ ok: false, error: 'attendance error' });
+    } finally {
+      if (client) client.release();
+    }
+  });
+
+  // Ràng buộc 3 của phương án A: BTL nhìn được TẤT CẢ thẻ đã bị sửa tay, kèm ai
+  // sửa và lúc nào — để đối soát số trước khi chốt báo cáo.
+  app.get('/crm/attendance/overrides', requireCrmAuth, requireRole('btl'), async (req, res) => {
+    try {
+      const r = await pool.query(
+        `SELECT id, full_name, att_override, att_override_by, att_override_at
+           FROM crm_guests
+          WHERE deleted_at IS NULL AND att_override IS NOT NULL
+          ORDER BY att_override_at DESC LIMIT 500`);
+      return res.json({ ok: true, rows: r.rows, count: r.rowCount });
+    } catch (err) {
+      console.error('[crm-guests] overrides failed:', err.message);
+      return res.status(500).json({ ok: false, error: 'overrides error' });
     }
   });
 }

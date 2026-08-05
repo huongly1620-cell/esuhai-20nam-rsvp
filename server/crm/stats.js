@@ -1,6 +1,8 @@
 'use strict';
 
 const { pool } = require('../db');
+// E08-D031: dùng CHUNG luật trạng thái tham dự với list/detail — không chép lại.
+const att = require('./attendance');
 
 // KPI mời ↔ đăng ký ↔ buổi (E08-D016 pha 1).
 // Counts only — never names/phones/emails. Auth-gated like the rest of /crm.
@@ -74,6 +76,22 @@ const SQL_RSVP = `
          coalesce(sum(guest_count) FILTER (WHERE status = 'yes'), 0)::int AS rsvp_guests
   FROM rsvp_submissions`;
 
+// E08-D031 — ba nhóm THAM DỰ, rời nhau và phủ kín khách active.
+// Dùng `att.attSql` y hệt list/detail: một luật, ba nơi. Đếm ở máy chủ để UI và
+// KPI không thể nói hai con số khác nhau (D016 đã có bài học 303 vs 350).
+const SQL_ATT = `
+  WITH g AS (
+    SELECT ${att.attSql('g', att.duSql('g', 'g.response_id', "'" + att.SESSION_RE['toa-dam'] + "'", "'" + att.SESSION_RE.gala + "'"))} AS st,
+           (g.att_override IS NOT NULL) AS manual
+    FROM crm_guests g WHERE g.deleted_at IS NULL
+  )
+  SELECT count(*) FILTER (WHERE st = 'du')::int    AS du,
+         count(*) FILTER (WHERE st = 'khong')::int AS khong,
+         count(*) FILTER (WHERE st = 'cho')::int   AS cho,
+         count(*) FILTER (WHERE manual)::int       AS sua_tay,
+         count(*)::int                             AS tong
+  FROM g`;
+
 // Check-ins of ACTIVE guests only. Guest delete is a soft delete (guests.js sets
 // deleted_at), so the check-in row survives — counting it raw would put
 // `checkedIn` on a different denominator than `invited`.
@@ -107,7 +125,7 @@ function mount(app, requireCrmAuth) {
     let client;
     try {
       client = await pool.connect();
-      let gr, fr, rr, cr, ir;
+      let gr, fr, rr, cr, ir, ar;
       try {
         await client.query('BEGIN TRANSACTION READ ONLY ISOLATION LEVEL REPEATABLE READ');
         gr = await client.query(SQL_GUESTS);
@@ -115,6 +133,7 @@ function mount(app, requireCrmAuth) {
         rr = await client.query(SQL_RSVP);
         cr = await client.query(SQL_CHECKINS);
         ir = await client.query(SQL_INVITED_CHECK);
+        ar = await client.query(SQL_ATT);
         await client.query('COMMIT');
       } catch (e) {
         await client.query('ROLLBACK').catch(() => {});
@@ -164,10 +183,21 @@ function mount(app, requireCrmAuth) {
         sessionList,
         sessionFormKnown: form,
         sessionUnknown: g.session_unknown,
+        // E08-D031: ba nhóm tham dự. `partitionOk` so với SQL_INVITED_CHECK —
+        // một truy vấn KHÁC — chứ không tự so với chính count(*) của mình, vì
+        // phép so đó không bao giờ hỏng được.
+        attendance: {
+          du: ar.rows[0].du,
+          khong: ar.rows[0].khong,
+          cho: ar.rows[0].cho,
+          suaTay: ar.rows[0].sua_tay,
+          tong: ar.rows[0].tong,
+        },
         integrity: {
           partitionOk,
           disjoint,
           bucketsOk,
+          attPartitionOk: (ar.rows[0].du + ar.rows[0].khong + ar.rows[0].cho) === ir.rows[0].n,
           overlapTagAndForm: g.overlap_tag_and_form,
         },
         asOf: new Date().toISOString(),

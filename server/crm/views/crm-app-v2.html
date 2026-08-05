@@ -159,6 +159,13 @@
   .sec{font-size:.63rem;text-transform:uppercase;letter-spacing:.13em;color:var(--gold);margin:18px 0 8px;text-align:left;display:flex;align-items:center;gap:8px;font-weight:700}.sec::after{content:"";flex:1;height:1px;background:var(--line)}
   input.f,select.f,textarea.f{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--inp);color:var(--text);font:inherit}input.f:focus,textarea.f:focus,select.f:focus{outline:none;border-color:var(--line2);box-shadow:0 0 0 3px var(--gold-soft)}
   .fld{margin:9px 0;text-align:left}.fld .lab{font-size:.68rem;color:var(--muted);margin-bottom:4px}
+  /* E08-D031 — trạng thái THAM DỰ. Trục khác hẳn «đã đến»: đây là khách CÓ dự
+     sự kiện không (số vào báo cáo BTC), kia là đã tới cửa chưa. */
+  .attb{font-size:.62rem;font-weight:800;border-radius:6px;padding:2px 7px;white-space:nowrap;letter-spacing:.02em}
+  .attb.khong{color:#2a1e05;background:var(--amber)}
+  .attb.cho{color:var(--muted);border:1px dashed var(--line2)}
+  .attb.du{color:#04240f;background:var(--green,#43e08d)}
+  .attsel{width:100%;font:inherit;font-size:.92rem;color:var(--cream,#eee);background:rgba(5,13,24,.5);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:6px}
   .thumbs{display:flex;gap:8px;flex-wrap:wrap}.thumbs img{width:70px;height:70px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
   /* E08-D028 L-01: dải ảnh hồ sơ trộn ảnh mặt khách với ảnh QUÀ chụp tại quầy
      mà không có gì phân biệt. BTL mở màn này ra để đối chiếu người thật — nhìn
@@ -320,6 +327,7 @@
         <div class="search"><span class="ic">&#128269;</span><input id="q" type="search" placeholder="Tìm tên / SĐT / đơn vị…" data-iph="ph_search"></div>
         <button class="chip" id="chipWait" data-i="only_wait">◔ Chưa đến</button>
         <button class="chip" id="chipDup" data-i="only_dup">⚠ Trùng</button>
+        <select class="sel" id="attSel"><option value="">Tham dự: tất cả</option><option value="du">Có tham dự</option><option value="khong">Không tham dự</option><option value="cho">Chưa xác nhận</option></select>
         <select class="sel" id="sort"><option value="name" data-i="s_name">Theo tên</option><option value="vip" data-i="s_vip">VIP trước</option><option value="table" data-i="s_tbl">Theo bàn</option><option value="status" data-i="s_st">Chưa đến trước</option></select>
         <button class="chip act" id="impBtn2" style="display:none" data-i="imp_btn">⬆ Import</button>
         <button class="chip act" id="expBtn2" data-i="exp_btn">⬇ Xuất</button>
@@ -339,14 +347,14 @@
  "use strict";
  var $=function(s,r){return (r||document).querySelector(s);};
  var me={email:"",role:"staff"};
- var ALL=[], state={tab:"all",q:"",wait:false,dup:false,sort:"name"}, curId=null, DUP={};
+ var ALL=[], state={tab:"all",q:"",wait:false,dup:false,sort:"name",att:""}, curId=null, DUP={};
  /* ── event config (địa điểm + giờ chỉnh được) ── */
  var CFG_DEF={venueToa:"(Bấm ✎ để nhập địa điểm Tọa đàm)",venueGala:"GEM Center · Sảnh Pollux, Tầng 3",toa:"2026-08-08T14:30",gala:"2026-08-08T17:00"};
  function loadCfg(){try{return Object.assign({},CFG_DEF,JSON.parse(localStorage.getItem("crm_event_cfg")||"{}"));}catch(e){return Object.assign({},CFG_DEF);}}
  function saveCfg(c){localStorage.setItem("crm_event_cfg",JSON.stringify(c));CFG=c;}
  var CFG=loadCfg();
- var T={vn:{cap_data:"Dữ liệu",cap_sys:"Hệ thống",add:"＋ Thêm khách",import:"⬆ Nhập CSV/Excel",exp_csv:"⬇ Xuất CSV",exp_xls:"⬇ Xuất Excel",cfg:"⚙ Cài đặt sự kiện",audit:"☰ Nhật ký",logout:"⏻ Đăng xuất",arrived:"Đã đến",toa_s:"Tọa đàm",gala_s:"Gala",ov_h:"Tổng quan & chuẩn bị",toa_full:"TỌA ĐÀM CHUYÊN ĐỀ",gala_full:"GALA TRI ÂN",venue_lbl:"Địa điểm:",edit:"Sửa",buoi_h:"Buổi tham dự (theo số khách)",prep_h:"Việc cần chuẩn bị",ph_task:"Thêm việc cần làm…",ph_search:"Tìm tên / SĐT / đơn vị…",tab_all:"Tất cả",tab_toa:"Tọa đàm",tab_gal:"Gala",only_wait:"◔ Chưa đến",s_name:"Theo tên",s_vip:"VIP trước",s_tbl:"Theo bàn",s_st:"Chưa đến trước",notfound:"Không tìm thấy khách phù hợp.",done_w:"xong",ban:"Bàn",ghe:"Ghế",hang:"Hạng",buoi:"Buổi",phutrach:"Phụ trách",gioitinh:"Giới tính",contact:"Liên hệ",toa:"Tọa đàm chuyên đề",gal:"Gala Lễ kỷ niệm",ci_btn:"◯ Điểm danh — Khách đã đến",ci_on:"Đã điểm danh ·",ci_at_door:"Điểm danh tại cửa — mở «Cửa Tọa đàm» hoặc «Cửa Gala» ở đầu màn",inter_h:"Ghi tương tác",kind_call:"gọi",kind_meet:"gặp",kind_photo:"gửi ảnh",kind_other:"khác",edit_h:"Sửa thông tin",save:"Lưu",photo_h:"Ảnh khách",photo_up:"📷 Chụp / tải ảnh lên",qua_anh:"Ảnh quà / ghi nhận tại quầy",no_photo:"Chưa có ảnh.",del:"Xoá khách này",showing:"Hiển thị",of:"trên",arr2:"đã đến",done_toast:"Đã điểm danh ✓",saved:"Đã lưu ✓",exported:"Đã xuất file ✓",cfg_saved:"Đã lưu cài đặt ✓",days:"ngày",over:"Đã diễn ra",cfg_h:"Cài đặt sự kiện",cfg_venue:"Địa điểm",cfg_toa:"Giờ Tọa đàm",cfg_gala:"Giờ Gala",cfg_venue_toa:"Địa điểm Tọa đàm",cfg_venue_gala:"Địa điểm Gala",venue_edit:"✎ Sửa địa điểm & giờ",only_dup:"⚠ Trùng",imp_btn:"⬆ Import",exp_btn:"⬇ Xuất",exp_choose:"Xuất danh sách khách",nav_toa:"Cửa Tọa đàm",nav_gala:"Cửa Gala",dup_warn:"Có khách khác TRÙNG TÊN — vui lòng kiểm tra!",b_list:"Theo danh sách mời",b_form:"Theo bản đăng ký",b_none:"Chưa rõ buổi",b_none_d:"chưa có trên danh sách và chưa nối được đăng ký",b_sum:"Cộng ba nhóm =",b_only_gala:"chỉ Gala",b_both:"cả hai buổi",b_only_toa:"chỉ Tọa đàm",b_unspec:"chưa nêu buổi",b_wait:"Chưa tải được số buổi — thử lại sau.",b_du:"Dự"},
-   jp:{cap_data:"データ",cap_sys:"システム",add:"＋ ゲスト追加",import:"⬆ CSV/Excel取込",exp_csv:"⬇ CSV出力",exp_xls:"⬇ Excel出力",cfg:"⚙ イベント設定",audit:"☰ 監査ログ",logout:"⏻ ログアウト",arrived:"受付済",toa_s:"座談会",gala_s:"ガラ",ov_h:"概要と準備",toa_full:"座談会",gala_full:"ガラ晩餐会",venue_lbl:"会場:",edit:"編集",buoi_h:"ご出席セッション(人数)",prep_h:"開催前の準備事項",ph_task:"作業を追加…",ph_search:"氏名/電話/所属で検索…",tab_all:"すべて",tab_toa:"座談会",tab_gal:"ガラ",only_wait:"◔ 未受付",s_name:"氏名順",s_vip:"VIP優先",s_tbl:"テーブル順",s_st:"未受付優先",notfound:"該当するゲストが見つかりません。",done_w:"完了",ban:"テーブル",ghe:"お席",hang:"ランク",buoi:"セッション",phutrach:"ご担当",gioitinh:"性別",contact:"ご連絡先",toa:"座談会",gal:"ガラ晩餐会",ci_btn:"◯ 受付 — ご来場",ci_on:"受付済 ·",ci_at_door:"受付は入口ページで行います — 上部の「受付 座談会 / ガラ」から",inter_h:"応対記録",kind_call:"電話",kind_meet:"面談",kind_photo:"写真送付",kind_other:"その他",edit_h:"情報を編集",save:"保存",photo_h:"ゲスト写真",photo_up:"📷 写真を撮影/アップロード",qua_anh:"贈り物・受付記録の写真",no_photo:"写真なし。",del:"このゲストを削除",showing:"表示",of:"／",arr2:"受付済",done_toast:"受付完了 ✓",saved:"保存しました ✓",exported:"ファイルを出力 ✓",cfg_saved:"設定を保存 ✓",days:"日",over:"開催済み",cfg_h:"イベント設定",cfg_venue:"会場",cfg_toa:"座談会 開始",cfg_gala:"ガラ 開始",cfg_venue_toa:"座談会 会場",cfg_venue_gala:"ガラ 会場",venue_edit:"✎ 会場・時刻を編集",only_dup:"⚠ 重複",imp_btn:"⬆ 取込",exp_btn:"⬇ 出力",exp_choose:"ゲスト一覧を出力",nav_toa:"受付 座談会",nav_gala:"受付 ガラ",dup_warn:"同姓同名のゲストがいます — ご確認ください！",b_list:"招待リスト基準",b_form:"申込フォーム基準",b_none:"セッション不明",b_none_d:"リストにも申込にも未紐付け",b_sum:"3グループ合計 =",b_only_gala:"ガラのみ",b_both:"両セッション",b_only_toa:"座談会のみ",b_unspec:"セッション未記入",b_wait:"セッション数を取得できません。後ほど再試行してください。",b_du:"出席"}};
+ var T={vn:{cap_data:"Dữ liệu",cap_sys:"Hệ thống",add:"＋ Thêm khách",import:"⬆ Nhập CSV/Excel",exp_csv:"⬇ Xuất CSV",exp_xls:"⬇ Xuất Excel",cfg:"⚙ Cài đặt sự kiện",audit:"☰ Nhật ký",logout:"⏻ Đăng xuất",arrived:"Đã đến",toa_s:"Tọa đàm",gala_s:"Gala",ov_h:"Tổng quan & chuẩn bị",toa_full:"TỌA ĐÀM CHUYÊN ĐỀ",gala_full:"GALA TRI ÂN",venue_lbl:"Địa điểm:",edit:"Sửa",buoi_h:"Buổi tham dự (theo số khách)",prep_h:"Việc cần chuẩn bị",ph_task:"Thêm việc cần làm…",ph_search:"Tìm tên / SĐT / đơn vị…",tab_all:"Tất cả",tab_toa:"Tọa đàm",tab_gal:"Gala",only_wait:"◔ Chưa đến",s_name:"Theo tên",s_vip:"VIP trước",s_tbl:"Theo bàn",s_st:"Chưa đến trước",notfound:"Không tìm thấy khách phù hợp.",done_w:"xong",ban:"Bàn",ghe:"Ghế",hang:"Hạng",buoi:"Buổi",phutrach:"Phụ trách",gioitinh:"Giới tính",contact:"Liên hệ",toa:"Tọa đàm chuyên đề",gal:"Gala Lễ kỷ niệm",ci_btn:"◯ Điểm danh — Khách đã đến",ci_on:"Đã điểm danh ·",ci_at_door:"Điểm danh tại cửa — mở «Cửa Tọa đàm» hoặc «Cửa Gala» ở đầu màn",inter_h:"Ghi tương tác",kind_call:"gọi",kind_meet:"gặp",kind_photo:"gửi ảnh",kind_other:"khác",edit_h:"Sửa thông tin",save:"Lưu",photo_h:"Ảnh khách",photo_up:"📷 Chụp / tải ảnh lên",att_h:"Trạng thái tham dự",att_du:"Có tham dự",att_khong:"Không tham dự",att_cho:"Chưa xác nhận",att_sec:"Tham dự sự kiện",att_manual:"đã sửa tay",att_set:"Đổi trạng thái",att_ok:"Đã cập nhật ✓",att_fail:"Không đổi được",att_ask:"Xác nhận khách KHÔNG tham dự?\n\nĐây là số báo cáo, KHÔNG phải «chưa đến».",qua_anh:"Ảnh quà / ghi nhận tại quầy",no_photo:"Chưa có ảnh.",del:"Xoá khách này",showing:"Hiển thị",of:"trên",arr2:"đã đến",done_toast:"Đã điểm danh ✓",saved:"Đã lưu ✓",exported:"Đã xuất file ✓",cfg_saved:"Đã lưu cài đặt ✓",days:"ngày",over:"Đã diễn ra",cfg_h:"Cài đặt sự kiện",cfg_venue:"Địa điểm",cfg_toa:"Giờ Tọa đàm",cfg_gala:"Giờ Gala",cfg_venue_toa:"Địa điểm Tọa đàm",cfg_venue_gala:"Địa điểm Gala",venue_edit:"✎ Sửa địa điểm & giờ",only_dup:"⚠ Trùng",imp_btn:"⬆ Import",exp_btn:"⬇ Xuất",exp_choose:"Xuất danh sách khách",nav_toa:"Cửa Tọa đàm",nav_gala:"Cửa Gala",dup_warn:"Có khách khác TRÙNG TÊN — vui lòng kiểm tra!",b_list:"Theo danh sách mời",b_form:"Theo bản đăng ký",b_none:"Chưa rõ buổi",b_none_d:"chưa có trên danh sách và chưa nối được đăng ký",b_sum:"Cộng ba nhóm =",b_only_gala:"chỉ Gala",b_both:"cả hai buổi",b_only_toa:"chỉ Tọa đàm",b_unspec:"chưa nêu buổi",b_wait:"Chưa tải được số buổi — thử lại sau.",b_du:"Dự"},
+   jp:{cap_data:"データ",cap_sys:"システム",add:"＋ ゲスト追加",import:"⬆ CSV/Excel取込",exp_csv:"⬇ CSV出力",exp_xls:"⬇ Excel出力",cfg:"⚙ イベント設定",audit:"☰ 監査ログ",logout:"⏻ ログアウト",arrived:"受付済",toa_s:"座談会",gala_s:"ガラ",ov_h:"概要と準備",toa_full:"座談会",gala_full:"ガラ晩餐会",venue_lbl:"会場:",edit:"編集",buoi_h:"ご出席セッション(人数)",prep_h:"開催前の準備事項",ph_task:"作業を追加…",ph_search:"氏名/電話/所属で検索…",tab_all:"すべて",tab_toa:"座談会",tab_gal:"ガラ",only_wait:"◔ 未受付",s_name:"氏名順",s_vip:"VIP優先",s_tbl:"テーブル順",s_st:"未受付優先",notfound:"該当するゲストが見つかりません。",done_w:"完了",ban:"テーブル",ghe:"お席",hang:"ランク",buoi:"セッション",phutrach:"ご担当",gioitinh:"性別",contact:"ご連絡先",toa:"座談会",gal:"ガラ晩餐会",ci_btn:"◯ 受付 — ご来場",ci_on:"受付済 ·",ci_at_door:"受付は入口ページで行います — 上部の「受付 座談会 / ガラ」から",inter_h:"応対記録",kind_call:"電話",kind_meet:"面談",kind_photo:"写真送付",kind_other:"その他",edit_h:"情報を編集",save:"保存",photo_h:"ゲスト写真",photo_up:"📷 写真を撮影/アップロード",att_h:"ご出欠",att_du:"出席",att_khong:"欠席",att_cho:"未確認",att_sec:"ご出欠",att_manual:"手動変更",att_set:"変更",att_ok:"更新しました ✓",att_fail:"更新できません",att_ask:"このゲストを欠席にしますか？\n\n受付状況（来場済）とは別の項目です。",qua_anh:"贈り物・受付記録の写真",no_photo:"写真なし。",del:"このゲストを削除",showing:"表示",of:"／",arr2:"受付済",done_toast:"受付完了 ✓",saved:"保存しました ✓",exported:"ファイルを出力 ✓",cfg_saved:"設定を保存 ✓",days:"日",over:"開催済み",cfg_h:"イベント設定",cfg_venue:"会場",cfg_toa:"座談会 開始",cfg_gala:"ガラ 開始",cfg_venue_toa:"座談会 会場",cfg_venue_gala:"ガラ 会場",venue_edit:"✎ 会場・時刻を編集",only_dup:"⚠ 重複",imp_btn:"⬆ 取込",exp_btn:"⬇ 出力",exp_choose:"ゲスト一覧を出力",nav_toa:"受付 座談会",nav_gala:"受付 ガラ",dup_warn:"同姓同名のゲストがいます — ご確認ください！",b_list:"招待リスト基準",b_form:"申込フォーム基準",b_none:"セッション不明",b_none_d:"リストにも申込にも未紐付け",b_sum:"3グループ合計 =",b_only_gala:"ガラのみ",b_both:"両セッション",b_only_toa:"座談会のみ",b_unspec:"セッション未記入",b_wait:"セッション数を取得できません。後ほど再試行してください。",b_du:"出席"}};
  var LANG=localStorage.getItem("crm_lang")||"vn";
  function tt(k){return (T[LANG]&&T[LANG][k])||T.vn[k]||k;}
  /* ── checklist (thêm/xoá/tick tự do) ── */
@@ -409,6 +417,32 @@ async function addShrunk(fd,file){
   var pv=await shrinkImg(file,1024,.8); if(pv)fd.append("preview",pv,"t1024.jpg");
   return fd;
 }
+
+ /* ─────────── E08-D031 · trạng thái THAM DỰ ───────────
+    Đọc field máy chủ trả, KHÔNG tự suy từ `tags`: D016 đã có bài học client tự
+    đếm tag nên nói 303 trong khi KPI nói 350. Một luật, ba nơi (list · hồ sơ ·
+    /crm/stats) — tất cả cùng `att_status` từ server/crm/attendance.js. */
+ function attOf(g){return g&&g.att_status?g.att_status:"";}
+ function attLbl(a){return a==="du"?tt("att_du"):(a==="khong"?tt("att_khong"):(a==="cho"?tt("att_cho"):""));}
+ function attBadge(g){var a=attOf(g);
+   /* Trên LIST chỉ gắn nhãn khi KHÁC «có dự» — 320/344 khách là có dự, gắn hết
+      thì nhãn thành nhiễu và che mất đúng hai nhóm cần chú ý. */
+   if(a!=="khong"&&a!=="cho")return "";
+   return '<span class="attb '+a+'">'+esc(attLbl(a))+'</span>';}
+ async function setAtt(id,status,el){
+   if(status==="khong"&&!confirm(tt("att_ask"))){if(el)el.value=el.getAttribute("data-cur")||"";return;}
+   if(el)el.disabled=true;
+   try{
+     var r=await api("/crm/guests/"+id+"/attendance",{method:"POST",
+       headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({status:status,source:"crm"})});
+     /* fetch KHÔNG ném khi 4xx/5xx — không kiểm r.ok thì màn đổi nhãn trong khi
+        DB không đổi gì (lớp lỗi CỬA-2). */
+     if(!r.ok){if(el){el.disabled=false;el.value=el.getAttribute("data-cur")||"";}
+       toast(tt("att_fail")+" ("+r.status+")","err");return;}
+     toast(tt("att_ok"),"ok");openGuest(id);loadAll();
+   }catch(e){if(el){el.disabled=false;el.value=el.getAttribute("data-cur")||"";}
+     toast(tt("att_fail"),"err");}}
  function vipLbl(g){var v=vipOf(g);return /^v?vip/i.test(v)?v.toUpperCase():v;}
  function vipRank(g){var v=noAcc(vipOf(g)).replace(/[^0-9]/g,"");return v?parseInt(v,10):(vipOf(g)?1:99);}
  function noteF(g,label){var m=new RegExp(label+"\\s*[:：]\\s*([^·]+)").exec(g.note||"");return m?m[1].trim():"";}
@@ -482,6 +516,22 @@ async function addShrunk(fd,file){
       +box(s.linked,'Mời đã nối form','ghép được thẻ mời ↔ bản đăng ký')
       +box(s.unlinked,'Mời chưa nối form','chưa ghép được');
 
+    // E08-D031: ba nhóm THAM DỰ — rời nhau, cộng lại bằng tổng khách active.
+    // KHÔNG gộp "chưa xác nhận" vào "không dự", KHÔNG mặc định tất cả tham dự.
+    var at=s.attendance||{};
+    var attHtml='';
+    if(typeof at.du==="number"&&typeof at.khong==="number"&&typeof at.cho==="number"){
+      attHtml='<div class="ksec"><h4>'+tt("att_sec")+'</h4><div class="kpart">'
+        +part1(tt("att_du"),at.du,'có buổi Tọa đàm hoặc Gala')
+        +part1(tt("att_khong"),at.khong,'đã trả lời KHÔNG dự')
+        +part1(tt("att_cho"),at.cho,'chưa trả lời — KHÔNG phải "không dự"')
+        +'</div>'
+        +(ig.attPartitionOk===false
+          ? '<div class="kwarn">&#9888; Ba nhóm tham dự cộng lại không bằng tổng khách active — số đang lệch, đừng dùng để báo cáo.</div>'
+          : '<div class="ksum">Cộng ba nhóm = <b>'+(at.du+at.khong+at.cho)+'</b> = tổng khách active'
+            +(at.suaTay?' &#183; trong đó <b>'+at.suaTay+'</b> thẻ đã sửa tay':'')+'</div>')
+        +'</div>';
+    }
     var part=''
       +part1('Buổi theo danh sách',sl.tagged,'Chỉ Gala '+sl.onlyGala+' &#183; Cả hai buổi '+sl.both+(sl.onlyToaDam?' &#183; Chỉ Tọa đàm '+sl.onlyToaDam:''))
       +part1('Buổi theo bản đăng ký',fk.total,'Gala '+fk.gala+' &#183; Tọa đàm&#183;Gala '+fk.toaDamGala+(fk.toaDamOnly?' &#183; Chỉ Tọa đàm '+fk.toaDamOnly:'')+(fk.unspecified?' &#183; chưa nêu buổi '+fk.unspecified:''))
@@ -509,6 +559,7 @@ async function addShrunk(fd,file){
     $("#kpiBody").innerHTML=
       '<div class="kgrid">'+top+'</div>'
       +'<div class="hint">Chưa nối ≠ chưa đăng ký — chỉ là chưa ghép được thẻ mời với bản đăng ký (thiếu SĐT / khác tên).</div>'
+      +attHtml
       +'<div class="ksec"><h4>Chia theo buổi</h4><div class="kpart">'+part+'</div>'
       +sum+warn
       +'<div class="hint">Một khách có thể dự cả hai buổi — các số buổi có thể lồng nhau.'
@@ -550,6 +601,7 @@ async function addShrunk(fd,file){
    if(state.tab!=="all"&&!duBuoi(g,state.tab))return false;
    if(state.wait&&g.checked_in)return false;
    if(state.dup&&!isDup(g))return false;
+   if(state.att&&attOf(g)!==state.att)return false;
    if(state.q){var s=noAcc(state.q);if(// Đánh chỉ mục cả 3 field JP: sau E3, PG Nhật gõ 山田 mà không ra ai thì
    // dữ liệu JP coi như vô dụng ở cửa.
    noAcc(g.full_name+" "+(g.org||"")+" "+(g.title||"")+" "+(g.phone||"")+" "+(g.name_jp||"")+" "+(g.title_jp||"")+" "+(g.org_jp||"")).indexOf(s)===-1)return false;}
@@ -602,7 +654,7 @@ function pairVJ(vn,jp){
       // Thumb ở màn chi tiết (:497) vốn đã có lazy; đây là đồng bộ lại.
       +'<div class="av">'+(g.photo_url?'<img src="'+esc(g.photo_url)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">':esc(ini(g.full_name)))+'<span class="sd'+(g.checked_in?" in":"")+'"></span></div>'
       +'<div class="nm"><div class="n1">'+pairVJ(g.full_name,g.name_jp)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+(isDup(g)?' <span class="tag dup">⚠ TRÙNG</span>':'')+'</div><div class="n2">'+(pairVJ([g.org,g.title].filter(Boolean).join(" · "),[g.org_jp,g.title_jp].filter(Boolean).join(" · "))||"—")+'</div></div>'
-      +'<div class="rb">'+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')+(g.checked_in?'<span class="tag in">✓ '+hhmm(g.checked_in_at)+'</span>':(g.table_no?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':''))+'</div></div>';
+      +'<div class="rb">'+attBadge(g)+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')+(g.checked_in?'<span class="tag in">✓ '+hhmm(g.checked_in_at)+'</span>':(g.table_no?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':''))+'</div></div>';
    }).join("");
  }
  /* ---- hồ sơ khách (giữ nguyên endpoint) — SĐT ẩn khi hiển thị ---- */
@@ -637,6 +689,12 @@ window.imgFit=imgFit;
    $("#sheetBody").innerHTML=
      '<div class="pf-av">'+(pu?'<img src="'+esc(pu)+'" loading="lazy" onload="imgFit(this)" onerror="this.remove()">':esc(ini(g.full_name)))+'</div>'
     +'<div class="pf-nm">'+pairVJ(g.full_name,g.name_jp)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+'</div><div class="pf-rl">'+(pairVJ([g.org,g.title].filter(Boolean).join(" · "),[g.org_jp,g.title_jp].filter(Boolean).join(" · "))||"—")+'</div>'
+    +'<div style="margin:8px 0"><span class="attb '+(attOf(j.guest)||"cho")+'">'+esc(attLbl(attOf(j.guest)))+'</span>'
+     +(j.guest&&j.guest.att_override?' <span class="hint" style="font-size:.7rem">('+tt("att_manual")+')</span>':'')+'</div>'
+    +(me.role==="btl"?'<div class="fld"><label class="lb">'+tt("att_set")+'</label>'
+      +'<select class="attsel" id="attSel1" data-cur="'+esc(attOf(j.guest))+'">'
+      +['du','khong','cho'].map(function(v){return '<option value="'+v+'"'+(attOf(j.guest)===v?' selected':'')+'>'+esc(attLbl(v))+'</option>';}).join("")
+      +'</select></div>':'')
     +(isDup(g)?'<div class="dupwarn">⚠ '+tt("dup_warn")+'</div>':'')+'<div class="th"><div><div class="k">'+tt("ban")+'</div><div class="v num">'+esc(g.table_no||"—")+'</div></div></div>'
     +'<div class="facts"><div class="ft"><div class="k">'+tt("buoi")+'</div><div class="v">'+esc(buoiOf(g))+'</div></div>'+(vipLbl(g)?'<div class="ft"><div class="k">'+tt("hang")+'</div><div class="v">'+esc(vipLbl(g))+'</div></div>':'')+(gt?'<div class="ft"><div class="k">'+tt("gioitinh")+'</div><div class="v">'+esc(gt)+'</div></div>':'')+'</div>'
     +'<div class="info"><div class="ir"><span class="k">'+tt("contact")+'</span><span class="v">'+esc(contact)+'</span></div>'
@@ -651,6 +709,7 @@ window.imgFit=imgFit;
    $("#iSave").addEventListener("click",async function(){var b=$("#iBody").value.trim();if(!b){gmsg("Nhập nội dung.","err");return;}var r=await jsend("/crm/guests/"+g.id+"/interactions","POST",{kind:$("#iKind").value,body:b});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);}else gmsg(r.body.error||"Lỗi.","err");});
    $("#eSave").addEventListener("click",async function(){var r=await jsend("/crm/guests/"+g.id,"PATCH",{phone:$("#ePhone").value,org:$("#eOrg").value,title:$("#eTitle").value,note:$("#eNote").value});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else gmsg(r.body.error||"Lỗi.","err");});
    var delBtn=$("#delBtn");if(delBtn)delBtn.addEventListener("click",async function(){if(!confirm("Xoá khách "+g.full_name+"?"))return;var r=await jsend("/crm/guests/"+g.id,"DELETE");if(r.ok){$("#sheet").classList.remove("show");toast("Đã xoá","ok");loadAll();}else gmsg(r.body.error||"Lỗi.","err");});
+   var aSel=$("#attSel1");if(aSel)aSel.addEventListener("change",function(){setAtt(g.id,this.value,this);});
    $("#photoInput").addEventListener("change",async function(){var f=this.files&&this.files[0];if(!f)return;gmsg("Đang tải ảnh…","ok");var fd=new FormData();fd.append("photo",f);await addShrunk(fd,f);try{var r=await api("/crm/guests/"+g.id+"/photos",{method:"POST",body:fd});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else{var jj=await r.json().catch(function(){return {};});gmsg(jj.error||"Lỗi tải ảnh.","err");}}catch(e){gmsg("Lỗi tải ảnh.","err");}});
  }
  function gmsg(t,c){var m=$("#gMsg");if(m){m.textContent=t;m.className="msg"+(c?(" "+c):"");}}
@@ -694,6 +753,7 @@ window.imgFit=imgFit;
  $("#q").addEventListener("input",function(e){state.q=e.target.value;renderList();});
  $("#chipWait").addEventListener("click",function(){state.wait=!state.wait;this.classList.toggle("on",state.wait);renderList();});
  $("#chipDup").addEventListener("click",function(){state.dup=!state.dup;this.classList.toggle("on",state.dup);renderList();});
+ $("#attSel").addEventListener("change",function(){state.att=this.value;renderList();});
  $("#impBtn2").addEventListener("click",openImport);
  $("#expBtn2").addEventListener("click",openExport);
  $("#sort").addEventListener("change",function(e){state.sort=e.target.value;renderList();});

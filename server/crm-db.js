@@ -111,6 +111,15 @@ ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS org_jp   TEXT;
 -- Cả bốn cột NULLABLE và chỉ THÊM: khoá NULL nghĩa là chưa có bản dẫn xuất, mọi
 -- đường dẫn tự lùi về ảnh gốc (đúng hành vi trước vé). Nhờ vậy deploy được
 -- TRƯỚC khi backfill xong, và backfill dừng giữa chừng không hỏng gì.
+-- E08-D031: trạng thái tham dự sửa TAY. NULL = chưa ai đụng → giá trị suy ra từ
+-- tag/form (xem server/crm/attendance.js). Cột riêng chứ KHÔNG sửa `tags`:
+-- import merge tag (bản vá sau sự cố Pha 2), nên chiều "tham dự → không dự"
+-- phải XOÁ tag buổi và lượt import sau sẽ gắn lại — đúng chiều Ly cần nhất.
+-- Cột riêng ⇒ import không bao giờ chạm, và xoá override là số trở về nguyên trạng.
+ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS att_override    TEXT;
+ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS att_override_at TIMESTAMPTZ;
+ALTER TABLE crm_guests ADD COLUMN IF NOT EXISTS att_override_by TEXT;
+
 ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS thumb_key    TEXT;
 ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS thumb_size   INTEGER;
 ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS preview_key  TEXT;

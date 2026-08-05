@@ -726,7 +726,64 @@ window.imgFit=imgFit;
  function gmsg(t,c){var m=$("#gMsg");if(m){m.textContent=t;m.className="msg"+(c?(" "+c):"");}}
  /* ---- btl: add / import / audit / settings ---- */
  function openAdd(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:12px">Thêm khách mới</h2><div class="fld"><input class="f" id="nName" placeholder="Họ tên *"></div><div class="fld"><input class="f" id="nPhone" placeholder="SĐT"></div><div class="fld"><input class="f" id="nOrg" placeholder="Đơn vị"></div><div class="fld"><input class="f" id="nTitle" placeholder="Chức danh"></div><button class="btn gold block" id="nSave">Tạo khách</button><div class="msg" id="nMsg"></div>';$("#nSave").addEventListener("click",async function(){var name=$("#nName").value.trim();if(!name){$("#nMsg").textContent="Nhập họ tên.";$("#nMsg").className="msg err";return;}var r=await jsend("/crm/guests","POST",{full_name:name,phone:$("#nPhone").value,org:$("#nOrg").value,title:$("#nTitle").value});if(r.ok){$("#sheet2").classList.remove("show");toast(tt("saved"),"ok");loadAll();openGuest(r.body.id);}else{$("#nMsg").textContent=r.body.error||"Lỗi.";$("#nMsg").className="msg err";}});$("#sheet2").classList.add("show");}
- function openImport(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:8px">Nhập CSV/Excel</h2><p style="color:var(--muted);font-size:.84rem">Cột: guest_ext_id, full_name, org, title, phone, email, assigned_email, tags. Upsert (chạy lại không nhân đôi).</p><input class="f" type="file" id="impFile" accept=".csv,.xlsx"><button class="btn gold block" id="impRun" style="margin-top:10px">Chạy import</button><div class="msg" id="impMsg"></div>';$("#impRun").addEventListener("click",async function(){var f=$("#impFile").files&&$("#impFile").files[0];if(!f){$("#impMsg").textContent="Chọn file.";$("#impMsg").className="msg err";return;}$("#impMsg").textContent="Đang import…";var fd=new FormData();fd.append("file",f);try{var r=await api("/crm/import",{method:"POST",body:fd});var jj=await r.json().catch(function(){return {};});if(r.ok){$("#impMsg").textContent="Xong: tạo "+jj.created+", cập nhật "+jj.updated+".";$("#impMsg").className="msg ok";toast(tt("saved"),"ok");loadAll();}else{$("#impMsg").textContent=jj.error||"Lỗi.";$("#impMsg").className="msg err";}}catch(e){$("#impMsg").textContent="Lỗi import.";$("#impMsg").className="msg err";}});$("#sheet2").classList.add("show");}
+
+ function openImportUpdate(){
+   $("#sheet2Body").innerHTML=
+     '<h2 style="margin-bottom:6px">Nhập file CẬP NHẬT</h2>'
+    +'<p style="color:var(--muted);font-size:.8rem;line-height:1.5;margin-bottom:12px">'
+    +'Dùng đúng file tải từ <b>«Xuất để CẬP NHẬT»</b>. Ô để trống = <b>không đổi</b>; muốn xoá thì gõ <b>(xoá)</b>.<br>'
+    +'Bước 1 <b>kiểm thử</b> chỉ đếm, <b>không ghi gì</b>. Xem số xong mới hiện nút ghi.</p>'
+    +'<input class="f" type="file" id="iuFile" accept=".csv,.xlsx">'
+    +'<button class="btn block" id="iuDry" style="margin-top:10px">① Kiểm thử (không ghi)</button>'
+    +'<div class="msg" id="iuMsg"></div><div id="iuNum"></div><div id="iuGo"></div>';
+   var file=null;
+   function tomTat(j){
+     var x=j.seXoa||{};
+     return '<div class="msg ok" style="line-height:1.6">'
+       +'Cập nhật <b>'+j.capNhat+'</b> · tạo mới <b>'+(j.taoMoiDuKien!==undefined?j.taoMoiDuKien:j.taoMoi)+'</b> · không khớp <b>'+j.khongKhop+'</b>'
+       +'<br>Sẽ xoá: bàn <b>'+(x.ban||0)+'</b> · ghế <b>'+(x.ghe||0)+'</b> · trạng thái <b>'+(x.att||0)+'</b>'
+       +(j.loi?'<br>Dòng lỗi: <b>'+j.loi+'</b>':'')
+       +(j.ghiChu?'<br><span style="color:var(--muted);font-size:.78rem">'+esc(j.ghiChu)+'</span>':'')
+       +(j.danhSachKhongKhop&&j.danhSachKhongKhop.length?'<br><span style="color:var(--muted);font-size:.76rem">Không khớp: '+j.danhSachKhongKhop.map(function(k){return esc(k.ma);}).slice(0,10).join(", ")+'</span>':'')
+       +(j.danhSachLoi&&j.danhSachLoi.length?'<br><span style="color:#ff9a8f;font-size:.76rem">'+j.danhSachLoi.map(function(k){return "dòng "+k.dong+": "+esc(k.lyDo);}).slice(0,10).join("<br>")+'</span>':'')
+       +'</div>';
+   }
+   $("#iuDry").addEventListener("click",async function(){
+     file=$("#iuFile").files&&$("#iuFile").files[0];
+     $("#iuGo").innerHTML="";
+     if(!file){$("#iuMsg").textContent="Chọn file.";$("#iuMsg").className="msg err";return;}
+     $("#iuMsg").textContent="Đang kiểm thử…";$("#iuMsg").className="msg";
+     var fd=new FormData();fd.append("file",file);
+     try{
+       var r=await api("/crm/import-update/dry-run",{method:"POST",body:fd});
+       var j=await r.json().catch(function(){return {};});
+       if(!r.ok){$("#iuMsg").textContent=j.error||("Lỗi ("+r.status+")");$("#iuMsg").className="msg err";return;}
+       $("#iuMsg").textContent="";$("#iuNum").innerHTML=tomTat(j);
+       if(j.loi){ $("#iuGo").innerHTML='<div class="msg err">Còn '+j.loi+' dòng lỗi — sửa file rồi kiểm thử lại. Chưa ghi được.</div>'; return; }
+       /* Chỉ ĐẾN LÚC NÀY nút ghi mới được tạo ra. */
+       $("#iuGo").innerHTML='<button class="btn gold block" id="iuCommit" style="margin-top:12px">② Ghi thật vào hệ thống</button>';
+       $("#iuCommit").addEventListener("click",async function(){
+         if(!confirm("Ghi thật "+j.capNhat+" cập nhật và "+(j.taoMoiDuKien||0)+" khách mới vào hệ thống?"))return;
+         this.disabled=true;this.textContent="Đang ghi…";
+         var fd2=new FormData();fd2.append("file",file);
+         try{
+           var r2=await api("/crm/import-update/commit",{method:"POST",body:fd2});
+           var j2=await r2.json().catch(function(){return {};});
+           if(!r2.ok){$("#iuMsg").textContent=j2.error||("Lỗi ("+r2.status+")");$("#iuMsg").className="msg err";
+             this.disabled=false;this.textContent="② Ghi thật vào hệ thống";return;}
+           $("#iuNum").innerHTML=tomTat(j2);
+           $("#iuGo").innerHTML='<div class="msg ok">Đã ghi xong.</div>';
+           toast("Đã cập nhật danh sách ✓","ok"); loadAll();
+         }catch(e){$("#iuMsg").textContent="Lỗi mạng — CHƯA ghi.";$("#iuMsg").className="msg err";
+           this.disabled=false;this.textContent="② Ghi thật vào hệ thống";}
+       });
+     }catch(e){$("#iuMsg").textContent="Lỗi mạng.";$("#iuMsg").className="msg err";}
+   });
+ }
+ function openImport(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:8px">Nhập CSV/Excel</h2><p style="color:var(--muted);font-size:.84rem">Cột: guest_ext_id, full_name, org, title, phone, email, assigned_email, tags. Upsert (chạy lại không nhân đôi).</p><input class="f" type="file" id="impFile" accept=".csv,.xlsx"><button class="btn gold block" id="impRun" style="margin-top:10px">Chạy import</button><div class="msg" id="impMsg"></div>'
+    +'<div style="border-top:1px solid var(--line);margin:14px 0 10px"></div>'
+    +'<p style="color:var(--muted);font-size:.8rem;margin-bottom:8px">Có file tải từ «Xuất để CẬP NHẬT»? Nút trên <b>không</b> đọc được Bàn/Ghế/Trạng thái — dùng nút dưới.</p>'
+    +'<button class="btn block" id="impUpd">⬆ Nhập file CẬP NHẬT (Bàn · Ghế · Trạng thái)</button>';var bu2=$("#impUpd");if(bu2)bu2.addEventListener("click",openImportUpdate);$("#impRun").addEventListener("click",async function(){var f=$("#impFile").files&&$("#impFile").files[0];if(!f){$("#impMsg").textContent="Chọn file.";$("#impMsg").className="msg err";return;}$("#impMsg").textContent="Đang import…";var fd=new FormData();fd.append("file",f);try{var r=await api("/crm/import",{method:"POST",body:fd});var jj=await r.json().catch(function(){return {};});if(r.ok){$("#impMsg").textContent="Xong: tạo "+jj.created+", cập nhật "+jj.updated+".";$("#impMsg").className="msg ok";toast(tt("saved"),"ok");loadAll();}else{$("#impMsg").textContent=jj.error||"Lỗi.";$("#impMsg").className="msg err";}}catch(e){$("#impMsg").textContent="Lỗi import.";$("#impMsg").className="msg err";}});$("#sheet2").classList.add("show");}
  async function openAudit(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:10px">Nhật ký (audit)</h2><div id="audArea" class="msg">Đang tải…</div><a class="btn block" href="/crm/audit/export.csv" style="margin-top:10px">⬇ Xuất CSV</a>';$("#sheet2").classList.add("show");try{var j=await jget("/crm/audit?limit=100");var rows=(j.rows||[]).map(function(x){return '<tr><td>'+esc(fmt(x.created_at))+'</td><td>'+esc(x.actor_email||"—")+'</td><td>'+esc(x.event_type)+'</td><td>'+esc(x.target_id||"")+'</td></tr>';}).join("");$("#audArea").outerHTML='<table class="aud"><tbody>'+(rows||'<tr><td>Chưa có.</td></tr>')+'</tbody></table>';}catch(e){}}
  function openCfg(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:12px">'+tt("cfg_h")+'</h2><div class="sec" style="margin-top:4px">'+tt("toa_full")+'</div><div class="fld"><div class="lab">'+tt("cfg_venue_toa")+'</div><input class="f" id="cVenueToa" value="'+esc(CFG.venueToa)+'"></div><div class="fld"><div class="lab">'+tt("cfg_toa")+'</div><input class="f" id="cToa" type="datetime-local" value="'+esc(CFG.toa)+'"></div><div class="sec">'+tt("gala_full")+'</div><div class="fld"><div class="lab">'+tt("cfg_venue_gala")+'</div><input class="f" id="cVenueGala" value="'+esc(CFG.venueGala)+'"></div><div class="fld"><div class="lab">'+tt("cfg_gala")+'</div><input class="f" id="cGala" type="datetime-local" value="'+esc(CFG.gala)+'"></div><button class="btn gold block" id="cSave" style="margin-top:6px">'+tt("save")+'</button><p style="color:var(--muted);font-size:.76rem;margin-top:10px">Lưu trên trình duyệt này. (Muốn đồng bộ mọi máy → cần Kha thêm bảng cấu hình backend.)</p>';$("#cSave").addEventListener("click",function(){saveCfg({venueToa:$("#cVenueToa").value.trim()||CFG_DEF.venueToa,venueGala:$("#cVenueGala").value.trim()||CFG_DEF.venueGala,toa:$("#cToa").value||CFG_DEF.toa,gala:$("#cGala").value||CFG_DEF.gala});$("#sheet2").classList.remove("show");renderDash();tickCd();toast(tt("cfg_saved"),"ok");});$("#sheet2").classList.add("show");}
  function openExport(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:6px">'+tt("exp_choose")+'</h2><p style="color:var(--muted);font-size:.82rem;margin-bottom:14px">'+ALL.length+' khách · SĐT đã ẩn</p><button class="btn gold block" id="doCsv">⬇ CSV (.csv)</button><button class="btn block" id="doXls" style="margin-top:9px">⬇ Excel (.xls)</button>'

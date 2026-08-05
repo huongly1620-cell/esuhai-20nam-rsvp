@@ -147,7 +147,11 @@ async function plan(client, rows) {
 }
 
 const tomTat = (p) => ({
-  capNhat: p.capNhat.length, taoMoi: p.taoMoi.length,
+  capNhat: p.capNhat.length,
+  // Ở lượt GHI, `taoMoi` là số dòng THẬT SỰ chèn được (ON CONFLICT có thể hụt
+  // trong im lặng); ở dry-run là số dự kiến.
+  taoMoi: (p.daChen !== undefined ? p.daChen : p.taoMoi.length),
+  taoMoiDuKien: p.taoMoi.length,
   khongKhop: p.khongKhop.length, loi: p.loi.length,
   seXoa: p.xoa,
   danhSachKhongKhop: p.khongKhop.slice(0, 50),
@@ -208,15 +212,20 @@ function mount(app, requireCrmAuth, requireRole, upload, parseUpload) {
               rec.att !== undefined, rec.att === undefined ? null : rec.att,
               req.actor.email]);
         }
+        // ON CONFLICT DO NOTHING có thể chèn hụt trong im lặng. Đếm số dòng THẬT
+        // SỰ chèn được và báo con số đó, đừng báo lại độ dài danh sách dự kiến.
+        let daChen = 0;
         for (const rec of p.taoMoi) {
-          await client.query(
+          const ins = await client.query(
             `INSERT INTO crm_guests (guest_ext_id, full_name, org, title, table_no, seat_no, att_override, att_override_at, att_override_by)
              VALUES ($1,$2,$3,$4,$5,$6,$7, CASE WHEN $7::text IS NULL THEN NULL ELSE now() END, CASE WHEN $7::text IS NULL THEN NULL ELSE $8::text END)
-             ON CONFLICT (guest_ext_id) DO NOTHING`,
+             ON CONFLICT (guest_ext_id) DO NOTHING RETURNING id`,
             [rec.code, rec.ten, rec.donvi || null, rec.chuc || null,
               rec.ban === undefined ? null : rec.ban, rec.ghe === undefined ? null : rec.ghe,
               rec.att === undefined ? null : rec.att, req.actor.email]);
+          daChen += ins.rowCount;
         }
+        p.daChen = daChen;
         await client.query('COMMIT');
       } catch (e) { await client.query('ROLLBACK').catch(() => {}); throw e; }
 

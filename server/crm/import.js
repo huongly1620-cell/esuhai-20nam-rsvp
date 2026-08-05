@@ -52,7 +52,27 @@ function parseUpload(req) {
 // Idempotent upsert of parsed rows into crm_guests (key: guest_ext_id else
 // phone_norm). Returns {created, updated, assigned, total}. Throws with
 // err.code EMPTY / NONAME for caller-friendly messages.
+// E08-D032 ĐK#2 — file «xuất để CẬP NHẬT» nạp nhầm vào đường import CŨ là ca
+// hỏng nặng nhất của vé, và nó hỏng IM LẶNG: `detectCol` khớp mờ nên «Đơn vị»
+// rơi vào khoá `assigned` (chuỗi "nv"), còn Bàn/Ghế/Trạng thái thì hàm này
+// không đọc. Màn báo "cập nhật 344" trong khi đúng ba thứ Ly cần sửa KHÔNG được
+// ghi cái nào — chị tin là xong, 08/08 mở ra mới biết. Kèm 344 dòng rác vào
+// crm_assignments (prod đang 0 dòng).
+// Chặn ở ĐÂY chứ không ở màn: đặt trong importRows thì MỌI đường gọi đều dính
+// (/crm/import và /admin/api/import-crm), không phải nhớ vá từng chỗ.
+function laFileCapNhat(hdr) {
+  const k = (hdr || []).map((h) => String(h == null ? '' : h).normalize('NFC')
+    .replace(/[ĐÐ]/g, 'D').replace(/[đð]/g, 'd')
+    .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, ''));
+  return k.some((x) => x === 'makhachkhoakhongsua' || (x.indexOf('khoa') > -1 && x.indexOf('khongsua') > -1));
+}
+
 async function importRows(rows, actorEmail, ip) {
+  if (rows && rows[0] && laFileCapNhat(rows[0])) {
+    const e = new Error('Đây là file «Xuất để CẬP NHẬT» — hãy dùng nút «Nhập file CẬP NHẬT». Nút Nhập CSV/Excel cũ KHÔNG đọc được Bàn / Ghế / Trạng thái và sẽ ghi sai cột Đơn vị.');
+    e.status = 400; e.code = 'WRONG_IMPORT';
+    throw e;
+  }
   if (!rows || rows.length < 2) { const e = new Error('empty'); e.code = 'EMPTY'; throw e; }
   const headers = rows[0];
   const col = {
@@ -119,6 +139,9 @@ async function importRows(rows, actorEmail, ip) {
 function importError(res, err, tag) {
   if (err.code === 'EMPTY') return res.status(400).json({ ok: false, error: 'File trống hoặc không đọc được.' });
   if (err.code === 'NONAME') return res.status(400).json({ ok: false, error: 'Không tìm thấy cột Họ tên (tiêu đề dòng 1: Họ tên, SĐT, Đơn vị…).' });
+  // Nói RÕ phải dùng nút nào, đừng để 500 chung chung — người gặp lỗi này đang
+  // cầm đúng file, chỉ bấm nhầm nút.
+  if (err.code === 'WRONG_IMPORT') return res.status(400).json({ ok: false, error: err.message });
   console.error(`[${tag}] failed:`, err.message);
   return res.status(500).json({ ok: false, error: 'Import lỗi.' });
 }

@@ -204,8 +204,12 @@ function counter(){var done=G.filter(came).length;
 var POLL_MS=25000,pollBusy=false,mutSeq=0,lastSync=0,lastSig="",DEAD=false;
 /* Chữ ký phải gồm MỌI thứ list vẽ ra, không chỉ cờ đã-đến: máy A chụp ảnh cho
    khách thì máy B phải thấy: nếu chữ ký bỏ qua ảnh, list máy B đứng nguyên cho
-   tới khi tình cờ có một lần điểm danh làm đổi chữ ký. */
-function sig(){return G.map(function(g){return g.id+(came(g)?"1":"0")+"|"+(g.photo||"")+"|"+(g.table||"");}).join(",");}
+   tới khi tình cờ có một lần điểm danh làm đổi chữ ký.
+   Từ khi có badge (AC-F5) và stick đếm, list còn vẽ cả hạng · quan hệ gia đình ·
+   khách Nhật — nên chúng cũng phải nằm trong chữ ký. Đo được: bỏ tag VIP của 5
+   khách rồi ép một vòng poll, cả badge lẫn stick đều ĐỨNG IM ở số cũ. */
+function sig(){return G.map(function(g){return g.id+(came(g)?"1":"0")+"|"+(g.photo||"")+"|"+(g.table||"")
+  +"|"+(g.vip||"")+"|"+(g.phanloai||"")+"|"+(g.name_jp||"");}).join(",");}
 function merge(rows){
  var old={};G.forEach(function(g){old[g.id]=g;});
  G=rows.map(function(r){var n=mapRow(r),o=old[n.id];

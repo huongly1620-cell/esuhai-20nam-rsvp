@@ -154,6 +154,37 @@ async function lookupAllowed(email) {
   return (u && u.active) ? u : null;
 }
 
+// ---- CỬA: tự đăng ký bằng OTP (anh Kha chốt 05/08) ---------------------------
+// PG đứng cửa không có tài khoản và anh không muốn duy trì danh sách email: ai
+// có link cửa thì nhập email, nhận mã, vào. OTP vẫn giữ — nó chứng minh người
+// nhập kiểm soát được hộp thư đó, nên mọi lượt điểm danh vẫn có tên người thật
+// trong nhật ký thay vì một danh nghĩa chung.
+//
+// HAI RÀNG BUỘC KHÔNG ĐƯỢC NỚI:
+//   * Tài khoản tự đăng ký LUÔN là role `staff` — vào được cửa, KHÔNG vào được
+//     bảng /crm. Bảng /crm vẫn đúng 5 người btl anh chốt. Đây là chỗ mà nếu sai
+//     thì bất kỳ ai trên internet cũng xoá được khách.
+//   * Ghi một dòng vào `staff_users` để BTL nhìn thấy ai đã vào cửa và tắt được
+//     từng người bằng cột `active` mà không cần deploy.
+//
+// `CRM_DOOR_SIGNUP` là công tắc: bỏ biến đi là quay lại chế độ chỉ-danh-sách.
+function doorSignup() { return String(process.env.CRM_DOOR_SIGNUP || '') === '1'; }
+
+// Trả về user để phát mã / mint phiên. Có trong danh sách thì dùng nguyên quyền
+// của họ; không có mà cửa đang cho tự đăng ký thì tạo diện `staff`.
+async function allowOrSelfSignup(email) {
+  const u = await lookupAllowed(email);
+  if (u) return u;
+  if (!doorSignup()) return null;
+  const r = await pool.query(
+    `INSERT INTO staff_users (email, role, active) VALUES ($1,'staff',true)
+     ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+     RETURNING email, role, active`, [email]);
+  const n = r.rows[0];
+  // Đã bị BTL tắt thì tôn trọng, đừng bật lại người vừa bị chặn.
+  return (n && n.active) ? n : null;
+}
+
 // ---- routes ----
 function mount(app) {
   // Do NOT reveal whether the email is in the allowlist (always 202).
@@ -171,7 +202,7 @@ function mount(app) {
     arr.push(now); reqLimit.set(key, arr);
 
     try {
-      const user = await lookupAllowed(email);
+      const user = await allowOrSelfSignup(email);
       if (user) {
         const code = String(Math.floor(100000 + Math.random() * 900000)); // 6 digits
         const expires = new Date(now + CODE_TTL_MS).toISOString();
@@ -203,6 +234,9 @@ function mount(app) {
     const code = String((req.body && req.body.code) || '').trim();
     if (!email || !code) return res.status(400).json({ ok: false, error: 'Thiếu email hoặc mã.' });
     try {
+      // Không tự đăng ký ở ĐÂY — chỉ đọc lại. Dòng staff_users đã được tạo ở
+      // bước xin mã; nếu tạo lúc verify thì ai gõ bừa một mã sai cũng đẻ ra một
+      // tài khoản.
       const user = await lookupAllowed(email);
       const r = await pool.query('SELECT code_hash, expires_at, attempts FROM crm_auth_codes WHERE email = $1', [email]);
       const row = r.rows[0];

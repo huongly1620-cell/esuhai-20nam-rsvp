@@ -69,7 +69,13 @@
     try{
       await fetch("/auth/request-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email})});
       $("step1").classList.add("hidden"); $("step2").classList.remove("hidden");
-      setMsg("Nếu email nằm trong danh sách đón tiếp, mã đã được gửi. Nhập mã để vào.","ok");
+      /* Vào cửa thì ai nhập email cũng nhận được mã (anh Kha chốt 05/08), nên
+         câu "nếu nằm trong danh sách" là sai và làm PG tưởng mình bị loại.
+         Vào /crm thì vẫn là danh sách đóng — giữ nguyên câu mập mờ để không
+         tiết lộ ai có quyền. */
+      setMsg(NEXT==="/crm"
+        ? "Nếu email nằm trong danh sách đón tiếp, mã đã được gửi. Nhập mã để vào."
+        : "Đã gửi mã tới email của anh/chị. Kiểm tra hộp thư và cả mục Spam.","ok");
       setTimeout(function(){ $("code").focus(); },50);
     }catch(_){ setMsg("Lỗi kết nối, thử lại.","err"); }
     $("sendBtn").disabled=false; $("sendBtn").textContent="Gửi mã đăng nhập";

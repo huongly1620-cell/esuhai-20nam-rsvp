@@ -33,9 +33,11 @@ function mount(app) {
   });
 
   auth.mount(app);                                  // /auth/* + /crm/me
-  guests.mount(app, auth.requireCrmAuth, auth.requireRole);
+  // allowDoor CHỈ được truyền cho guests + photos, và bên trong chỉ dùng cho
+  // đúng các route trang cửa gọi. stats / import / audit vẫn requireCrmAuth.
+  guests.mount(app, auth.requireCrmAuth, auth.requireRole, auth.allowDoor);
   stats.mount(app, auth.requireCrmAuth);
-  photos.mount(app, auth.requireCrmAuth);
+  photos.mount(app, auth.requireCrmAuth, auth.allowDoor);
   importer.mount(app, auth.requireCrmAuth, auth.requireRole);
   audit.mount(app, auth.requireCrmAuth, auth.requireRole);
 }

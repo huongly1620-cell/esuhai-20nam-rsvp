@@ -536,7 +536,12 @@ setInterval(function(){refresh();},POLL_MS);
    tiếp tục gõ máy chủ mỗi 25 giây. Dựng cờ để dừng hẳn. */
 function gate(html){DEAD=true;document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#eee;background:#0b1a30">'+html+'</div>';}
 async function boot(){
- try{await jget("/crm/me");}catch(e){return gate('<div><div style="font-size:44px">🔒</div><h2 style="margin:8px 0">Cần đăng nhập CRM</h2><p style="color:#b9b096;max-width:330px">Trang điểm danh Gala dùng dữ liệu thật từ <b>/crm</b>. Đăng nhập OTP rồi quay lại.</p><a href="/crm" style="display:inline-block;margin-top:14px;background:#d8b876;color:#1a1204;padding:11px 22px;border-radius:8px;text-decoration:none;font-weight:700">Đăng nhập /crm →</a></div>');}
+ /* CỬA MỞ (anh Kha chốt 05/08): bỏ cổng đăng nhập ở trang cửa. PG đứng cửa
+    không có tài khoản nào — staff_users chỉ có 4 dòng role btl. Trang này không
+    hề có login riêng, nó đòi đúng phiên /crm mà PG không thể có, nên cổng cũ
+    chặn đúng người cần dùng. Máy chủ mở diện `cua-mo` cho riêng các route trang
+    cửa gọi; công tắc là biến CRM_DOOR_OPEN.
+    Vẫn giữ màn báo lỗi bên dưới: tải danh sách hỏng thì phải nói rõ, không im. */
  try{var j=await jget("/crm/guests?session="+SESSION+"&limit=1000");G=(j.rows||[]).map(mapRow);}catch(e){return gate('<div><h2>Lỗi tải dữ liệu</h2><p style="color:#b9b096">Kiểm tra kết nối rồi thử lại.</p><button onclick="location.reload()" style="margin-top:12px;background:#d8b876;color:#1a1204;padding:10px 20px;border:0;border-radius:8px;font-weight:700;cursor:pointer">Tải lại</button></div>');}
  lastSync=Date.now();counter();setLang(LANG);lastSig=sig();
 }

@@ -9,7 +9,11 @@ const COOKIE = 'esuhai_crm';
 const SECRET = process.env.CRM_SESSION_SECRET || process.env.SESSION_SECRET || 'esuhai20-crm-dev-secret';
 const OTP_SALT = process.env.OTP_SALT || process.env.IP_HASH_SALT || 'esuhai20-otp-salt';
 const OTP_DELIVERY = process.env.OTP_DELIVERY || 'console';
-const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12h
+// Ngày 08/08: Tọa đàm 14:30, Gala chạy tới ~21:00. Ai đăng nhập 8h sáng thì
+// phiên 12 tiếng chết lúc 20h — ĐÚNG GIỮA GALA. Cho phép nới bằng biến môi
+// trường để ngày lễ đặt 48, xong lễ trả về 12 mà không phải sửa mã.
+const SESSION_TTL_MS = Math.max(1, Math.min(168,
+  parseInt(process.env.CRM_SESSION_TTL_H || '12', 10) || 12)) * 60 * 60 * 1000;
 const CODE_TTL_MS = 10 * 60 * 1000; // 10 min (spec ≤10')
 const MAX_ATTEMPTS = 5;
 
@@ -136,6 +140,33 @@ function requireCrmAuth(req, res, next) {
   req.actor = { email: a.email, role: a.role || 'staff' };
   next();
 }
+
+// ---- CỬA MỞ (Sponsor chốt 05/08 ~08:4x) --------------------------------------
+// PG đứng cửa KHÔNG có tài khoản: `staff_users` chỉ có 4 dòng, tất cả role `btl`,
+// và đúng 3 người từng đăng nhập được. Trước đây hai trang cửa không hề có login
+// riêng — chúng đòi đúng phiên /crm mà PG không thể có. Anh Kha chốt mở công
+// khai phần cửa.
+//
+// PHẠM VI, ghi rõ để người sau không hiểu nhầm là "mở hết":
+//   * CHỈ những route trang cửa thật sự gọi (xem `allowDoor` ở index.js).
+//   * KHÔNG mở: thêm/sửa/xoá khách · import · nhật ký · thống kê · shell /crm.
+//   * Diện `door` không thấy `phone`/`email` của khách — màn cửa vốn đã ẩn SĐT,
+//     nên đây không phải bớt tính năng, chỉ là không phát ra thứ không ai dùng.
+//
+// `CRM_DOOR_OPEN` là CÔNG TẮC: đặt về 0 (hoặc xoá biến) là khoá lại ngay, không
+// cần deploy. Mặc định TRONG MÃ là ĐÓNG — mở phải là một hành động có chủ ý.
+const DOOR_EMAIL = 'cua-mo';
+function doorOpen() { return String(process.env.CRM_DOOR_OPEN || '') === '1'; }
+function doorActor() { return doorOpen() ? { email: DOOR_EMAIL, role: 'door' } : null; }
+
+// Dùng cho route mà TRANG CỬA cần: có phiên thì dùng phiên (giữ được tên người
+// điểm danh); không có phiên mà cửa đang mở thì cho qua dưới danh nghĩa `cua-mo`.
+function allowDoor(req, res, next) {
+  const a = currentActor(req) || doorActor();
+  if (!a || !a.email) return res.status(401).json({ ok: false, error: 'unauthorized' });
+  req.actor = { email: a.email, role: a.role || 'staff' };
+  next();
+}
 function requireRole(role) {
   return (req, res, next) => {
     if (!req.actor) return res.status(401).json({ ok: false, error: 'unauthorized' });
@@ -233,4 +264,4 @@ function mount(app) {
   app.get('/crm/me', requireCrmAuth, (req, res) => res.json({ ok: true, email: req.actor.email, role: req.actor.role }));
 }
 
-module.exports = { mount, requireCrmAuth, requireRole, currentActor, ipOf, maskEmail };
+module.exports = { mount, requireCrmAuth, requireRole, allowDoor, doorOpen, currentActor, ipOf, maskEmail };

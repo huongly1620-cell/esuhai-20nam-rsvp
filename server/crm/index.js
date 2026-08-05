@@ -35,7 +35,12 @@ function mount(app) {
     const next = String(req.query.next || '');
     if (a && DOOR_PATHS.indexOf(next) > -1) return res.redirect(302, next);
     if (!a) return res.sendFile(path.join(__dirname, 'views', 'crm-login.html'));
-    if (a.role !== 'btl') return res.status(403).send(doorOnlyPage());
+    // Làn smoke là CÔNG CỤ, không phải người: nó vốn đã đọc được toàn bộ danh
+    // sách khách qua API, nên chặn nó xem trang HTML không bảo vệ thêm gì mà
+    // làm mù phép kiểm sau mỗi lần deploy. Nó vẫn là role `staff` nên vẫn bị
+    // requireRole('btl') chặn ở xoá khách / import / nhật ký — đó mới là chỗ
+    // đáng chặn, và smoke dùng chính điều đó để khẳng định RBAC còn nguyên.
+    if (a.role !== 'btl' && a.email !== auth.SMOKE_EMAIL) return res.status(403).send(doorOnlyPage());
     return res.sendFile(path.join(__dirname, 'views', file));
   }
   function doorOnlyPage() {

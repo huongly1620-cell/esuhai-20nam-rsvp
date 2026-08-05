@@ -237,4 +237,4 @@ function mount(app) {
   app.get('/crm/me', requireCrmAuth, (req, res) => res.json({ ok: true, email: req.actor.email, role: req.actor.role }));
 }
 
-module.exports = { mount, requireCrmAuth, requireRole, currentActor, ipOf, maskEmail };
+module.exports = { mount, requireCrmAuth, requireRole, currentActor, ipOf, maskEmail, SMOKE_EMAIL };

@@ -53,6 +53,13 @@
 <script>
   var email="";
   var $=function(id){return document.getElementById(id);};
+  /* PG mở link cửa → bị đưa sang đây đăng nhập → phải quay lại ĐÚNG cửa đó, chứ
+     không đổ hết về /crm (bảng điều khiển họ không có quyền vào). Chỉ chấp nhận
+     đúng hai đường dẫn cửa: tham số next là do URL đưa vào nên không được tin. */
+  var DOOR=["/checkin-toadam.html","/checkin-gala.html"];
+  var NEXT=(function(){try{var n=new URLSearchParams(location.search).get("next")||"";
+    return DOOR.indexOf(n)>-1?n:"/crm";}catch(e){return "/crm";}})();
+  if(NEXT!=="/crm"){var h=document.querySelector("h1,h2");if(h)h.textContent="Đăng nhập để vào cửa đón tiếp";}
   function setMsg(t,cls){ var m=$("msg"); m.textContent=t||""; m.className="msg"+(cls?(" "+cls):""); }
   $("step1").addEventListener("submit", async function(e){
     e.preventDefault(); setMsg("");
@@ -74,7 +81,7 @@
     $("verifyBtn").disabled=true; $("verifyBtn").textContent="Đang kiểm tra…";
     try{
       var r=await fetch("/auth/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,code:code})});
-      if(r.ok){ location.href="/crm"; return; }
+      if(r.ok){ location.href=NEXT; return; }
       var j=await r.json().catch(function(){return {};});
       setMsg(j.error||"Mã không đúng.","err");
     }catch(_){ setMsg("Lỗi kết nối, thử lại.","err"); }

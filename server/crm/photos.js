@@ -40,11 +40,10 @@ async function pickPart(files, name, max) {
   return f;
 }
 
-function mount(app, requireCrmAuth, allowDoor) {
-  const doorGet = allowDoor || requireCrmAuth;   // xem ghi chú "cửa mở" ở auth.js
+function mount(app, requireCrmAuth) {
   // Upload a photo attached to a guest → MinIO object + Postgres metadata.
   // `photo` bắt buộc; `thumb`/`preview` do trình duyệt thu nhỏ sẵn, KHÔNG bắt buộc.
-  app.post('/crm/guests/:id/photos', doorGet,
+  app.post('/crm/guests/:id/photos', requireCrmAuth,
     upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'thumb', maxCount: 1 }, { name: 'preview', maxCount: 1 }]),
     async (req, res) => {
     const id = parseInt(req.params.id, 10);
@@ -163,8 +162,8 @@ function mount(app, requireCrmAuth, allowDoor) {
       if (!res.headersSent) return res.status(500).json({ ok: false, error: 'view error' });
     }
   }
-  app.get('/crm/photos/:id/thumb', doorGet, (req, res) => serveDerived(req, res, 'thumb_key'));
-  app.get('/crm/photos/:id/preview', doorGet, (req, res) => serveDerived(req, res, 'preview_key'));
+  app.get('/crm/photos/:id/thumb', requireCrmAuth, (req, res) => serveDerived(req, res, 'thumb_key'));
+  app.get('/crm/photos/:id/preview', requireCrmAuth, (req, res) => serveDerived(req, res, 'preview_key'));
 
   // View a photo: auth-gated redirect to a short-lived presigned URL (private bucket).
   app.get('/crm/photos/:id', requireCrmAuth, async (req, res) => {

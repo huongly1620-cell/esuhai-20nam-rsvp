@@ -87,7 +87,7 @@ async function plan(client, rows) {
     'SELECT id, guest_ext_id, table_no, seat_no, att_override FROM crm_guests WHERE deleted_at IS NULL')).rows;
   const byExt = new Map(cur.filter((x) => x.guest_ext_id).map((x) => [x.guest_ext_id, x]));
 
-  const capNhat = []; const taoMoi = []; const khongKhop = []; const loi = [];
+  const capNhat = []; const taoMoi = []; const khongKhop = []; const loi = []; const boQua = [];
   let xoaBan = 0; let xoaGhe = 0; let xoaAtt = 0;
   const seenCode = new Set();
 
@@ -95,7 +95,29 @@ async function plan(client, rows) {
     const row = rows[r];
     const g = (i) => (i > -1 ? clean(row[i]) : '');
     const ma = g(idx.ma); const ten = g(idx.ten);
-    if (!ma && !ten) continue;                       // dòng trống hoàn toàn
+    // E08-D037 — chỗ NUỐT THẬT. Dòng thiếu cả mã lẫn tên bị bỏ, mà bỏ IM LẶNG:
+    // không vào loi, không vào khongKhop, không con số nào đổi. Ly thêm khách ở
+    // cuối file, điền bàn ghế trước rồi quên gõ tên ⇒ dòng biến mất không dấu
+    // vết trong khi bảng số vẫn xanh — đúng lớp báo-xanh-giả vé D032 đã dẹp hai
+    // lần, còn sót đúng chỗ này.
+    //
+    // Mốc phân biệt là «MỌI ô trong dòng đều rỗng», KHÔNG phải «ma và ten đều
+    // rỗng»: ca thật của Ly (bàn 45, ghế 3, không tên) rơi đúng khe giữa hai
+    // định nghĩa đó — dùng định nghĩa sau thì nó vẫn bị coi là dòng trống và
+    // tiếp tục im lặng.
+    //
+    // Đếm riêng, KHÔNG chặn file (Sponsor chốt): hành vi ghi không đổi.
+    if (!ma && !ten) {
+      if (row.some((o) => String(o == null ? '' : o).trim() !== '')) {
+        // Kèm nội dung các ô ĐANG có, không chỉ số dòng: parseCSV lọc bỏ dòng
+        // trắng TRƯỚC khi đánh số nên số dòng có thể lệch với file Ly nhìn thấy
+        // trong Excel. Nội dung thì không lệch.
+        const oCo = [['Đơn vị', idx.donvi], ['Chức danh', idx.chuc], ['Bàn', idx.ban], ['Ghế', idx.ghe], ['Trạng thái', idx.attn]]
+          .filter(([, i]) => i > -1 && g(i)).map(([k, i]) => k + ' ' + g(i));
+        boQua.push({ dong: r + 1, noiDung: oCo.join(' · ').slice(0, 60) });
+      }
+      continue;
+    }
 
     // Ô trạng thái: chữ lạ thì HỎNG CẢ DÒNG, không bỏ qua im lặng — Ly gõ "Ko
     // tham dự" mà màn báo "đã cập nhật" chính là báo xanh giả (lớp lỗi CỬA-2).
@@ -126,7 +148,13 @@ async function plan(client, rows) {
     const hit = ma ? byExt.get(ma) : null;
     if (hit) { rec.id = hit.id; capNhat.push(rec); continue; }
     if (ma) { khongKhop.push({ dong: r + 1, ma }); continue; }
-    if (!ten) continue;
+    // E08-D037 AC-12 — ở đây từng có `if (!ten) continue;`. Đó là NHÁNH CHẾT và
+    // đã gỡ: tới dòng này thì `ma` chắc chắn rỗng (có `ma` đã bị hit/khongKhop
+    // bắt ở trên), mà cửa `!ma && !ten` phía trên đã loại ca rỗng cả hai ⇒ `ma`
+    // rỗng KÉO THEO `ten` phải có. Đếm thật: cửa trên chạy 3 lần, cửa này 0 lần.
+    // Ghi lại vì suýt nữa bản vá boQua được neo vào đây — neo vào nhánh chết thì
+    // `boQua` luôn ra 0 trong khi dòng vẫn biến mất, tức là dựng một
+    // báo-xanh-giả về chính cơ chế chống báo-xanh-giả.
     const code = newCode(ten, rec.donvi || '', rec.chuc || '');
     // Chạy LẠI đúng file đó: khoá tất định nên khách mới của lượt trước đã có
     // thẻ ⇒ lần này là CẬP NHẬT, không phải lỗi. Nếu coi là lỗi thì luật
@@ -143,7 +171,7 @@ async function plan(client, rows) {
     rec.code = code;
     taoMoi.push(rec);
   }
-  return { capNhat, taoMoi, khongKhop, loi, xoa: { ban: xoaBan, ghe: xoaGhe, att: xoaAtt }, idx };
+  return { capNhat, taoMoi, khongKhop, loi, boQua, xoa: { ban: xoaBan, ghe: xoaGhe, att: xoaAtt }, idx };
 }
 
 // Nhãn cột để màn in ra; thứ tự này là thứ tự hiện trên màn.
@@ -160,6 +188,8 @@ const tomTat = (p) => ({
   taoMoi: (p.daChen !== undefined ? p.daChen : p.taoMoi.length),
   taoMoiDuKien: p.taoMoi.length,
   khongKhop: p.khongKhop.length, loi: p.loi.length,
+  boQua: (p.boQua || []).length,
+  danhSachBoQua: (p.boQua || []).slice(0, 10),
   seXoa: p.xoa,
   danhSachKhongKhop: p.khongKhop.slice(0, 50),
   danhSachLoi: p.loi.slice(0, 50),

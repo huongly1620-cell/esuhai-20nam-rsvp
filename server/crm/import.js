@@ -117,6 +117,15 @@ async function importRows(rows, actorEmail, ip) {
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
           [ext, name, phone || null, pn, get(col.email) || null, get(col.org) || null, get(col.title) || null, get(col.tags) || null]);
         guestId = ins.rows[0].id;
+        // E08-D037 — file không có cột mã thì `ext` là null và thẻ ra đời KHÔNG
+        // CÓ KHOÁ. Đúng cách thẻ #437 sinh ra (05/08, audit `import_run`), và một
+        // thẻ thiếu khoá là nút «Xuất để CẬP NHẬT» chết TOÀN BỘ danh sách.
+        // Cấp trong CÙNG giao dịch đang mở: không có cửa sổ nào thẻ tồn tại mà
+        // chưa có khoá. Khoá lấy từ chính id nên duy nhất theo cấu tạo. Tiền tố
+        // `imp-` để phân biệt với `tay-` (thêm tay) và `upd-` (nhập cập nhật).
+        // CHỈ nhánh INSERT — nhánh UPDATE dùng COALESCE($8, guest_ext_id), thẻ cũ
+        // đã có khoá, không đụng.
+        if (!ext) await client.query('UPDATE crm_guests SET guest_ext_id = $1 WHERE id = $2', ['imp-' + guestId, guestId]);
         created++;
       }
       const asgEmail = get(col.assigned).toLowerCase();

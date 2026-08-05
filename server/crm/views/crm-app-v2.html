@@ -775,6 +775,9 @@ window.imgFit=imgFit;
        +(j.dryRun===false?j.taoMoi:(j.taoMoiDuKien!==undefined?j.taoMoiDuKien:j.taoMoi))+'</b> · không khớp <b>'+j.khongKhop+'</b>'
        +'<br>Sẽ xoá: bàn <b>'+(x.ban||0)+'</b> · ghế <b>'+(x.ghe||0)+'</b> · trạng thái <b>'+(x.att||0)+'</b>'
        +cot
+       +(j.boQua?'<br><b style="color:var(--red-b)">Bỏ qua '+j.boQua+' dòng thiếu tên</b> — có dữ liệu nhưng không có Họ tên nên KHÔNG được ghi:<br><span style="color:var(--muted);font-size:.76rem">'
+         +(j.danhSachBoQua||[]).map(function(k){return 'dòng '+k.dong+(k.noiDung?' ('+esc(k.noiDung)+')':'');}).join('<br>')
+         +((j.danhSachBoQua||[]).length<j.boQua?'<br>…':'')+'</span>':'')
        +(j.loi?'<br>Dòng lỗi: <b>'+j.loi+'</b>':'')
        +(j.ghiChu?'<br><span style="color:var(--muted);font-size:.78rem">'+esc(j.ghiChu)+'</span>':'')
        +(j.danhSachKhongKhop&&j.danhSachKhongKhop.length?'<br><span style="color:var(--muted);font-size:.76rem">Không khớp: '+j.danhSachKhongKhop.map(function(k){return esc(k.ma);}).slice(0,10).join(", ")+'</span>':'')

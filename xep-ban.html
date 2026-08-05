@@ -76,6 +76,7 @@
     <div class="f"><label>VIP2 · Hàng 2</label><input id="c2" type="number" value="10" min="1"></div>
     <div class="f"><label>VIP2 · Hàng 3</label><input id="c3" type="number" value="11" min="1"></div>
     <div class="f"><label>Nội bộ (người/bàn)</label><input id="c4" type="number" value="10" min="1"></div>
+    <div class="f"><label>Số bàn bắt đầu từ</label><input id="cStart" type="number" value="1" min="1"></div>
     <button class="btn btn-gold" id="calc">↻ Tính lại</button>
     <button class="btn" id="loadCsv">↑ Nạp DS khách (CSV)</button>
     <input type="file" id="loadFile" accept=".csv,text/csv" style="display:none">
@@ -143,7 +144,13 @@ function packTier(guests,cap){
 function assign(){
   var caps={"VIP1":+document.getElementById("c1").value||8,"VIP2 - Hàng 2":+document.getElementById("c2").value||10,
     "VIP2 - Hàng 3":+document.getElementById("c3").value||11,"Nội bộ":+document.getElementById("c4").value||10};
-  assignment=[]; var no=0;
+  /* E08-D034/CR-47 — số bàn bắt đầu từ đâu.
+     Sponsor chốt GIỮ 119 số bàn Ly đã xếp tay; công cụ chỉ xếp phần khách chưa
+     có bàn. Bản cũ luôn đánh từ 1 nên sẽ đè thẳng lên bàn 1, 3, 4, 9… đang dùng
+     — hai người cùng nhận "bàn 1" mà ngoài đời là hai bàn khác nhau, tệ hơn cả
+     không xếp. Mặc định 1: để trống thì hành vi y hệt trước. */
+  var start=Math.max(1,parseInt((document.getElementById("cStart")||{}).value,10)||1);
+  assignment=[]; var no=start-1;
   TIERS.forEach(function(t){
     var gs=GUESTS.filter(function(g){return (g.vip||g.cat)===t.key || (t.key==="Nội bộ"&&g.cat==="Nội bộ");});
     if(t.key!=="Nội bộ") gs=GUESTS.filter(function(g){return g.vip===t.key;});

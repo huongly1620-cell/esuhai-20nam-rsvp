@@ -729,8 +729,38 @@ window.imgFit=imgFit;
  function openImport(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:8px">Nhập CSV/Excel</h2><p style="color:var(--muted);font-size:.84rem">Cột: guest_ext_id, full_name, org, title, phone, email, assigned_email, tags. Upsert (chạy lại không nhân đôi).</p><input class="f" type="file" id="impFile" accept=".csv,.xlsx"><button class="btn gold block" id="impRun" style="margin-top:10px">Chạy import</button><div class="msg" id="impMsg"></div>';$("#impRun").addEventListener("click",async function(){var f=$("#impFile").files&&$("#impFile").files[0];if(!f){$("#impMsg").textContent="Chọn file.";$("#impMsg").className="msg err";return;}$("#impMsg").textContent="Đang import…";var fd=new FormData();fd.append("file",f);try{var r=await api("/crm/import",{method:"POST",body:fd});var jj=await r.json().catch(function(){return {};});if(r.ok){$("#impMsg").textContent="Xong: tạo "+jj.created+", cập nhật "+jj.updated+".";$("#impMsg").className="msg ok";toast(tt("saved"),"ok");loadAll();}else{$("#impMsg").textContent=jj.error||"Lỗi.";$("#impMsg").className="msg err";}}catch(e){$("#impMsg").textContent="Lỗi import.";$("#impMsg").className="msg err";}});$("#sheet2").classList.add("show");}
  async function openAudit(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:10px">Nhật ký (audit)</h2><div id="audArea" class="msg">Đang tải…</div><a class="btn block" href="/crm/audit/export.csv" style="margin-top:10px">⬇ Xuất CSV</a>';$("#sheet2").classList.add("show");try{var j=await jget("/crm/audit?limit=100");var rows=(j.rows||[]).map(function(x){return '<tr><td>'+esc(fmt(x.created_at))+'</td><td>'+esc(x.actor_email||"—")+'</td><td>'+esc(x.event_type)+'</td><td>'+esc(x.target_id||"")+'</td></tr>';}).join("");$("#audArea").outerHTML='<table class="aud"><tbody>'+(rows||'<tr><td>Chưa có.</td></tr>')+'</tbody></table>';}catch(e){}}
  function openCfg(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:12px">'+tt("cfg_h")+'</h2><div class="sec" style="margin-top:4px">'+tt("toa_full")+'</div><div class="fld"><div class="lab">'+tt("cfg_venue_toa")+'</div><input class="f" id="cVenueToa" value="'+esc(CFG.venueToa)+'"></div><div class="fld"><div class="lab">'+tt("cfg_toa")+'</div><input class="f" id="cToa" type="datetime-local" value="'+esc(CFG.toa)+'"></div><div class="sec">'+tt("gala_full")+'</div><div class="fld"><div class="lab">'+tt("cfg_venue_gala")+'</div><input class="f" id="cVenueGala" value="'+esc(CFG.venueGala)+'"></div><div class="fld"><div class="lab">'+tt("cfg_gala")+'</div><input class="f" id="cGala" type="datetime-local" value="'+esc(CFG.gala)+'"></div><button class="btn gold block" id="cSave" style="margin-top:6px">'+tt("save")+'</button><p style="color:var(--muted);font-size:.76rem;margin-top:10px">Lưu trên trình duyệt này. (Muốn đồng bộ mọi máy → cần Kha thêm bảng cấu hình backend.)</p>';$("#cSave").addEventListener("click",function(){saveCfg({venueToa:$("#cVenueToa").value.trim()||CFG_DEF.venueToa,venueGala:$("#cVenueGala").value.trim()||CFG_DEF.venueGala,toa:$("#cToa").value||CFG_DEF.toa,gala:$("#cGala").value||CFG_DEF.gala});$("#sheet2").classList.remove("show");renderDash();tickCd();toast(tt("cfg_saved"),"ok");});$("#sheet2").classList.add("show");}
- function openExport(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:6px">'+tt("exp_choose")+'</h2><p style="color:var(--muted);font-size:.82rem;margin-bottom:14px">'+ALL.length+' khách · SĐT đã ẩn</p><button class="btn gold block" id="doCsv">⬇ CSV (.csv)</button><button class="btn block" id="doXls" style="margin-top:9px">⬇ Excel (.xls)</button>';$("#doCsv").addEventListener("click",function(){exportCSV();$("#sheet2").classList.remove("show");});$("#doXls").addEventListener("click",function(){exportXls();$("#sheet2").classList.remove("show");});$("#sheet2").classList.add("show");}
+ function openExport(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:6px">'+tt("exp_choose")+'</h2><p style="color:var(--muted);font-size:.82rem;margin-bottom:14px">'+ALL.length+' khách · SĐT đã ẩn</p><button class="btn gold block" id="doCsv">⬇ CSV (.csv)</button><button class="btn block" id="doXls" style="margin-top:9px">⬇ Excel (.xls)</button>'
+   +'<div style="border-top:1px solid var(--line);margin:14px 0 10px"></div>'
+   +'<button class="btn block" id="doUpd">⬇ Xuất để CẬP NHẬT (nạp lại được)</button>'
+   +'<p style="color:var(--muted);font-size:.76rem;margin-top:7px;line-height:1.45">Có <b>Mã khách</b> (khoá — đừng sửa) · sửa được Đơn vị / Chức danh / <b>Bàn</b> / <b>Ghế</b> / Trạng thái, rồi nạp lại.<br>Ô để trống = <b>không đổi</b>. Muốn <b>xoá</b> một ô thì gõ <b>(xoá)</b> — đừng gõ <b>x</b>, chữ đó đã mang nghĩa «không dự».<br>Cột <b>Phụ trách</b> chỉ để xem, không ghi ngược.</p>';var bu=$("#doUpd");if(bu)bu.addEventListener("click",exportUpdateCSV);$("#doCsv").addEventListener("click",function(){exportCSV();$("#sheet2").classList.remove("show");});$("#doXls").addEventListener("click",function(){exportXls();$("#sheet2").classList.remove("show");});$("#sheet2").classList.add("show");}
  /* ---- xuất CSV / Excel (client-side, SĐT đã ẩn) ---- */
+
+ /* ───────── E08-D032 · xuất Excel «để CẬP NHẬT» (vòng khứ hồi) ─────────
+    Ba chỗ bản classic của chị Ly làm chưa đúng, sửa ở đây:
+    M1 — «Mã khách» phải là `guest_ext_id` (KHOÁ), không phải `g.id` nội bộ.
+         Bản cũ rơi về g.id vì API chưa trả guest_ext_id ⇒ nhập lại khớp 0/344
+         và INSERT 344 khách trùng. Nay API trả khoá cho btl; nếu VẪN thiếu thì
+         KHÔNG xuất bừa bằng g.id — chặn và nói rõ, vì file sai khoá còn tệ hơn
+         không có file.
+    M3 — cột Trạng thái đọc `att_status` (3 nhóm), không phải `from_rsvp` (2 nhóm).
+    (b) — cột Bàn/Ghế mang dữ liệu THẬT để Ly lọc ra ai chưa có bàn và tự điền
+         ghế cho 119 khách không đi qua công cụ. */
+ /* v2 KHÔNG có ptOf() (đó là hàm riêng của classic) — khai ở đây, dùng noteF
+    sẵn có. Không khai thì đây đúng là lỗi ReferenceError kiểu ROLE/doorGet. */
+ function ptOf(g){return noteF(g,"S2 phụ trách")||noteF(g,"phụ trách");}
+ var UPD_HDR=["Mã khách (KHÓA - KHÔNG sửa)","Họ tên","Đơn vị","Chức danh","Bàn","Ghế","Trạng thái (Tham dự / Không tham dự / Chờ xác nhận)","Phụ trách"];
+ var ATT_TEXT={du:"Tham dự",khong:"Không tham dự",cho:"Chờ xác nhận"};
+ function updRows(){return ALL.map(function(g){return [
+   g.guest_ext_id||"", g.full_name, g.org||"", g.title||"",
+   g.table_no||"", g.seat_no||"", (ATT_TEXT[attOf(g)]||""), ptOf(g)||""];});}
+ function exportUpdateCSV(){
+   var thieu=ALL.filter(function(g){return !g.guest_ext_id;}).length;
+   if(thieu){ toast("Không xuất được: "+thieu+" khách thiếu mã khoá. Đăng nhập bằng tài khoản BTL rồi thử lại.","err"); return; }
+   var lines=[UPD_HDR].concat(updRows()).map(function(r){
+     return r.map(function(c){c=String(c==null?"":c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(",");
+   }).join("\r\n");
+   dl("CAP_NHAT_DS_ESUHAI20_"+ymd()+".csv","\uFEFF"+lines,"text/csv;charset=utf-8");
+ }
  function guestRows(){return ALL.map(function(g){return [g.full_name,g.org||"",g.title||"",buoiOf(g),vipLbl(g),g.table_no||"",maskPhone(g.phone),g.checked_in?"Đã đến":"Chưa đến",g.checked_in?hhmm(g.checked_in_at):"",noteF(g,"S2 phụ trách")||noteF(g,"phụ trách")];});}
  var EXP_HDR=["Họ tên","Đơn vị","Chức danh","Buổi","Hạng VIP","Bàn","SĐT (ẩn)","Trạng thái","Giờ đến","Phụ trách"];
  function dl(name,content,mime){var b=new Blob([content],{type:mime});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},400);toast(tt("exported"),"ok");}

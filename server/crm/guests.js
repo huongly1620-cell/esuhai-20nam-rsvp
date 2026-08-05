@@ -69,7 +69,7 @@ function mount(app, requireCrmAuth, requireRole) {
         // khai trên form. Trả sẵn từ máy chủ để tab, ?session= và KPI dùng CHUNG
         // một luật — trước đây client tự đếm tag nên nói 303 trong khi KPI nói
         // 350, và 47 khách đã đăng ký biến mất khỏi tab Gala.
-        `SELECT g.id, g.full_name, g.phone, g.org, g.title, g.table_no, g.seat_no, g.tags, g.note,
+        `SELECT g.id, g.guest_ext_id, g.full_name, g.phone, g.org, g.title, g.table_no, g.seat_no, g.tags, g.note,
                 g.name_jp, g.title_jp, g.org_jp,
                 ((',' || COALESCE(g.tags,'') || ',') ILIKE '%,toa-dam,%'
                  OR (g.response_id IS NOT NULL AND EXISTS (
@@ -103,6 +103,11 @@ function mount(app, requireCrmAuth, requireRole) {
          ) p ON TRUE
          ${'WHERE ' + conds.join(' AND ')}
          ORDER BY g.full_name ASC LIMIT $${params.length}`, params);
+      // M1 (E08-D032): `guest_ext_id` là KHOÁ để file xuất nhập ngược khớp
+      // đúng người. Trước đây API không trả nó nên bản xuất rơi về `g.id` nội
+      // bộ ⇒ nhập lại khớp 0/344, INSERT 344 khách trùng. Chỉ lộ cho `btl` —
+      // 2 cửa (role staff) không cần và không nên thấy khoá nội bộ.
+      if (!req.actor || req.actor.role !== 'btl') r.rows.forEach((x) => { delete x.guest_ext_id; });
       return res.json({ ok: true, rows: r.rows });
     } catch (err) {
       console.error('[crm-guests] search failed:', err.message);

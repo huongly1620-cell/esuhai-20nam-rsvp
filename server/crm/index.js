@@ -3,6 +3,7 @@
 const path = require('path');
 const auth = require('./auth');
 const audit = require('./audit');
+const importUpdate = require('./import-update');
 const guests = require('./guests');
 const stats = require('./stats');
 const photos = require('./photos');
@@ -69,6 +70,8 @@ function mount(app) {
   photos.mount(app, auth.requireCrmAuth);
   importer.mount(app, auth.requireCrmAuth, auth.requireRole);
   audit.mount(app, auth.requireCrmAuth, auth.requireRole);
+  // E08-D032 — hai lệnh TÁCH BẠCH: /crm/import-update/dry-run và /commit.
+  importUpdate.mount(app, auth.requireCrmAuth, auth.requireRole, importer.upload, importer.parseUpload);
 }
 
 module.exports = { mount };

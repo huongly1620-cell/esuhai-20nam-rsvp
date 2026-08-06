@@ -140,6 +140,83 @@ function requireCrmAuth(req, res, next) {
   req.actor = { email: a.email, role: a.role || 'staff' };
   next();
 }
+
+// ─────────── E08-D041 · CỬA MỞ + KHOÁ SĐT ───────────
+// Ly 05/08: «mng feedback bất tiện khi nhập email ở check in và chờ otp… để lâu
+// sẽ bị out». Session TTL ~12h nên giữa lễ là phải đăng nhập lại — ở cửa, lúc
+// đông, với người không cầm mailbox.
+//
+// M1 — cửa mở nghĩa là URL LÀ CHÌA. Nên:
+//   · KHÔNG nới requireCrmAuth (nới một chỗ là nới cho cả route btl).
+//     Làm middleware RIÊNG, dùng cho ĐÚNG danh sách route cửa cần.
+//   · Có công tắc tắt được: CRM_DOOR_OPEN. Tắt là cửa đòi auth như hôm nay.
+//   · Không public URL trên landing.
+function doorOpen() { return String(process.env.CRM_DOOR_OPEN || '') === '1'; }
+
+const DOOR_ACTOR = { email: 'door@checkin.local', role: 'staff' };
+
+// Dùng cho các route trong ALLOWLIST CỬA. Có cookie/bearer thật thì ưu tiên danh
+// tính thật (để audit ghi đúng người); không có mà cửa đang mở thì rơi về actor
+// cửa — role «staff», nên mọi requireRole('btl') phía sau VẪN chặn.
+function requireDoorOrAuth(req, res, next) {
+  const a = currentActor(req);
+  if (a && a.email) { req.actor = { email: a.email, role: a.role || 'staff' }; return next(); }
+  if (!doorOpen()) return res.status(401).json({ ok: false, error: 'unauthorized' });
+  req.actor = { email: DOOR_ACTOR.email, role: DOOR_ACTOR.role, laCua: true };
+  return next();
+}
+
+// ---- khoá SĐT (§3b) ----
+// M2 — che SĐT phải ở MÁY CHỦ. Chỉ maskPhone ở giao diện là thất bại: mở
+// DevTools/Network là thấy số đủ trong JSON.
+const PHONE_COOKIE = 'esuhai_phone_ok';
+const PHONE_TTL_MIN = 30;
+
+function phoneUnlocked(req) {
+  const t = parseCookies(req)[PHONE_COOKIE];
+  if (!t) return false;
+  const v = verifyToken(t);
+  return !!(v && v.phoneOk);
+}
+
+function mountPhoneUnlock(app) {
+  // auth.js không require express — tự đọc thân JSON để không thêm một chỗ phụ
+  // thuộc mới vào tệp gác cổng.
+  function docThan(req, cb) {
+    if (req.body && typeof req.body === "object") return cb(req.body);
+    let d = ""; req.on("data", (c) => { d += c; if (d.length > 4096) req.destroy(); });
+    req.on("end", () => { try { cb(JSON.parse(d || "{}")); } catch (_) { cb({}); } });
+  }
+  app.post("/crm/phone-unlock", (req, res) => docThan(req, (than) => {
+    const want = String(process.env.CRM_PHONE_UNLOCK || '');
+    // Chưa cấu hình thì nói RÕ 503, đừng để thành «sai mật khẩu» — người trực
+    // cửa sẽ gõ lại mười lần rồi mới báo, mất đúng lúc đông nhất.
+    if (!want) return res.status(503).json({ ok: false, error: 'Chưa cấu hình mật khẩu xem SĐT (CRM_PHONE_UNLOCK).' });
+    const ip = ipOf(req);
+    const now = Date.now();
+    const key = 'ph:' + ip;
+    const arr = (reqLimit.get(key) || []).filter((t) => now - t < RL_WINDOW);
+    if (arr.length >= RL_MAX) return res.status(429).json({ ok: false, error: 'Thử quá nhiều lần, đợi một lát.' });
+    arr.push(now); reqLimit.set(key, arr);
+
+    const got = String((than && than.password) || '');
+    // So sánh hằng-thời-gian. Độ dài khác nhau thì timingSafeEqual NÉM, nên phải
+    // băm về cùng độ dài trước — so trực tiếp là rò rỉ độ dài mật khẩu.
+    const ok = crypto.timingSafeEqual(
+      crypto.createHash('sha256').update(got).digest(),
+      crypto.createHash('sha256').update(want).digest());
+    if (!ok) return res.status(401).json({ ok: false, error: 'Mật khẩu không đúng.' });
+
+    const tok = sign({ phoneOk: true, exp: Date.now() + PHONE_TTL_MIN * 60000 });
+    res.setHeader('Set-Cookie', PHONE_COOKIE + '=' + tok
+      + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + (PHONE_TTL_MIN * 60)
+      + (process.env.NODE_ENV === 'production' ? '; Secure' : ''));
+    // CHỈ trả ok — không trả SĐT nào ở đây. Màn phải nạp lại danh sách qua tuyến
+    // thường, để một lỗ hổng ở tuyến này không thành lỗ rò cả sổ.
+    return res.json({ ok: true, ttlMin: PHONE_TTL_MIN });
+  }));
+}
+
 function requireRole(role) {
   return (req, res, next) => {
     if (!req.actor) return res.status(401).json({ ok: false, error: 'unauthorized' });
@@ -168,7 +245,9 @@ async function lookupAllowed(email) {
 //     từng người bằng cột `active` mà không cần deploy.
 //
 // `CRM_DOOR_SIGNUP` là công tắc: bỏ biến đi là quay lại chế độ chỉ-danh-sách.
-function doorSignup() { return String(process.env.CRM_DOOR_SIGNUP || '') === '1'; }
+// M6 — cửa mở thì signup TẮT: không còn lý do đẻ tài khoản staff hàng loạt
+// (CR-61), mà mỗi dòng thừa trong staff_users là một người có thể check-in.
+function doorSignup() { return !doorOpen() && String(process.env.CRM_DOOR_SIGNUP || '') === '1'; }
 
 // Trả về user để phát mã / mint phiên. Có trong danh sách thì dùng nguyên quyền
 // của họ; không có mà cửa đang cho tự đăng ký thì tạo diện `staff`.
@@ -271,4 +350,5 @@ function mount(app) {
   app.get('/crm/me', requireCrmAuth, (req, res) => res.json({ ok: true, email: req.actor.email, role: req.actor.role }));
 }
 
-module.exports = { mount, requireCrmAuth, requireRole, currentActor, ipOf, maskEmail, SMOKE_EMAIL };
+module.exports = { mount, requireCrmAuth, requireRole, currentActor, ipOf, maskEmail, SMOKE_EMAIL,
+  requireDoorOrAuth, doorOpen, phoneUnlocked, mountPhoneUnlock, DOOR_ACTOR };

@@ -40,10 +40,12 @@ async function pickPart(files, name, max) {
   return f;
 }
 
-function mount(app, requireCrmAuth, requireRole) {
+function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
+  // E08-D041 — quên wire là FAIL-CLOSED: rơi về gác cổng cũ, cửa đòi auth.
+  var doorAuth = requireDoorOrAuth || requireCrmAuth;
   // Upload a photo attached to a guest → MinIO object + Postgres metadata.
   // `photo` bắt buộc; `thumb`/`preview` do trình duyệt thu nhỏ sẵn, KHÔNG bắt buộc.
-  app.post('/crm/guests/:id/photos', requireCrmAuth,
+  app.post('/crm/guests/:id/photos', doorAuth,
     upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'thumb', maxCount: 1 }, { name: 'preview', maxCount: 1 }]),
     async (req, res) => {
     const id = parseInt(req.params.id, 10);
@@ -218,11 +220,11 @@ function mount(app, requireCrmAuth, requireRole) {
     }
   });
 
-  app.get('/crm/photos/:id/thumb', requireCrmAuth, (req, res) => serveDerived(req, res, 'thumb_key'));
-  app.get('/crm/photos/:id/preview', requireCrmAuth, (req, res) => serveDerived(req, res, 'preview_key'));
+  app.get('/crm/photos/:id/thumb', doorAuth, (req, res) => serveDerived(req, res, 'thumb_key'));
+  app.get('/crm/photos/:id/preview', doorAuth, (req, res) => serveDerived(req, res, 'preview_key'));
 
   // View a photo: auth-gated redirect to a short-lived presigned URL (private bucket).
-  app.get('/crm/photos/:id', requireCrmAuth, async (req, res) => {
+  app.get('/crm/photos/:id', doorAuth, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
     try {

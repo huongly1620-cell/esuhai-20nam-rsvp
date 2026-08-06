@@ -196,7 +196,7 @@
 <input type="file" id="pick" accept="image/*">
 <script>
 var G=[];var SESSION="toa-dam";var SESS="Tọa đàm"; /* E08-D020: SoT = /crm API, filter theo tag buổi */
-var T={"vn": {"ci": "CHECK-IN · Tọa đàm", "lich": "📅 Lịch trình", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Tọa đàm", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)", "makhach": "Mã khách", "ci_fail":"Máy chủ từ chối — CHƯA điểm danh được, thử lại","ci_auth":"Phiên hết hạn — đăng nhập lại rồi điểm danh","ci_404":"Không tìm thấy khách này trên máy chủ","ci_net":"Mất mạng — CHƯA điểm danh được, thử lại","cambtn":"Chụp ảnh khách","pickbtn":"Thêm hình từ thiết bị","cam_up":"Đang tải ảnh…","cam_ok":"Đã lưu ảnh ✓","cam_fail":"Không lưu được ảnh","cam_net":"Lỗi mạng — ảnh chưa lưu. Điểm danh vẫn giữ.","cam_auth":"Phiên đã hết hạn — đăng nhập lại để gửi ảnh","cam_notimg":"File không phải ảnh","cam_heic":"Ảnh dạng HEIC không hiện được. Vào Cài đặt → Camera → Định dạng → chọn Tương thích nhất, rồi chụp lại.","cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in","undo_ask":"Huỷ check-in khách này?\n\nGiờ đến sẽ bị xoá. Check-in lại sẽ ghi giờ mới.","undo_ok":"Đã huỷ check-in ✓","undo_fail":"Máy chủ từ chối — CHƯA huỷ được","undo_net":"Mất mạng — CHƯA huỷ được","undo_role":"Chỉ ban tổ chức mới huỷ được check-in", "close": "Đóng","att_du":"Có tham dự","att_khong":"Không tham dự","att_cho":"Chưa xác nhận","quay_h":"Ghi nhận tại quầy","q_anh":"Ảnh khách","q_tang":"🎁 Quà khách tặng","q_tang_ph":"Quà khách tặng là gì? (giỏ hoa, tranh…)","q_camqua":"Chụp ảnh quà","q_dap":"🎀 Quà đáp lễ","q_dap_ph":"Loại quà đáp lễ (引き出物)…","q_dap_note":"⌛ Danh sách quà đáp lễ đang chờ chị Thúy Hà xác nhận","q_note":"📝 Ghi chú","q_note_ph":"Ghi chú thêm tại quầy…","q_save":"Lưu ghi nhận","q_saved":"Đã lưu ghi nhận ✓","q_empty":"Chưa có gì để lưu","q_fail":"Máy chủ từ chối — CHƯA lưu được","q_net":"Mất mạng — CHƯA lưu được","kho_h":"Ảnh đã chụp","q_hist":"Lịch sử tại quầy","q_ob":"OB Esuhai","q_dongdu":"Đông Du","gdtgd":"Gia đình TGĐ","b_noi":"Nội","b_ngoai":"Ngoại","b_tgd":"GĐ TGĐ","b_jp":"🎌 Nhật","rf_ok":"Đã cập nhật số ✓","rf_fail":"Không tải lại được — kiểm tra mạng","upd":"Cập nhật {t}"}, "jp": {"ci": "受付 · 座談会", "lich": "📅 式次第", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "座談会 ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)", "makhach": "ゲストID", "cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消","undo_ask":"チェックインを取り消しますか？\n\n受付時刻は削除されます。再受付すると新しい時刻になります。","undo_ok":"チェックインを取り消しました ✓","undo_fail":"サーバーが拒否 — 取り消せません","undo_net":"通信エラー — 取り消せません","undo_role":"取消は主催者のみ可能です", "close": "閉じる","att_du":"出席","att_khong":"欠席","att_cho":"未確認","quay_h":"受付での記録","q_anh":"ゲスト写真","q_tang":"🎁 ゲストからの贈り物","q_tang_ph":"贈り物の内容(花かご・絵画など)","q_camqua":"贈り物を撮影","q_dap":"🎀 引出物","q_dap_ph":"引出物の種類…","q_dap_note":"⌛ 引出物リストは確認待ちです","q_note":"📝 メモ","q_note_ph":"受付でのメモ…","q_save":"記録を保存","q_saved":"記録を保存しました ✓","q_empty":"保存する内容がありません","q_fail":"サーバーが拒否 — 保存できません","q_net":"通信エラー — 保存できません","kho_h":"撮影済みの写真","q_hist":"受付の記録","q_ob":"OB エスハイ","q_dongdu":"ドンズー","gdtgd":"社長ご家族","b_noi":"内","b_ngoai":"外","b_tgd":"社長ご家族","b_jp":"🎌 日本","rf_ok":"更新しました ✓","rf_fail":"更新できません — 通信をご確認ください","upd":"{t} 更新"}};var LANG=localStorage.getItem("ci_lang")||"vn";
+var T={"vn": {"ci": "CHECK-IN · Tọa đàm", "lich": "📅 Lịch trình", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Tọa đàm", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)","sdt_mo":"Xem số","sdt_hoi":"Nhập mật khẩu để xem số điện thoại:","sdt_ok":"Đã mở khoá số điện thoại (30 phút) ✓","sdt_sai":"Mật khẩu không đúng","sdt_net":"Mất mạng — chưa mở khoá được", "makhach": "Mã khách", "ci_fail":"Máy chủ từ chối — CHƯA điểm danh được, thử lại","ci_auth":"Phiên hết hạn — đăng nhập lại rồi điểm danh","ci_404":"Không tìm thấy khách này trên máy chủ","ci_net":"Mất mạng — CHƯA điểm danh được, thử lại","cambtn":"Chụp ảnh khách","pickbtn":"Thêm hình từ thiết bị","cam_up":"Đang tải ảnh…","cam_ok":"Đã lưu ảnh ✓","cam_fail":"Không lưu được ảnh","cam_net":"Lỗi mạng — ảnh chưa lưu. Điểm danh vẫn giữ.","cam_auth":"Phiên đã hết hạn — đăng nhập lại để gửi ảnh","cam_notimg":"File không phải ảnh","cam_heic":"Ảnh dạng HEIC không hiện được. Vào Cài đặt → Camera → Định dạng → chọn Tương thích nhất, rồi chụp lại.","cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in","undo_ask":"Huỷ check-in khách này?\n\nGiờ đến sẽ bị xoá. Check-in lại sẽ ghi giờ mới.","undo_ok":"Đã huỷ check-in ✓","undo_fail":"Máy chủ từ chối — CHƯA huỷ được","undo_net":"Mất mạng — CHƯA huỷ được","undo_role":"Chỉ ban tổ chức mới huỷ được check-in", "close": "Đóng","att_du":"Có tham dự","att_khong":"Không tham dự","att_cho":"Chưa xác nhận","quay_h":"Ghi nhận tại quầy","q_anh":"Ảnh khách","q_tang":"🎁 Quà khách tặng","q_tang_ph":"Quà khách tặng là gì? (giỏ hoa, tranh…)","q_camqua":"Chụp ảnh quà","q_dap":"🎀 Quà đáp lễ","q_dap_ph":"Loại quà đáp lễ (引き出物)…","q_dap_note":"⌛ Danh sách quà đáp lễ đang chờ chị Thúy Hà xác nhận","q_note":"📝 Ghi chú","q_note_ph":"Ghi chú thêm tại quầy…","q_save":"Lưu ghi nhận","q_saved":"Đã lưu ghi nhận ✓","q_empty":"Chưa có gì để lưu","q_fail":"Máy chủ từ chối — CHƯA lưu được","q_net":"Mất mạng — CHƯA lưu được","kho_h":"Ảnh đã chụp","q_hist":"Lịch sử tại quầy","q_ob":"OB Esuhai","q_dongdu":"Đông Du","gdtgd":"Gia đình TGĐ","b_noi":"Nội","b_ngoai":"Ngoại","b_tgd":"GĐ TGĐ","b_jp":"🎌 Nhật","rf_ok":"Đã cập nhật số ✓","rf_fail":"Không tải lại được — kiểm tra mạng","upd":"Cập nhật {t}"}, "jp": {"ci": "受付 · 座談会", "lich": "📅 式次第", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "座談会 ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)","sdt_mo":"番号を表示","sdt_hoi":"電話番号を表示するにはパスワードを入力してください：","sdt_ok":"電話番号のロックを解除しました（30分）✓","sdt_sai":"パスワードが違います","sdt_net":"通信エラー — 解除できません", "makhach": "ゲストID", "cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消","undo_ask":"チェックインを取り消しますか？\n\n受付時刻は削除されます。再受付すると新しい時刻になります。","undo_ok":"チェックインを取り消しました ✓","undo_fail":"サーバーが拒否 — 取り消せません","undo_net":"通信エラー — 取り消せません","undo_role":"取消は主催者のみ可能です", "close": "閉じる","att_du":"出席","att_khong":"欠席","att_cho":"未確認","quay_h":"受付での記録","q_anh":"ゲスト写真","q_tang":"🎁 ゲストからの贈り物","q_tang_ph":"贈り物の内容(花かご・絵画など)","q_camqua":"贈り物を撮影","q_dap":"🎀 引出物","q_dap_ph":"引出物の種類…","q_dap_note":"⌛ 引出物リストは確認待ちです","q_note":"📝 メモ","q_note_ph":"受付でのメモ…","q_save":"記録を保存","q_saved":"記録を保存しました ✓","q_empty":"保存する内容がありません","q_fail":"サーバーが拒否 — 保存できません","q_net":"通信エラー — 保存できません","kho_h":"撮影済みの写真","q_hist":"受付の記録","q_ob":"OB エスハイ","q_dongdu":"ドンズー","gdtgd":"社長ご家族","b_noi":"内","b_ngoai":"外","b_tgd":"社長ご家族","b_jp":"🎌 日本","rf_ok":"更新しました ✓","rf_fail":"更新できません — 通信をご確認ください","upd":"{t} 更新"}};var LANG=localStorage.getItem("ci_lang")||"vn";
 function t(k,rep){var s=(T[LANG]&&T[LANG][k])||T.vn[k]||k;if(rep)for(var x in rep)s=s.replace("{"+x+"}",rep[x]);return s;}
 // --- API layer (SoT = /crm + Postgres) — thay hẳn localStorage check-in ---
 async function api(u,o){o=o||{};o.credentials="same-origin";return fetch(u,o);}
@@ -588,32 +588,33 @@ async function saveQuay(id,btn){
   ["qTang","qDap","qNote"].forEach(function(k){var el=document.getElementById(k);if(el)el.value="";});
   g._q={};g._enriched=false;toast(t("q_saved"));await enrich(g,id);
  }catch(e){btn.disabled=false;g._enriched=false;toast(t("q_net"),1);}}
-async function jdel(u){var r=await api(u,{method:"DELETE"});var j={};try{j=await r.json();}catch(e){}return{ok:r.ok,status:r.status,body:j};}
-/* E08-D036 — huỷ check-in. Chiều làm TỤT số nên HỎI LẠI (AC-4); chiều check-in
-   vẫn ghi ngay, không hỏi — cùng luật D031 AC-8c.
-   Lớp lỗi CỬA-2 lặp lại y hệt ở nút này: api() KHÔNG ném khi máy chủ trả 4xx/5xx.
-   Bỏ qua r.ok thì màn xoá dấu ✓, bộ đếm −1, TRONG KHI dòng còn nguyên trong DB —
-   ở cửa nghĩa là khách đã vào phòng mà màn báo chưa. Chỉ đổi màn khi máy chủ
-   XÁC NHẬN. */
-async function huyCi(id,btn){
- if(!confirm(t("undo_ask")))return;
- btn.disabled=true;
+/* E08-D041 §3c — huyCi()/jdel() ĐÃ GỠ cùng nút huỷ: cửa nay mở nên không để
+   thao tác XOÁ DÒNG sau một URL. Huỷ chỉ còn ở /crm với role btl. */
+/* E08-D041 §3b — mở khoá SĐT ngay tại ô SĐT, không mở khoá cả trang. Máy chủ
+   mới là chỗ che thật: chưa mở khoá thì phản hồi trả phone:null, nên mở DevTools
+   cũng không thấy số. Ở đây chỉ là chỗ NHẬP mật khẩu rồi nạp lại. Cookie 30 phút;
+   hết hạn thì số tự ẩn lại ở lần nạp sau. */
+async function moKhoaSdt(btn){
+ var mk=prompt(t("sdt_hoi"));
+ if(mk===null||mk==="")return;
+ if(btn)btn.disabled=true;
  try{
-  var r=await jdel("/crm/guests/"+id+"/check-in");
-  if(!r.ok){
-   btn.disabled=false;
-   toast(r.status===401?t("ci_auth"):(r.status===403?t("undo_role"):(r.status===404?t("ci_404"):t("undo_fail")+" ("+r.status+")")),1);
-   return;
-  }
-  var g=byId(id); if(g){g._came="";g._by="";}
-  mutSeq++;                        /* CỬA-4: vô hiệu mọi vòng poll đang bay */
-  lastSync=Date.now();counter();openPf(id);renderList();lastSig=sig();
-  toast(t("undo_ok"));
- }catch(e){btn.disabled=false;toast(t("undo_net"),1);}
+  var r=await api("/crm/phone-unlock",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({password:mk})});
+  if(!r.ok){var e={};try{e=await r.json();}catch(_){}
+   if(btn)btn.disabled=false;toast(e.error||t("sdt_sai"),1);return;}
+  /* KHÔNG tự vẽ số từ phản hồi — tuyến mở khoá cố ý không trả SĐT nào. Nạp lại
+     qua tuyến thường để số đến từ đúng một nguồn. */
+  toast(t("sdt_ok"));await refresh();if(curId)openPf(curId);
+ }catch(e){if(btn)btn.disabled=false;toast(t("sdt_net"),1);}
 }
 function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls=g.diet==="Món chay"?"chay":"";
  var ciBox=cm?'<div class="cidone"><div class="t">&#9711; '+t("cidone",{t:fmtCame(cm)})+(g._by?' · '+esc(g._by):'')+'</div>'
-   +'<div class="undorow"><button class="undob" data-undo="'+esc(g.id)+'">'+t("undo")+'</button></div></div>'
+   /* E08-D041 §3c — Sponsor chốt phương án A: BỎ nút huỷ ở cửa. Cửa nay mở
+      (không OTP) nên ai có link đều bấm được; huỷ check-in là thao tác XOÁ DÒNG
+      và audit là bản ghi duy nhất còn lại (D036 §3g) — không để nó sau một URL.
+      Huỷ chỉ còn ở /crm với role btl, nút đó vẫn nguyên. */
+   +'</div>'
    :'<button class="cib" data-ci="'+esc(g.id)+'">&#9711;&nbsp; '+t("cibtn")+'</button>';
  ciBox+=khoHtml(g)+quayHtml(g);
  $("#pfBody").innerHTML='<div class="pf-av">'+av(g,1)+(hangOf(g)?'<span class="av-vip">'+esc(hangOf(g))+'</span>':'')+'</div><div class="pf-nm">'+pairVJ(g.name,g.name_jp)+'</div><div class="pf-rl"><b>'+(pairVJ(g.title,g.title_jp)||"—")+'</b>'+((g.org||g.org_jp)?'<br>'+pairVJ(g.org,g.org_jp):'')+'</div>'
@@ -622,7 +623,11 @@ function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came
   +'<div class="facts">'+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(g.buoi)+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(g.diet||"—")+'</div></div></div>'
   +'<div class="info"><div class="ir"><span class="k">'+t("phutrach")+'</span><span class="v">'+esc(g.handler||"—")+'</span></div>'
   +'<div class="ir"><span class="k">'+t("vaitro")+'</span><span class="v">'+esc(g.role||"—")+(g.note?' · '+esc(g.note):'')+'</span></div>'
-  +'<div class="ir"><span class="k">'+t("sdt")+'</span><span class="v">'+t("sdthide")+'</span></div>'
+  /* Có số ⇒ đã mở khoá (máy chủ trả null khi chưa). Chưa có ⇒ nút mở khoá. */
+  +'<div class="ir"><span class="k">'+t("sdt")+'</span><span class="v">'
+    +(g.phone?('<a href="tel:'+esc(g.phone)+'">'+esc(g.phone)+'</a>')
+             :(t("sdthide")+' <button class="undob" data-sdt="1" style="margin-left:6px">'+t("sdt_mo")+'</button>'))
+    +'</span></div>'
   +'<div class="ir"><span class="k">'+t("makhach")+'</span><span class="v">'+esc(g.id)+'</span></div></div>'+ciBox;
  $("#pf").classList.add("show");document.body.style.overflow="hidden";if(!g._enriched)enrich(g,id);}
 async function enrich(g,id){try{var j=await jget("/crm/guests/"+id);g._enriched=true;
@@ -646,7 +651,7 @@ $("#pfBody").addEventListener("click",function(e){var b=e.target.closest("button
   if(b.getAttribute("data-pick")){camQua=false;camFor=b.getAttribute("data-pick");var pk=document.getElementById("pick");if(pk){pk.value="";pk.click();}return;}
   if(b.getAttribute("data-camqua")){camQua=true;camFor=b.getAttribute("data-camqua");var cq=document.getElementById("cam");if(cq){cq.value="";cq.click();}return;}
   if(b.getAttribute("data-save")){saveQuay(b.getAttribute("data-save"),b);return;}
-  if(b.getAttribute("data-undo")){huyCi(b.getAttribute("data-undo"),b);return;}
+  if(b.getAttribute("data-sdt")){moKhoaSdt(b);return;}
   if(b.getAttribute("data-ci")){var id=b.getAttribute("data-ci");b.disabled=true;
     /* E08-D028 CỬA-2: jpost() KHÔNG ném lỗi khi máy chủ từ chối — nó trả
        {ok:false,status}. Bản cũ bỏ qua r.ok rồi rơi về || "1" nên màn hiện
@@ -685,9 +690,16 @@ async function boot(){
     ĐÚNG cửa vừa mở. Trang này KHÔNG dựng màn đăng nhập riêng — dùng chung một
     luồng OTP với /crm để chỉ có một chỗ phát mã và một chỗ chặn tần suất.
     Tài khoản PG là role `staff`: vào được cửa, KHÔNG vào được bảng /crm. */
+ /* E08-D041 — BỎ chặn OTP ở cửa. Ly 05/08: «mng feedback bất tiện khi nhập
+    email ở check in và chờ otp… để lâu sẽ bị out». Phiên hết hạn ~12h nên giữa
+    lễ là phải đăng nhập lại, ở cửa, lúc đông, với người không cầm mailbox.
+    Không redirect nữa: 401 ở đây chỉ nghĩa là CHƯA có phiên — vẫn đi tiếp, vì
+    máy chủ đã mở đúng bốn tuyến cửa qua requireDoorOrAuth (CRM_DOOR_OPEN).
+    Nếu công tắc TẮT thì lệnh danh sách phía dưới sẽ 401 và gate() hiện lỗi —
+    fail-closed, không phải màn trắng. */
  try{await jget("/crm/me");}catch(e){
-   if(e&&e.status===401){location.href="/crm?next="+encodeURIComponent(location.pathname);return;}
-   return gate('<div><h2>Lỗi tải dữ liệu</h2><p style="color:#b9b096">Kiểm tra kết nối rồi thử lại.</p><button onclick="location.reload()" style="margin-top:12px;background:#d8b876;color:#1a1204;padding:10px 20px;border:0;border-radius:8px;font-weight:700;cursor:pointer">Tải lại</button></div>');}
+   if(e&&e.status===401){/* chưa đăng nhập — cửa vẫn mở, đi tiếp */}else{
+   return gate('<div><h2>Lỗi tải dữ liệu</h2><p style="color:#b9b096">Kiểm tra kết nối rồi thử lại.</p><button onclick="location.reload()" style="margin-top:12px;background:#d8b876;color:#1a1204;padding:10px 20px;border:0;border-radius:8px;font-weight:700;cursor:pointer">Tải lại</button></div>');}}
  try{var j=await jget("/crm/guests?session="+SESSION+"&limit=1000");G=(j.rows||[]).map(mapRow);}catch(e){return gate('<div><h2>Lỗi tải dữ liệu</h2><p style="color:#b9b096">Kiểm tra kết nối rồi thử lại.</p><button onclick="location.reload()" style="margin-top:12px;background:#d8b876;color:#1a1204;padding:10px 20px;border:0;border-radius:8px;font-weight:700;cursor:pointer">Tải lại</button></div>');}
  lastSync=Date.now();counter();setLang(LANG);lastSig=sig();
 }

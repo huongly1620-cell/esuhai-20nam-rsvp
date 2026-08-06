@@ -2,7 +2,7 @@
 
 const { pool } = require('../db');
 const { logAudit, hashIp } = require('./audit');
-const { ipOf } = require('./auth');
+const { ipOf, phoneUnlocked } = require('./auth');
 // E08-D031: một luật trạng thái tham dự dùng chung cho list · detail · stats.
 const att = require('./attendance');
 
@@ -12,7 +12,10 @@ function clean(v) { return typeof v === 'string' ? v.trim() : (v == null ? '' : 
 // staff may update these; never id/response_id/deleted_at/guest_ext_id.
 const PATCH_WHITELIST = ['full_name', 'phone', 'email', 'org', 'title', 'note', 'tags'];
 
-function mount(app, requireCrmAuth, requireRole) {
+function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
+  // E08-D041 — nếu chưa nối làn cửa thì rơi về gác cổng cũ: quên wire là
+  // FAIL-CLOSED (cửa đòi auth), không phải fail-open.
+  var doorAuth = requireDoorOrAuth || requireCrmAuth;
   // ---- search (staff sees all; ?mine=1 filters to actor's assignments) ----
   // Session tags written by the D018 importer (Wave A uses tags, not a schema
   // column — see E08-D020). Only these two are filterable; anything else 400s.
@@ -26,7 +29,7 @@ function mount(app, requireCrmAuth, requireRole) {
   // thay vì mỗi file giữ một bản chép tay rồi lệch nhau lúc nào không ai biết.
   const SESSION_RE = att.SESSION_RE;
 
-  app.get('/crm/guests', requireCrmAuth, async (req, res) => {
+  app.get('/crm/guests', doorAuth, async (req, res) => {
     const q = String(req.query.q || '').trim();
     const mine = String(req.query.mine || '') === '1';
     const session = String(req.query.session || '').trim();
@@ -115,6 +118,12 @@ function mount(app, requireCrmAuth, requireRole) {
          ) p ON TRUE
          ${'WHERE ' + conds.join(' AND ')}
          ORDER BY g.full_name ASC LIMIT $${params.length}`, params);
+      /* E08-D041 M2 — SĐT bị GỠ KHỎI PHẢN HỒI khi chưa mở khoá. Che ở giao diện
+         là thất bại: mở tab Network là thấy số đủ trong JSON. Gỡ ở TẦNG NÀY thì
+         mọi màn — hai cửa, v2, classic, cả làn smoke — cùng không có số, không
+         phải nhớ vá từng chỗ và không sót chỗ nào. */
+      const moKhoaSdt = phoneUnlocked(req);
+      if (!moKhoaSdt) r.rows.forEach((x) => { x.phone = null; });
       // M1 (E08-D032): `guest_ext_id` là KHOÁ để file xuất nhập ngược khớp
       // đúng người. Trước đây API không trả nó nên bản xuất rơi về `g.id` nội
       // bộ ⇒ nhập lại khớp 0/344, INSERT 344 khách trùng. Chỉ lộ cho `btl` —
@@ -128,7 +137,7 @@ function mount(app, requireCrmAuth, requireRole) {
   });
 
   // ---- guest detail ----
-  app.get('/crm/guests/:id', requireCrmAuth, async (req, res) => {
+  app.get('/crm/guests/:id', doorAuth, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
     try {
@@ -157,7 +166,7 @@ function mount(app, requireCrmAuth, requireRole) {
       return res.json({
         ok: true,
         guest: {
-          id: row.id, full_name: row.full_name, phone: row.phone, email: row.email,
+          id: row.id, full_name: row.full_name, phone: (phoneUnlocked(req) ? row.phone : null), email: row.email,
           org: row.org, title: row.title, note: row.note, tags: row.tags,
           table_no: row.table_no, seat_no: row.seat_no || null,
           response_id: row.response_id, created_at: row.created_at,
@@ -268,7 +277,7 @@ function mount(app, requireCrmAuth, requireRole) {
   });
 
   // ---- check-in (single per guest; report if already) ----
-  app.post('/crm/guests/:id/check-in', requireCrmAuth, async (req, res) => {
+  app.post('/crm/guests/:id/check-in', doorAuth, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
     try {
@@ -404,7 +413,7 @@ function mount(app, requireCrmAuth, requireRole) {
   // dòng trùng nằm lại trên thẻ khách VIP và chị Thúy Hà đối soát quà sẽ đếm
   // sai. Một request + một transaction ⇒ hoặc vào hết, hoặc không dòng nào —
   // bấm lại bao nhiêu lần cũng không đẻ bản sao.
-  app.post('/crm/guests/:id/interactions', requireCrmAuth, async (req, res) => {
+  app.post('/crm/guests/:id/interactions', doorAuth, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
 

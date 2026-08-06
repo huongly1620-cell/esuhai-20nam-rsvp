@@ -64,10 +64,13 @@ function mount(app) {
   // Rollback lane: the classic shell, regardless of CRM_UI. Same auth gate.
   app.get('/crm/classic', (req, res) => serveShell(req, res, 'crm-app.html'));
 
-  auth.mount(app);                                  // /auth/* + /crm/me
-  guests.mount(app, auth.requireCrmAuth, auth.requireRole);
+  auth.mount(app);
+  // E08-D041 — tuyến mở khoá SĐT. Đặt cạnh auth vì nó là gác cổng, không phải
+  // dữ liệu khách.
+  auth.mountPhoneUnlock(app);                                  // /auth/* + /crm/me
+  guests.mount(app, auth.requireCrmAuth, auth.requireRole, auth.requireDoorOrAuth);
   stats.mount(app, auth.requireCrmAuth);
-  photos.mount(app, auth.requireCrmAuth, auth.requireRole);
+  photos.mount(app, auth.requireCrmAuth, auth.requireRole, auth.requireDoorOrAuth);
   importer.mount(app, auth.requireCrmAuth, auth.requireRole);
   audit.mount(app, auth.requireCrmAuth, auth.requireRole);
   // E08-D032 — hai lệnh TÁCH BẠCH: /crm/import-update/dry-run và /commit.

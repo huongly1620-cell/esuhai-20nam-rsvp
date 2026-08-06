@@ -296,7 +296,7 @@
     <div class="metabar">
       <div class="cdm toa"><span class="dt"></span><span class="k" data-i="toa_s">Tọa đàm</span><span class="v num" id="cdmToa">—</span></div>
       <div class="cdm gala"><span class="dt"></span><span class="k" data-i="gala_s">Gala</span><span class="v num" id="cdmGala">—</span></div>
-      <div class="counter"><div class="ring" id="ring"><i id="ringPct">0%</i></div><div><div class="lb" data-i="arrived">Đã đến</div><div><span class="big num" id="cIn">0</span><span class="tot num" id="cTot"> / 0</span></div></div></div>
+      <div class="counter"><div class="ring" id="ring"><i id="ringPct">0%</i></div><div><div class="lb"><span data-i="arrived">Đã đến</span> <span id="cNv" style="color:var(--muted);font-weight:400;font-size:.72rem"></span></div><div><span class="big num" id="cIn">0</span><span class="tot num" id="cTot"> / 0</span></div></div></div>
     </div>
   </div>
 
@@ -591,8 +591,16 @@ async function addShrunk(fd,file){
     function box(n,l,s2){return '<div class="kbox"><div class="kn num">'+n+'</div><div class="kl">'+l+'</div><div class="ks">'+s2+'</div></div>';}
     function part1(l,n,d){return '<div class="kp"><div class="kpt"><span class="kpl">'+l+'</span><span class="kpn num">'+n+'</span></div><div class="kpd">'+d+'</div></div>';}
   }
+ /* E08-D038 — cùng luật với máy chủ: tách token đúng dấu phẩy, không indexOf
+    (indexOf khớp cả "pl:nhan-vien-esuhai"). */
+ function laNhanVien(g){return tagList(g).indexOf("pl:nhan-vien")>-1;}
  function renderDash(){
-   var toa=tabCount("toa"),gal=tabCount("gal"),inN=ALL.filter(function(g){return g.checked_in;}).length,tot=ALL.length;
+   /* KPI đếm trên KHÁCH MỜI — khớp /crm/stats đã loại trừ pl:nhan-vien (mảnh 3a).
+      Nhân viên vẫn nằm trong ALL nên danh sách và bộ lọc bàn vẫn thấy họ. */
+   var kh=ALL.filter(function(g){return !laNhanVien(g);});
+   var nv=ALL.length-kh.length;
+   var toa=tabCount("toa"),gal=tabCount("gal"),inN=kh.filter(function(g){return g.checked_in;}).length,tot=kh.length;
+   var nvEl=$("#cNv");if(nvEl)nvEl.textContent=nv?("· nhân viên "+nv):"";
    $("#cIn").textContent=inN;$("#cTot").textContent=" / "+tot;
    var pct=tot?Math.round(inN/tot*100):0;$("#ringPct").textContent=pct+"%";$("#ring").style.setProperty("--p",(pct*3.6)+"deg");
    $("#ctAll").textContent=tot;$("#ctToa").textContent=toa;$("#ctGal").textContent=gal;

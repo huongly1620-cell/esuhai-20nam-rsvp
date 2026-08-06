@@ -182,6 +182,11 @@
  .ft{border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-size:.8rem;background:rgba(5,13,24,.4)}.ft .k{font-size:.55rem;text-transform:uppercase;color:var(--muted2)}.ft .v{color:var(--cream);font-weight:600}.ft.chay .v{color:var(--green-ok)}
  .info{text-align:left;border-top:1px solid var(--line);margin-top:6px}
  .ir{display:flex;justify-content:space-between;gap:14px;padding:11px 2px;border-bottom:1px dashed var(--line);font-size:.9rem}.ir .k{color:var(--muted)}.ir .v{color:var(--cream);text-align:right;font-weight:500}
+ /* E08-D056 — nút «Đã tặng» ở trạng thái ĐÃ TICK. Ngược hẳn nút vàng đặc của
+    check-in: viền xanh, nền mờ, chữ nhỏ hơn — hai nút không được nhìn giống nhau
+    vì chúng ở cùng một hồ sơ và hậu quả bấm nhầm khác hẳn nhau. */
+ .cib.qd-on{background:none;border:1.5px solid var(--green-ok);color:var(--green-ok);box-shadow:none;font-size:.92rem;padding:13px}
+ .cib.qd-wait{background:none;border:1.5px dashed var(--line2);color:var(--muted2);box-shadow:none;font-size:.92rem;padding:13px;cursor:default}
  .cib{width:100%;border:0;border-radius:14px;padding:17px;font:inherit;font-size:1.05rem;font-weight:700;cursor:pointer;margin-top:20px;background:linear-gradient(180deg,#f0d999,#cfa758);color:#2a1e05;box-shadow:0 10px 26px rgba(216,184,118,.28);display:flex;align-items:center;justify-content:center;gap:10px}
  .cidone{border:1.5px solid rgba(67,224,141,.5);border-radius:14px;padding:15px;background:rgba(67,224,141,.08);margin-top:20px}.cidone .t{color:var(--green-ok);font-weight:700}
  .undo{margin-top:10px;width:100%;border:1px solid rgba(226,58,46,.3);background:transparent;color:#ff9a8f;border-radius:11px;padding:11px;font:inherit;font-weight:600;cursor:pointer}
@@ -247,10 +252,22 @@ var T={"vn": {"ci": "CHECK-IN · Gala", "lich": "📅 Lịch trình", "came_labe
       lb_qua:"🎁 Ảnh quà",lb_ghim:"✓ Ảnh đại diện",
       /* E08-D055 §4d — «Đã đến» tái dùng khoá `btn_came` đã có; chỉ «Chưa đến»
          là thiếu ở cửa nên thêm mới, JP dùng 未受付 cho khớp `not_yet` của v2. */
-      chua_den:"Chưa đến"},
+      chua_den:"Chưa đến",
+      /* E08-D056 — nhãn MÀN. Chuỗi ghi xuống CSDL là QD_TANG/QD_HUY, cố ý KHÔNG
+         nằm ở đây: nhãn đổi theo ngôn ngữ, dữ liệu thì không được đổi. */
+      qd_nut:"Đã tặng quà đáp lễ",qd_roi:"Đã tặng",qd_boi:"bởi",
+      qd_note:"Tặng quà cho khách xong thì bấm nút này.",
+      qd_hoi:"Bỏ đánh dấu «đã tặng quà đáp lễ» cho khách này?\n\nDòng cũ KHÔNG bị xoá — hệ thống ghi thêm một dòng huỷ, lịch sử giữ đủ.",
+      qd_da_tick:"Đã đánh dấu tặng quà ✓",qd_da_go:"Đã bỏ đánh dấu ✓",
+      qd_fail:"Máy chủ từ chối — CHƯA ghi được"},
   jp:{q_pickqua:"端末から贈り物の写真",cam_ok_ghim:"保存しました ✓ — プロフィール写真に設定",
       lb_qua:"🎁 贈り物の写真",lb_ghim:"✓ プロフィール写真",
-      chua_den:"未受付"}};
+      chua_den:"未受付",
+      qd_nut:"引き出物をお渡し済み",qd_roi:"お渡し済み",qd_boi:"担当:",
+      qd_note:"引き出物をお渡ししたら押してください。",
+      qd_hoi:"「引き出物お渡し済み」の記録を取り消しますか？\n\n既存の記録は削除されません — 取消の記録が追加され、履歴は残ります。",
+      qd_da_tick:"お渡し済みとして記録しました ✓",qd_da_go:"記録を取り消しました ✓",
+      qd_fail:"サーバーが拒否 — 記録できません"}};
  for(var l in A){for(var k in A[l]){T[l][k]=A[l][k];}}})();
 function t(k,rep){var s=(T[LANG]&&T[LANG][k])||T.vn[k]||k;if(rep)for(var x in rep)s=s.replace("{"+x+"}",rep[x]);return s;}
 // --- API layer (SoT = /crm + Postgres) — thay hẳn localStorage check-in ---
@@ -742,12 +759,80 @@ function who(e){return String(e||"").split("@")[0];}
 /* Giữ chữ PG đang gõ: openPf() vẽ lại toàn bộ #pfBody mỗi lần điểm danh xong
    hoặc enrich() trả về, mà textarea nằm trong đó — không cất đi thì mất trắng. */
 function grabDraft(){if(!curId)return;var g=byId(curId);if(!g)return;
- var a=document.getElementById("qTang"),b=document.getElementById("qDap"),c=document.getElementById("qNote");
- if(a||b||c)g._q={tang:a?a.value:"",dap:b?b.value:"",note:c?c.value:""};}
+ var a=document.getElementById("qTang"),c=document.getElementById("qNote");
+ /* E08-D056 — bỏ `dap` khỏi bản nháp: ô #qDap không còn, nút tự gọi API. */
+ if(a||c)g._q={tang:a?a.value:"",note:c?c.value:""};}
 function histHtml(g){var L=g._inter||[];if(!L.length)return "";
  return '<div class="qh"><div class="qhh">'+t("q_hist")+'</div>'+L.slice(0,12).map(function(x){
   return '<div class="qhr"><b>'+esc(kindLbl(x.kind))+':</b> '+esc(x.body||"")
    +'<div class="qhm">'+esc(who(x.actor_email))+' · '+fmt(x.created_at)+'</div></div>';}).join("")+'</div>';}
+/* ─────────── E08-D056 · «Quà đáp lễ» → nút có tick ───────────
+   KHÔNG có route xoá interaction (grep server/crm: 0). Nên bỏ tick KHÔNG xoá
+   dòng — nó GHI THÊM một dòng phủ định, và trạng thái đọc theo dòng MỚI NHẤT.
+   Được cả ba: không cần route mới (36 giờ trước lễ), giữ append-only, và lịch
+   sử đủ ai-tick-ai-gỡ-lúc-nào ngay trong khối histHtml đã có.
+
+   Vì sao phải cẩn thận hơn D048: chụp trượt thì khách mang ảnh xấu; tick nhầm
+   thì khách bị ghi «đã nhận» khi chưa nhận ⇒ cuối buổi KHÔNG được phát 引き出物.
+   Hại rơi vào KHÁCH. Và ô chữ phải gõ mới ghi, còn nút thì CHẠM NHẦM LÀ GHI. */
+var QD_TANG="Đã tặng", QD_HUY="Huỷ đánh dấu", QD_KEY="quadaple";
+/* QD_TANG/QD_HUY là DỮ LIỆU ghi xuống CSDL, KHÔNG phải nhãn màn — tuyệt đối
+   không bọc t(). Bọc t() là bấm ở màn tiếng Nhật ghi xuống một chuỗi khác, và
+   phép so trạng thái vỡ ngay. */
+function qdTrangThai(g){
+ var L=g&&g._inter;
+ if(!L)return null;                    /* AC-6 — CHƯA BIẾT, khác hẳn «chưa tặng» */
+ for(var i=0;i<L.length;i++){
+   /* Máy chủ trả interactions theo `created_at DESC, id DESC` ⇒ khớp ĐẦU TIÊN
+      là dòng MỚI NHẤT. Tie-break `id DESC` là của vé D057, tách riêng khỏi vé này.
+
+      ⚠️ ĐỪNG viết lại chú thích này thành «thiếu id DESC thì tick và bỏ tick rơi
+      cùng mốc giờ». Đã đo: ca đó KHÔNG XẢY RA ĐƯỢC. `now()` đóng băng theo
+      transaction, mà mỗi lần bấm nút gửi MỘT yêu cầu riêng ⇒ hai transaction,
+      hai mốc giờ. Trùng mốc chỉ BẢO ĐẢM trong CÙNG MỘT yêu cầu, và không đường
+      nào ghi hai dòng `qua-dap-le` trong một yêu cầu: `saveQuay` đẩy zero dòng
+      loại này, classic `recSave` gọi ba jsend riêng, nút tick mỗi lần một dòng.
+      Tie-break vẫn cần — nhưng vì HAI lý do khác, xem guests.js:205: thứ tự toàn
+      phần rẻ hơn lập luận xác suất, và ca trùng mốc CÓ THẬT ở `histHtml`
+      (`qua-tang` + `ghi-chu-quay` đi chung một `items[]`, cùng một `created_at`).
+      §3 — dung thứ ở phía ĐỌC: `ttKey` gộp `qua-dap-le` (cửa) với `Quà đáp lễ`
+      (classic) về cùng "quadaple" nên dòng chị Ly gõ ở classic ĐƯỢC TÍNH, mà
+      classic không phải sửa một ký tự. Phải LOẠI CHUỖI RỖNG trước khi so:
+      ttKey("電話")==="" nên không loại thì mọi nhãn tiếng Nhật đều khớp nhau. */
+   var k=ttKey(L[i].kind);
+   if(!k||k!==QD_KEY)continue;
+   return {tick:String(L[i].body||"").trim()!==QD_HUY, boi:L[i].actor_email, luc:L[i].created_at};
+ }
+ return {tick:false};
+}
+function quaDapHtml(g){
+ var s=qdTrangThai(g);
+ /* AC-6 — `_inter` chưa tải xong thì CẤM hiện «chưa tặng». Vẽ «chưa tặng» khi
+    thật ra đã tặng thì PG tặng LẦN THỨ HAI — đúng lớp lỗi ⑤ của D048 (merge()
+    chép _enriched mà quên _photos ⇒ PG kết luận «khách chưa chụp»). */
+ if(!s)return '<button class="cib qd-wait" disabled>…</button>';
+ if(!s.tick)return '<button class="cib" data-qdap="'+esc(g.id)+'">&#127872;&nbsp; '+t("qd_nut")+'</button>';
+ /* AC-4e — «ai tick, lúc nào» ngay CẠNH nút, không chỉ trong lịch sử bên dưới.
+    Dòng phủ định là ĐƯỜNG SỬA; dòng này là ĐƯỜNG PHÁT HIỆN — thứ khiến người
+    chạm nhầm nhìn ra mình vừa chạm nhầm. Có đường sửa mà không ai biết mình cần
+    sửa thì đường sửa không bao giờ được dùng. */
+ return '<button class="cib qd-on" data-qdap="'+esc(g.id)+'" data-tick="1">&#10003;&nbsp; '+t("qd_roi")+' · '+fmt(s.luc)+'</button>'
+  +'<div class="qnote">'+t("qd_boi")+' '+esc(who(s.boi))+'</div>';
+}
+async function datQuaDap(id,btn,dangTick){
+ if(dangTick&&!confirm(t("qd_hoi")))return;
+ btn.disabled=true;                      /* AC-4d — khoá tới khi có phản hồi */
+ try{
+  var r=await api("/crm/guests/"+id+"/interactions",{method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({kind:"qua-dap-le",body:dangTick?QD_HUY:QD_TANG})});
+  /* §4b — fetch KHÔNG ném khi 4xx/5xx. Vẽ tick trước rồi mới biết máy chủ từ
+     chối là báo-xanh-giả, và ở đây nó khiến khách MẤT PHẦN QUÀ. */
+  if(!r.ok){btn.disabled=false;toast(r.status===401?t("ci_auth"):t("qd_fail")+" ("+r.status+")",1);return;}
+  var g=byId(id);
+  if(g){g._enriched=false;toast(dangTick?t("qd_da_go"):t("qd_da_tick"));await enrich(g,id);}
+ }catch(e){btn.disabled=false;toast(t("q_net"),1);}
+}
 function quayHtml(g){var q=g._q||{};
  return '<div class="quay"><h4>'+t("quay_h")+'</h4>'
   +'<div class="qf"><label>'+t("q_anh")+'</label>'
@@ -761,9 +846,12 @@ function quayHtml(g){var q=g._q||{};
       `data-pick` cho việc này: `data-pick` ép `camQua=false` (chân dung) nên ảnh
       quà sẽ thành ẢNH ĐẠI DIỆN của khách — và từ vé này còn TỰ GHIM nữa (M4). */
    +'<button class="cib camb" data-pickqua="'+esc(g.id)+'">&#128193;&nbsp; '+t("q_pickqua")+'</button></div>'
-  +'<div class="qf"><label>'+t("q_dap")+'</label>'
-   +'<input id="qDap" placeholder="'+esc(t("q_dap_ph"))+'" value="'+esc(q.dap||"")+'">'
-   +'<div class="qnote">'+esc(t("q_dap_note"))+'</div></div>'
+  +'<div class="qf"><label>'+t("q_dap")+'</label>'+quaDapHtml(g)
+   /* E08-D056 §4d — dòng chữ mờ THAY dòng cũ, không giữ cả hai: hai dòng mờ
+      chồng nhau dưới một nút thì không ai đọc dòng nào. Dòng cũ giải thích vì
+      sao ô là chữ tự do, mà ô đó không còn. Loại quà không mất chỗ ghi — ô Ghi
+      chú (`ghi-chu-quay`) vẫn còn. */
+   +'<div class="qnote">'+esc(t("qd_note"))+'</div></div>'
   +'<div class="qf"><label>'+t("q_note")+'</label>'
    +'<textarea id="qNote" rows="2" placeholder="'+esc(t("q_note_ph"))+'">'+esc(q.note||"")+'</textarea></div>'
   +'<button class="cib" data-save="'+esc(g.id)+'">&#128190;&nbsp; '+t("q_save")+'</button>'
@@ -772,7 +860,6 @@ async function saveQuay(id,btn){
  grabDraft();var g=byId(id);if(!g)return;var q=g._q||{};
  var items=[];
  if(String(q.tang||"").trim())items.push({kind:"qua-tang",body:q.tang.trim()});
- if(String(q.dap||"").trim())items.push({kind:"qua-dap-le",body:q.dap.trim()});
  if(String(q.note||"").trim())items.push({kind:"ghi-chu-quay",body:q.note.trim()});
  if(!items.length){toast(t("q_empty"),1);return;}
  btn.disabled=true;
@@ -791,7 +878,7 @@ async function saveQuay(id,btn){
      openPf(), mà openPf() mở đầu bằng grabDraft() — nó đọc lại đúng ba ô vẫn
      còn chữ và dựng lại bản nháp vừa xoá. Ở cửa nghĩa là PG lưu xong thấy chữ
      còn nguyên, tưởng chưa lưu, bấm lần nữa → hai dòng ghi nhận trùng. */
-  ["qTang","qDap","qNote"].forEach(function(k){var el=document.getElementById(k);if(el)el.value="";});
+  ["qTang","qNote"].forEach(function(k){var el=document.getElementById(k);if(el)el.value="";});
   g._q={};g._enriched=false;toast(t("q_saved"));await enrich(g,id);
  }catch(e){btn.disabled=false;g._enriched=false;toast(t("q_net"),1);}}
 /* E08-D041 §3c — huyCi()/jdel() ĐÃ GỠ cùng nút huỷ: cửa nay mở nên không để
@@ -856,6 +943,10 @@ $("#pfBody").addEventListener("click",function(e){
   /* §3b — CÙNG ô chọn tệp `#pick` với chân dung, khác đúng một thứ: camQua=true.
      Đó là lý do phải có attr riêng chứ không thêm cờ vào `data-pick`. */
   if(b.getAttribute("data-pickqua")){camQua=true;camFor=b.getAttribute("data-pickqua");var pq=document.getElementById("pick");if(pq){pq.value="";pq.click();}return;}
+  /* E08-D056 — nút «Đã tặng» tự gọi API ngay khi bấm (Sponsor: «có nút tick sau
+     khi nhấn»), KHÔNG đi qua nút «Lưu ghi nhận». data-tick nói nút đang ở trạng
+     thái nào để biết lần bấm này là tick hay gỡ. */
+  if(b.getAttribute("data-qdap")){datQuaDap(b.getAttribute("data-qdap"),b,b.getAttribute("data-tick")==="1");return;}
   if(b.getAttribute("data-save")){saveQuay(b.getAttribute("data-save"),b);return;}
   /* E08-D051 — bộ bắt `data-sdt` gỡ theo nút. Để lại một nhánh trỏ vào hàm đã
      xoá là ReferenceError ngay giữa hồ sơ khách, ở cửa, lúc đông. */

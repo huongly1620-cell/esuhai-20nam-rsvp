@@ -101,8 +101,11 @@
  .fb .mk{width:15px;height:15px;border-radius:50%;border:2px solid currentColor;display:inline-block;flex:none}.fb .xx{font-size:1rem}
  .fb.came.on{background:var(--green-ok);border-color:var(--green-ok);color:#042a17}.fb.no.on{background:var(--amber);border-color:var(--amber);color:#2a1e05}
  .sr{padding:2px 14px 8px;position:sticky;top:52px;z-index:20;background:linear-gradient(180deg,var(--sr1),var(--sr2));backdrop-filter:blur(8px)}
- .sr .box{position:relative}.sr input{width:100%;font:inherit;font-size:1rem;color:var(--cream);background:rgba(5,13,24,.6);border:1.5px solid var(--line);border-radius:12px;padding:13px 14px 13px 42px;outline:none}
- .sr input:focus{border-color:var(--acc)}.sr .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
+ /* Chỉ #q trong .box — KHÔNG dính #fBan. `.sr input` specificity thắng `.fban`
+    (0,1,1 > 0,1,0) ⇒ ô Bàn width:100% nuốt cả hàng, ô tìm tên flex:1 còn ~0px
+    (D038 LIVE 06/08 — Ly/Sponsor báo mất tìm tên). */
+ .sr .box{position:relative}.sr .box input{width:100%;font:inherit;font-size:1rem;color:var(--cream);background:rgba(5,13,24,.6);border:1.5px solid var(--line);border-radius:12px;padding:13px 14px 13px 42px;outline:none}
+ .sr .box input:focus{border-color:var(--acc)}.sr .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
  /* padding-top 11px là CHỖ ĐỨNG cho stick: .quick cuộn ngang nên overflow-y
     tính là auto, stick nhô lên khỏi mép hộp sẽ bị cắt hoặc đẻ ra thanh cuộn dọc. */
  .quick{display:flex;gap:9px;padding:11px 14px 2px;overflow-x:auto;scrollbar-width:none}.quick::-webkit-scrollbar{display:none}

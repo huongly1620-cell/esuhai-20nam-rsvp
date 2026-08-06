@@ -216,7 +216,36 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
         'SELECT session, actor_email, checked_in_at, note FROM crm_check_ins WHERE guest_id = $1 ORDER BY checked_in_at DESC',
         [id]);
       const asg = await pool.query('SELECT staff_email, assigned_at FROM crm_assignments WHERE guest_id = $1', [id]);
-      const inter = await pool.query('SELECT id, actor_email, kind, body, created_at FROM crm_interactions WHERE guest_id = $1 ORDER BY created_at DESC LIMIT 100', [id]);
+      /* E08-D057 — `, id DESC` là TIE-BREAK. HAI lý do, và cả hai đều KHÔNG phải
+         lý do R1 nêu lần đầu (xem phần «chỗ đã sai» cuối chú thích).
+
+         ① Thứ tự TOÀN PHẦN rẻ hơn lập luận về xác suất. Không có tie-break thì
+            tính đúng đắn của D056 phải tựa vào một tiền đề: «không yêu cầu nào
+            ghi hai dòng cùng `kind`». Tiền đề đó đúng hôm nay — và đúng là loại
+            tiền đề mà một vé sau vô tình phá, trong khi không ai còn nhớ là mình
+            từng dựa vào nó.
+
+         ② Ca trùng mốc BẢO ĐẢM thì CÓ THẬT, chỉ ở chỗ khác. `created_at` mặc
+            định `now()`, mà `now()` ĐÓNG BĂNG theo transaction — đo prod: gọi
+            hai lần cách 200 ms trong cùng giao dịch ra y hệt một giá trị, trong
+            khi `clock_timestamp()` đã nhảy. Một lượt «Lưu ghi nhận» ở cửa đẩy
+            `qua-tang` + `ghi-chu-quay` trong MỘT `items[]`, một transaction ⇒
+            hai dòng đó mang y hệt một `created_at` ⇒ `histHtml` ĐẢO THỨ TỰ giữa
+            hai vòng poll. Đó là AC-10 của D056, và nó chỉ ổn định sau dòng này.
+
+         CHỖ R1 ĐÃ SAI — ghi lại để người sau không lặp: trạng thái tick của D056
+         KHÔNG chạm ca bảo đảm ở ②. Không đường nào ghi hai dòng `qua-dap-le`
+         trong một yêu cầu: `saveQuay` ở cửa sau D056 đẩy ZERO dòng loại đó,
+         classic `recSave` gọi BA `jsend` riêng (ba transaction, ba mốc giờ —
+         không phải một `items[]`), nút tick mỗi lần ghi một dòng. Hai dòng
+         `quadaple` trùng mốc đòi HAI YÊU CẦU rơi cùng micro-giây: hiếm, không
+         phải bảo đảm. Vá vẫn đáng — nhưng vì ① và ②, không vì lý do đã nêu sai.
+
+         `id` là bigserial nên khớp đúng thứ tự chèn ⇒ thứ tự thành toàn phần.
+         KHÔNG thêm `FOR UPDATE`: thiết kế append-only, không có đọc-rồi-ghi nào
+         để tuần tự hoá; thêm khoá là đổi một bất định vô hại lấy một điểm tranh
+         chấp thật ở cửa lúc đông. */
+      const inter = await pool.query('SELECT id, actor_email, kind, body, created_at FROM crm_interactions WHERE guest_id = $1 ORDER BY created_at DESC, id DESC LIMIT 100', [id]);
       const photos = await pool.query('SELECT id, object_key, content_type, uploaded_by, created_at, interaction_id FROM crm_photos WHERE guest_id = $1 ORDER BY created_at DESC LIMIT 100', [id]);
       const row = g.rows[0];
       return res.json({

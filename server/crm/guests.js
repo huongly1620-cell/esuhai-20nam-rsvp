@@ -624,7 +624,33 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
     // E08-D047: huỷ đúng một buổi. Thiếu session mà khách có 2 dòng → 400 (không xoá cả hai im lặng).
     const sess = String((req.body && req.body.session) || req.query.session || '').trim();
-    const client = await pool.connect();
+
+    /* E08-D058 (vá) — `pool.connect()` phải nằm TRONG try, và chỉ CHỖ NÀY thôi.
+       Dòng này có từ D036, không phải mã của vé D058. Nhưng D058 vừa hạ guard
+       tuyến này xuống `doorAuth`, nên nó thành THỂ HIỆN DUY NHẤT của khuôn cũ mà
+       một phiên CHƯA ĐĂNG NHẬP cũng chạm được — hai tuyến còn lại (`avatar`,
+       `phanloai`) vẫn `btl`-only, đúng 5 tài khoản.
+
+       Vì sao chết người: express 4.22.2 KHÔNG bắt promise bị reject của route
+       handler, và cả `server/` không có `process.on('unhandledRejection')`
+       (grep = 0) ⇒ Node 24 biến nó thành uncaughtException và GIẾT CẢ TIẾN
+       TRÌNH. CSDL chớp một nhịp đúng lúc ai đó bấm huỷ ⇒ HAI CỬA NGỪNG CHECK-IN
+       tới khi Railway dựng lại. Mà đây là nút «bấm nhầm» của đêm 08/08: lúc tải
+       cao nhất, cũng là lúc Railway dễ restart nhất.
+
+       CỐ Ý KHÔNG đổi sang khuôn `let client + finally release` của tuyến PATCH
+       (:783), dù khuôn đó đúng kiểu dáng hơn: route này có SÁU lời gọi
+       `client.release()` rải ở từng nhánh `return`, và nó vừa qua 21 phép thử.
+       Gỡ cả sáu, 33 giờ trước lễ, là đổi một rủi ro ĐÃ ĐO lấy một rủi ro CHƯA
+       ĐO. Bọc riêng một dòng thì bề mặt thay đổi bằng đúng một dòng. */
+    let client;
+    try {
+      client = await pool.connect();
+    } catch (e) {
+      console.error('[crm-guests] check-in undo: không lấy được kết nối:', e.message);
+      return res.status(503).json({ ok: false, error: 'Máy chủ đang bận — CHƯA huỷ được, thử lại.' });
+    }
+
     try {
       await client.query('BEGIN');
       let cur;

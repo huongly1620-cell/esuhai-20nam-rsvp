@@ -345,7 +345,7 @@
         <div class="search"><span class="ic">&#128269;</span><input id="q" type="search" placeholder="Tìm tên / SĐT / đơn vị…" data-iph="ph_search"></div>
         <button class="chip" id="chipWait" data-i="only_wait">◔ Chưa đến</button>
         <button class="chip" id="chipDup" data-i="only_dup">⚠ Trùng</button>
-        <input id="fBan" class="sel" style="width:88px" type="search" placeholder="Bàn…" aria-label="Lọc theo bàn">
+        <select id="fBan" class="sel" style="width:110px" aria-label="Lọc theo bàn"><option value="">Bàn…</option></select>
         <input id="fPt" class="sel" style="width:118px" type="search" placeholder="Phụ trách…" aria-label="Lọc theo người phụ trách">
         <select class="sel" id="attSel"><option value="">Tham dự: tất cả</option><option value="du">Có tham dự</option><option value="khong">Không tham dự</option><option value="cho">Chưa xác nhận</option></select>
         <select class="sel" id="sort"><option value="name" data-i="s_name">Theo tên</option><option value="vip" data-i="s_vip">VIP trước</option><option value="table" data-i="s_tbl">Theo bàn</option><option value="status" data-i="s_st">Chưa đến trước</option></select>
@@ -715,7 +715,37 @@ function laChuTrangThai(v){return !!TT_RAC[ttKey(v)];}
    «Xuất để CẬP NHẬT» phải giữ NGUYÊN VĂN chữ đó, vì đó là cách chị Ly nhìn thấy
    và sửa bằng quy ước (xoá) của D032 (CR-44). Ẩn ở file xuất là bịt đường sửa. */
 function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
+ function banDanhSach(){
+   var seen={},nums=[],texts=[];
+   for(var i=0;i<ALL.length;i++){
+     var b=bgHien(ALL[i].table_no); if(!b)continue;
+     var k=/^[0-9]+$/.test(b)?("n:"+parseInt(b,10)):("t:"+ttKey(b));
+     if(seen[k])continue; seen[k]=1;
+     if(k.charAt(0)==="n")nums.push(String(parseInt(b,10))); else texts.push(b);
+   }
+   nums.sort(function(a,c){return (+a)-(+c);});
+   texts.sort(function(a,c){return a.localeCompare(c,"vi");});
+   return nums.concat(texts);
+ }
+ function napBanSelect(){
+   var el=$("#fBan"); if(!el)return;
+   var opts=banDanhSach(),cur=String(state.ban||"").trim(),ok=false,pick="";
+   var html='<option value="">Bàn…</option>';
+   for(var i=0;i<opts.length;i++){
+     var b=opts[i],sel=false;
+     if(cur){
+       if(b===cur)sel=true;
+       else if(/^[0-9]+$/.test(b)&&/^[0-9]+$/.test(cur)&&(+b)===(+cur))sel=true;
+       if(sel){ok=true;pick=b;}
+     }
+     html+='<option value="'+esc(b)+'"'+(sel?' selected':'')+'>'+esc(b)+'</option>';
+   }
+   el.innerHTML=html;
+   if(cur&&!ok){state.ban="";}
+   else if(ok){state.ban=pick;el.value=pick;}
+ }
  function renderList(){
+   napBanSelect();
    var rows=ALL.filter(match);
    if(state.sort==="vip")rows.sort(function(a,b){return vipRank(a)-vipRank(b)||String(a.full_name).localeCompare(String(b.full_name),"vi");});
    else if(state.sort==="table")rows.sort(function(a,b){return (parseInt(a.table_no,10)||999)-(parseInt(b.table_no,10)||999);});
@@ -1037,7 +1067,7 @@ window.imgFit=imgFit;
  });
  $("#menuBtn").addEventListener("click",function(e){e.stopPropagation();$("#menu").classList.toggle("open");});
  $("#q").addEventListener("input",function(e){state.q=e.target.value;renderList();});
- $("#fBan").addEventListener("input",function(e){state.ban=e.target.value;renderList();});
+ $("#fBan").addEventListener("change",function(e){state.ban=e.target.value;renderList();});
  $("#fPt").addEventListener("input",function(e){state.pt=e.target.value;renderList();});
  $("#chipWait").addEventListener("click",function(){state.wait=!state.wait;this.classList.toggle("on",state.wait);renderList();});
  $("#chipDup").addEventListener("click",function(){state.dup=!state.dup;this.classList.toggle("on",state.dup);renderList();});

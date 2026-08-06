@@ -53,9 +53,11 @@
     lại đúng sự cố cửa Gala 13,03 MB. Giữ lazy (D027). */
  /* Ô lọc bàn: ô RIÊNG, không nhét vào dropdown sắp xếp — ở cửa cần lọc bàn
     VÀ giữ thứ tự đang xem cùng lúc. */
- .fban{width:74px;flex:none;border:1.5px solid var(--line2);background:rgba(5,13,24,.5);color:var(--cream);
-   border-radius:12px;padding:9px 10px;font:inherit;font-size:.86rem}
- .fban.fpt{width:118px}
+ /* Bàn = <select> chọn, không gõ tay. Phụ trách (#fPt) vẫn gõ. */
+ .fban{width:100px;flex:none;border:1.5px solid var(--line2);background:rgba(5,13,24,.5);color:var(--cream);
+   border-radius:12px;padding:9px 8px;font:inherit;font-size:.86rem;cursor:pointer}
+ select.fban{appearance:auto}
+ .fban.fpt{width:118px;cursor:text}
  .kho{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:14px}
  .kho .k1{position:relative;width:62px;height:62px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.05);flex:none}
  .kho .k1 img{width:100%;height:100%;object-fit:cover}
@@ -191,7 +193,7 @@
   <div class="big b-came" data-f="came"><div class="cl" data-i="came_label">ĐÃ ĐẾN</div><div class="cn"><span id="cDone">0</span></div><div class="cs" data-i="guests">Tọa đàm</div></div>
   <div class="big b-no" data-f="no"><div class="cl" data-i="btn_no">CHƯA ĐẾN</div><div class="cn"><span id="cLeft">0</span><b>/<span id="cTot">0</span></b></div><div class="cs" data-i="guests">Tọa đàm</div></div>
 </div></header><div class="upd"><span id="cNv"></span> <span id="upd"></span></div>
-<div class="sr" style="display:flex;gap:8px"><input id="fBan" class="fban" type="search" placeholder="Bàn…" aria-label="Lọc theo bàn"><input id="fPt" class="fban fpt" type="search" placeholder="Phụ trách…" aria-label="Lọc theo người phụ trách"><div class="box" style="flex:1"><span class="ic">&#8981;</span><input id="q" type="search" placeholder="Gõ tên khách (không dấu cũng được)…"></div></div>
+<div class="sr" style="display:flex;gap:8px"><select id="fBan" class="fban" aria-label="Lọc theo bàn"><option value="">Bàn…</option></select><input id="fPt" class="fban fpt" type="search" placeholder="Phụ trách…" aria-label="Lọc theo người phụ trách"><div class="box" style="flex:1"><span class="ic">&#8981;</span><input id="q" type="search" placeholder="Gõ tên khách (không dấu cũng được)…"></div></div>
 <div class="quick" id="quick">
   <button class="qb" data-q="vip" data-i="vip">★ VIP</button><button class="qb" data-q="nhat" data-i="nhat">🎌 Khách Nhật</button>
   <button class="qb" data-q="noi" data-i="noi">Gia đình-Nội</button><button class="qb" data-q="ngoai" data-i="ngoai">Gia đình-Ngoại</button><button class="qb" data-q="gdtgd" data-i="gdtgd">Gia đình TGĐ</button><button class="qb" data-q="ob" data-i="q_ob">OB Esuhai</button><button class="qb" data-q="dongdu" data-i="q_dongdu">Đông Du</button>
@@ -223,7 +225,9 @@ function parseNote(s){var o={};String(s||"").split(" · ").forEach(function(p){v
 function mapRow(r){var a=tagArr(r.tags);var pn=parseNote(r.note);return{id:String(r.id),name:r.full_name,title:r.title||"",org:r.org||"",table:""      /* E08-D043 L-A: Tọa đàm KHÔNG hiện bàn — số bàn chỉ dùng cho Gala
                      (chị Ly 06/08). Cùng lập luận D030 đã dùng cho GHẾ: table_no là
                      thuộc tính của KHÁCH, không của BUỔI. Để rỗng ngay ở nguồn thì
-                     cả dòng danh sách lẫn thBox cùng sạch. */,_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(r),du_toa_dam:!!r.du_toa_dam,du_gala:!!r.du_gala,name_jp:r.name_jp||"",title_jp:r.title_jp||"",org_jp:r.org_jp||"",phanloai:(a.indexOf("Gia đình TGĐ")>-1?"Gia đình TGĐ":a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),ob:a.indexOf("pl:ob")>-1,tagraw:String(r.tags||""),seat:"",diet:pn.diet||"",handler:pn.handler||"",role:pn.role||"",note:r.note||"",photo:r.photo_url||"",photoBig:r.photo_view_url||"",att:r.att_status||"",
+                     cả dòng danh sách lẫn thBox cùng sạch. */
+                     /* banKey vẫn giữ table_no để ô lọc Bàn (select) hoạt động — chỉ ẨN hiển thị. */
+                     ,banKey:r.table_no||"",_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(r),du_toa_dam:!!r.du_toa_dam,du_gala:!!r.du_gala,name_jp:r.name_jp||"",title_jp:r.title_jp||"",org_jp:r.org_jp||"",phanloai:(a.indexOf("Gia đình TGĐ")>-1?"Gia đình TGĐ":a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),ob:a.indexOf("pl:ob")>-1,tagraw:String(r.tags||""),seat:"",diet:pn.diet||"",handler:pn.handler||"",role:pn.role||"",note:r.note||"",photo:r.photo_url||"",photoBig:r.photo_view_url||"",att:r.att_status||"",
   /* E08-D041 — phone do MÁY CHỦ quyết: null khi chưa mở khoá, số đủ khi đã mở.
      Không mang về đây thì nút «Xem số» mở khoá xong vẫn không có gì để hiện. */
   phone:r.phone||"",
@@ -436,7 +440,36 @@ function ptKhop(pt,q){
  q=String(q==null?"":q).trim(); if(!q)return true;
  return norm(pt).indexOf(norm(q))>-1;
 }
-function renderList(){quickCounts();var rows=G.filter(match).filter(function(g){return banKhop(g.table||g.seat,st.ban);}).filter(function(g){return ptKhop(g.handler,st.pt);});
+function banDanhSach(){
+ var seen={},nums=[],texts=[];
+ for(var i=0;i<G.length;i++){
+  var b=bgHien(G[i].banKey||G[i].table||G[i].seat); if(!b)continue;
+  var k=/^[0-9]+$/.test(b)?("n:"+parseInt(b,10)):("t:"+ttKey(b));
+  if(seen[k])continue; seen[k]=1;
+  if(k.charAt(0)==="n")nums.push(String(parseInt(b,10))); else texts.push(b);
+ }
+ nums.sort(function(a,c){return (+a)-(+c);});
+ texts.sort(function(a,c){return a.localeCompare(c,"vi");});
+ return nums.concat(texts);
+}
+function napBanSelect(){
+ var el=$("#fBan"); if(!el)return;
+ var opts=banDanhSach(),cur=String(st.ban||"").trim(),ok=false,pick="";
+ var html='<option value="">Bàn…</option>';
+ for(var i=0;i<opts.length;i++){
+  var b=opts[i],sel=false;
+  if(cur){
+   if(b===cur)sel=true;
+   else if(/^[0-9]+$/.test(b)&&/^[0-9]+$/.test(cur)&&(+b)===(+cur))sel=true;
+   if(sel){ok=true;pick=b;}
+  }
+  html+='<option value="'+esc(b)+'"'+(sel?' selected':'')+'>'+esc(b)+'</option>';
+ }
+ el.innerHTML=html;
+ if(cur&&!ok){st.ban="";}
+ else if(ok){st.ban=pick;el.value=pick;}
+}
+function renderList(){quickCounts();napBanSelect();var rows=G.filter(match).filter(function(g){return banKhop(g.banKey||g.table||g.seat,st.ban);}).filter(function(g){return ptKhop(g.handler,st.pt);});
  $("#hint").textContent=(st.q||st.quick||st.f||st.ban||st.pt)?t("res",{n:rows.length}):t("total",{n:G.length});
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);
   return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'"><span class="sd'+(cm?" came":"")+'"></span>'
@@ -717,7 +750,7 @@ $("#pfBody").addEventListener("click",function(e){var b=e.target.closest("button
       lastSync=Date.now();counter();openPf(id);renderList();lastSig=sig();
     }).catch(function(){b.disabled=false;toast(t("ci_net"),1);});}});
 $("#q").addEventListener("input",function(e){st.q=e.target.value;renderList();});
-$("#fBan").addEventListener("input",function(e){st.ban=e.target.value;renderList();});
+$("#fBan").addEventListener("change",function(e){st.ban=e.target.value;renderList();});
 $("#fPt").addEventListener("input",function(e){st.pt=e.target.value;renderList();});
 $("#quick").addEventListener("click",function(e){var b=e.target.closest(".qb");if(!b)return;var q=b.getAttribute("data-q");st.quick=(st.quick===q?"":q);document.querySelectorAll(".qb").forEach(function(x){x.classList.remove("on");});if(st.quick)b.classList.add("on");renderList();});
 document.querySelectorAll(".fb,.big[data-f]").forEach(function(b){b.addEventListener("click",function(){var f=b.getAttribute("data-f");st.f=(st.f===f?"":f);document.querySelectorAll(".fb").forEach(function(x){x.classList.remove("on");});if(st.f)b.classList.add("on");renderList();});});

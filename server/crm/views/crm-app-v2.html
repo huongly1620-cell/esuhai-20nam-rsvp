@@ -346,6 +346,7 @@
         <button class="chip" id="chipWait" data-i="only_wait">◔ Chưa đến</button>
         <button class="chip" id="chipDup" data-i="only_dup">⚠ Trùng</button>
         <input id="fBan" class="sel" style="width:88px" type="search" placeholder="Bàn…" aria-label="Lọc theo bàn">
+        <input id="fPt" class="sel" style="width:118px" type="search" placeholder="Phụ trách…" aria-label="Lọc theo người phụ trách">
         <select class="sel" id="attSel"><option value="">Tham dự: tất cả</option><option value="du">Có tham dự</option><option value="khong">Không tham dự</option><option value="cho">Chưa xác nhận</option></select>
         <select class="sel" id="sort"><option value="name" data-i="s_name">Theo tên</option><option value="vip" data-i="s_vip">VIP trước</option><option value="table" data-i="s_tbl">Theo bàn</option><option value="status" data-i="s_st">Chưa đến trước</option></select>
         <button class="chip act" id="impBtn2" style="display:none" data-i="imp_btn">⬆ Import</button>
@@ -366,7 +367,7 @@
  "use strict";
  var $=function(s,r){return (r||document).querySelector(s);};
  var me={email:"",role:"staff"};
- var ALL=[], state={tab:"all",q:"",wait:false,dup:false,sort:"name",att:""}, curId=null, DUP={};
+ var ALL=[], state={tab:"all",q:"",wait:false,dup:false,sort:"name",att:"",ban:"",pt:""}, curId=null, DUP={};
  /* ── event config (địa điểm + giờ chỉnh được) ── */
  var CFG_DEF={venueToa:"(Bấm ✎ để nhập địa điểm Tọa đàm)",venueGala:"GEM Center · Sảnh Pollux, Tầng 3",toa:"2026-08-08T14:30",gala:"2026-08-08T17:00"};
  function loadCfg(){try{return Object.assign({},CFG_DEF,JSON.parse(localStorage.getItem("crm_event_cfg")||"{}"));}catch(e){return Object.assign({},CFG_DEF);}}
@@ -646,6 +647,9 @@ async function addShrunk(fd,file){
    if(state.dup&&!isDup(g))return false;
    if(state.att&&attOf(g)!==state.att)return false;
    if(state.ban&&!banKhop(g.table_no,state.ban))return false;
+   /* Ô Phụ trách RIÊNG — AND với tìm tên + lọc bàn. Đọc cùng ptOf (S2 phụ trách
+      · phụ trách), không gộp vào ô #q kẻo gõ tên phụ trách lẫn tên khách. */
+   if(state.pt&&noAcc(ptOf(g)).indexOf(noAcc(state.pt))===-1)return false;
    if(state.q){var s=noAcc(state.q);if(// Đánh chỉ mục cả 3 field JP: sau E3, PG Nhật gõ 山田 mà không ra ai thì
    // dữ liệu JP coi như vô dụng ở cửa.
    noAcc(g.full_name+" "+(g.org||"")+" "+(g.title||"")+" "+(g.phone||"")+" "+(g.name_jp||"")+" "+(g.title_jp||"")+" "+(g.org_jp||"")).indexOf(s)===-1)return false;}
@@ -1034,6 +1038,7 @@ window.imgFit=imgFit;
  $("#menuBtn").addEventListener("click",function(e){e.stopPropagation();$("#menu").classList.toggle("open");});
  $("#q").addEventListener("input",function(e){state.q=e.target.value;renderList();});
  $("#fBan").addEventListener("input",function(e){state.ban=e.target.value;renderList();});
+ $("#fPt").addEventListener("input",function(e){state.pt=e.target.value;renderList();});
  $("#chipWait").addEventListener("click",function(){state.wait=!state.wait;this.classList.toggle("on",state.wait);renderList();});
  $("#chipDup").addEventListener("click",function(){state.dup=!state.dup;this.classList.toggle("on",state.dup);renderList();});
  $("#attSel").addEventListener("change",function(){state.att=this.value;renderList();});

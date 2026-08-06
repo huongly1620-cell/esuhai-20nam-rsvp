@@ -6,6 +6,21 @@ const { ipOf, phoneUnlocked } = require('./auth');
 // E08-D031: một luật trạng thái tham dự dùng chung cho list · detail · stats.
 const att = require('./attendance');
 
+// E08-D038 §3c/§3d — bảng ánh xạ nhãn → tag, TƯỜNG MINH. Bảy tag đầu do R1 đo
+// thật trên prod 06/08 (394 thẻ còn sống); `pl:nhan-vien` là nhãn mới của vé này,
+// hiện 0 thẻ. Sửa bảng này là việc có Gate, không phải việc gõ thêm một dòng.
+const PL_NHAN = [
+  ['PTGĐ', 'pl:ptgd'],                       // 145 thẻ
+  ['TGĐ', 'pl:tgd'],                         // 101
+  ['Đối tác / Khách hàng', 'pl:doi-tac-khach-hang'], // 23
+  ['OB Esuhai', 'pl:ob'],                    // 22  ⚠️ KHÔNG phải slug("OB Esuhai")
+  ['Người hợp tác', 'pl:nguoi-hop-tac'],     // 20
+  ['Cơ quan công quyền', 'pl:co-quan-cong-quyen'], // 6
+  ['HR', 'pl:hr'],                           // 4
+  ['Nhân viên', 'pl:nhan-vien'],             // 0 — nhãn mới, chính tả chốt đúng một dạng
+];
+const PL_TAGS = PL_NHAN.map((x) => x[1]);
+
 function normPhone(p) { return String(p || '').replace(/\D/g, ''); }
 function clean(v) { return typeof v === 'string' ? v.trim() : (v == null ? '' : String(v)); }
 
@@ -341,6 +356,54 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
     }
   });
 
+  // ---- đổi PHÂN LOẠI khách (btl) — E08-D038 §3a Đường C ----
+  //
+  // §3b MÌN — vì sao KHÔNG dùng PATCH /crm/guests/:id sẵn có: nó ghi ĐÈ NGUYÊN
+  // CHUỖI `tags` (tags = $n, không merge). Gửi "pl:nhan-vien" là thẻ đó mất sạch
+  // `gala` · `vnjb-*` · `kcode:K0xx` · `tgd116` · tag hạng. Hậu quả KHÔNG hiện ra
+  // ngay: mất `gala` ⇒ du_gala false ⇒ khách BIẾN MẤT khỏi cửa Gala. Ly đổi phân
+  // loại xong màn vẫn xanh, tối 08/08 mới biết người đó không tra được ở cửa.
+  //
+  // Nên: đọc tags hiện có → thay ĐÚNG token pl:* → ghi lại cả chuỗi, trong CÙNG
+  // giao dịch có FOR UPDATE. Merge ở MÁY CHỦ chứ không ở trình duyệt: ngày lễ
+  // nhiều người dùng chung, hai tab cùng lưu sẽ ghi đè nhau nếu merge phía client.
+  //
+  // §3c BẪY — bảng ánh xạ TƯỜNG MINH, tuyệt đối không slug() nhãn tại chỗ:
+  // `pl:ob` (22 thẻ) do vnjb-keys.js gắn tay, slug("OB Esuhai") ra `pl:ob-esuhai`
+  // ⇒ chọn nhãn đó là 22 thẻ rời khỏi nhóm OB, nút lọc OB ở cửa rỗng đúng ngày lễ.
+  // Bảy dòng đầu là tag R1 ĐO THẬT trên prod 06/08 (394 thẻ), không phải suy ra.
+  app.patch('/crm/guests/:id/phanloai', requireCrmAuth, requireRole('btl'), async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
+    const tag = req.body && req.body.tag === null ? null : String((req.body && req.body.tag) || '');
+    if (tag !== null && tag !== '' && PL_TAGS.indexOf(tag) < 0) {
+      return res.status(400).json({ ok: false, error: 'Nhãn phân loại không hợp lệ.' });
+    }
+    const moi = (tag === null || tag === '') ? null : tag;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const g = (await client.query('SELECT tags FROM crm_guests WHERE id = $1 AND deleted_at IS NULL FOR UPDATE', [id])).rows[0];
+      if (!g) { await client.query('ROLLBACK'); client.release(); return res.status(404).json({ ok: false, error: 'not found' }); }
+      const cu = String(g.tags || '').split(',').map((x) => x.trim()).filter(Boolean);
+      const giu = cu.filter((x) => x.slice(0, 3).toLowerCase() !== 'pl:');
+      const cuPl = cu.filter((x) => x.slice(0, 3).toLowerCase() === 'pl:');
+      if (moi) giu.push(moi);
+      const chuoi = giu.join(',');
+      await client.query('UPDATE crm_guests SET tags = $1, updated_at = now() WHERE id = $2', [chuoi || null, id]);
+      await logAudit(client, { actor_email: req.actor.email, event_type: 'phanloai_set', target_type: 'guest', target_id: id,
+        meta: { cu: cuPl, moi, soTagGiuLai: giu.length - (moi ? 1 : 0) }, ip: ipOf(req) });
+      await client.query('COMMIT');
+      client.release();
+      return res.json({ ok: true, tags: chuoi, phanloai: moi });
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      client.release();
+      console.error('[crm-guests] phanloai failed:', err.message);
+      return res.status(500).json({ ok: false, error: 'phanloai error' });
+    }
+  });
+
   // ---- huỷ check-in (btl) — E08-D036 ----
   // Bảng có `guest_id UNIQUE` nên huỷ = XOÁ DÒNG, không có cột đánh dấu. Sponsor
   // chốt hướng xoá thật vì `crm_check_ins` bị ĐỌC ở 5 chỗ (stats · list · hồ sơ ·
@@ -539,4 +602,4 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
   });
 }
 
-module.exports = { mount, normPhone };
+module.exports = { PL_NHAN, PL_TAGS, mount, normPhone };

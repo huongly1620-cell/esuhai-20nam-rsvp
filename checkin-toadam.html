@@ -840,8 +840,18 @@ async function datQuaDap(id,btn,dangTick){
   /* §4b — fetch KHÔNG ném khi 4xx/5xx. Vẽ tick trước rồi mới biết máy chủ từ
      chối là báo-xanh-giả, và ở đây nó khiến khách MẤT PHẦN QUÀ. */
   if(!r.ok){btn.disabled=false;toast(r.status===401?t("ci_auth"):t("qd_fail")+" ("+r.status+")",1);return;}
+  /* E08-D056 (vá) — máy chủ ĐÃ nhận, nên PG phải thấy xác nhận DÙ có vẽ lại
+     được hay không. Bản đầu nhét cả toast lẫn mở khoá vào trong `if(g)`, mà đó
+     là nhánh THÀNH CÔNG duy nhất không tự mở khoá — `byId` trả rỗng (thẻ vừa
+     rơi khỏi danh sách sau một vòng poll) là nút kẹt `disabled`, PG không tick
+     được nữa cho tới khi đóng/mở lại hồ sơ, và giữa lúc đông thì không ai đoán
+     ra cách gỡ. Ghi nhận vẫn nằm trong CSDL — chỉ cái nút là chết. */
+  toast(dangTick?t("qd_da_go"):t("qd_da_tick"));
   var g=byId(id);
-  if(g){g._enriched=false;toast(dangTick?t("qd_da_go"):t("qd_da_tick"));await enrich(g,id);}
+  /* Có `g` ⇒ enrich() nạp lại _inter rồi openPf() vẽ lại nút MỚI (tự hết
+     disabled). Không có ⇒ không ai vẽ lại, phải tự mở khoá. */
+  if(g){g._enriched=false;await enrich(g,id);}
+  else btn.disabled=false;
  }catch(e){btn.disabled=false;toast(t("q_net"),1);}
 }
 function quayHtml(g){var q=g._q||{};

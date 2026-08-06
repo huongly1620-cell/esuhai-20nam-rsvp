@@ -172,10 +172,10 @@ async function migrateCrm() {
   try {
     await cli.query('BEGIN');
     await cli.query(`
-      DO $ BEGIN
+      DO $$ BEGIN
         ALTER TABLE crm_check_ins DROP CONSTRAINT IF EXISTS crm_check_ins_guest_id_key;
       EXCEPTION WHEN undefined_object THEN NULL;
-      END $`);
+      END $$`);
     // Dòng cũ (session NULL) nhân bản thành toa-dam + gala rồi xoá bản NULL —
     // smoke/test cũ vẫn hiện «đã đến» ở cả hai cửa; check-in MỚI chỉ ghi đúng buổi.
     const nhan = await cli.query(`
@@ -189,11 +189,11 @@ async function migrateCrm() {
     // trên chưa xong — phải nổ để ROLLBACK, không được đi tiếp rồi báo ok.
     await cli.query('ALTER TABLE crm_check_ins ALTER COLUMN session SET NOT NULL');
     await cli.query(`
-      DO $ BEGIN
+      DO $$ BEGIN
         ALTER TABLE crm_check_ins ADD CONSTRAINT crm_check_ins_session_check
           CHECK (session IN ('toa-dam','gala'));
       EXCEPTION WHEN duplicate_object THEN NULL;
-      END $`);
+      END $$`);
     await cli.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS uq_crm_check_ins_guest_session
         ON crm_check_ins (guest_id, session)`);

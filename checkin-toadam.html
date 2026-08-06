@@ -211,7 +211,8 @@ function t(k,rep){var s=(T[LANG]&&T[LANG][k])||T.vn[k]||k;if(rep)for(var x in re
 // --- API layer (SoT = /crm + Postgres) — thay hẳn localStorage check-in ---
 async function api(u,o){o=o||{};o.credentials="same-origin";return fetch(u,o);}
 async function jget(u){var r=await api(u);if(!r.ok)throw{status:r.status};return r.json();}
-async function jpost(u){var r=await api(u,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});var j={};try{j=await r.json();}catch(e){}return{ok:r.ok,status:r.status,body:j};}
+/* E08-D047: luôn gửi session cửa — máy chủ check-in theo buổi. */
+async function jpost(u,body){var r=await api(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body||{session:SESSION})});var j={};try{j=await r.json();}catch(e){}return{ok:r.ok,status:r.status,body:j};}
 function tagArr(s){return String(s||"").split(",").map(function(x){return x.trim();}).filter(Boolean);}
 function vipOf(a){for(var i=0;i<a.length;i++)if(/^V?VIP/i.test(a[i]))return a[i];return"";}
 /* AC-F2/F7: DB lưu tag chữ THƯỜNG `vip` (import-vnjb ghi 48 thẻ) — màn cửa
@@ -739,7 +740,7 @@ $("#pfBody").addEventListener("click",function(e){var b=e.target.closest("button
        «Đã check-in ✓», bộ đếm +1, thẻ chuyển «đã đến» TRONG KHI DB không có
        dòng nào. Ở cửa nghĩa là PG tưởng đã ghi, khách được cho vào, và không
        ai biết dữ liệu đã mất. Chỉ đánh dấu khi máy chủ XÁC NHẬN. */
-    jpost("/crm/guests/"+id+"/check-in").then(function(r){
+    jpost("/crm/guests/"+id+"/check-in",{session:SESSION}).then(function(r){
       if(!r.ok){
         b.disabled=false;
         toast(r.status===401?t("ci_auth"):(r.status===404?t("ci_404"):t("ci_fail")+" ("+r.status+")"),1);

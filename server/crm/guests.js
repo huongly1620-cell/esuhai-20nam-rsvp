@@ -81,7 +81,14 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
         params.push(req.actor.email);
         join = `JOIN crm_assignments a ON a.guest_id = g.id AND a.staff_email = $${params.length}`;
       }
+      // E08-D047: khoá join check-in theo buổi cửa (trước LIMIT).
+      let ciSessIdx = null;
+      if (session) {
+        params.push(session);
+        ciSessIdx = params.length;
+      }
       params.push(limit);
+      const limitIdx = params.length;
       const r = await pool.query(
         // du_toa_dam / du_gala: buổi HIỆU LỰC của khách = tag danh sách ∪ buổi
         // khai trên form. Trả sẵn từ máy chủ để tab, ?session= và KPI dùng CHUNG
@@ -99,7 +106,11 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
                          AND s.sessions ~* '${SESSION_RE.gala}'))) AS du_gala,
                 ${att.attSql('g', att.duSql('g', 'g.response_id', "'" + SESSION_RE['toa-dam'] + "'", "'" + SESSION_RE.gala + "'"))} AS att_status,
                 (g.response_id IS NOT NULL) AS from_rsvp,
+                /* E08-D047: checked_in theo BUỔI khi ?session=; không session thì
+                   «đã đến» = có check-in bất kỳ buổi (CRM tổng). */
                 (ci.guest_id IS NOT NULL) AS checked_in, ci.checked_in_at, ci.actor_email AS checked_in_by,
+                EXISTS(SELECT 1 FROM crm_check_ins x WHERE x.guest_id = g.id AND x.session = 'toa-dam') AS checked_in_toa,
+                EXISTS(SELECT 1 FROM crm_check_ins x WHERE x.guest_id = g.id AND x.session = 'gala') AS checked_in_gala,
                 -- E08-D029 AC-2: danh sách trỏ BẢN THU NHỎ, không phải file gốc.
                 -- Route /thumb tự lùi về gốc khi thẻ chưa có bản dẫn xuất, nên
                 -- không màn nào mất ảnh trong lúc backfill đang chạy dở.
@@ -109,7 +120,16 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
                 CASE WHEN p.id IS NULL THEN NULL ELSE '/crm/photos/' || p.id || '/preview' END AS photo_view_url
          FROM crm_guests g
          ${join}
-         LEFT JOIN crm_check_ins ci ON ci.guest_id = g.id
+         /* Có ?session= → một dòng CI đúng buổi. Không session (CRM) → LATERAL
+            LIMIT 1 kẻo khách check-in cả hai buổi bị nhân đôi hàng danh sách. */
+         ${ciSessIdx
+           ? `LEFT JOIN crm_check_ins ci ON ci.guest_id = g.id AND ci.session = $${ciSessIdx}`
+           : `LEFT JOIN LATERAL (
+                SELECT guest_id, checked_in_at, actor_email
+                  FROM crm_check_ins
+                 WHERE guest_id = g.id
+                 ORDER BY checked_in_at DESC LIMIT 1
+              ) ci ON TRUE`}
          LEFT JOIN LATERAL (
            -- AC-G4: ảnh có interaction_id là ảnh QUÀ chụp tại quầy, không phải
            -- chân dung khách. Không loại ra thì tấm quà chụp sau cùng sẽ thành
@@ -132,7 +152,7 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
            ) AS id
          ) p ON TRUE
          ${'WHERE ' + conds.join(' AND ')}
-         ORDER BY g.full_name ASC LIMIT $${params.length}`, params);
+         ORDER BY g.full_name ASC LIMIT $${limitIdx}`, params);
       /* E08-D041 M2 — SĐT bị GỠ KHỎI PHẢN HỒI khi chưa mở khoá. Che ở giao diện
          là thất bại: mở tab Network là thấy số đủ trong JSON. Gỡ ở TẦNG NÀY thì
          mọi màn — hai cửa, v2, classic, cả làn smoke — cùng không có số, không
@@ -173,7 +193,9 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
          FROM crm_guests WHERE id = $1 AND deleted_at IS NULL`,
         [id, SESSION_RE['toa-dam'], SESSION_RE.gala]);
       if (!g.rows[0]) return res.status(404).json({ ok: false, error: 'not found' });
-      const ci = await pool.query('SELECT actor_email, checked_in_at, note FROM crm_check_ins WHERE guest_id = $1', [id]);
+      const ci = await pool.query(
+        'SELECT session, actor_email, checked_in_at, note FROM crm_check_ins WHERE guest_id = $1 ORDER BY checked_in_at DESC',
+        [id]);
       const asg = await pool.query('SELECT staff_email, assigned_at FROM crm_assignments WHERE guest_id = $1', [id]);
       const inter = await pool.query('SELECT id, actor_email, kind, body, created_at FROM crm_interactions WHERE guest_id = $1 ORDER BY created_at DESC LIMIT 100', [id]);
       const photos = await pool.query('SELECT id, object_key, content_type, uploaded_by, created_at, interaction_id FROM crm_photos WHERE guest_id = $1 ORDER BY created_at DESC LIMIT 100', [id]);
@@ -196,6 +218,8 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
           // nên cột mới tự có, không phải sửa danh sách cột.
           avatar_photo_id: row.avatar_photo_id || null,
         },
+        /* E08-D047: checkIns[] theo buổi; checkIn = bản mới nhất (tương thích màn cũ). */
+        checkIns: ci.rows,
         checkIn: ci.rows[0] || null,
         assignments: asg.rows,
         interactions: inter.rows,
@@ -291,14 +315,23 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
     }
   });
 
-  // ---- check-in (single per guest; report if already) ----
+  // ---- check-in THEO BUỔI (E08-D047) — một khách có thể có 2 dòng (toa-dam + gala)
   app.post('/crm/guests/:id/check-in', doorAuth, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
+    const sess = String((req.body && req.body.session) || req.query.session || '').trim();
+    if (!SESSION_TAGS[sess]) {
+      return res.status(400).json({ ok: false, error: 'Cần session=toa-dam|gala (check-in theo buổi).' });
+    }
     try {
-      const exists = await pool.query('SELECT actor_email, checked_in_at FROM crm_check_ins WHERE guest_id = $1', [id]);
+      const exists = await pool.query(
+        'SELECT actor_email, checked_in_at FROM crm_check_ins WHERE guest_id = $1 AND session = $2',
+        [id, sess]);
       if (exists.rows[0]) {
-        return res.status(200).json({ ok: true, already: true, by: exists.rows[0].actor_email, at: exists.rows[0].checked_in_at });
+        return res.status(200).json({
+          ok: true, already: true, session: sess,
+          by: exists.rows[0].actor_email, at: exists.rows[0].checked_in_at,
+        });
       }
       const g = await pool.query('SELECT id, tags FROM crm_guests WHERE id = $1 AND deleted_at IS NULL', [id]);
       if (!g.rows[0]) return res.status(404).json({ ok: false, error: 'not found' });
@@ -313,15 +346,23 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
         return res.status(409).json({ ok: false, laNhanVien: true, error: 'Nhân viên không cần check-in.' });
       }
       const ins = await pool.query(
-        `INSERT INTO crm_check_ins (guest_id, actor_email, note) VALUES ($1,$2,$3)
-         ON CONFLICT (guest_id) DO NOTHING RETURNING checked_in_at`,
-        [id, req.actor.email, clean(req.body && req.body.note) || null]);
+        `INSERT INTO crm_check_ins (guest_id, session, actor_email, note) VALUES ($1,$2,$3,$4)
+         ON CONFLICT (guest_id, session) DO NOTHING RETURNING checked_in_at`,
+        [id, sess, req.actor.email, clean(req.body && req.body.note) || null]);
       if (!ins.rows[0]) {
-        const e2 = await pool.query('SELECT actor_email, checked_in_at FROM crm_check_ins WHERE guest_id = $1', [id]);
-        return res.status(200).json({ ok: true, already: true, by: e2.rows[0].actor_email, at: e2.rows[0].checked_in_at });
+        const e2 = await pool.query(
+          'SELECT actor_email, checked_in_at FROM crm_check_ins WHERE guest_id = $1 AND session = $2',
+          [id, sess]);
+        return res.status(200).json({
+          ok: true, already: true, session: sess,
+          by: e2.rows[0].actor_email, at: e2.rows[0].checked_in_at,
+        });
       }
-      await logAudit(pool, { actor_email: req.actor.email, event_type: 'check_in', target_type: 'guest', target_id: id, ip: ipOf(req) });
-      return res.status(201).json({ ok: true, already: false, at: ins.rows[0].checked_in_at });
+      await logAudit(pool, {
+        actor_email: req.actor.email, event_type: 'check_in', target_type: 'guest', target_id: id,
+        meta: { session: sess }, ip: ipOf(req),
+      });
+      return res.status(201).json({ ok: true, already: false, session: sess, at: ins.rows[0].checked_in_at });
     } catch (err) {
       console.error('[crm-guests] check-in failed:', err.message);
       return res.status(500).json({ ok: false, error: 'check-in error' });
@@ -439,27 +480,41 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
   app.delete('/crm/guests/:id/check-in', requireCrmAuth, requireRole('btl'), async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
+    // E08-D047: huỷ đúng một buổi. Thiếu session mà khách có 2 dòng → 400 (không xoá cả hai im lặng).
+    const sess = String((req.body && req.body.session) || req.query.session || '').trim();
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      // FOR UPDATE OF ci: khoá đúng dòng check-in (không khoá cả thẻ khách) để
-      // hai người cùng bấm huỷ thì người thứ hai đọc được trạng thái đã xoá,
-      // không phải cùng xoá một dòng hai lần (AC-9).
-      const cur = await client.query(
-        `SELECT ci.actor_email, ci.checked_in_at, ci.note, g.full_name
-           FROM crm_check_ins ci JOIN crm_guests g ON g.id = ci.guest_id
-          WHERE ci.guest_id = $1 FOR UPDATE OF ci`, [id]);
+      let cur;
+      if (sess) {
+        if (!SESSION_TAGS[sess]) {
+          await client.query('ROLLBACK'); client.release();
+          return res.status(400).json({ ok: false, error: 'session không hợp lệ (toa-dam|gala).' });
+        }
+        cur = await client.query(
+          `SELECT ci.actor_email, ci.checked_in_at, ci.note, ci.session, g.full_name
+             FROM crm_check_ins ci JOIN crm_guests g ON g.id = ci.guest_id
+            WHERE ci.guest_id = $1 AND ci.session = $2 FOR UPDATE OF ci`, [id, sess]);
+      } else {
+        cur = await client.query(
+          `SELECT ci.actor_email, ci.checked_in_at, ci.note, ci.session, g.full_name
+             FROM crm_check_ins ci JOIN crm_guests g ON g.id = ci.guest_id
+            WHERE ci.guest_id = $1 FOR UPDATE OF ci`, [id]);
+        if (cur.rows.length > 1) {
+          await client.query('ROLLBACK'); client.release();
+          return res.status(400).json({
+            ok: false,
+            error: 'Khách đã check-in cả hai buổi — gửi session=toa-dam|gala để huỷ đúng buổi.',
+            sessions: cur.rows.map((r) => r.session),
+          });
+        }
+      }
       if (!cur.rows[0]) {
-        // AC-8: khách chưa check-in (hoặc vừa bị người khác huỷ) — trả lời hiền,
-        // không 500. Màn cứ vẽ lại theo sự thật là xong.
         await client.query('COMMIT');
         client.release();
         return res.status(200).json({ ok: true, already: false });
       }
       const c0 = cur.rows[0];
-      // AC-7 — chép đủ để dựng lại dòng đã mất, và ĐỨNG MỘT MÌNH được: tên khách
-      // chép theo giá trị, không chỉ id, để nhật ký còn đọc được cả khi thẻ khách
-      // sau này đổi tên hoặc bị xoá.
       await client.query(
         `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)
          VALUES ($1,'check_in_undo','guest',$2,$3::jsonb,$4)`,
@@ -467,15 +522,19 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
           JSON.stringify({
             guest_id: id,
             guest_ten: c0.full_name,
+            session: c0.session,
             cu_checked_in_at: c0.checked_in_at,
             cu_actor_email: c0.actor_email,
             cu_note: c0.note || null,
           }),
           hashIp(ipOf(req))]);
-      await client.query('DELETE FROM crm_check_ins WHERE guest_id = $1', [id]);
+      await client.query('DELETE FROM crm_check_ins WHERE guest_id = $1 AND session = $2', [id, c0.session]);
       await client.query('COMMIT');
       client.release();
-      return res.status(200).json({ ok: true, already: true, cu: { at: c0.checked_in_at, by: c0.actor_email } });
+      return res.status(200).json({
+        ok: true, already: true, session: c0.session,
+        cu: { at: c0.checked_in_at, by: c0.actor_email },
+      });
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
       client.release();

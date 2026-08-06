@@ -42,12 +42,16 @@ CREATE TABLE IF NOT EXISTS crm_assignments (
 );
 CREATE INDEX IF NOT EXISTS idx_crm_assign_staff ON crm_assignments (staff_email);
 
+-- E08-D047: check-in THEO BUỔI (toa-dam | gala). Trước đây guest_id UNIQUE
+-- ⇒ một lần bấm ở Tọa đàm làm cửa Gala cũng hiện «đã đến».
 CREATE TABLE IF NOT EXISTS crm_check_ins (
   id            BIGSERIAL PRIMARY KEY,
-  guest_id      BIGINT NOT NULL UNIQUE REFERENCES crm_guests(id) ON DELETE CASCADE,
+  guest_id      BIGINT NOT NULL REFERENCES crm_guests(id) ON DELETE CASCADE,
+  session       TEXT NOT NULL DEFAULT 'gala' CHECK (session IN ('toa-dam','gala')),
   actor_email   TEXT NOT NULL,
   checked_in_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  note          TEXT
+  note          TEXT,
+  UNIQUE (guest_id, session)
 );
 
 CREATE TABLE IF NOT EXISTS crm_interactions (
@@ -137,11 +141,81 @@ ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS thumb_key    TEXT;
 ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS thumb_size   INTEGER;
 ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS preview_key  TEXT;
 ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS preview_size INTEGER;
+
+-- E08-D047 · bảng cũ (guest_id UNIQUE, không cột session) → theo buổi.
+-- Idempotent: chạy lại an toàn khi cột/index đã có.
+ALTER TABLE crm_check_ins ADD COLUMN IF NOT EXISTS session TEXT;
 `;
 
 async function migrateCrm() {
   await pool.query(CREATE_SQL);
-  console.log('[crm-db] migration ok (CRM tables ready)');
+
+  // ─────────── E08-D047 · di trú crm_check_ins sang khoá (guest_id, session) ───────────
+  // HAI ĐIỀU KIỆN Sponsor chốt trước khi deploy (06/08):
+  //
+  // 1 · MỘT TRANSACTION. Năm lệnh này KHÔNG được chạy rời: giữa DROP CONSTRAINT và
+  //     CREATE UNIQUE INDEX có một khoảng mà bảng KHÔNG còn ràng buộc chống trùng.
+  //     Hỏng đúng lúc đó là từ đó một khách check-in được nhiều dòng cùng buổi, và
+  //     tối 08/08 KPI đếm sai mà không ai biết. Gói vào BEGIN/COMMIT thì hoặc xong
+  //     cả, hoặc bảng y nguyên như trước khi chạy.
+  //
+  // 2 · KHÔNG nuốt lỗi. Bản trước có `EXCEPTION WHEN others THEN NULL` ở bước
+  //     SET NOT NULL — hỏng gì cũng im, rồi vẫn in "migration ok". Đúng lớp bẫy
+  //     logAudit mà D036/D040 đã chốt: chỗ nào là bản đảm bảo duy nhất thì hỏng
+  //     PHẢI NỔ. Nay chỉ bắt đúng hai ngoại lệ VÔ HẠI của việc chạy lại
+  //     (undefined_object · duplicate_object), còn lại ném ra ngoài.
+  //
+  // Chạy lại lần hai: DROP ... IF EXISTS không có gì để bỏ · không còn dòng
+  // session NULL nên INSERT/DELETE đụng 0 dòng · SET NOT NULL đã đúng · CHECK và
+  // UNIQUE INDEX đã tồn tại ⇒ 0 dòng đổi thêm.
+  const cli = await pool.connect();
+  try {
+    await cli.query('BEGIN');
+    await cli.query(`
+      DO $ BEGIN
+        ALTER TABLE crm_check_ins DROP CONSTRAINT IF EXISTS crm_check_ins_guest_id_key;
+      EXCEPTION WHEN undefined_object THEN NULL;
+      END $`);
+    // Dòng cũ (session NULL) nhân bản thành toa-dam + gala rồi xoá bản NULL —
+    // smoke/test cũ vẫn hiện «đã đến» ở cả hai cửa; check-in MỚI chỉ ghi đúng buổi.
+    const nhan = await cli.query(`
+      INSERT INTO crm_check_ins (guest_id, actor_email, checked_in_at, note, session)
+      SELECT c.guest_id, c.actor_email, c.checked_in_at, c.note, v.sess
+        FROM crm_check_ins c
+        CROSS JOIN (VALUES ('toa-dam'), ('gala')) AS v(sess)
+       WHERE c.session IS NULL`);
+    const xoa = await cli.query('DELETE FROM crm_check_ins WHERE session IS NULL');
+    // KHÔNG bọc EXCEPTION: hỏng ở đây là dữ liệu còn dòng session NULL, tức bước
+    // trên chưa xong — phải nổ để ROLLBACK, không được đi tiếp rồi báo ok.
+    await cli.query('ALTER TABLE crm_check_ins ALTER COLUMN session SET NOT NULL');
+    await cli.query(`
+      DO $ BEGIN
+        ALTER TABLE crm_check_ins ADD CONSTRAINT crm_check_ins_session_check
+          CHECK (session IN ('toa-dam','gala'));
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $`);
+    await cli.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_crm_check_ins_guest_session
+        ON crm_check_ins (guest_id, session)`);
+    await cli.query('COMMIT');
+    if (nhan.rowCount || xoa.rowCount) {
+      console.log('[crm-db] D047: bung ' + xoa.rowCount + ' dòng check-in cũ thành ' + nhan.rowCount + ' dòng theo buổi');
+    }
+  } catch (e) {
+    await cli.query('ROLLBACK').catch(() => {});
+    cli.release();
+    /* Ném tiếp. ĐO ĐƯỢC (boot thử 06/08): server/index.js bắt lỗi migrate rồi
+       VẪN cho app lên — in "[startup] migration failed: …" rồi "listening". Nên
+       câu này KHÔNG chặn app khởi động; thứ nó bảo đảm là bảng không bao giờ ở
+       trạng thái DỞ: transaction đã ROLLBACK nên bảng y nguyên như trước khi
+       chạy (còn UNIQUE(guest_id) cũ). Hệ quả: mã mới chạy trên lược đồ cũ ⇒
+       check-in buổi thứ hai sẽ lỗi ràng buộc — ồn ào và thấy được, KHÔNG phải
+       hỏng im lặng. Muốn app dừng hẳn khi migrate hỏng thì phải sửa index.js,
+       việc đó ngoài vé này. */
+    throw e;
+  }
+  cli.release();
+  console.log('[crm-db] migration ok (CRM tables ready · D047 session check-in)');
 }
 
 module.exports = { migrateCrm };

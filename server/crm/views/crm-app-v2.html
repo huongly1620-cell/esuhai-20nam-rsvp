@@ -641,9 +641,15 @@ async function addShrunk(fd,file){
    var n=0;$("#chklist").innerHTML=TASKS.map(function(x,i){if(x.d)n++;var lb=(LANG==="jp"&&x.tj)?x.tj:x.t;return '<div class="chk'+(x.d?" done":"")+'"><span class="box" data-tk="'+i+'">'+(x.d?"&#10003;":"")+'</span><span class="lb" data-tk="'+i+'">'+esc(lb)+'</span><button class="del" data-tkdel="'+i+'">✕</button></div>';}).join("");
    $("#chkpg").textContent=n+"/"+TASKS.length+" "+tt("done_w");
  }
+ /* E08-D047: tab Tọa đàm/Gala nhìn cờ đúng buổi; tab Tất cả = có check-in bất kỳ. */
+ function daDenBuoi(g){
+   if(state.tab==="toa")return !!(g.checked_in_toa);
+   if(state.tab==="gal")return !!(g.checked_in_gala);
+   return !!g.checked_in;
+ }
  function match(g){
    if(state.tab!=="all"&&!duBuoi(g,state.tab))return false;
-   if(state.wait&&g.checked_in)return false;
+   if(state.wait&&daDenBuoi(g))return false;
    if(state.dup&&!isDup(g))return false;
    if(state.att&&attOf(g)!==state.att)return false;
    if(state.ban&&!banKhop(g.table_no,state.ban))return false;
@@ -749,21 +755,21 @@ function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
    var rows=ALL.filter(match);
    if(state.sort==="vip")rows.sort(function(a,b){return vipRank(a)-vipRank(b)||String(a.full_name).localeCompare(String(b.full_name),"vi");});
    else if(state.sort==="table")rows.sort(function(a,b){return (parseInt(a.table_no,10)||999)-(parseInt(b.table_no,10)||999);});
-   else if(state.sort==="status")rows.sort(function(a,b){return (a.checked_in?1:0)-(b.checked_in?1:0)||String(a.full_name).localeCompare(String(b.full_name),"vi");});
+   else if(state.sort==="status")rows.sort(function(a,b){return (daDenBuoi(a)?1:0)-(daDenBuoi(b)?1:0)||String(a.full_name).localeCompare(String(b.full_name),"vi");});
    else rows.sort(function(a,b){return String(a.full_name).localeCompare(String(b.full_name),"vi");});
-   var inShown=rows.filter(function(g){return g.checked_in;}).length;
+   var inShown=rows.filter(daDenBuoi).length;
    var nd=ALL.filter(isDup).length;$("#statline").innerHTML=tt("showing")+' <b>'+rows.length+'</b> '+tt("of")+' '+ALL.length+' · <span class="ok">'+inShown+'</span> '+tt("arr2")+(nd?' · <span style="color:var(--red-b)">⚠ '+nd+(LANG==="jp"?" 件重複":" trùng")+'</span>':'');
    if(!rows.length){$("#list").innerHTML='<div class="empty"><div class="em-ic">🔍</div>'+tt("notfound")+'</div>';return;}
    $("#list").innerHTML=rows.map(function(g){
-     var vip=vipLbl(g),vr=vipRank(g);
-     return '<div class="g'+(g.checked_in?" done":"")+'" data-id="'+g.id+'">'
+     var vip=vipLbl(g),vr=vipRank(g),den=daDenBuoi(g);
+     return '<div class="g'+(den?" done":"")+'" data-id="'+g.id+'">'
       // loading="lazy" + decoding="async": danh sách kéo cả 401 thẻ một lượt,
       // ảnh là object GỐC (293 MB tổng, 17 tấm > 5 MB, lớn nhất 20 MB). Không
       // lazy thì trình duyệt tải hết ngay khi mở màn — wifi hội trường 08/08.
       // Thumb ở màn chi tiết (:497) vốn đã có lazy; đây là đồng bộ lại.
-      +'<div class="av">'+(g.photo_url?'<img src="'+esc(g.photo_url)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">':esc(ini(g.full_name)))+'<span class="sd'+(g.checked_in?" in":"")+'"></span></div>'
+      +'<div class="av">'+(g.photo_url?'<img src="'+esc(g.photo_url)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">':esc(ini(g.full_name)))+'<span class="sd'+(den?" in":"")+'"></span></div>'
       +'<div class="nm"><div class="n1">'+pairVJ(g.full_name,g.name_jp)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+(isDup(g)?' <span class="tag dup">⚠ TRÙNG</span>':'')+'</div><div class="n2">'+(pairVJ([g.org,g.title].filter(Boolean).join(" · "),[g.org_jp,g.title_jp].filter(Boolean).join(" · "))||"—")+'</div></div>'
-      +'<div class="rb">'+(laNhanVien(g)?'<span class="tag nv">'+tt("pl_nv")+'</span>':'')+attBadge(g)+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')+(g.checked_in?'<span class="tag in">✓ '+hhmm(g.checked_in_at)+'</span>':(bgHien(g.table_no)?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':''))+'</div></div>';
+      +'<div class="rb">'+(laNhanVien(g)?'<span class="tag nv">'+tt("pl_nv")+'</span>':'')+attBadge(g)+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')+(den?'<span class="tag in">✓ '+hhmm(g.checked_in_at)+'</span>':(bgHien(g.table_no)?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':''))+'</div></div>';
    }).join("");
  }
  /* ---- hồ sơ khách (giữ nguyên endpoint) — SĐT ẩn khi hiển thị ---- */
@@ -772,12 +778,14 @@ function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
 // trong IIFE — phải phơi ra window. Smoke bắt được: "imgFit is not defined".
 window.imgFit=imgFit;
  function renderGuest(j){
-   var g=j.guest,ci=j.checkIn;var canDel=(me.role==="btl");
+   var g=j.guest;var canDel=(me.role==="btl");
+   /* E08-D047: checkIns[] theo buổi; fallback checkIn cũ. */
+   var cis=j.checkIns&&j.checkIns.length?j.checkIns:(j.checkIn?[j.checkIn]:[]);
    /* Ảnh có interaction_id là ảnh QUÀ chụp tại quầy (E08-D028 AC-G4) — không
     phải mặt khách; list đã loại chúng ở SQL, khối hồ sơ phải loại y hệt.
     Dùng bản 1024px cho khung 190px, không kéo file gốc 1–20 MB. */
  var pav=(j.photos||[]).filter(function(p){return !p.interaction_id;});
- /* E08-D040 — hồ sơ phải theo ĐÚNG luật của máy chủ: ghim trước, không có ghim
+   /* E08-D040 — hồ sơ phải theo ĐÚNG luật của máy chủ: ghim trước, không có ghim
     mới lùi về tấm mới nhất. Không làm vậy thì CRM và cửa hiện hai ảnh khác nhau
     cho cùng một khách (M4) — tệ hơn hiện trạng. */
  var ghim=j.guest&&j.guest.avatar_photo_id;
@@ -790,12 +798,14 @@ window.imgFit=imgFit;
    // đường duy nhất, không ai bấm chồng ai.
    // KẾT QUẢ đã điểm danh (ai / lúc nào) vẫn hiện với MỌI role — đó là thông
    // tin, không phải hành động.
-   /* E08-D036 — Ly sửa nhầm check-in từ CRM, không phải chạy ra cửa.
-      Khối này CHƯA TỪNG có nút nào (chưa check-in thì chỉ là chữ «điểm danh tại
-      cửa»), nên nút huỷ là nút duy nhất ở đây — không có gì để bấm nhầm. */
-   var ciBlock=ci?'<div class="ci-on">◯ '+tt("ci_on")+' <b>'+esc(ci.actor_email)+'</b><br>'+esc(fmt(ci.checked_in_at))
-       +(me.role==="btl"?'<div style="margin-top:9px;text-align:right"><button class="btn" id="undoCi" style="width:auto;padding:6px 12px;font-size:.76rem">'+tt("undo")+'</button></div>':'')
-       +'</div>'
+   /* E08-D036 + D047 — huỷ theo từng buổi (session trên nút). */
+   function sessLbl(s){return s==="toa-dam"?tt("toa_s"):(s==="gala"?tt("gala_s"):(s||""));}
+   var ciBlock=cis.length?cis.map(function(ci){
+     return '<div class="ci-on" style="margin-bottom:8px">◯ '+tt("ci_on")+' <b>'+esc(sessLbl(ci.session))+'</b>'
+       +' · <b>'+esc(ci.actor_email)+'</b><br>'+esc(fmt(ci.checked_in_at))
+       +(me.role==="btl"?'<div style="margin-top:9px;text-align:right"><button class="btn" data-undoci="'+esc(ci.session||"")+'" style="width:auto;padding:6px 12px;font-size:.76rem">'+tt("undo")+' · '+esc(sessLbl(ci.session))+'</button></div>':'')
+       +'</div>';
+   }).join("")
      :'<div class="ci-off">'+tt("ci_at_door")+'</div>';
    var thumbs=(j.photos||[]).map(function(p){
      /* Chỉ ảnh có interaction_id mới là ảnh quà/ghi nhận quầy. Luật avatar của
@@ -871,18 +881,19 @@ window.imgFit=imgFit;
        if(!r.ok){b.disabled=false;toast((r.body&&r.body.error)||tt("anh_xoa_fail"),"err");return;}
        toast(tt("anh_xoa_ok"),"ok");openGuest(g.id);loadAll();
      });});
-   var undoBtn=$("#undoCi");if(undoBtn)undoBtn.addEventListener("click",async function(){
-     /* Chiều làm TỤT số thì hỏi lại (cùng luật D031 AC-8c). */
-     if(!confirm(tt("undo_ask")))return;
-     undoBtn.disabled=true;var nhan=undoBtn.textContent;undoBtn.textContent=tt("undo_ing");
-     try{
-       var r=await jsend("/crm/guests/"+g.id+"/check-in","DELETE");
-       /* Lớp lỗi CỬA-2: jsend KHÔNG ném khi 4xx/5xx. Chỉ vẽ lại khi máy chủ
-          xác nhận, nếu không thì màn báo đã huỷ trong khi dòng còn nguyên. */
-       if(!r.ok){undoBtn.disabled=false;undoBtn.textContent=nhan;
-         toast(r.status===403?tt("undo_role"):tt("undo_fail")+" ("+r.status+")","err");return;}
-       toast(tt("undo_ok"),"ok");openGuest(g.id);loadAll();
-     }catch(e){undoBtn.disabled=false;undoBtn.textContent=nhan;toast(tt("undo_net"),"err");}
+   Array.prototype.forEach.call(document.querySelectorAll("[data-undoci]"),function(undoBtn){
+     undoBtn.addEventListener("click",async function(){
+       if(!confirm(tt("undo_ask")))return;
+       var sess=undoBtn.getAttribute("data-undoci")||"";
+       undoBtn.disabled=true;var nhan=undoBtn.textContent;undoBtn.textContent=tt("undo_ing");
+       try{
+         var url="/crm/guests/"+g.id+"/check-in"+(sess?("?session="+encodeURIComponent(sess)):"");
+         var r=await jsend(url,"DELETE");
+         if(!r.ok){undoBtn.disabled=false;undoBtn.textContent=nhan;
+           toast(r.status===403?tt("undo_role"):((r.body&&r.body.error)||tt("undo_fail")+" ("+r.status+")"),"err");return;}
+         toast(tt("undo_ok"),"ok");openGuest(g.id);loadAll();
+       }catch(e){undoBtn.disabled=false;undoBtn.textContent=nhan;toast(tt("undo_net"),"err");}
+     });
    });
    $("#iSave").addEventListener("click",async function(){var b=$("#iBody").value.trim();if(!b){gmsg("Nhập nội dung.","err");return;}var r=await jsend("/crm/guests/"+g.id+"/interactions","POST",{kind:$("#iKind").value,body:b});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);}else gmsg(r.body.error||"Lỗi.","err");});
       /* E08-D041 — nút mở khoá SĐT ngay trong hồ sơ. Máy chủ mới là chỗ che thật;

@@ -100,8 +100,10 @@ const SQL_ATT = `
 // Check-ins of ACTIVE guests only. Guest delete is a soft delete (guests.js sets
 // deleted_at), so the check-in row survives — counting it raw would put
 // `checkedIn` on a different denominator than `invited`.
+// E08-D047: một khách có thể 2 dòng check-in (toa-dam + gala) — đếm DISTINCT
+// guest_id để «đã đến» tổng không bị nhân đôi.
 const SQL_CHECKINS = `
-  SELECT count(*)::int AS n
+  SELECT count(DISTINCT ci.guest_id)::int AS n
   FROM crm_check_ins ci
   JOIN crm_guests g ON g.id = ci.guest_id
   WHERE g.deleted_at IS NULL AND ${KHONG_NV}`;

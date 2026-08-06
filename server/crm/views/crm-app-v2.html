@@ -768,7 +768,7 @@ function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
       // lazy thì trình duyệt tải hết ngay khi mở màn — wifi hội trường 08/08.
       // Thumb ở màn chi tiết (:497) vốn đã có lazy; đây là đồng bộ lại.
       +'<div class="av">'+(g.photo_url?'<img src="'+esc(g.photo_url)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">':esc(ini(g.full_name)))+'<span class="sd'+(den?" in":"")+'"></span></div>'
-      +'<div class="nm"><div class="n1">'+pairVJ(g.full_name,g.name_jp)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+(isDup(g)?' <span class="tag dup">⚠ TRÙNG</span>':'')+'</div><div class="n2">'+(pairVJ([g.org,g.title].filter(Boolean).join(" · "),[g.org_jp,g.title_jp].filter(Boolean).join(" · "))||"—")+'</div></div>'
+      +'<div class="nm"><div class="n1">'+pairVJ(g.full_name,g.name_jp)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+(isDup(g)?' <span class="tag dup">⚠ TRÙNG</span>':'')+'</div><div class="n2">'+(pairVJ([g.org,g.title].filter(Boolean).join(" · "),[g.org_jp,g.title_jp].filter(Boolean).join(" · "))||"—")+(ptOf(g)?' · '+tt("phutrach")+': '+esc(ptOf(g)):'')+'</div></div>'
       +'<div class="rb">'+(laNhanVien(g)?'<span class="tag nv">'+tt("pl_nv")+'</span>':'')+attBadge(g)+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')+(den?'<span class="tag in">✓ '+hhmm(g.checked_in_at)+'</span>':(bgHien(g.table_no)?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':''))+'</div></div>';
    }).join("");
  }

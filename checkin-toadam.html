@@ -474,7 +474,7 @@ function renderList(){quickCounts();napBanSelect();var rows=G.filter(match).filt
  $("#hint").textContent=(st.q||st.quick||st.f||st.ban||st.pt)?t("res",{n:rows.length}):t("total",{n:G.length});
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);
   return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'"><span class="sd'+(cm?" came":"")+'"></span>'
-   +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+pairVJ(g.name,g.name_jp)+'</div><div class="n2">'+pairVJ(g.title||g.org||"",g.title_jp||g.org_jp||"")+'</div>'+badges(g)+'</div>'
+   +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+pairVJ(g.name,g.name_jp)+'</div><div class="n2">'+pairVJ(g.title||g.org||"",g.title_jp||g.org_jp||"")+(g.handler?' · '+t("phutrach")+': '+esc(g.handler):'')+'</div>'+badges(g)+'</div>'
    /* Chỗ này chính là nhãn trong ảnh chị Ly chụp — rìa phải MỖI DÒNG, không
       phải khung Bàn/Ghế trong hồ sơ. Vá thiếu ở đây là hồ sơ sạch mà danh sách
       vẫn hiện «Bàn Không tham dự». */

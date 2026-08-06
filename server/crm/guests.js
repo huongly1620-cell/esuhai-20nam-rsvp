@@ -248,6 +248,16 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
       const inter = await pool.query('SELECT id, actor_email, kind, body, created_at FROM crm_interactions WHERE guest_id = $1 ORDER BY created_at DESC, id DESC LIMIT 100', [id]);
       const photos = await pool.query('SELECT id, object_key, content_type, uploaded_by, created_at, interaction_id FROM crm_photos WHERE guest_id = $1 ORDER BY created_at DESC LIMIT 100', [id]);
       const row = g.rows[0];
+      /* E08-D058 §4b — `can_undo` do MÁY CHỦ tính, client CHỈ VẼ THEO CỜ. Cửa
+         không được vẽ một nút chắc chắn ăn 403 — đó đúng lớp báo-xanh-giả ba vé
+         gần nhất phải chữa. Cùng một luật với hàng rào ở tuyến DELETE; lệch hai
+         chỗ là vẽ nút rồi từ chối, hoặc giấu nút của người có quyền.
+         ADDITIVE: thêm một trường vào từng dòng, không đổi trường nào đang có,
+         nên 4 màn đang đọc `checkIns[]` không vỡ. */
+      const coTheHuy = (r) => !!(req.actor && (req.actor.role === 'btl'
+        || (r.actor_email && r.actor_email === req.actor.email)));
+      ci.rows.forEach((r) => { r.can_undo = coTheHuy(r); });
+
       return res.json({
         ok: true,
         guest: {
@@ -598,7 +608,18 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
   // DELETE vẫn commit ⇒ mất dữ liệu vĩnh viễn, IM LẶNG. Ghi thẳng bằng
   // client.query trong cùng giao dịch để lỗi ném ra ngoài và cuốn DELETE theo
   // (AC-16).
-  app.delete('/crm/guests/:id/check-in', requireCrmAuth, requireRole('btl'), async (req, res) => {
+  /* E08-D058 — HẠ GUARD từ `requireCrmAuth + requireRole('btl')` xuống `doorAuth`.
+     ĐÂY LÀ ĐẢO QUYẾT ĐỊNH D041 §3c, không phải bù chỗ sót: D041 cố ý gỡ nút huỷ
+     khỏi cửa vì «cửa nay mở nên không để thao tác XOÁ DÒNG sau một URL». Sponsor
+     chốt lại 06/08 22:4x, phạm vi «PG huỷ được dòng do chính mình ghi».
+
+     ⚠️ RANH GIỚI «CHÍNH MÌNH» HẸP HƠN TÊN GỌI — đã đo, đừng ngạc nhiên rồi vá
+     nhầm chỗ: `requireDoorOrAuth` có HAI danh tính; không đăng nhập mà cửa mở thì
+     mọi người dùng chung `door@checkin.local` (auth.js:156). Prod 06/08 đã có 2/4
+     dòng check-in mang email đó ⇒ tối 08/08 «của chính mình» xấp xỉ «của cửa».
+     Phần còn cắn thật: dòng do NGƯỜI CÓ ĐĂNG NHẬP ghi thì phiên cửa KHÔNG huỷ
+     được. Muốn cắn hơn thì bắt PG đăng nhập — quyết định VẬN HÀNH, ngoài vé này. */
+  app.delete('/crm/guests/:id/check-in', doorAuth, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
     // E08-D047: huỷ đúng một buổi. Thiếu session mà khách có 2 dòng → 400 (không xoá cả hai im lặng).
@@ -636,6 +657,22 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
         return res.status(200).json({ ok: true, already: false });
       }
       const c0 = cur.rows[0];
+
+      /* §4a — HÀNG RÀO dựng lại BÊN TRONG, thay cho guard vừa hạ. Đặt SAU khi đã
+         đọc `cur` (cần biết ai ghi dòng đó) nhưng TRƯỚC audit và TRƯỚC DELETE ⇒
+         từ chối là ROLLBACK, 0 dòng bị xoá, 0 dòng audit rác. */
+      const laBtl = !!(req.actor && req.actor.role === 'btl');
+      const laCuaMinh = !!(req.actor && c0.actor_email && c0.actor_email === req.actor.email);
+      if (!laBtl && !laCuaMinh) {
+        await client.query('ROLLBACK'); client.release();
+        /* Câu báo NÊU TÊN người đã ghi dòng — PG ở cửa phải biết đi hỏi ai, chứ
+           «không có quyền» thì không đi tiếp được việc gì. */
+        return res.status(403).json({ ok: false,
+          error: 'Dòng check-in này do ' + (c0.actor_email || 'người khác')
+               + ' ghi — chỉ người đó hoặc ban tổ chức mới huỷ được.',
+          nguoiGhi: c0.actor_email || null });
+      }
+
       await client.query(
         `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)
          VALUES ($1,'check_in_undo','guest',$2,$3::jsonb,$4)`,
@@ -647,6 +684,11 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
             cu_checked_in_at: c0.checked_in_at,
             cu_actor_email: c0.actor_email,
             cu_note: c0.note || null,
+            /* §4e — phân biệt huỷ-từ-CỬA với huỷ-từ-/crm. Không có cờ này thì
+               `door@checkin.local` trong audit đọc như một tài khoản người, và
+               sáng 09/08 không ai biết dòng đó do một phiên ẩn danh ở cửa bấm. */
+            boi_actor: req.actor.email,
+            laCua: !!(req.actor && req.actor.laCua),
           }),
           hashIp(ipOf(req))]);
       await client.query('DELETE FROM crm_check_ins WHERE guest_id = $1 AND session = $2', [id, c0.session]);

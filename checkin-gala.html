@@ -185,6 +185,16 @@
  /* E08-D056 — nút «Đã tặng» ở trạng thái ĐÃ TICK. Ngược hẳn nút vàng đặc của
     check-in: viền xanh, nền mờ, chữ nhỏ hơn — hai nút không được nhìn giống nhau
     vì chúng ở cùng một hồ sơ và hậu quả bấm nhầm khác hẳn nhau. */
+ /* E08-D058 — nút huỷ check-in ở cửa. Cố ý NGƯỢC HẲN nút check-in (khối vàng đặc,
+    full-width, padding 17px): viền rỗng, chữ nhỏ, hẹp, canh phải, nằm TRONG hộp
+    xanh «đã đến». Cùng lập luận D036 đã dùng cho nút huỷ trên /crm — hai nút
+    không bao giờ cùng có mặt, nên rủi ro thật không phải bấm nhầm nút bên cạnh
+    mà là TRÍ NHỚ CƠ BẮP VỀ VỊ TRÍ: tay quen bấm giữa màn. Khác vị trí + khác
+    hình + hỏi lại là ba lớp chặn. */
+ .huyrow{display:flex;justify-content:flex-end;margin-top:10px}
+ .huyb{border:1.5px solid var(--line2);background:transparent;color:var(--muted);
+   border-radius:10px;padding:7px 13px;font:inherit;font-size:.76rem;font-weight:700;cursor:pointer}
+ .huyb:disabled{opacity:.5;cursor:default}
  .cib.qd-on{background:none;border:1.5px solid var(--green-ok);color:var(--green-ok);box-shadow:none;font-size:.92rem;padding:13px}
  .cib.qd-wait{background:none;border:1.5px dashed var(--line2);color:var(--muted2);box-shadow:none;font-size:.92rem;padding:13px;cursor:default}
  .cib{width:100%;border:0;border-radius:14px;padding:17px;font:inherit;font-size:1.05rem;font-weight:700;cursor:pointer;margin-top:20px;background:linear-gradient(180deg,#f0d999,#cfa758);color:#2a1e05;box-shadow:0 10px 26px rgba(216,184,118,.28);display:flex;align-items:center;justify-content:center;gap:10px}
@@ -253,6 +263,14 @@ var T={"vn": {"ci": "CHECK-IN · Gala", "lich": "📅 Lịch trình", "came_labe
       /* E08-D055 §4d — «Đã đến» tái dùng khoá `btn_came` đã có; chỉ «Chưa đến»
          là thiếu ở cửa nên thêm mới, JP dùng 未受付 cho khớp `not_yet` của v2. */
       chua_den:"Chưa đến",
+      /* E08-D058 — «undo»/«undo_ing» đã có sẵn ở /crm nhưng CỬA chưa có; thêm
+         mới ở đây. Câu hỏi nêu rõ buổi + giờ sắp mất (§4c). */
+      undo:"Huỷ check-in",undo_ing:"Đang huỷ…",
+      undo_ask:"Huỷ check-in {buoi} cho khách này?\n\nGiờ đến {gio} sẽ bị XOÁ. Check-in lại sẽ ghi giờ mới.",
+      undo_ok_gio:"Đã huỷ check-in ✓ — giờ đến {gio} đã xoá",
+      undo_fail:"Máy chủ từ chối — CHƯA huỷ được",
+      undo_role:"Chỉ người đã ghi dòng này hoặc ban tổ chức mới huỷ được",
+      undo_net:"Mất mạng — CHƯA huỷ được",
       /* E08-D056 — nhãn MÀN. Chuỗi ghi xuống CSDL là QD_TANG/QD_HUY, cố ý KHÔNG
          nằm ở đây: nhãn đổi theo ngôn ngữ, dữ liệu thì không được đổi. */
       qd_nut:"Đã tặng quà đáp lễ",qd_roi:"Đã tặng",qd_boi:"bởi",
@@ -263,6 +281,12 @@ var T={"vn": {"ci": "CHECK-IN · Gala", "lich": "📅 Lịch trình", "came_labe
   jp:{q_pickqua:"端末から贈り物の写真",cam_ok_ghim:"保存しました ✓ — プロフィール写真に設定",
       lb_qua:"🎁 贈り物の写真",lb_ghim:"✓ プロフィール写真",
       chua_den:"未受付",
+      undo:"受付取消",undo_ing:"取消中…",
+      undo_ask:"{buoi}のチェックインを取り消しますか？\n\n受付時刻 {gio} は削除されます。再受付すると新しい時刻になります。",
+      undo_ok_gio:"取り消しました ✓ — 受付時刻 {gio} を削除",
+      undo_fail:"サーバーが拒否 — 取り消せません",
+      undo_role:"記録した本人または主催者のみ取り消せます",
+      undo_net:"通信エラー — 取り消せません",
       qd_nut:"引き出物をお渡し済み",qd_roi:"お渡し済み",qd_boi:"担当:",
       qd_note:"引き出物をお渡ししたら押してください。",
       qd_hoi:"「引き出物お渡し済み」の記録を取り消しますか？\n\n既存の記録は削除されません — 取消の記録が追加され、履歴は残ります。",
@@ -355,6 +379,10 @@ function merge(rows){
       PG không nghi là lỗi tải — PG kết luận «khách này chưa chụp» rồi chụp lại. */
    n._enriched=o._enriched;n.seat=o.seat;n.diet=o.diet;n.handler=o.handler;n.role=o.role;n._inter=o._inter;
    n._photos=o._photos;n._ghim=o._ghim;
+   /* E08-D058 — `_ci` phải chép cùng nhóm này. Thiếu nó mà vẫn chép
+      `_enriched=true` là nút huỷ BIẾN MẤT sau một vòng poll và không ai gọi lại
+      enrich — đúng lớp lỗi ⑤ của D048 (kho ảnh biến mất). */
+   n._ci=o._ci;
    if(!n.photo&&o.photo){n.photo=o.photo;n.photoBig=o.photoBig;}
    /* Máy chủ là SoT cho «đã đến». Chỉ giữ dấu cũ khi máy chủ trả về rỗng: cửa
       không có nút huỷ điểm danh, nên thẻ tự lật ngược «đã đến» → «chưa đến»
@@ -897,12 +925,56 @@ async function saveQuay(id,btn){
    duy nhất của nó là nút `data-sdt` trong hồ sơ, mà nút đó không còn ⇒ giữ lại
    là mã chết, và mã chết ở màn cửa thì lần sau có người tưởng năng lực còn sống.
    Tuyến máy chủ `/crm/phone-unlock` GIỮ NGUYÊN — /crm vẫn gọi nó (AC-4). */
+/* ─────────── E08-D058 · huỷ check-in ở cửa ───────────
+   `_ci` = mảng checkIns[] của hồ sơ, do enrich() nạp. Cửa này chỉ lo ĐÚNG một
+   buổi (hằng SESSION), nên tìm dòng của buổi đó rồi đọc cờ `can_undo` máy chủ
+   tính sẵn. Chưa enrich xong ⇒ `_ci` rỗng ⇒ KHÔNG vẽ nút: thà thiếu nút một
+   nhịp còn hơn vẽ nút rồi ăn 403 (cùng lập luận nút «…» disabled của D056). */
+function ciCuaBuoi(g){
+ var L=(g&&g._ci)||[];
+ for(var i=0;i<L.length;i++)if(String(L[i].session||"")===String(SESSION))return L[i];
+ return null;
+}
+function huyHtml(g){
+ var r=ciCuaBuoi(g);
+ if(!r||!r.can_undo)return "";
+ return '<div class="huyrow"><button class="huyb" data-huyci="'+esc(g.id)+'">'+t("undo")+'</button></div>';
+}
+async function huyCheckin(id,btn){
+ var g=byId(id), r=ciCuaBuoi(g);
+ /* §4c — confirm nêu RÕ buổi + giờ sắp mất, không hỏi chung chung. */
+ var gio=r&&r.checked_in_at?fmt(r.checked_in_at):"";
+ if(!confirm(t("undo_ask",{buoi:t("ci"),gio:gio})))return;
+ btn.disabled=true;var nhan=btn.textContent;btn.textContent=t("undo_ing");
+ function moKhoa(){btn.disabled=false;btn.textContent=nhan;}
+ try{
+  var res=await api("/crm/guests/"+id+"/check-in?session="+encodeURIComponent(SESSION),{method:"DELETE"});
+  /* fetch KHÔNG ném khi 4xx/5xx — kiểm r.ok TRƯỚC khi vẽ lại (D056 §4b). */
+  if(!res.ok){var e={};try{e=await res.json();}catch(_){}
+   moKhoa();
+   toast(res.status===403?(e.error||t("undo_role")):(res.status===401?t("ci_auth"):t("undo_fail")+" ("+res.status+")"),1);
+   return;}
+  var j={};try{j=await res.json();}catch(_){}
+  /* §4d — NÓI RA GIỜ VỪA MẤT. Audit là bản sao đủ dựng lại (D036 AC-7), nhưng
+     dựng lại đòi có người BIẾT mà đi đọc. Cùng lý do đã bắt D056 hiện «ai tick,
+     lúc nào»: đường sửa vô dụng nếu không có đường phát hiện. */
+  var mat=(j&&j.cu&&j.cu.at)?fmt(j.cu.at):gio;
+  toast(t("undo_ok_gio",{gio:mat||"—"}));
+  /* CR-100 — nhánh THÀNH CÔNG cũng phải mở khoá nếu không vẽ lại được. */
+  if(g){g._came="";g._ci=[];g._enriched=false;mutSeq++;lastSync=Date.now();
+        counter();renderList();lastSig=sig();await enrich(g,id);}
+  else moKhoa();
+ }catch(e){moKhoa();toast(t("undo_net"),1);}
+}
 function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls=g.diet==="Món chay"?"chay":"";
  var ciBox=cm?'<div class="cidone"><div class="t">&#9711; '+t("cidone",{t:fmtCame(cm)})+(g._by?' · '+esc(g._by):'')+'</div>'
-   /* E08-D041 §3c — Sponsor chốt phương án A: BỎ nút huỷ ở cửa. Cửa nay mở
-      (không OTP) nên ai có link đều bấm được; huỷ check-in là thao tác XOÁ DÒNG
-      và audit là bản ghi duy nhất còn lại (D036 §3g) — không để nó sau một URL.
-      Huỷ chỉ còn ở /crm với role btl, nút đó vẫn nguyên. */
+   /* E08-D058 — nút huỷ TRỞ LẠI cửa, ĐẢO quyết định D041 §3c (Sponsor chốt 22:4x).
+      D041 gỡ nó vì «cửa nay mở nên không để thao tác XOÁ DÒNG sau một URL»; nay
+      guard hạ xuống doorAuth và hàng rào dựng lại BÊN TRONG tuyến (guests.js).
+      §4c — CHỈ vẽ khi máy chủ nói được: `can_undo` của ĐÚNG dòng buổi này. Không
+      tự suy từ role ở client — client suy một luật, máy chủ giữ một luật khác là
+      vẽ nút rồi ăn 403, đúng lớp báo-xanh-giả ba vé gần nhất phải chữa. */
+   +huyHtml(g)
    +'</div>'
    /* E08-D038 mảnh 5 — nhân viên không có nút check-in. Ẩn nút là lớp thứ nhất;
       lớp THẬT là máy chủ trả 409 — tuyến check-in nằm trong allowlist cửa của
@@ -935,6 +1007,8 @@ async function enrich(g,id){try{var j=await jget("/crm/guests/"+id);g._enriched=
  g._photos=j.photos||[];              /* kho ảnh: ĐỦ, gồm cả ảnh quà */
  var pc=(g._ghim&&pf.filter(function(p){return String(p.id)===String(g._ghim);})[0])||pf[0];
  if(pc){g.photo=pc.thumb_url||pc.url;g.photoBig=pc.view_url||pc.url;}
+ /* E08-D058 — `_ci` là nguồn của cờ can_undo. Máy chủ tính, cửa chỉ vẽ theo. */
+ g._ci=j.checkIns||[];
  g._inter=j.interactions||[];g.phone=(j.guest&&j.guest.phone)||"";var p=parseNote(j.guest&&j.guest.note);g.diet=p.diet||"";g.role=p.role||"";g.handler=p.handler||"";g.seat=p.seat||"";if(curId===id)openPf(id);}catch(e){g._enriched=true;}}
 function setLang(l){LANG=l;localStorage.setItem("ci_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";
  document.querySelectorAll("[data-i]").forEach(function(el){var k=el.getAttribute("data-i");var v=t(k);if(v)el.textContent=v;});
@@ -956,6 +1030,7 @@ $("#pfBody").addEventListener("click",function(e){
   /* E08-D056 — nút «Đã tặng» tự gọi API ngay khi bấm (Sponsor: «có nút tick sau
      khi nhấn»), KHÔNG đi qua nút «Lưu ghi nhận». data-tick nói nút đang ở trạng
      thái nào để biết lần bấm này là tick hay gỡ. */
+  if(b.getAttribute("data-huyci")){huyCheckin(b.getAttribute("data-huyci"),b);return;}
   if(b.getAttribute("data-qdap")){datQuaDap(b.getAttribute("data-qdap"),b,b.getAttribute("data-tick")==="1");return;}
   if(b.getAttribute("data-save")){saveQuay(b.getAttribute("data-save"),b);return;}
   /* E08-D051 — bộ bắt `data-sdt` gỡ theo nút. Để lại một nhánh trỏ vào hàm đã

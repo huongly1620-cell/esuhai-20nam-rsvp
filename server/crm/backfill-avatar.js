@@ -22,18 +22,55 @@
 //  * Khách CHƯA có ảnh nào thì để NULL — không tạo ghim từ hư không. Đó là lối
 //    thoát cho PG chụp trượt ở cửa (AC-6): tấm 1 rồi tấm 2 vẫn đổi được.
 
+const fs = require('fs');
+const path = require('path');
 const { pool } = require('../db');
 const { logAudit } = require('./audit');
 
 const COMMIT = process.argv.includes('--commit');
 
-// Đúng biểu thức của guests.js nhánh lùi — tấm chân dung MỚI NHẤT.
-const SQL_TAM_DANG_HIEN = `
+// Tấm SẼ GHIM cho thẻ chưa ghim = tấm chân dung MỚI NHẤT.
+//
+// E08-D053 — ĐỌC KỸ TRƯỚC KHI SỬA: đây KHÔNG phải «ảnh đang hiện». Nó chỉ TRÙNG
+// với ảnh đang hiện ở đúng nhóm thẻ mà backfill chạm tới (`avatar_photo_id IS
+// NULL`), vì ở nhóm đó COALESCE của guests.js rơi về đúng nhánh này. Dùng nó ở
+// câu UPDATE là ĐÚNG; dùng nó để SO trước/sau là SAI — chính chỗ đó là bệnh
+// D053 phải vá (xem `bieuThucDangHien` bên dưới).
+const SQL_TAM_SE_GHIM = `
   SELECT g.id AS guest_id,
          (SELECT ph.id FROM crm_photos ph
            WHERE ph.guest_id = g.id AND ph.interaction_id IS NULL
            ORDER BY ph.created_at DESC LIMIT 1) AS tam
     FROM crm_guests g`;
+
+/* ---- E08-D053 · MỘT NGUỒN DUY NHẤT cho «ảnh đang hiện» ----
+   Hàng rào AC-2 cũ chép tay nhánh lùi rồi so với COALESCE-ghim, tức đo «mã cũ
+   vs mã mới» trong khi COALESCE-ghim đã LIVE từ D040. Nó không đo thứ nó tưởng
+   mình đo, và vì thế chặn nhầm 3 thẻ đã ghim hợp lệ từ trước — 33 thẻ hở nằm
+   lại, đúng thứ backfill sinh ra để chặn.
+
+   Chống tái phát bằng cách KHÔNG chép nữa: đọc thẳng biểu thức đang chạy ra từ
+   `guests.js` lúc chạy. `guests.js` đổi thì phép đo đổi theo, không có bản thứ
+   hai để lệch. Không đụng một dòng nào của `guests.js` (ràng buộc §5).
+
+   FAIL-CLOSED: bóc không ra thì DỪNG HẲN, không lặng lẽ rơi về bản chép tay —
+   rơi về bản chép tay chính là cách bệnh này ra đời. */
+function bieuThucDangHien() {
+  const p = path.join(__dirname, 'guests.js');
+  const src = fs.readFileSync(p, 'utf8');
+  // Neo vào mệnh đề KHÔNG THỂ trùng chỗ khác trong tệp, rồi nới ra hai đầu.
+  const neo = src.indexOf('ap.id = g.avatar_photo_id');
+  const dau = neo < 0 ? -1 : src.lastIndexOf('SELECT COALESCE(', neo);
+  const cuoi = dau < 0 ? -1 : src.indexOf(') AS id', dau);
+  if (neo < 0 || dau < 0 || cuoi < 0) {
+    console.error('\n⛔ D053 — KHÔNG bóc được biểu thức avatar từ server/crm/guests.js.');
+    console.error('   guests.js đã đổi hình dạng. DỪNG, không đoán, không dùng bản chép tay.');
+    console.error('   Sửa hàm bieuThucDangHien() cho khớp rồi chạy lại.\n');
+    process.exit(1);
+  }
+  return 'COALESCE(' + src.slice(dau + 'SELECT COALESCE('.length, cuoi) + ')';
+}
+const DANG_HIEN = bieuThucDangHien();   // dùng alias `g` cho crm_guests
 
 (async () => {
   console.log('\n=== E08-D040 · backfill ảnh đại diện — ' + (COMMIT ? 'GHI THẬT' : 'DRY-RUN (không ghi)') + ' ===\n');
@@ -45,7 +82,7 @@ const SQL_TAM_DANG_HIEN = `
       FROM crm_guests`)).rows[0];
   const co = (await pool.query(`
     SELECT count(*)::int n, count(*) FILTER (WHERE x.deleted_at IS NULL)::int n_song
-      FROM (${SQL_TAM_DANG_HIEN}) t
+      FROM (${SQL_TAM_SE_GHIM}) t
       JOIN crm_guests x ON x.id = t.guest_id
      WHERE t.tam IS NOT NULL`)).rows[0];
 
@@ -56,35 +93,58 @@ const SQL_TAM_DANG_HIEN = `
   let daGhim = 0;
   try {
     await client.query('BEGIN');
+
+    /* E08-D053 AC-1 — CHỤP TRẠNG THÁI TRƯỚC, bằng CHÍNH biểu thức đang chạy.
+       Phải nằm TRƯỚC câu UPDATE, và trong cùng transaction để bản chụp biến mất
+       cùng ROLLBACK (ON COMMIT DROP). Đây mới là «trước» thật; hàng rào cũ không
+       có bước này nên nó buộc phải lấy một biểu thức khác làm mốc — và lấy nhầm. */
+    await client.query(`CREATE TEMP TABLE d053_truoc ON COMMIT DROP AS
+      SELECT g.id, (${DANG_HIEN}) AS anh FROM crm_guests g WHERE g.deleted_at IS NULL`);
+
     const r = await client.query(`
       UPDATE crm_guests g SET avatar_photo_id = t.tam
-        FROM (${SQL_TAM_DANG_HIEN}) t
+        FROM (${SQL_TAM_SE_GHIM}) t
        WHERE g.id = t.guest_id AND t.tam IS NOT NULL AND g.avatar_photo_id IS NULL
       RETURNING g.id`);
     daGhim = r.rowCount;
 
-    // AC-2 — so TRƯỚC/SAU ngay trong cùng transaction: tấm mã CŨ chọn so với tấm
-    // mã MỚI sẽ chọn (COALESCE ghim → lùi). Đếm thẻ LỆCH, kỳ vọng 0.
+    /* AC-1 · PHÉP THẬT — cùng một biểu thức, hai thời điểm. Đây là ý nghĩa gốc
+       của AC-2 D040, nguyên văn chú thích đầu tệp: «backfill KHÔNG chọn ảnh mới,
+       nó chỉ ĐÓNG BĂNG lựa chọn hiện tại». */
     const lech = (await client.query(`
+      SELECT count(*)::int n
+        FROM crm_guests g JOIN d053_truoc t ON t.id = g.id
+       WHERE g.deleted_at IS NULL AND (${DANG_HIEN}) IS DISTINCT FROM t.anh`)).rows[0].n;
+
+    /* AC-6 · in CẢ phép cũ để lại vết cho người đọc sau — nhưng nói rõ nó KHÔNG
+       phải cổng chặn. Nó so nhánh lùi (mã trước D040) với COALESCE-ghim (mã đang
+       chạy), nên 3 thẻ đã ghim hợp lệ từ trước rồi có ảnh mới hơn sẽ luôn bị nó
+       tính là «lệch» — dù backfill KHÔNG chạm chúng (`WHERE avatar_photo_id IS
+       NULL`). Số đó là số của một câu hỏi khác, không phải câu AC-2 đang hỏi. */
+    const lechCu = (await client.query(`
       SELECT count(*)::int n FROM crm_guests g
        WHERE g.deleted_at IS NULL
          AND (SELECT ph.id FROM crm_photos ph
                WHERE ph.guest_id = g.id AND ph.interaction_id IS NULL
                ORDER BY ph.created_at DESC LIMIT 1)
-         IS DISTINCT FROM
-             COALESCE(
-               (SELECT ap.id FROM crm_photos ap
-                 WHERE ap.id = g.avatar_photo_id AND ap.guest_id = g.id AND ap.interaction_id IS NULL),
-               (SELECT ph.id FROM crm_photos ph
-                 WHERE ph.guest_id = g.id AND ph.interaction_id IS NULL
-                 ORDER BY ph.created_at DESC LIMIT 1))`)).rows[0].n;
+         IS DISTINCT FROM (${DANG_HIEN})`)).rows[0].n;
+
+    // Sổ hở còn lại: thẻ sống, có ảnh chân dung, mà vẫn chưa ghim sau khi chạy.
+    const hoLai = (await client.query(`
+      SELECT count(*)::int n FROM crm_guests g
+       WHERE g.deleted_at IS NULL AND g.avatar_photo_id IS NULL
+         AND EXISTS (SELECT 1 FROM crm_photos p WHERE p.guest_id = g.id AND p.interaction_id IS NULL)`)).rows[0].n;
 
     console.log('\n  → ' + (COMMIT ? 'ĐÃ ghim' : 'SẼ ghim') + ': ' + daGhim + ' thẻ');
-    console.log('  → AC-2 · thẻ còn sống ĐỔI ảnh đang hiện: ' + lech + (lech === 0 ? '  ✅' : '  ❌ PHẢI LÀ 0'));
+    console.log('  → AC-2 THẬT (cổng chặn) · ảnh ĐANG HIỆN đổi, cùng biểu thức trước/sau: '
+      + lech + (lech === 0 ? '  ✅' : '  ❌ PHẢI LÀ 0'));
+    console.log('  → sổ hở còn lại (sống · có ảnh · chưa ghim): ' + hoLai + (hoLai === 0 ? '  ✅' : ''));
+    console.log('  → [tham khảo, KHÔNG chặn] phép CŨ (nhánh lùi vs đang chạy): ' + lechCu
+      + ' — số này ≠ 0 là bình thường, xem chú thích D053 trong tệp');
 
     if (lech !== 0) {
       await client.query('ROLLBACK');
-      console.log('\n  ⛔ HOÀN TÁC — có thẻ đổi ảnh, không được ghi.\n');
+      console.log('\n  ⛔ HOÀN TÁC — có thẻ đổi ảnh đang hiện, không được ghi.\n');
       client.release(); await pool.end(); process.exit(1);
     }
     if (!COMMIT) {
@@ -92,7 +152,7 @@ const SQL_TAM_DANG_HIEN = `
       console.log('\n  ĐÃ HOÀN TÁC (dry-run). Chạy lại với --commit để ghi thật.\n');
     } else {
       await logAudit(client, { actor_email: 'r1@esuhai.local', event_type: 'avatar_backfill',
-        target_type: 'crm_guests', meta: { daGhim, thẻCóẢnh: co.n, lech } });
+        target_type: 'crm_guests', meta: { daGhim, theCoAnh: co.n, lech } });
       await client.query('COMMIT');
       console.log('\n  ĐÃ GHI ✅\n');
     }

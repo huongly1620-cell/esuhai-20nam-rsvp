@@ -769,26 +769,10 @@ async function saveQuay(id,btn){
  }catch(e){btn.disabled=false;g._enriched=false;toast(t("q_net"),1);}}
 /* E08-D041 §3c — huyCi()/jdel() ĐÃ GỠ cùng nút huỷ: cửa nay mở nên không để
    thao tác XOÁ DÒNG sau một URL. Huỷ chỉ còn ở /crm với role btl. */
-/* E08-D041 §3b — mở khoá SĐT ngay tại ô SĐT, không mở khoá cả trang. Máy chủ
-   mới là chỗ che thật: chưa mở khoá thì phản hồi trả phone:null, nên mở DevTools
-   cũng không thấy số. Ở đây chỉ là chỗ NHẬP mật khẩu rồi nạp lại. Cookie 30 phút;
-   hết hạn thì số tự ẩn lại ở lần nạp sau. */
-async function moKhoaSdt(btn){
- var mk=prompt(t("sdt_hoi"));
- if(mk===null||mk==="")return;
- if(btn)btn.disabled=true;
- try{
-  var r=await api("/crm/phone-unlock",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({password:mk})});
-  if(!r.ok){var e={};try{e=await r.json();}catch(_){}
-   if(btn)btn.disabled=false;toast(e.error||t("sdt_sai"),1);return;}
-  /* KHÔNG tự vẽ số từ phản hồi — tuyến mở khoá cố ý không trả SĐT nào. Nạp lại
-     qua tuyến thường để số đến từ đúng một nguồn. */
-  /* Phải là refresh(1): đang mở hồ sơ thì refresh() không manual sẽ THOÁT NGAY
-     (chặn list nhảy dưới tay PG) — mở khoá xong màn không đổi gì. */
-  toast(t("sdt_ok"));await refresh(1);if(curId)openPf(curId);
- }catch(e){if(btn)btn.disabled=false;toast(t("sdt_net"),1);}
-}
+/* E08-D051 §3 — moKhoaSdt() ĐÃ GỠ HẲN cùng nút «Xem số» của D041 §3b. Lối vào
+   duy nhất của nó là nút `data-sdt` trong hồ sơ, mà nút đó không còn ⇒ giữ lại
+   là mã chết, và mã chết ở màn cửa thì lần sau có người tưởng năng lực còn sống.
+   Tuyến máy chủ `/crm/phone-unlock` GIỮ NGUYÊN — /crm vẫn gọi nó (AC-4). */
 function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls=g.diet==="Món chay"?"chay":"";
  var ciBox=cm?'<div class="cidone"><div class="t">&#9711; '+t("cidone",{t:fmtCame(cm)})+(g._by?' · '+esc(g._by):'')+'</div>'
    /* E08-D041 §3c — Sponsor chốt phương án A: BỎ nút huỷ ở cửa. Cửa nay mở
@@ -807,12 +791,14 @@ function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came
   +badges(g,1)
   +'<div class="facts">'+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(g.buoi)+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(g.diet||"—")+'</div></div></div>'
   +'<div class="info"><div class="ir"><span class="k">'+t("phutrach")+'</span><span class="v">'+esc(g.handler||"—")+'</span></div>'
-  +'<div class="ir"><span class="k">'+t("vaitro")+'</span><span class="v">'+esc(g.role||"—")+(g.note?' · '+esc(g.note):'')+'</span></div>'
-  /* Có số ⇒ đã mở khoá (máy chủ trả null khi chưa). Chưa có ⇒ nút mở khoá. */
-  +'<div class="ir"><span class="k">'+t("sdt")+'</span><span class="v">'
-    +(g.phone?('<a href="tel:'+esc(g.phone)+'">'+esc(g.phone)+'</a>')
-             :(t("sdthide")+' <button class="undob" data-sdt="1" style="margin-left:6px">'+t("sdt_mo")+'</button>'))
-    +'</span></div>'
+  /* E08-D051 (Sponsor chốt 06/08 18:45 · CR-78) — ĐÃ GỠ hai dòng khỏi hồ sơ cửa:
+       · «Vai trò / đi cùng»
+       · «SĐT» kèm nút «Xem số» (data-sdt) — gỡ CẢ đường mở khoá tại cửa.
+     Hệ quả Sponsor đã chấp nhận tường minh: người đứng cửa KHÔNG còn đường gọi
+     khách lạc/đến trễ; cần số thì mở /crm. Đừng «tiện tay» thêm lại một nút gọi
+     ở đây — đó là đảo một quyết định đã chốt, không phải sửa sót.
+     Che số phía MÁY CHỦ của D041 giữ NGUYÊN (tuyến /crm vẫn dùng) — vé này chỉ
+     đụng hai tệp cửa. */
   +'<div class="ir"><span class="k">'+t("makhach")+'</span><span class="v">'+esc(g.id)+'</span></div></div>'+ciBox;
  $("#pf").classList.add("show");document.body.style.overflow="hidden";if(!g._enriched)enrich(g,id);}
 async function enrich(g,id){try{var j=await jget("/crm/guests/"+id);g._enriched=true;
@@ -844,7 +830,8 @@ $("#pfBody").addEventListener("click",function(e){
      Đó là lý do phải có attr riêng chứ không thêm cờ vào `data-pick`. */
   if(b.getAttribute("data-pickqua")){camQua=true;camFor=b.getAttribute("data-pickqua");var pq=document.getElementById("pick");if(pq){pq.value="";pq.click();}return;}
   if(b.getAttribute("data-save")){saveQuay(b.getAttribute("data-save"),b);return;}
-  if(b.getAttribute("data-sdt")){moKhoaSdt(b);return;}
+  /* E08-D051 — bộ bắt `data-sdt` gỡ theo nút. Để lại một nhánh trỏ vào hàm đã
+     xoá là ReferenceError ngay giữa hồ sơ khách, ở cửa, lúc đông. */
   if(b.getAttribute("data-ci")){var id=b.getAttribute("data-ci");b.disabled=true;
     /* E08-D028 CỬA-2: jpost() KHÔNG ném lỗi khi máy chủ từ chối — nó trả
        {ok:false,status}. Bản cũ bỏ qua r.ok rồi rơi về || "1" nên màn hiện

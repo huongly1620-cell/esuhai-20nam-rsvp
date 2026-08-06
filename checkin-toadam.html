@@ -212,7 +212,10 @@ function hangOf(g){var v=String(g.vip||"");return /^v?vip/i.test(v)?v.toUpperCas
 // danh sách buổi này — cùng loại lỗi N1 trên /crm.
 function buoiOf(r){var b=[];if(r&&r.du_toa_dam)b.push("Tọa đàm");if(r&&r.du_gala)b.push("Gala");return b.join(" + ");}
 function parseNote(s){var o={};String(s||"").split(" · ").forEach(function(p){var k=(p.split(":")[0]||"").trim(),v=p.slice(p.indexOf(":")+1).trim();if(/Ẩm thực/.test(k))o.diet=v;else if(/Vai trò/.test(k))o.role=v;else if(/^S2/.test(k))o.handler=v;else if(/Số bàn/.test(k))o.seat=v;});return o;}
-function mapRow(r){var a=tagArr(r.tags);return{id:String(r.id),name:r.full_name,title:r.title||"",org:r.org||"",table:r.table_no||"",_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(r),du_toa_dam:!!r.du_toa_dam,du_gala:!!r.du_gala,name_jp:r.name_jp||"",title_jp:r.title_jp||"",org_jp:r.org_jp||"",phanloai:(a.indexOf("Gia đình TGĐ")>-1?"Gia đình TGĐ":a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),ob:a.indexOf("pl:ob")>-1,tagraw:String(r.tags||""),seat:"",diet:"",handler:"",role:"",note:"",photo:r.photo_url||"",photoBig:r.photo_view_url||"",att:r.att_status||"",
+function mapRow(r){var a=tagArr(r.tags);return{id:String(r.id),name:r.full_name,title:r.title||"",org:r.org||"",table:""      /* E08-D043 L-A: Tọa đàm KHÔNG hiện bàn — số bàn chỉ dùng cho Gala
+                     (chị Ly 06/08). Cùng lập luận D030 đã dùng cho GHẾ: table_no là
+                     thuộc tính của KHÁCH, không của BUỔI. Để rỗng ngay ở nguồn thì
+                     cả dòng danh sách lẫn thBox cùng sạch. */,_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(r),du_toa_dam:!!r.du_toa_dam,du_gala:!!r.du_gala,name_jp:r.name_jp||"",title_jp:r.title_jp||"",org_jp:r.org_jp||"",phanloai:(a.indexOf("Gia đình TGĐ")>-1?"Gia đình TGĐ":a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),ob:a.indexOf("pl:ob")>-1,tagraw:String(r.tags||""),seat:"",diet:"",handler:"",role:"",note:"",photo:r.photo_url||"",photoBig:r.photo_view_url||"",att:r.att_status||"",
   /* E08-D030 — cửa TỌA ĐÀM cố ý KHÔNG đọc ghế.
      `seat_no` là thuộc tính của KHÁCH, không phải của buổi: đo prod bằng luật
      du_toa_dam/du_gala thì 145/147 khách Tọa đàm cũng dự Gala. Nếu đọc chung,
@@ -407,7 +410,10 @@ function renderList(){quickCounts();var rows=G.filter(match);
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);
   return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'"><span class="sd'+(cm?" came":"")+'"></span>'
    +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+pairVJ(g.name,g.name_jp)+'</div><div class="n2">'+pairVJ(g.title||g.org||"",g.title_jp||g.org_jp||"")+'</div>'+badges(g)+'</div>'
-   +(cm?'<span class="gt">&#9711; '+fmtCame(cm)+'</span>':(g.table?'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>':''))+'</div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
+   /* Chỗ này chính là nhãn trong ảnh chị Ly chụp — rìa phải MỖI DÒNG, không
+      phải khung Bàn/Ghế trong hồ sơ. Vá thiếu ở đây là hồ sơ sạch mà danh sách
+      vẫn hiện «Bàn Không tham dự». */
+   +(cm?'<span class="gt">&#9711; '+fmtCame(cm)+'</span>':(bgHien(g.table)?'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>':''))+'</div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
 
 /* E08-D028 AC-C — chụp ảnh khách tại cửa → kệ MinIO.
    AC-C2 (Sponsor chốt): ĐIỂM DANH và ẢNH độc lập. Ảnh fail → báo đỏ, KHÔNG
@@ -489,7 +495,33 @@ function khoHtml(g){
       +'<img src="'+esc(p.thumb_url||p.url)+'" loading="lazy" decoding="async">'
       +(q?'<span class="qb">&#127873;</span>':'')+'</span>';}).join("")
   +'</div>';}
-function thBox(g){var ban=g.table||g.seat||"",ghe=g.ghe||"";
+/* E08-D043 — nhãn Bàn/Ghế mang chữ TRẠNG THÁI THAM DỰ là rác: 41 thẻ có
+   table_no = "Không tham dự" do vòng nhập, và nhãn đó chỉ LẶP LẠI thứ chấm/chữ
+   D033 đã hiện ngay trên cùng dòng — ở chỗ dành cho số bàn.
+   KHÔNG ẩn theo «không phải số»: đo trên file chị Ly nạp thì luật đó giết luôn
+   4 bàn thật («Bàn nhân viên» ×3, «Bàn ekip» ×1) và 2 ghế thật («ghế em bé»).
+   So bằng KHOÁ CHUẨN HOÁ, không so chuỗi hiển thị — ba lý do đều đã cắn dự án:
+     · hoa/thường — D028 AC-F0 giấu 48/53 khách VIP vì indexOf("VIP") vs tag "vip";
+       prod 04/08 có cả "Bàn nhân viên" lẫn "bàn nhân viên" cùng lúc.
+     · Đ KHÔNG tách bằng NFD (U+0110/U+0111) ⇒ phải đổi Đ→D TRƯỚC NFD. Sai thứ tự
+       là "Đã tham dự" không khớp — gốc của cả M2 lẫn D034.
+     · dấu cách / dấu chấm thừa — bỏ hết ký tự không phải chữ-số.
+   Tập chữ lấy đúng ATT_TEXT của import-update.js: đó CHÍNH LÀ tập chữ vòng nhập
+   chấp nhận, tức tập chữ có thể chui vào cột Bàn. */
+function ttKey(s){return String(s==null?"":s).normalize("NFC")
+  .replace(/[ĐÐ]/g,"D").replace(/[đð]/g,"d")
+  .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");}
+var TT_RAC={thamdu:1,khongthamdu:1,choxacnhan:1,chuaxacnhan:1,khongdu:1,codu:1};
+function laChuTrangThai(v){return !!TT_RAC[ttKey(v)];}
+/* Dùng cho MỌI chỗ hiển thị Bàn/Ghế. TUYỆT ĐỐI không dùng cho updRows(): file
+   «Xuất để CẬP NHẬT» phải giữ NGUYÊN VĂN chữ đó, vì đó là cách chị Ly nhìn thấy
+   và sửa bằng quy ước (xoá) của D032 (CR-44). Ẩn ở file xuất là bịt đường sửa. */
+function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
+function thBox(g){
+ /* E08-D043 L-A — BỎ «||g.seat»: g.seat do parseNote() lấy từ GHI CHÚ và chú
+    thích cũ cố ý gộp nó làm BÀN. Chỉ làm rỗng g.table thì dòng danh sách sạch
+    mà MỞ HỒ SƠ RA BÀN VẪN HIỆN — AC-1 vẫn PASS trong khi lỗi còn nguyên. */
+ var ban=bgHien(g.table),ghe=bgHien(g.ghe);
  if(!ban&&!ghe)return "";
  return '<div class="th">'
   +(ban?'<div class="c"><div class="k">'+t("ban")+'</div><div class="v num">'+esc(ban)+'</div></div>':'')

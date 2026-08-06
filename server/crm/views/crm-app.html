@@ -383,6 +383,28 @@
    if(state.q){var s=noAcc(state.q);if(noAcc(g.full_name+" "+(g.org||"")+" "+(g.title||"")+" "+(g.phone||"")).indexOf(s)===-1)return false;}
    return true;
  }
+/* E08-D043 — nhãn Bàn/Ghế mang chữ TRẠNG THÁI THAM DỰ là rác: 41 thẻ có
+   table_no = "Không tham dự" do vòng nhập, và nhãn đó chỉ LẶP LẠI thứ chấm/chữ
+   D033 đã hiện ngay trên cùng dòng — ở chỗ dành cho số bàn.
+   KHÔNG ẩn theo «không phải số»: đo trên file chị Ly nạp thì luật đó giết luôn
+   4 bàn thật («Bàn nhân viên» ×3, «Bàn ekip» ×1) và 2 ghế thật («ghế em bé»).
+   So bằng KHOÁ CHUẨN HOÁ, không so chuỗi hiển thị — ba lý do đều đã cắn dự án:
+     · hoa/thường — D028 AC-F0 giấu 48/53 khách VIP vì indexOf("VIP") vs tag "vip";
+       prod 04/08 có cả "Bàn nhân viên" lẫn "bàn nhân viên" cùng lúc.
+     · Đ KHÔNG tách bằng NFD (U+0110/U+0111) ⇒ phải đổi Đ→D TRƯỚC NFD. Sai thứ tự
+       là "Đã tham dự" không khớp — gốc của cả M2 lẫn D034.
+     · dấu cách / dấu chấm thừa — bỏ hết ký tự không phải chữ-số.
+   Tập chữ lấy đúng ATT_TEXT của import-update.js: đó CHÍNH LÀ tập chữ vòng nhập
+   chấp nhận, tức tập chữ có thể chui vào cột Bàn. */
+function ttKey(s){return String(s==null?"":s).normalize("NFC")
+  .replace(/[ĐÐ]/g,"D").replace(/[đð]/g,"d")
+  .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");}
+var TT_RAC={thamdu:1,khongthamdu:1,choxacnhan:1,chuaxacnhan:1,khongdu:1,codu:1};
+function laChuTrangThai(v){return !!TT_RAC[ttKey(v)];}
+/* Dùng cho MỌI chỗ hiển thị Bàn/Ghế. TUYỆT ĐỐI không dùng cho updRows(): file
+   «Xuất để CẬP NHẬT» phải giữ NGUYÊN VĂN chữ đó, vì đó là cách chị Ly nhìn thấy
+   và sửa bằng quy ước (xoá) của D032 (CR-44). Ẩn ở file xuất là bịt đường sửa. */
+function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
  function renderList(){
    var rows=ALL.filter(match);
    if(state.sort==="vip")rows.sort(function(a,b){return vipRank(a)-vipRank(b)||String(a.full_name).localeCompare(String(b.full_name),"vi");});
@@ -397,7 +419,7 @@
      return '<div class="g'+(g.checked_in?" done":"")+'" data-id="'+g.id+'">'
       +'<div class="av">'+(g.photo_url?'<img src="'+esc(g.photo_url)+'" onerror="this.remove()">':esc(ini(g.full_name)))+'<span class="sd'+(g.checked_in?" in":"")+'"></span></div>'
       +'<div class="nm"><div class="n1">'+esc(g.full_name)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+(isDup(g)?' <span class="tag dup">⚠ TRÙNG</span>':'')+(hasTag(g,"ngoai-ds")?' <span class="tag walk">'+tt("walk_badge")+'</span>':'')+'</div><div class="n2">'+esc([g.org,g.title].filter(Boolean).join(" · ")||"—")+(ptOf(g)?' · 👤 '+esc(ptOf(g)):'')+'</div></div>'
-      +'<div class="rb">'+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')+(g.checked_in?'<span class="tag in">✓ '+hhmm(g.checked_in_at)+'</span>':(g.table_no?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':''))+'</div></div>';
+      +'<div class="rb">'+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')+(g.checked_in?'<span class="tag in">✓ '+hhmm(g.checked_in_at)+'</span>':(bgHien(g.table_no)?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':''))+'</div></div>';
    }).join("");
    wireImgs($("#list"),false);
  }
@@ -430,7 +452,7 @@
     +stepHTML(done,curStep)+'<div class="phase">';
    if(curStep==="truoc"){
      var contact=isBtl?('<span id="phMask">'+esc(maskPhone(g.phone))+'</span>'+(String(g.phone||"").replace(/\D/g,"").length>3?' <button class="reveal" id="phReveal">👁</button>':'')+(g.email?'<br>'+esc(g.email):'')):('•• '+tt("hidden"));
-     html+='<div class="phase-h">① '+tt("ph_truoc")+'</div><div style="text-align:center"><div class="th"><div><div class="k">'+tt("ban")+'</div><div class="v num">'+esc(g.table_no||"—")+'</div></div></div></div>'
+     html+='<div class="phase-h">① '+tt("ph_truoc")+'</div><div style="text-align:center"><div class="th"><div><div class="k">'+tt("ban")+'</div><div class="v num">'+esc(bgHien(g.table_no)||"—")+'</div></div></div></div>'
       +'<div class="facts"><div class="ft"><div class="k">'+tt("buoi")+'</div><div class="v">'+esc(buoiOf(g))+'</div></div>'+(vipOf(g)?'<div class="ft"><div class="k">'+tt("hang")+'</div><div class="v">'+esc(vipOf(g))+'</div></div>':'')+'<div class="ft"><div class="k">RSVP</div><div class="v">'+(g.from_rsvp?"✓":"—")+'</div></div></div>'
       +'<div class="info"><div class="ir"><span class="k">'+tt("contact")+'</span><span class="v">'+contact+'</span></div>'+(ph?'<div class="ir"><span class="k">'+tt("phutrach")+'</span><span class="v">'+esc(ph)+'</span></div>':'')+'</div><div class="sec">'+tt("photo_h")+'</div><div class="thumbs">'+thumbs+'</div><label class="btn block" style="margin-top:8px">'+tt("photo_up")+'<input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none"></label>';
    }else if(curStep==="trong"){

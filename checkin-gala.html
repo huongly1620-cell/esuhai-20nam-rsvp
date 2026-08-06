@@ -404,7 +404,10 @@ function renderList(){quickCounts();var rows=G.filter(match);
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);
   return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'"><span class="sd'+(cm?" came":"")+'"></span>'
    +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+pairVJ(g.name,g.name_jp)+'</div><div class="n2">'+pairVJ(g.title||g.org||"",g.title_jp||g.org_jp||"")+'</div>'+badges(g)+'</div>'
-   +(cm?'<span class="gt">&#9711; '+fmtCame(cm)+'</span>':(g.table?'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>':''))+'</div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
+   /* Chỗ này chính là nhãn trong ảnh chị Ly chụp — rìa phải MỖI DÒNG, không
+      phải khung Bàn/Ghế trong hồ sơ. Vá thiếu ở đây là hồ sơ sạch mà danh sách
+      vẫn hiện «Bàn Không tham dự». */
+   +(cm?'<span class="gt">&#9711; '+fmtCame(cm)+'</span>':(bgHien(g.table)?'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>':''))+'</div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
 
 /* E08-D028 AC-C — chụp ảnh khách tại cửa → kệ MinIO.
    AC-C2 (Sponsor chốt): ĐIỂM DANH và ẢNH độc lập. Ảnh fail → báo đỏ, KHÔNG
@@ -486,7 +489,29 @@ function khoHtml(g){
       +'<img src="'+esc(p.thumb_url||p.url)+'" loading="lazy" decoding="async">'
       +(q?'<span class="qb">&#127873;</span>':'')+'</span>';}).join("")
   +'</div>';}
-function thBox(g){var ban=g.table||g.seat||"",ghe=g.ghe||"";
+/* E08-D043 — nhãn Bàn/Ghế mang chữ TRẠNG THÁI THAM DỰ là rác: 41 thẻ có
+   table_no = "Không tham dự" do vòng nhập, và nhãn đó chỉ LẶP LẠI thứ chấm/chữ
+   D033 đã hiện ngay trên cùng dòng — ở chỗ dành cho số bàn.
+   KHÔNG ẩn theo «không phải số»: đo trên file chị Ly nạp thì luật đó giết luôn
+   4 bàn thật («Bàn nhân viên» ×3, «Bàn ekip» ×1) và 2 ghế thật («ghế em bé»).
+   So bằng KHOÁ CHUẨN HOÁ, không so chuỗi hiển thị — ba lý do đều đã cắn dự án:
+     · hoa/thường — D028 AC-F0 giấu 48/53 khách VIP vì indexOf("VIP") vs tag "vip";
+       prod 04/08 có cả "Bàn nhân viên" lẫn "bàn nhân viên" cùng lúc.
+     · Đ KHÔNG tách bằng NFD (U+0110/U+0111) ⇒ phải đổi Đ→D TRƯỚC NFD. Sai thứ tự
+       là "Đã tham dự" không khớp — gốc của cả M2 lẫn D034.
+     · dấu cách / dấu chấm thừa — bỏ hết ký tự không phải chữ-số.
+   Tập chữ lấy đúng ATT_TEXT của import-update.js: đó CHÍNH LÀ tập chữ vòng nhập
+   chấp nhận, tức tập chữ có thể chui vào cột Bàn. */
+function ttKey(s){return String(s==null?"":s).normalize("NFC")
+  .replace(/[ĐÐ]/g,"D").replace(/[đð]/g,"d")
+  .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");}
+var TT_RAC={thamdu:1,khongthamdu:1,choxacnhan:1,chuaxacnhan:1,khongdu:1,codu:1};
+function laChuTrangThai(v){return !!TT_RAC[ttKey(v)];}
+/* Dùng cho MỌI chỗ hiển thị Bàn/Ghế. TUYỆT ĐỐI không dùng cho updRows(): file
+   «Xuất để CẬP NHẬT» phải giữ NGUYÊN VĂN chữ đó, vì đó là cách chị Ly nhìn thấy
+   và sửa bằng quy ước (xoá) của D032 (CR-44). Ẩn ở file xuất là bịt đường sửa. */
+function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
+function thBox(g){var ban=bgHien(g.table||g.seat),ghe=bgHien(g.ghe);
  if(!ban&&!ghe)return "";
  return '<div class="th">'
   +(ban?'<div class="c"><div class="k">'+t("ban")+'</div><div class="v num">'+esc(ban)+'</div></div>':'')

@@ -317,7 +317,14 @@ function merge(rows){
       sơ nào cũng thấy «—» cho tới khi enrich chạy lại. */
    if(!n.att&&o.att)n.att=o.att;
    if(!n.ghe&&o.ghe)n.ghe=o.ghe;
+   /* E08-D048 — _photos/_ghim PHẢI được chép cùng nhóm này. Thiếu chúng mà vẫn
+      chép `_enriched=true` là: PG đóng hồ sơ (refresh → merge) rồi mở lại thì
+      openPf thấy _enriched=true nên KHÔNG gọi enrich, còn khoHtml thấy _photos
+      rỗng nên trả "" ⇒ dải «Ảnh đã chụp» BIẾN MẤT và không còn .k1 nào để bấm,
+      tức lightbox chết hẳn. Lịch sử tại quầy vẫn hiện (nhờ _inter được chép) nên
+      PG không nghi là lỗi tải — PG kết luận «khách này chưa chụp» rồi chụp lại. */
    n._enriched=o._enriched;n.seat=o.seat;n.diet=o.diet;n.handler=o.handler;n.role=o.role;n._inter=o._inter;
+   n._photos=o._photos;n._ghim=o._ghim;
    if(!n.photo&&o.photo){n.photo=o.photo;n.photoBig=o.photoBig;}
    /* Máy chủ là SoT cho «đã đến». Chỉ giữ dấu cũ khi máy chủ trả về rỗng: cửa
       không có nút huỷ điểm danh, nên thẻ tự lật ngược «đã đến» → «chưa đến»
@@ -632,6 +639,11 @@ function lbVe(){
  var p=lbList[lbIdx];if(!p)return;
  document.getElementById("lbImg").src=p.view_url||p.url;   /* bản 1024, có đường lùi về gốc */
  document.getElementById("lbC").textContent=(lbIdx+1)+" / "+lbList.length;
+ /* Chữ nút đặt Ở ĐÂY chứ không lúc dựng: lbDung() chỉ chạy MỘT lần (`if(lbEl())
+    return`), nên nhúng cứng esc(t("close")) vào innerHTML là nút đóng băng theo
+    ngôn ngữ của lần mở ĐẦU TIÊN — đổi sang 日本語 thì nhãn 🎁/✓ ngay bên cạnh
+    đổi đúng còn nút vẫn «Đóng», lệch ngay trong một khung hình trước mặt khách Nhật. */
+ document.getElementById("lbX").textContent=t("close");
  var q=document.getElementById("lbQ");
  q.textContent=p.interaction_id?t("lb_qua"):(String(p.id)===String(lbGhim||"")?t("lb_ghim"):"");
 }

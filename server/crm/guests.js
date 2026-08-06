@@ -321,15 +321,24 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
        gì sang gì. Chỉ nhánh CÓ bàn/ghế mới mở giao dịch + đọc thêm một câu:
        lượt PATCH thường (PG sửa ghi chú/SĐT) giữ NGUYÊN hình dạng và chi phí cũ. */
     if (btlFields.length) {
-      const client = await pool.connect();
+      /* `pool.connect()` phải nằm TRONG try. Để nó ngoài thì một nhịp chớp của
+         CSDL (Railway restart / rớt mạng) làm nó ném NGAY tại đây: Express 4
+         KHÔNG bắt promise bị reject của route handler, repo không có
+         process.on('unhandledRejection') ⇒ Node 20+ biến nó thành
+         uncaughtException và GIẾT CẢ TIẾN TRÌNH — hai cửa mất check-in cho tới
+         khi Railway dựng lại. Cùng khuôn `let client` + `finally release` mà
+         tuyến attendance đang dùng; và `finally` là chỗ trả kết nối DUY NHẤT,
+         không rải release() ở từng nhánh return (bài học D016 B10). */
+      let client;
       try {
+        client = await pool.connect();
         await client.query('BEGIN');
         const cu = (await client.query(
           'SELECT table_no, seat_no FROM crm_guests WHERE id = $1 AND deleted_at IS NULL FOR UPDATE', [id])).rows[0];
-        if (!cu) { await client.query('ROLLBACK'); client.release(); return res.status(404).json({ ok: false, error: 'not found' }); }
+        if (!cu) { await client.query('ROLLBACK'); return res.status(404).json({ ok: false, error: 'not found' }); }
         const r = await client.query(
           `UPDATE crm_guests SET ${sets.join(', ')} WHERE id = $${params.length} AND deleted_at IS NULL RETURNING table_no, seat_no`, params);
-        if (!r.rows[0]) { await client.query('ROLLBACK'); client.release(); return res.status(404).json({ ok: false, error: 'not found' }); }
+        if (!r.rows[0]) { await client.query('ROLLBACK'); return res.status(404).json({ ok: false, error: 'not found' }); }
         const meta = { fields: Object.keys(changed) };
         if (changed.table_no) meta.ban = { cu: cu.table_no, moi: r.rows[0].table_no };
         if (changed.seat_no) meta.ghe = { cu: cu.seat_no, moi: r.rows[0].seat_no };
@@ -346,14 +355,14 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
            VALUES ($1,'guest_update','guest',$2,$3::jsonb,$4)`,
           [req.actor.email, String(id), JSON.stringify(meta), hashIp(ipOf(req))]);
         await client.query('COMMIT');
-        client.release();
         return res.json({ ok: true, table_no: r.rows[0].table_no, seat_no: r.rows[0].seat_no });
       } catch (err) {
-        await client.query('ROLLBACK').catch(() => {});
-        client.release();
+        if (client) await client.query('ROLLBACK').catch(() => {});
         if (err.code === '23505') return res.status(409).json({ ok: false, error: 'Số điện thoại đã tồn tại.' });
         console.error('[crm-guests] patch (btl) failed:', err.message);
         return res.status(500).json({ ok: false, error: 'update error' });
+      } finally {
+        if (client) client.release();
       }
     }
 

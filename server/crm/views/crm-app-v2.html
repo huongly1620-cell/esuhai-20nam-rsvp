@@ -382,11 +382,19 @@
    vn:{bg_ban_ph:"vd: 17 · Bàn nhân viên",bg_ghe_ph:"vd: 10",
        bg_xoa_ban:"Bỏ SỐ BÀN của khách này?\n\nÔ đang để trống — bấm OK là xoá bàn khỏi hồ sơ.",
        bg_xoa_ghe:"Bỏ SỐ GHẾ của khách này?\n\nÔ đang để trống — bấm OK là xoá ghế khỏi hồ sơ.",
-       bg_role:"Chỉ ban tổ chức mới sửa được Bàn / Ghế"},
+       bg_role:"Chỉ ban tổ chức mới sửa được Bàn / Ghế",
+       bg_huy:"Đã huỷ — CHƯA lưu gì cả (kể cả Đơn vị / Chức danh / Ghi chú vừa sửa)",
+       att_mat_cho:"⚠ Khách này sẽ MẤT chỗ ngồi:",
+       att_mat_cho2:"Bấm lại «Có tham dự» KHÔNG trả số cũ về — phải gán tay.",
+       att_da_xoa:"đã xoá chỗ ngồi:"},
    jp:{bg_ban_ph:"例: 17 · スタッフ席",bg_ghe_ph:"例: 10",
        bg_xoa_ban:"このゲストのテーブル番号を削除しますか？\n\n欄が空です — OKで削除されます。",
        bg_xoa_ghe:"このゲストの席番号を削除しますか？\n\n欄が空です — OKで削除されます。",
-       bg_role:"テーブル・お席の変更は主催者のみ可能です"}};
+       bg_role:"テーブル・お席の変更は主催者のみ可能です",
+       bg_huy:"キャンセルしました — 何も保存されていません（所属・役職・備考の変更も含む）",
+       att_mat_cho:"⚠ このゲストの座席が削除されます:",
+       att_mat_cho2:"「出席」に戻しても番号は戻りません — 手動で再設定が必要です。",
+       att_da_xoa:"座席を削除しました:"}};
   for(var l in A){for(var k in A[l]){T[l][k]=A[l][k];}}})();
  function tt(k){return (T[LANG]&&T[LANG][k])||T.vn[k]||k;}
  /* ── checklist (thêm/xoá/tick tự do) ── */
@@ -466,8 +474,24 @@ async function addShrunk(fd,file){
    if(a==="du")return '<span class="attd du" title="'+esc(attLbl(a))+'" aria-label="'+esc(attLbl(a))+'"></span>';
    if(a!=="khong"&&a!=="cho")return "";   /* field thiếu (máy chủ cũ) → không bịa */
    return '<span class="attb '+a+'">'+esc(attLbl(a))+'</span>';}
- async function setAtt(id,status,el){
-   if(status==="khong"&&!confirm(tt("att_ask"))){if(el)el.value=el.getAttribute("data-cur")||"";return;}
+ /* E08-D049 — `g` truyền vào để CẢNH BÁO ĐÚNG SỐ sắp mất. Máy chủ nay xoá
+    table_no/seat_no khi att chuyển sang «không tham dự», và việc đó KHÔNG có
+    đường lùi: bấm lại «Có tham dự» không trả số cũ về (spec §6 xếp việc tự gán
+    lại ra ngoài phạm vi). Nên hai chỗ phải nói thật:
+      · TRƯỚC khi ghi — popup phải nêu số bàn/ghế sắp mất, chứ chuỗi att_ask cũ
+        chỉ nói về «số báo cáo», không một chữ nào về chỗ ngồi.
+      · SAU khi ghi — toast phải nhắc lại số vừa xoá, vì đó là lần cuối cùng con
+        số đó còn hiện trên màn: màn Nhật ký không vẽ `meta`, muốn đọc lại phải
+        tải /crm/audit/export.csv rồi bới JSON.
+    Dùng bgHien(): 39/41 thẻ `khong` trên prod mang CHỮ RÁC "Không tham dự" ở cột
+    bàn — doạ người dùng vì sắp xoá một chuỗi rác là báo động giả. */
+ async function setAtt(id,status,el,g){
+   if(status==="khong"){
+     var cho=[bgHien(g&&g.table_no)?tt("ban")+" "+bgHien(g.table_no):"",
+              bgHien(g&&g.seat_no)?tt("ghe")+" "+bgHien(g.seat_no):""].filter(Boolean).join(" · ");
+     var hoi=tt("att_ask")+(cho?"\n\n"+tt("att_mat_cho")+" "+cho+"\n"+tt("att_mat_cho2"):"");
+     if(!confirm(hoi)){if(el)el.value=el.getAttribute("data-cur")||"";return;}
+   }
    if(el)el.disabled=true;
    try{
      var r=await api("/crm/guests/"+id+"/attendance",{method:"POST",
@@ -477,7 +501,11 @@ async function addShrunk(fd,file){
         DB không đổi gì (lớp lỗi CỬA-2). */
      if(!r.ok){if(el){el.disabled=false;el.value=el.getAttribute("data-cur")||"";}
        toast(tt("att_fail")+" ("+r.status+")","err");return;}
-     toast(tt("att_ok"),"ok");openGuest(id);loadAll();
+     var jb={};try{jb=await r.json();}catch(_){}
+     var x=jb&&jb.daXoaChoNgoi;
+     var mat=x?[x.ban?tt("ban")+" "+x.ban:"",x.ghe?tt("ghe")+" "+x.ghe:""].filter(Boolean).join(" · "):"";
+     toast(mat?(tt("att_ok")+" — "+tt("att_da_xoa")+" "+mat):tt("att_ok"),"ok");
+     openGuest(id);loadAll();
    }catch(e){if(el){el.disabled=false;el.value=el.getAttribute("data-cur")||"";}
      toast(tt("att_fail"),"err");}}
  function vipLbl(g){var v=vipOf(g);return /^v?vip/i.test(v)?v.toUpperCase():v;}
@@ -962,7 +990,11 @@ window.imgFit=imgFit;
          /* Huỷ popup ⇒ HUỶ CẢ LƯỢT LƯU, không gọi API (AC-5). Gửi các trường
             khác rồi bỏ qua bàn là báo-xanh-giả kiểu khác: Ly tưởng đã huỷ thao
             tác mà Đơn vị/Ghi chú vẫn bị ghi. */
-         if(moi===""&&!confirm(tt(cap[i][3])))return;
+         /* Huỷ ⇒ dừng CẢ lượt lưu, và PHẢI NÓI RA. Không nói thì Ly sửa Ghi chú,
+            lỡ tay xoá ô Bàn, bấm Huỷ ở popup — ô Ghi chú vẫn còn chữ mới trên
+            màn (form không vẽ lại) nên chị đóng hồ sơ, tin là đã lưu, mà không
+            trường nào vào CSDL. Đó là báo-xanh-giả đúng nghĩa (D028 CỬA-2). */
+         if(moi===""&&!confirm(tt(cap[i][3]))){gmsg(tt("bg_huy"),"err");return;}
          than[cap[i][1]]=moi;
        }
      }
@@ -970,7 +1002,7 @@ window.imgFit=imgFit;
      if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}
      else gmsg((r.status===403?tt("bg_role"):null)||r.body.error||"Lỗi.","err");});
    var delBtn=$("#delBtn");if(delBtn)delBtn.addEventListener("click",async function(){if(!confirm("Xoá khách "+g.full_name+"?"))return;var r=await jsend("/crm/guests/"+g.id,"DELETE");if(r.ok){$("#sheet").classList.remove("show");toast("Đã xoá","ok");loadAll();}else gmsg(r.body.error||"Lỗi.","err");});
-   var aSel=$("#attSel1");if(aSel)aSel.addEventListener("change",function(){setAtt(g.id,this.value,this);});
+   var aSel=$("#attSel1");if(aSel)aSel.addEventListener("change",function(){setAtt(g.id,this.value,this,g);});
    $("#photoInput").addEventListener("change",async function(){var f=this.files&&this.files[0];if(!f)return;gmsg("Đang tải ảnh…","ok");var fd=new FormData();fd.append("photo",f);await addShrunk(fd,f);try{var r=await api("/crm/guests/"+g.id+"/photos",{method:"POST",body:fd});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else{var jj=await r.json().catch(function(){return {};});gmsg(jj.error||"Lỗi tải ảnh.","err");}}catch(e){gmsg("Lỗi tải ảnh.","err");}});
  }
  function gmsg(t,c){var m=$("#gMsg");if(m){m.textContent=t;m.className="msg"+(c?(" "+c):"");}}

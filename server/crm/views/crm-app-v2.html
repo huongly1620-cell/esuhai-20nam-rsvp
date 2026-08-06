@@ -394,6 +394,10 @@
        att_da_xoa:"đã xoá chỗ ngồi:",
        jp_h:"Tiếng Nhật (hiện ở màn cửa)",jp_ten:"Họ tên JP",jp_cd:"Chức danh JP",jp_dv:"Đơn vị JP",
        jp_note:"Để trống rồi Lưu = XOÁ chữ Nhật của ô đó.",
+       /* E08-D055 (vá) — `not_yet` KHÔNG hề có trong bảng T; spec §4d ghi là «đã có»
+          và R1 tin spec thay vì grep. Thiếu khoá thì tt() rơi về `||k` ⇒ ~384 dòng
+          trên /crm hiện chữ trần «X not_yet». `arrived` thì có thật. */
+       not_yet:"Chưa đến",
        hoten:"Họ tên",hoten_trong:"Chưa lưu — Họ tên không được để trống. Đây là tên PG gõ để tra khách ở cửa."},
    jp:{bg_ban_ph:"例: 17 · スタッフ席",bg_ghe_ph:"例: 10",
        bg_xoa_ban:"このゲストのテーブル番号を削除しますか？\n\n欄が空です — OKで削除されます。",
@@ -405,6 +409,7 @@
        att_da_xoa:"座席を削除しました:",
        jp_h:"日本語表記（受付画面に表示）",jp_ten:"氏名（日本語）",jp_cd:"役職（日本語）",jp_dv:"所属（日本語）",
        jp_note:"空欄のまま保存すると、その日本語表記は削除されます。",
+       not_yet:"未受付",
        hoten:"氏名",hoten_trong:"保存していません — 氏名は必須です。受付での検索に使う名前です。"}};
   for(var l in A){for(var k in A[l]){T[l][k]=A[l][k];}}})();
  function tt(k){return (T[LANG]&&T[LANG][k])||T.vn[k]||k;}

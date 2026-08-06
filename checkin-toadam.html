@@ -216,6 +216,9 @@ function mapRow(r){var a=tagArr(r.tags);return{id:String(r.id),name:r.full_name,
                      (chị Ly 06/08). Cùng lập luận D030 đã dùng cho GHẾ: table_no là
                      thuộc tính của KHÁCH, không của BUỔI. Để rỗng ngay ở nguồn thì
                      cả dòng danh sách lẫn thBox cùng sạch. */,_came:r.checked_in?(r.checked_in_at||"1"):"",_by:r.checked_in_by||"",vip:vipOf(a),buoi:buoiOf(r),du_toa_dam:!!r.du_toa_dam,du_gala:!!r.du_gala,name_jp:r.name_jp||"",title_jp:r.title_jp||"",org_jp:r.org_jp||"",phanloai:(a.indexOf("Gia đình TGĐ")>-1?"Gia đình TGĐ":a.indexOf("Nội")>-1?"Nội":a.indexOf("Ngoại")>-1?"Ngoại":""),ob:a.indexOf("pl:ob")>-1,tagraw:String(r.tags||""),seat:"",diet:"",handler:"",role:"",note:"",photo:r.photo_url||"",photoBig:r.photo_view_url||"",att:r.att_status||"",
+  /* E08-D041 — phone do MÁY CHỦ quyết: null khi chưa mở khoá, số đủ khi đã mở.
+     Không mang về đây thì nút «Xem số» mở khoá xong vẫn không có gì để hiện. */
+  phone:r.phone||"",
   /* E08-D030 — cửa TỌA ĐÀM cố ý KHÔNG đọc ghế.
      `seat_no` là thuộc tính của KHÁCH, không phải của buổi: đo prod bằng luật
      du_toa_dam/du_gala thì 145/147 khách Tọa đàm cũng dự Gala. Nếu đọc chung,
@@ -605,7 +608,9 @@ async function moKhoaSdt(btn){
    if(btn)btn.disabled=false;toast(e.error||t("sdt_sai"),1);return;}
   /* KHÔNG tự vẽ số từ phản hồi — tuyến mở khoá cố ý không trả SĐT nào. Nạp lại
      qua tuyến thường để số đến từ đúng một nguồn. */
-  toast(t("sdt_ok"));await refresh();if(curId)openPf(curId);
+  /* Phải là refresh(1): đang mở hồ sơ thì refresh() không manual sẽ THOÁT NGAY
+     (chặn list nhảy dưới tay PG) — mở khoá xong màn không đổi gì. */
+  toast(t("sdt_ok"));await refresh(1);if(curId)openPf(curId);
  }catch(e){if(btn)btn.disabled=false;toast(t("sdt_net"),1);}
 }
 function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came(g);var dcls=g.diet==="Món chay"?"chay":"";
@@ -640,7 +645,7 @@ async function enrich(g,id){try{var j=await jget("/crm/guests/"+id);g._enriched=
  g._photos=j.photos||[];              /* kho ảnh: ĐỦ, gồm cả ảnh quà */
  var pc=(g._ghim&&pf.filter(function(p){return String(p.id)===String(g._ghim);})[0])||pf[0];
  if(pc){g.photo=pc.thumb_url||pc.url;g.photoBig=pc.view_url||pc.url;}
- g._inter=j.interactions||[];var p=parseNote(j.guest&&j.guest.note);g.diet=p.diet||"";g.role=p.role||"";g.handler=p.handler||"";g.seat=p.seat||"";if(curId===id)openPf(id);}catch(e){g._enriched=true;}}
+ g._inter=j.interactions||[];g.phone=(j.guest&&j.guest.phone)||"";var p=parseNote(j.guest&&j.guest.note);g.diet=p.diet||"";g.role=p.role||"";g.handler=p.handler||"";g.seat=p.seat||"";if(curId===id)openPf(id);}catch(e){g._enriched=true;}}
 function setLang(l){LANG=l;localStorage.setItem("ci_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";
  document.querySelectorAll("[data-i]").forEach(function(el){var k=el.getAttribute("data-i");var v=t(k);if(v)el.textContent=v;});
  $("#q").placeholder=t("search");$("#langBtn").textContent=l==="jp"?"Tiếng Việt":"日本語";renderList();if(curId)openPf(curId);}

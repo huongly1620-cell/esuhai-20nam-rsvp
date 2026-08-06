@@ -68,7 +68,31 @@ function bieuThucDangHien() {
     console.error('   Sửa hàm bieuThucDangHien() cho khớp rồi chạy lại.\n');
     process.exit(1);
   }
-  return 'COALESCE(' + src.slice(dau + 'SELECT COALESCE('.length, cuoi) + ')';
+  const bt = 'COALESCE(' + src.slice(dau + 'SELECT COALESCE('.length, cuoi) + ')';
+
+  /* ---- E08-D053 · KIỂM HÌNH DẠNG sau khi bóc (CR-95) ----
+     Bốn kiểu bóp méo đã thử đều fail-closed NGAY tại khâu bóc. Còn một kiểu thì
+     không: chèn thêm một `) AS id` NẰM GIỮA hai neo ⇒ `indexOf` bắt phải dấu
+     đóng sớm ⇒ biểu thức bị CẮT CỤT nhưng vẫn «bóc được». Lúc đó script vẫn
+     dừng — nhưng dừng ở khâu CHẠY, và kêu bằng một thông báo lỗi cú pháp của
+     Postgres.
+
+     Vì sao hai dòng này đáng: TOÀN BỘ lý do D053 tồn tại là một hàng rào KÊU
+     SAI CHỖ. CR-84 báo «3 thẻ đổi ảnh» trong khi bệnh thật là «hàng rào đang so
+     với nhánh đã chết», và phải mất một vòng đo mới tìm ra. Lặp lại đúng hình
+     dạng đó lúc 2 giờ sáng trước lễ đắt hơn nhiều so với hai dòng mã.
+
+     Hai mảnh dưới đây là hai NHÁNH của COALESCE — thiếu bất kỳ mảnh nào nghĩa
+     là thứ bóc ra không còn là «ảnh đang hiện», dù nó vẫn là SQL hợp lệ. */
+  const CAN = [['avatar_photo_id', 'nhánh GHIM'], ['ORDER BY ph.created_at DESC', 'nhánh LÙI']];
+  const thieu = CAN.filter((x) => bt.indexOf(x[0]) < 0);
+  if (thieu.length) {
+    console.error('\n⛔ D053 — bóc RA được nhưng SAI HÌNH DẠNG: thiếu ' + thieu.map((x) => x[1]).join(' + ') + '.');
+    console.error('   Biểu thức lấy từ guests.js không còn là «ảnh đang hiện» ⇒ phép AC-2 sẽ đo nhầm.');
+    console.error('   DỪNG ở đây, kêu đúng chỗ — không để Postgres kêu hộ bằng lỗi cú pháp.\n');
+    process.exit(1);
+  }
+  return bt;
 }
 const DANG_HIEN = bieuThucDangHien();   // dùng alias `g` cho crm_guests
 

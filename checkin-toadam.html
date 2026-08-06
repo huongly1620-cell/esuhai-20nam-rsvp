@@ -65,6 +65,30 @@
  .kho .k1.ghim{outline:2px solid var(--green-ok);outline-offset:-2px}
  .kho .qb{position:absolute;right:1px;bottom:1px;font-size:.62rem;line-height:1}
  .kho .cap{color:var(--muted2);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;width:100%;text-align:center;margin-bottom:2px}
+ /* E08-D048 §3d — FEEDBACK SAU CHỤP. Toast một mình chưa đủ: Bizi cần thấy ĐÚNG
+    TẤM vừa bấm đã vào kho, không phải chỉ một dòng chữ chung ở đáy màn. Viền
+    xanh nhấp nháy 6 giây rồi TỰ TẮT (animation forwards) — không để lại trạng
+    thái phải dọn, và không đụng viền `ghim`/`qua` của D040. */
+ .kho .k1{cursor:zoom-in}
+ .kho .k1.moi{animation:k1moi 6s ease-out 1 forwards}
+ @keyframes k1moi{0%,60%{box-shadow:0 0 0 3px var(--green-ok),0 0 14px rgba(70,200,120,.75)}100%{box-shadow:0 0 0 0 rgba(70,200,120,0)}}
+ /* E08-D048 §3c — LIGHTBOX album. M5: KHÔNG nạp trước cả album. Đo prod 06/08:
+    preview trung bình 157 KB, lớn nhất 463 KB, album lớn nhất 4 tấm ⇒ nạp trước
+    cả album là ~630 KB mỗi lần mở, ở cửa với sóng yếu là không chấp nhận được.
+    Chỉ nạp bản preview của ĐÚNG tấm đang xem, đổi src khi lướt. */
+ .lb{position:fixed;inset:0;z-index:100002;display:none}
+ .lb.show{display:block}
+ .lb .lb-bd{position:absolute;inset:0;background:rgba(3,8,16,.94)}
+ .lb img{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+   max-width:96vw;max-height:82vh;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+ .lb button{position:absolute;border:1px solid var(--line2);background:rgba(9,18,32,.85);
+   color:#e9e2d2;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+ .lb .lb-x{top:14px;right:14px;padding:9px 15px;font-size:.82rem}
+ .lb .lb-p,.lb .lb-n{top:50%;transform:translateY(-50%);width:46px;height:64px;font-size:1.7rem;line-height:1}
+ .lb .lb-p{left:8px} .lb .lb-n{right:8px}
+ .lb .lb-c{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);color:var(--muted);
+   font-size:.8rem;letter-spacing:.06em}
+ .lb .lb-q{position:absolute;left:50%;top:14px;transform:translateX(-50%);color:#f0b34a;font-size:.78rem;font-weight:700}
  .attd{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green-ok);
    border:1px solid rgba(0,0,0,.45);vertical-align:middle;flex:none;align-self:center}
  /* E08-D036 — nút huỷ check-in. Cố ý NGƯỢC HẲN nút check-in (khối vàng đặc,
@@ -207,6 +231,14 @@
 <script>
 var G=[];var SESSION="toa-dam";var SESS="Tọa đàm"; /* E08-D020: SoT = /crm API, filter theo tag buổi */
 var T={"vn": {"ci": "CHECK-IN · Tọa đàm", "lich": "📅 Lịch trình", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Tọa đàm", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)","sdt_mo":"Xem số","sdt_hoi":"Nhập mật khẩu để xem số điện thoại:","sdt_ok":"Đã mở khoá số điện thoại (30 phút) ✓","sdt_sai":"Mật khẩu không đúng","sdt_net":"Mất mạng — chưa mở khoá được", "makhach": "Mã khách", "ci_fail":"Máy chủ từ chối — CHƯA điểm danh được, thử lại","ci_auth":"Phiên hết hạn — đăng nhập lại rồi điểm danh","ci_404":"Không tìm thấy khách này trên máy chủ","ci_net":"Mất mạng — CHƯA điểm danh được, thử lại","cambtn":"Chụp ảnh khách","pickbtn":"Thêm hình từ thiết bị","cam_up":"Đang tải ảnh…","cam_ok":"Đã lưu ảnh ✓","cam_fail":"Không lưu được ảnh","cam_net":"Lỗi mạng — ảnh chưa lưu. Điểm danh vẫn giữ.","cam_auth":"Phiên đã hết hạn — đăng nhập lại để gửi ảnh","cam_notimg":"File không phải ảnh","cam_heic":"Ảnh dạng HEIC không hiện được. Vào Cài đặt → Camera → Định dạng → chọn Tương thích nhất, rồi chụp lại.","cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in","undo_ask":"Huỷ check-in khách này?\n\nGiờ đến sẽ bị xoá. Check-in lại sẽ ghi giờ mới.","undo_ok":"Đã huỷ check-in ✓","undo_fail":"Máy chủ từ chối — CHƯA huỷ được","undo_net":"Mất mạng — CHƯA huỷ được","undo_role":"Chỉ ban tổ chức mới huỷ được check-in", "close": "Đóng","att_du":"Có tham dự","att_khong":"Không tham dự","att_cho":"Chưa xác nhận","quay_h":"Ghi nhận tại quầy","q_anh":"Ảnh khách","q_tang":"🎁 Quà khách tặng","q_tang_ph":"Quà khách tặng là gì? (giỏ hoa, tranh…)","q_camqua":"Chụp ảnh quà","q_dap":"🎀 Quà đáp lễ","q_dap_ph":"Loại quà đáp lễ (引き出物)…","q_dap_note":"⌛ Danh sách quà đáp lễ đang chờ chị Thúy Hà xác nhận","q_note":"📝 Ghi chú","q_note_ph":"Ghi chú thêm tại quầy…","q_save":"Lưu ghi nhận","q_saved":"Đã lưu ghi nhận ✓","q_empty":"Chưa có gì để lưu","q_fail":"Máy chủ từ chối — CHƯA lưu được","q_net":"Mất mạng — CHƯA lưu được","kho_h":"Ảnh đã chụp","q_hist":"Lịch sử tại quầy","q_ob":"OB Esuhai","q_dongdu":"Đông Du","gdtgd":"Gia đình TGĐ","b_noi":"Nội","b_ngoai":"Ngoại","b_tgd":"GĐ TGĐ","b_jp":"🎌 Nhật","rf_ok":"Đã cập nhật số ✓","rf_fail":"Không tải lại được — kiểm tra mạng","nv_khong_ci":"Nhân viên — không cần check-in","nv_dem":"· nhân viên {n} (không tính vào số khách)","upd":"Cập nhật {t}"}, "jp": {"ci": "受付 · 座談会", "lich": "📅 式次第", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "座談会 ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)","sdt_mo":"番号を表示","sdt_hoi":"電話番号を表示するにはパスワードを入力してください：","sdt_ok":"電話番号のロックを解除しました（30分）✓","sdt_sai":"パスワードが違います","sdt_net":"通信エラー — 解除できません", "makhach": "ゲストID", "cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消","undo_ask":"チェックインを取り消しますか？\n\n受付時刻は削除されます。再受付すると新しい時刻になります。","undo_ok":"チェックインを取り消しました ✓","undo_fail":"サーバーが拒否 — 取り消せません","undo_net":"通信エラー — 取り消せません","undo_role":"取消は主催者のみ可能です", "close": "閉じる","att_du":"出席","att_khong":"欠席","att_cho":"未確認","quay_h":"受付での記録","q_anh":"ゲスト写真","q_tang":"🎁 ゲストからの贈り物","q_tang_ph":"贈り物の内容(花かご・絵画など)","q_camqua":"贈り物を撮影","q_dap":"🎀 引出物","q_dap_ph":"引出物の種類…","q_dap_note":"⌛ 引出物リストは確認待ちです","q_note":"📝 メモ","q_note_ph":"受付でのメモ…","q_save":"記録を保存","q_saved":"記録を保存しました ✓","q_empty":"保存する内容がありません","q_fail":"サーバーが拒否 — 保存できません","q_net":"通信エラー — 保存できません","kho_h":"撮影済みの写真","q_hist":"受付の記録","q_ob":"OB エスハイ","q_dongdu":"ドンズー","gdtgd":"社長ご家族","b_noi":"内","b_ngoai":"外","b_tgd":"社長ご家族","b_jp":"🎌 日本","rf_ok":"更新しました ✓","rf_fail":"更新できません — 通信をご確認ください","nv_khong_ci":"スタッフ — 受付不要","nv_dem":"· スタッフ {n}名（ゲスト数に含めず）","upd":"{t} 更新"}};var LANG=localStorage.getItem("ci_lang")||"vn";
+/* E08-D048 — nhãn mới gộp SAU bảng T thay vì chen vào dòng khổng lồ phía trên:
+   chen vào đó là diff không đọc nổi và rất dễ nuốt một dấu ngoặc. */
+(function(){var A={
+  vn:{q_pickqua:"Thêm ảnh quà từ máy",cam_ok_ghim:"Đã lưu ✓ — đặt làm ảnh đại diện",
+      lb_qua:"🎁 Ảnh quà",lb_ghim:"✓ Ảnh đại diện"},
+  jp:{q_pickqua:"端末から贈り物の写真",cam_ok_ghim:"保存しました ✓ — プロフィール写真に設定",
+      lb_qua:"🎁 贈り物の写真",lb_ghim:"✓ プロフィール写真"}};
+ for(var l in A){for(var k in A[l]){T[l][k]=A[l][k];}}})();
 function t(k,rep){var s=(T[LANG]&&T[LANG][k])||T.vn[k]||k;if(rep)for(var x in rep)s=s.replace("{"+x+"}",rep[x]);return s;}
 // --- API layer (SoT = /crm + Postgres) — thay hẳn localStorage check-in ---
 async function api(u,o){o=o||{};o.credentials="same-origin";return fetch(u,o);}
@@ -523,6 +555,11 @@ async function sendPhoto(id,file,asGift){
     if(!r.ok){var e={};try{e=await r.json();}catch(_){}toast(e.error||t("cam_fail"),1);return;}
     var j={};try{j=await r.json();}catch(_){}
     var g=byId(id);
+    /* E08-D048 §3d — đánh dấu ĐÚNG TẤM vừa lưu để kho ảnh viền xanh 6 giây.
+       Chỉ đặt SAU khi máy chủ đã trả 201 kèm id — không có báo-xanh-đoán-trước.
+       Xoá cờ sau 6,5s (dài hơn animation) để lần mở hồ sơ sau không nháy lại. */
+    if(g&&j&&j.id){g._moi=String(j.id);
+      setTimeout(function(){if(g._moi===String(j.id))g._moi="";},6500);}
     /* Ảnh quà KHÔNG được thay ảnh đại diện khách — chỉ nạp lại hồ sơ để lịch
        sử tại quầy hiện thêm dòng vừa ghi. */
     /* j.url là ảnh GỐC; list phải trỏ bản thu nhỏ, hồ sơ trỏ bản 1024. */
@@ -534,7 +571,10 @@ async function sendPhoto(id,file,asGift){
       if(asGift){var qt=document.getElementById("qTang");if(qt)qt.value="";
         if(g._q)g._q.tang="";}
       g._enriched=false;enrich(g,id);}
-    toast(asGift?t("q_saved"):t("cam_ok"));
+    /* §3d — «đã lưu» và «đã thành ảnh đại diện» là HAI việc khác nhau; Bizi phải
+       phân biệt được, nếu không thì không biết còn phải nhờ chị Ly ghim nữa hay
+       không. `j.ghim` do máy chủ trả (photos.js §3a), không phải màn tự đoán. */
+    toast(asGift?t("q_saved"):(j&&j.ghim?t("cam_ok_ghim"):t("cam_ok")));
   }catch(err){toast(t("cam_net"),1);}
 }
 
@@ -552,14 +592,72 @@ function khoHtml(g){
  var ps=g._photos||[];
  if(!ps.length)return "";
  return '<div class="kho"><div class="cap">'+t("kho_h")+'</div>'
-  +ps.map(function(p){
+  +ps.map(function(p,i){
     var q=!!p.interaction_id, gh=String(p.id)===String(g._ghim||"");
-    return '<span class="k1'+(q?' qua':'')+(gh?' ghim':'')+'"'+(q?' title="'+esc(t("q_tang"))+'"':'')+'>'
+    /* E08-D048 §3d — `moi` = tấm VỪA lưu xong ở lượt này (sendPhoto đặt g._moi
+       sau khi máy chủ trả 201). §3c — `data-i` là chỉ số trong _photos để
+       lightbox mở đúng tấm bấm vào, không phải luôn mở tấm đầu. */
+    var mo=String(p.id)===String(g._moi||"");
+    return '<span class="k1'+(q?' qua':'')+(gh?' ghim':'')+(mo?' moi':'')+'" data-i="'+i+'"'+(q?' title="'+esc(t("q_tang"))+'"':'')+'>'
       /* thumb_url||url: một ảnh trên prod (#73) chưa có bản thu nhỏ — thiếu
          đường lùi này là tấm đó vỡ hình. */
       +'<img src="'+esc(p.thumb_url||p.url)+'" loading="lazy" decoding="async">'
       +(q?'<span class="qb">&#127873;</span>':'')+'</span>';}).join("")
   +'</div>';}
+
+/* ─────────── E08-D048 §3c · LIGHTBOX kho ảnh ───────────
+   Bấm thumb → xem lớn, ← → / vuốt để lướt HẾT `_photos` (chân dung + quà), đóng
+   bằng nền · nút Đóng · phím Escape (AC-7).
+   M5 — LAZY THẬT: chỉ đặt `src` cho ĐÚNG tấm đang xem. Đo prod 06/08: preview
+   trung bình 157 KB / lớn nhất 463 KB, album lớn nhất 4 tấm ⇒ nạp trước cả album
+   là ~630 KB một lần mở. Ở cửa, sóng yếu, đó là đúng lớp bệnh D029 đã dẹp. */
+var lbList=[],lbIdx=-1,lbX0=null;
+function lbEl(){return document.getElementById("lb");}
+function lbDung(){
+ if(lbEl())return;
+ var d=document.createElement("div");d.id="lb";d.className="lb";
+ d.innerHTML='<div class="lb-bd"></div><div class="lb-q" id="lbQ"></div><img id="lbImg" alt="">'
+  +'<button class="lb-x" id="lbX">'+esc(t("close"))+'</button>'
+  +'<button class="lb-p" id="lbP" aria-label="prev">&#8249;</button>'
+  +'<button class="lb-n" id="lbN" aria-label="next">&#8250;</button><div class="lb-c" id="lbC"></div>';
+ document.body.appendChild(d);
+ d.addEventListener("click",function(e){
+  var b=e.target.closest("button");
+  if(b&&b.id==="lbP"){lbGo(-1);return;}
+  if(b&&b.id==="lbN"){lbGo(1);return;}
+  if(b&&b.id==="lbX"){lbDong();return;}
+  /* Nền = đóng. Bấm trúng ảnh thì KHÔNG đóng — ở cửa tay hay chạm nhầm giữa màn. */
+  if(e.target.id==="lbImg")return;
+  lbDong();});
+ /* Vuốt: chỉ tính khi đi ngang đủ 40px, kẻo cuộn dọc cũng nhảy ảnh. */
+ d.addEventListener("touchstart",function(e){lbX0=e.touches[0].clientX;},{passive:true});
+ d.addEventListener("touchend",function(e){
+  if(lbX0===null)return;var dx=e.changedTouches[0].clientX-lbX0;lbX0=null;
+  if(Math.abs(dx)>40)lbGo(dx<0?1:-1);},{passive:true});
+}
+function lbVe(){
+ var p=lbList[lbIdx];if(!p)return;
+ document.getElementById("lbImg").src=p.view_url||p.url;   /* bản 1024, có đường lùi về gốc */
+ document.getElementById("lbC").textContent=(lbIdx+1)+" / "+lbList.length;
+ var q=document.getElementById("lbQ");
+ q.textContent=p.interaction_id?t("lb_qua"):(String(p.id)===String(lbGhim||"")?t("lb_ghim"):"");
+}
+var lbGhim="";
+function lbMo(g,i){
+ lbList=g._photos||[];if(!lbList.length)return;
+ lbGhim=g._ghim||"";lbIdx=Math.max(0,Math.min(i|0,lbList.length-1));
+ lbDung();lbVe();lbEl().classList.add("show");
+}
+function lbGo(d){if(!lbList.length)return;lbIdx=(lbIdx+d+lbList.length)%lbList.length;lbVe();}
+function lbDong(){var d=lbEl();if(d){d.classList.remove("show");
+ /* Bỏ src để trình duyệt thả ảnh lớn — mở/đóng nhiều lần ở cửa không dồn bộ nhớ. */
+ var im=document.getElementById("lbImg");if(im)im.removeAttribute("src");}
+ lbIdx=-1;lbList=[];}
+document.addEventListener("keydown",function(e){
+ if(lbIdx<0)return;
+ if(e.key==="Escape")lbDong();
+ else if(e.key==="ArrowLeft")lbGo(-1);
+ else if(e.key==="ArrowRight")lbGo(1);});
 /* E08-D043 — nhãn Bàn/Ghế mang chữ TRẠNG THÁI THAM DỰ là rác: 41 thẻ có
    table_no = "Không tham dự" do vòng nhập, và nhãn đó chỉ LẶP LẠI thứ chấm/chữ
    D033 đã hiện ngay trên cùng dòng — ở chỗ dành cho số bàn.
@@ -630,7 +728,12 @@ function quayHtml(g){var q=g._q||{};
    +'<button class="cib camb" data-pick="'+esc(g.id)+'">&#128193;&nbsp; '+t("pickbtn")+'</button></div>'
   +'<div class="qf"><label>'+t("q_tang")+'</label>'
    +'<textarea id="qTang" rows="2" placeholder="'+esc(t("q_tang_ph"))+'">'+esc(q.tang||"")+'</textarea>'
-   +'<button class="cib camb" data-camqua="'+esc(g.id)+'">&#128247;&nbsp; '+t("q_camqua")+'</button></div>'
+   +'<button class="cib camb" data-camqua="'+esc(g.id)+'">&#128247;&nbsp; '+t("q_camqua")+'</button>'
+   /* E08-D048 §3b — quà chụp SẴN trong máy (Bizi chụp bằng app khác, hoặc ảnh
+      lãng hoa gửi qua Zalo) phải có đường lên. TUYỆT ĐỐI không tái dùng
+      `data-pick` cho việc này: `data-pick` ép `camQua=false` (chân dung) nên ảnh
+      quà sẽ thành ẢNH ĐẠI DIỆN của khách — và từ vé này còn TỰ GHIM nữa (M4). */
+   +'<button class="cib camb" data-pickqua="'+esc(g.id)+'">&#128193;&nbsp; '+t("q_pickqua")+'</button></div>'
   +'<div class="qf"><label>'+t("q_dap")+'</label>'
    +'<input id="qDap" placeholder="'+esc(t("q_dap_ph"))+'" value="'+esc(q.dap||"")+'">'
    +'<div class="qnote">'+esc(t("q_dap_note"))+'</div></div>'
@@ -728,10 +831,18 @@ function setLang(l){LANG=l;localStorage.setItem("ci_lang",l);document.body.class
  $("#q").placeholder=t("search");$("#langBtn").textContent=l==="jp"?"Tiếng Việt":"日本語";renderList();if(curId)openPf(curId);}
 $("#list").addEventListener("click",function(e){var c=e.target.closest(".gc");if(c)openPf(c.getAttribute("data-id"));});
 $("#pfBack").addEventListener("click",function(){$("#pf").classList.remove("show");document.body.style.overflow="";curId=null;refresh();});
-$("#pfBody").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+$("#pfBody").addEventListener("click",function(e){
+ /* E08-D048 §3c — thumb kho ảnh là <span>, không phải <button>, nên phải bắt
+    TRƯỚC phép lọc button bên dưới, nếu không lightbox không bao giờ mở. */
+ var th=e.target.closest(".k1");
+ if(th&&curId){lbMo(byId(curId)||{},parseInt(th.getAttribute("data-i"),10)||0);return;}
+ var b=e.target.closest("button");if(!b)return;
  if(b.getAttribute("data-cam")){camQua=false;camFor=b.getAttribute("data-cam");var ci=document.getElementById("cam");if(ci){ci.value="";ci.click();}return;}
   if(b.getAttribute("data-pick")){camQua=false;camFor=b.getAttribute("data-pick");var pk=document.getElementById("pick");if(pk){pk.value="";pk.click();}return;}
   if(b.getAttribute("data-camqua")){camQua=true;camFor=b.getAttribute("data-camqua");var cq=document.getElementById("cam");if(cq){cq.value="";cq.click();}return;}
+  /* §3b — CÙNG ô chọn tệp `#pick` với chân dung, khác đúng một thứ: camQua=true.
+     Đó là lý do phải có attr riêng chứ không thêm cờ vào `data-pick`. */
+  if(b.getAttribute("data-pickqua")){camQua=true;camFor=b.getAttribute("data-pickqua");var pq=document.getElementById("pick");if(pq){pq.value="";pq.click();}return;}
   if(b.getAttribute("data-save")){saveQuay(b.getAttribute("data-save"),b);return;}
   if(b.getAttribute("data-sdt")){moKhoaSdt(b);return;}
   if(b.getAttribute("data-ci")){var id=b.getAttribute("data-ci");b.disabled=true;

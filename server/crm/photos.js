@@ -106,7 +106,7 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
       // hỏng thì kho thừa một object không ai trỏ tới — vô hại; đổi lại thẻ
       // khách không bao giờ mang một dòng ghi nhận trỏ vào hư không.
       let client = await pool.connect();
-      let photoId; let madeInter = false;
+      let photoId; let madeInter = false; let tuGhim = false;
       try {
         await client.query('BEGIN');
         if (!interId && nKind && nBody) {
@@ -121,13 +121,49 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
           [id, key, ct, req.file.size, req.actor.email, interId, tKey, tSize, pKey, pSize]);
         photoId = r.rows[0].id;
+
+        /* ---- E08-D048 §3a · TỰ GHIM tấm đầu khi khách CHƯA có ảnh đại diện ----
+           Sponsor ĐỔI AC của D040 (06/08 17:58). Luật cũ: cửa không bao giờ tự
+           ghim ⇒ tấm đầu chỉ «lùi» tạm, chị Ly phải mở CRM ghim từng thẻ — tối
+           08/08 không kịp. Luật mới, đúng lời chị Ly: chưa có avatar → tấm đầu
+           thành avatar; đã có → ảnh mới CHỈ vào kho, không đè (AC-2 · AC-3).
+
+           BA lớp chặn ảnh QUÀ, không phải một:
+            1. `!interId` — `interId` đã được gán ở CẢ HAI đường quà: client gửi
+               `interaction_id` (phía trên), và máy chủ tự tạo dòng ghi nhận từ
+               `interaction_kind/body` (ngay trên đây). Phép thử đặt SAU cả hai
+               nên nó đọc giá trị CUỐI CÙNG.
+            2. `EXISTS (… interaction_id IS NULL)` ngay trong câu UPDATE — lớp
+               cuối kiểu D040: kể cả một client tương lai gửi ảnh quà mà QUÊN kèm
+               nội dung ghi nhận (⇒ interId NULL, lớp 1 hụt), hàng ảnh vừa INSERT
+               vẫn phải là chân dung mới ghim được. Prod hôm nay có 0/217 ảnh quà
+               ⇒ đường này CHƯA chạy thật lần nào, không được tin vào dữ liệu cũ.
+            3. `avatar_photo_id IS NULL` — M1: hai PG cùng chụp một khách chưa có
+               avatar thì Postgres khoá hàng, request sau đọc lại thấy đã có giá
+               trị ⇒ 0 dòng đổi. Đúng một tấm thắng, tấm kia vào kho, không đè.
+
+           Nằm TRONG cùng transaction với INSERT ảnh (§3a) ⇒ hỏng ở giữa là cuộn
+           cả hai, không bao giờ có ghim trỏ vào ảnh không tồn tại. Đổi avatar
+           «ảnh xấu» vẫn CHỈ ở CRM — cửa không có nút đổi (M3 · AC-10). */
+        if (!interId) {
+          const gh = await client.query(
+            `UPDATE crm_guests SET avatar_photo_id = $1, updated_at = now()
+              WHERE id = $2 AND avatar_photo_id IS NULL
+                AND EXISTS (SELECT 1 FROM crm_photos p
+                             WHERE p.id = $1 AND p.guest_id = $2 AND p.interaction_id IS NULL)
+              RETURNING id`, [photoId, id]);
+          tuGhim = gh.rowCount > 0;
+        }
         await client.query('COMMIT');
       } catch (e) { await client.query('ROLLBACK').catch(() => {}); throw e; }
       finally { client.release(); }
 
-      await logAudit(pool, { actor_email: req.actor.email, event_type: 'photo_upload', target_type: 'guest', target_id: id, meta: { key, interaction_id: interId, tao_ghi_nhan: madeInter, thumb: !!tKey, preview: !!pKey }, ip: ipOf(req) });
+      await logAudit(pool, { actor_email: req.actor.email, event_type: 'photo_upload', target_type: 'guest', target_id: id, meta: { key, interaction_id: interId, tao_ghi_nhan: madeInter, thumb: !!tKey, preview: !!pKey, tu_ghim: tuGhim }, ip: ipOf(req) });
       return res.status(201).json({ ok: true, id: String(photoId), url: '/crm/photos/' + photoId,
-        interaction_id: interId ? String(interId) : null });
+        interaction_id: interId ? String(interId) : null,
+        // Cửa đọc cờ này để báo đúng chữ: «đã lưu» khác hẳn «đã thành ảnh đại
+        // diện» — Bizi cần phân biệt được (§3d).
+        ghim: tuGhim });
     } catch (err) {
       console.error('[crm-photos] upload failed:', err.message);
       return res.status(500).json({ ok: false, error: 'upload error' });

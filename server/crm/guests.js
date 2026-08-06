@@ -300,8 +300,18 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
       if (exists.rows[0]) {
         return res.status(200).json({ ok: true, already: true, by: exists.rows[0].actor_email, at: exists.rows[0].checked_in_at });
       }
-      const g = await pool.query('SELECT id FROM crm_guests WHERE id = $1 AND deleted_at IS NULL', [id]);
+      const g = await pool.query('SELECT id, tags FROM crm_guests WHERE id = $1 AND deleted_at IS NULL', [id]);
       if (!g.rows[0]) return res.status(404).json({ ok: false, error: 'not found' });
+      /* E08-D038 mảnh 5 — nhân viên KHÔNG check-in (Sponsor chốt). Chặn ở ĐÂY chứ
+         không chỉ ẩn nút: tuyến này nằm trong allowlist cửa của D041 nên chạy được
+         KHÔNG cần đăng nhập — ai mở sẵn hồ sơ, hoặc một vòng poll cũ, vẫn bắn được
+         lệnh. Lấy cột tags ngay trong câu đang có, không thêm truy vấn thứ hai.
+         Tách token đúng dấu phẩy, không indexOf — indexOf khớp luôn biến thể dài.
+         Câu từ chối phải ĐỌC ĐƯỢC ở cửa: PG lúc đông không tra mã lỗi được. */
+      const tg = String(g.rows[0].tags || '').split(',').map((x) => x.trim());
+      if (tg.indexOf('pl:nhan-vien') > -1) {
+        return res.status(409).json({ ok: false, laNhanVien: true, error: 'Nhân viên không cần check-in.' });
+      }
       const ins = await pool.query(
         `INSERT INTO crm_check_ins (guest_id, actor_email, note) VALUES ($1,$2,$3)
          ON CONFLICT (guest_id) DO NOTHING RETURNING checked_in_at`,

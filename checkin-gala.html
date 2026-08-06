@@ -156,6 +156,15 @@
  .gm{flex:1;min-width:0}.gm .n1{font-family:serif;font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gm .n2{font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .tb{font-size:.64rem;font-weight:700;color:var(--acc);border:1px solid var(--line2);border-radius:8px;padding:3px 7px;white-space:nowrap;text-align:center}.tb b{font-family:serif;font-size:.88rem;display:block}
  .gt{color:var(--green-ok);font-size:.68rem;font-weight:700;white-space:nowrap}
+ /* E08-D055 §4a — cột phải. `max-width` + `text-overflow` là thứ giữ AC-6: cột
+    này ăn bề ngang của TÊN KHÁCH, mà PG đứng cửa dùng điện thoại 360px. Tên phải
+    được co trước, không phải bị cắt sớm hơn hôm nay. */
+ .rb{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none;max-width:38%}
+ .rb .pt{font-size:.64rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+ /* §3b — «đã đến» NỔI: nền xanh, chữ đậm. Đây là thứ PG cần thấy ngay. */
+ .rb .ci-y{font-size:.66rem;font-weight:800;white-space:nowrap;color:#04220f;background:var(--green-ok);border-radius:8px;padding:3px 7px}
+ /* §3b — «chưa đến» MỜ: mặc định của 384/393 dòng, không nền không viền. */
+ .rb .ci-n{font-size:.66rem;font-weight:600;white-space:nowrap;color:var(--muted2)}
  /* E08-D028 CỬA-1: banner cụm cửa dùng z-index 99999 nên đè kín nút «←».
     QC quét 648 điểm trên nút → 0 điểm chạm được; ngón tay thật không đóng
     được hồ sơ, mỗi khách xong phải tải lại trang. Hồ sơ là lớp phủ toàn
@@ -235,9 +244,13 @@ var T={"vn": {"ci": "CHECK-IN · Gala", "lich": "📅 Lịch trình", "came_labe
    chen vào đó là diff không đọc nổi và rất dễ nuốt một dấu ngoặc. */
 (function(){var A={
   vn:{q_pickqua:"Thêm ảnh quà từ máy",cam_ok_ghim:"Đã lưu ✓ — đặt làm ảnh đại diện",
-      lb_qua:"🎁 Ảnh quà",lb_ghim:"✓ Ảnh đại diện"},
+      lb_qua:"🎁 Ảnh quà",lb_ghim:"✓ Ảnh đại diện",
+      /* E08-D055 §4d — «Đã đến» tái dùng khoá `btn_came` đã có; chỉ «Chưa đến»
+         là thiếu ở cửa nên thêm mới, JP dùng 未受付 cho khớp `not_yet` của v2. */
+      chua_den:"Chưa đến"},
   jp:{q_pickqua:"端末から贈り物の写真",cam_ok_ghim:"保存しました ✓ — プロフィール写真に設定",
-      lb_qua:"🎁 贈り物の写真",lb_ghim:"✓ プロフィール写真"}};
+      lb_qua:"🎁 贈り物の写真",lb_ghim:"✓ プロフィール写真",
+      chua_den:"未受付"}};
  for(var l in A){for(var k in A[l]){T[l][k]=A[l][k];}}})();
 function t(k,rep){var s=(T[LANG]&&T[LANG][k])||T.vn[k]||k;if(rep)for(var x in rep)s=s.replace("{"+x+"}",rep[x]);return s;}
 // --- API layer (SoT = /crm + Postgres) — thay hẳn localStorage check-in ---
@@ -505,12 +518,25 @@ function napBanSelect(){
 function renderList(){quickCounts();napBanSelect();var rows=G.filter(match).filter(function(g){return banKhop(g.banKey||g.table||g.seat,st.ban);}).filter(function(g){return ptKhop(g.handler,st.pt);});
  $("#hint").textContent=(st.q||st.quick||st.f||st.ban||st.pt)?t("res",{n:rows.length}):t("total",{n:G.length});
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);
-  return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'"><span class="sd'+(cm?" came":"")+'"></span>'
-   +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+pairVJ(g.name,g.name_jp)+'</div><div class="n2">'+pairVJ(g.title||g.org||"",g.title_jp||g.org_jp||"")+(g.handler?' · '+t("phutrach")+': '+esc(g.handler):'')+'</div>'+badges(g)+'</div>'
-   /* Chỗ này chính là nhãn trong ảnh chị Ly chụp — rìa phải MỖI DÒNG, không
-      phải khung Bàn/Ghế trong hồ sơ. Vá thiếu ở đây là hồ sơ sạch mà danh sách
-      vẫn hiện «Bàn Không tham dự». */
-   +(cm?'<span class="gt">&#9711; '+fmtCame(cm)+'</span>':(bgHien(g.table)?'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>':''))+'</div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
+  /* E08-D055 §4b — chấm check-in ĐÃ GỠ. Lý do nặng hơn «chấm khó đọc»: dòng này
+     từng mang HAI chấm 9×9 tròn cùng màu --green-ok nói hai chuyện khác hẳn nhau
+     — `.sd.came` (đã tới cửa) và `.attd` của D033 (có tham dự). Đổi sang chữ vừa
+     dễ đọc vừa gỡ một chỗ đọc nhầm được. `.attd` GIỮ NGUYÊN, đó là trục khác. */
+  return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'">'
+   +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+pairVJ(g.name,g.name_jp)+'</div><div class="n2">'+pairVJ(g.title||g.org||"",g.title_jp||g.org_jp||"")+'</div>'+badges(g)+'</div>'
+   /* §4a — CỘT PHẢI (khuôn `.rb` của v2). Trước đây vùng phải là MỘT span đơn,
+      XOR giữa giờ và pill Bàn; «Người phụ trách» thì nhét trong `.n2`, tức bên
+      trái. Nay: phụ trách · (Bàn khi chưa đến) · trạng thái cửa.
+      §3b — hai vế KHÁC TRỌNG LƯỢNG có chủ đích: 384/393 dòng sẽ mang «Chưa đến»
+      lúc mở cửa, để nó nổi bằng «Đã đến» là cả màn thành một khối chữ — đúng cái
+      bẫy D033/CR-38 đã tránh khi chọn chấm thay chữ. Đã đến = nền xanh nổi;
+      chưa đến = chữ mờ, không nền, không viền. */
+   +'<div class="rb">'
+     +(g.handler?'<span class="pt">'+esc(g.handler)+'</span>':'')
+     +((!cm&&bgHien(g.table))?'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>':'')
+     +(cm?'<span class="ci-y">O '+t("btn_came")+' · '+fmtCame(cm)+'</span>'
+         :'<span class="ci-n">X '+t("chua_den")+'</span>')
+   +'</div></div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
 
 /* E08-D028 AC-C — chụp ảnh khách tại cửa → kệ MinIO.
    AC-C2 (Sponsor chốt): ĐIỂM DANH và ẢNH độc lập. Ảnh fail → báo đỏ, KHÔNG

@@ -130,7 +130,12 @@
   .av .sd{position:absolute;right:-2px;bottom:-2px;width:14px;height:14px;border-radius:50%;border:2.5px solid var(--bg2);background:var(--amber)}.av .sd.in{background:var(--ok)}
   :root[data-theme=light] .av .sd{border-color:#fff}
   .g .nm{flex:1;min-width:0}.g .n1{font-family:"Playfair Display",serif;font-size:1.06rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}.g .n2{color:var(--muted2);font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-  .rb{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+  /* E08-D055 — cột phải nay mang thêm «phụ trách» + nhãn cửa. max-width giữ
+     AC-6: cột này ăn bề ngang của TÊN khách trên màn 360px. */
+  .rb{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none;max-width:40%}
+  .rb .pt{font-size:.64rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  /* §3b — «chưa đến» là mặc định của 384/393 dòng ⇒ mờ, không nền, không viền. */
+  .rb .ci-n{font-size:.64rem;font-weight:600;white-space:nowrap;color:var(--muted)}
   .tag{font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;letter-spacing:.02em}
   .tag.v1{color:#3a2600;background:linear-gradient(180deg,#f6e6bd,#dcb75e)}.tag.v2{color:#241802;background:linear-gradient(180deg,var(--gold),var(--gold-d))}
   .tag.v3{color:var(--gold-b);border:1px solid var(--line2)}.tag.v4{color:var(--muted);border:1px solid var(--line)}
@@ -529,6 +534,44 @@ async function addShrunk(fd,file){
    try{var j=await jget("/crm/guests?mine=0&limit=1000");ALL=j.rows||[];computeDup();renderDash();renderList();}
    catch(e){if(e.message!=="unauth")$("#list").innerHTML='<div class="empty"><div class="em-ic">⚠️</div>Lỗi tải dữ liệu.</div>';}
  }
+
+ /* ---- E08-D055 §4c · /crm TỰ LÀM MỚI 25 giây ----
+    Trước vé này hai cửa poll 25s còn /crm thì không — giờ check-in trên /crm
+    đứng im tới khi ai đó tải lại trang, nên «realtime» mà Sponsor xin không có
+    thật ở màn này.
+
+    BĂNG THÔNG (§4c cảnh báo 293 MB — con số đó lấy từ CHÚ THÍCH CŨ, đã sai):
+    `photo_url` là `/crm/photos/:id/thumb` từ D029, không phải ảnh gốc. Đo prod
+    06/08: tổng thumb cả danh sách 3,06 MB, đúng 1 tấm thiếu thumb (gốc 0,01 MB).
+    URL cố định + `immutable` 7 ngày ⇒ mỗi vòng poll tốn 0 byte ảnh. Cùng cơ chế
+    hai cửa đã chạy từ D029.
+
+    CHỐNG GIẪM — ba lớp, mượn khuôn của cửa chứ không tự chế:
+      · `pollBusy`   — một vòng đang bay thì bỏ vòng kế, không xếp hàng.
+      · `document.hidden` — tab nền không poll (pin + tải máy chủ), sáng lại bù ngay.
+      · `sigList()`  — DỮ LIỆU KHÔNG ĐỔI thì KHÔNG vẽ lại. Đây là lớp giữ AC-7b:
+        không vẽ lại thì không có gì để giẫm.
+    AC-7b — hồ sơ đang mở: vòng poll chỉ chạm `#list` và khối tổng quan, KHÔNG
+    chạm `#sheetBody` (nơi có ô Đơn vị/Ghi chú/Bàn/Họ tên/JP chị Ly đang gõ) và
+    KHÔNG gọi openGuest(). Hai cửa chưa từng phải chịu ca này vì cửa không có
+    form sửa — nên khuôn của cửa không che, phải nói rõ ở đây. */
+ var pollBusy=false,lastSig="";
+ function sigList(){return ALL.map(function(g){
+   return g.id+(g.checked_in?"1":"0")+"|"+(g.checked_in_at||"")+"|"+(g.att_status||"")
+     +"|"+(g.table_no||"")+"|"+(g.photo_url||"");}).join(",");}
+ async function pollList(){
+   if(pollBusy||document.hidden)return;
+   pollBusy=true;
+   try{
+     var j=await jget("/crm/guests?mine=0&limit=1000");
+     ALL=j.rows||[];computeDup();
+     var s=sigList();
+     if(s!==lastSig){lastSig=s;renderDash();renderList();}
+   }catch(e){/* im lặng: một vòng hỏng không được làm vỡ màn đang dùng */}
+   finally{pollBusy=false;}
+ }
+ setInterval(pollList,25000);
+ document.addEventListener("visibilitychange",function(){if(!document.hidden)pollList();});
  // Buổi HIỆU LỰC do máy chủ tính (tag ∪ form) — không tự đếm tag ở client nữa,
  // đó là chỗ làm tab nói 303 trong khi KPI nói 350 (E08-D028 AC-A).
  function duBuoi(g,t){return t==="toa"?!!g.du_toa_dam:t==="gal"?!!g.du_gala:true;}
@@ -809,13 +852,28 @@ function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
    $("#list").innerHTML=rows.map(function(g){
      var vip=vipLbl(g),vr=vipRank(g),den=daDenBuoi(g);
      return '<div class="g'+(den?" done":"")+'" data-id="'+g.id+'">'
-      // loading="lazy" + decoding="async": danh sách kéo cả 401 thẻ một lượt,
-      // ảnh là object GỐC (293 MB tổng, 17 tấm > 5 MB, lớn nhất 20 MB). Không
-      // lazy thì trình duyệt tải hết ngay khi mở màn — wifi hội trường 08/08.
-      // Thumb ở màn chi tiết (:497) vốn đã có lazy; đây là đồng bộ lại.
-      +'<div class="av">'+(g.photo_url?'<img src="'+esc(g.photo_url)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">':esc(ini(g.full_name)))+'<span class="sd'+(den?" in":"")+'"></span></div>'
-      +'<div class="nm"><div class="n1">'+pairVJ(g.full_name,g.name_jp)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+(isDup(g)?' <span class="tag dup">⚠ TRÙNG</span>':'')+'</div><div class="n2">'+(pairVJ([g.org,g.title].filter(Boolean).join(" · "),[g.org_jp,g.title_jp].filter(Boolean).join(" · "))||"—")+(ptOf(g)?' · '+tt("phutrach")+': '+esc(ptOf(g)):'')+'</div></div>'
-      +'<div class="rb">'+(laNhanVien(g)?'<span class="tag nv">'+tt("pl_nv")+'</span>':'')+attBadge(g)+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')+(den?'<span class="tag in">✓ '+hhmm(g.checked_in_at)+'</span>':(bgHien(g.table_no)?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':''))+'</div></div>';
+      /* E08-D055 AC-7c — CHÚ THÍCH CŨ ĐÃ SAI, sửa tại chỗ vì nó vừa suýt cắt mất
+         một AC. Bản cũ viết «ảnh là object GỐC (293 MB tổng…)»: đúng với thời
+         TRƯỚC D029, nhưng từ D029 `photo_url` do máy chủ trả là
+         `/crm/photos/:id/thumb` (guests.js: «danh sách trỏ BẢN THU NHỎ, không
+         phải file gốc»). Đo prod 06/08 trên đúng biểu thức avatar mà danh sách
+         dùng: 198/393 thẻ có ảnh · TỔNG thumb 3,06 MB (không phải 293) · đúng 1
+         tấm thiếu thumb nên rơi về ảnh gốc, và ảnh gốc đó 0,01 MB.
+         Route /thumb trả kèm `Cache-Control: private, max-age=604800, immutable`
+         ⇒ vòng poll sau tốn 0 byte ảnh — chính điều photos.js đã ghi và là lý do
+         hai cửa poll 25 giây từ D029 tới giờ không ai kêu.
+         Giữ lazy/async: mở màn lần đầu vẫn nên tải dần. */
+      +'<div class="av">'+(g.photo_url?'<img src="'+esc(g.photo_url)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">':esc(ini(g.full_name)))+'</div>'
+      +'<div class="nm"><div class="n1">'+pairVJ(g.full_name,g.name_jp)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+(isDup(g)?' <span class="tag dup">⚠ TRÙNG</span>':'')+'</div><div class="n2">'+(pairVJ([g.org,g.title].filter(Boolean).join(" · "),[g.org_jp,g.title_jp].filter(Boolean).join(" · "))||"—")+'</div></div>'
+      /* E08-D055 §4a — «Người phụ trách» rời `.n2` (bên trái) sang cột phải.
+         §4b — chấm `.av .sd` đã gỡ, thay bằng chữ. §3b — hai vế khác trọng
+         lượng: đã đến nổi (nền xanh, khuôn `.tag.in` sẵn có), chưa đến mờ. */
+      +'<div class="rb">'+(laNhanVien(g)?'<span class="tag nv">'+tt("pl_nv")+'</span>':'')+attBadge(g)+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')
+       +(ptOf(g)?'<span class="pt">'+esc(ptOf(g))+'</span>':'')
+       +((!den&&bgHien(g.table_no))?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':'')
+       +(den?'<span class="tag in">O '+tt("arrived")+' · '+hhmm(g.checked_in_at)+'</span>'
+            :'<span class="ci-n">X '+tt("not_yet")+'</span>')
+      +'</div></div>';
    }).join("");
  }
  /* ---- hồ sơ khách (giữ nguyên endpoint) — SĐT ẩn khi hiển thị ---- */

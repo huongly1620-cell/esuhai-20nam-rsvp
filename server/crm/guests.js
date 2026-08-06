@@ -356,6 +356,14 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
     }
   });
 
+  // ---- danh sách nhãn Phân loại (đọc) — E08-D038 ----
+  // Màn KHÔNG chép lại bảng nhãn: v2 là tệp tĩnh, không require được, nên nó
+  // ĐỌC từ đây. Một nguồn duy nhất ⇒ sửa bảng là cả máy chủ lẫn màn cùng đổi,
+  // không có cảnh hai bên lệch nhau như bốn bản ttKey của D043 (phải dựng phép
+  // kiểm băm mới yên tâm).
+  app.get('/crm/phanloai/nhan', requireCrmAuth, (req, res) =>
+    res.json({ ok: true, nhan: PL_NHAN.map((x) => ({ ten: x[0], tag: x[1] })) }));
+
   // ---- đổi PHÂN LOẠI khách (btl) — E08-D038 §3a Đường C ----
   //
   // §3b MÌN — vì sao KHÔNG dùng PATCH /crm/guests/:id sẵn có: nó ghi ĐÈ NGUYÊN

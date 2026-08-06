@@ -24,6 +24,11 @@ const TAG = (col, t) => `(',' || COALESCE(${col},'') || ',') ILIKE '%,${t},%'`;
 
 const HAS_TD = TAG('g.tags', 'toa-dam');
 const HAS_GALA = TAG('g.tags', 'gala');
+// E08-D038 — nhân viên ngồi cùng bàn khách để phục vụ, KHÔNG phải khách mời:
+// Sponsor chốt họ không vào bất kỳ số báo cáo nào. Một hằng dùng chung cho MỌI
+// câu, để không có câu nào lỡ quên.
+const NV = TAG('g.tags', 'pl:nhan-vien');
+const KHONG_NV = `NOT ${NV}`;
 const TAGGED = `(${HAS_TD} OR ${HAS_GALA})`;
 
 // Group 1 + 3 + the invite-side totals. One pass over crm_guests.
@@ -33,7 +38,7 @@ const SQL_GUESTS = `
            ${HAS_TD} AS td,
            ${HAS_GALA} AS ga,
            ${TAG('g.tags', 'tgd116')} AS tgd
-    FROM crm_guests g WHERE g.deleted_at IS NULL
+    FROM crm_guests g WHERE g.deleted_at IS NULL AND ${KHONG_NV}
   )
   SELECT count(*)::int                                              AS invited,
          count(*) FILTER (WHERE tgd)::int                           AS invited_tgd,
@@ -64,7 +69,7 @@ const SQL_FORM_SESSIONS = `
   SELECT s.sessions, count(DISTINCT g.id)::int AS n
   FROM crm_guests g
   LEFT JOIN rsvp_submissions s ON s.id = g.response_id
-  WHERE g.deleted_at IS NULL AND g.response_id IS NOT NULL AND NOT ${TAGGED}
+  WHERE g.deleted_at IS NULL AND ${KHONG_NV} AND g.response_id IS NOT NULL AND NOT ${TAGGED}
   GROUP BY s.sessions`;
 
 // AC-5b: Rg is its OWN query. It happens to equal `linked` on today's data, but
@@ -83,7 +88,7 @@ const SQL_ATT = `
   WITH g AS (
     SELECT ${att.attSql('g', att.duSql('g', 'g.response_id', "'" + att.SESSION_RE['toa-dam'] + "'", "'" + att.SESSION_RE.gala + "'"))} AS st,
            (g.att_override IS NOT NULL) AS manual
-    FROM crm_guests g WHERE g.deleted_at IS NULL
+    FROM crm_guests g WHERE g.deleted_at IS NULL AND ${KHONG_NV}
   )
   SELECT count(*) FILTER (WHERE st = 'du')::int    AS du,
          count(*) FILTER (WHERE st = 'khong')::int AS khong,
@@ -99,12 +104,15 @@ const SQL_CHECKINS = `
   SELECT count(*)::int AS n
   FROM crm_check_ins ci
   JOIN crm_guests g ON g.id = ci.guest_id
-  WHERE g.deleted_at IS NULL`;
+  WHERE g.deleted_at IS NULL AND ${KHONG_NV}`;
 
 // Independent recount of I, deliberately NOT derived from SQL_GUESTS, so the
 // partition check below compares two separately-computed numbers instead of
 // asserting a tautology.
-const SQL_INVITED_CHECK = 'SELECT count(*)::int AS n FROM crm_guests WHERE deleted_at IS NULL';
+const SQL_INVITED_CHECK = `SELECT count(*)::int AS n FROM crm_guests g WHERE g.deleted_at IS NULL AND ${KHONG_NV}`;
+// Đếm RIÊNG nhân viên để màn hiện tách «khách N · nhân viên M» — Sponsor chốt
+// vẫn phải thấy họ, chỉ là không cộng vào số khách mời.
+const SQL_NHANVIEN = `SELECT count(*)::int AS n FROM crm_guests g WHERE g.deleted_at IS NULL AND ${NV}`;
 
 // "Tọa đàm · Gala" vs "Gala" — classify without assuming an exact label.
 function classifySessions(raw) {
@@ -125,7 +133,7 @@ function mount(app, requireCrmAuth) {
     let client;
     try {
       client = await pool.connect();
-      let gr, fr, rr, cr, ir, ar;
+      let gr, fr, rr, cr, ir, ar, nvr;
       try {
         await client.query('BEGIN TRANSACTION READ ONLY ISOLATION LEVEL REPEATABLE READ');
         gr = await client.query(SQL_GUESTS);
@@ -133,6 +141,7 @@ function mount(app, requireCrmAuth) {
         rr = await client.query(SQL_RSVP);
         cr = await client.query(SQL_CHECKINS);
         ir = await client.query(SQL_INVITED_CHECK);
+        nvr = await client.query(SQL_NHANVIEN);
         ar = await client.query(SQL_ATT);
         await client.query('COMMIT');
       } catch (e) {
@@ -174,6 +183,10 @@ function mount(app, requireCrmAuth) {
       return res.json({
         ok: true,
         invited: g.invited,
+        // E08-D038 — nhân viên KHÔNG nằm trong `invited`. Trả riêng để màn hiện
+        // tách «khách N · nhân viên M»: Sponsor chốt vẫn phải thấy họ, chỉ là
+        // không cộng vào số báo cáo BTC.
+        nhanVien: nvr.rows[0].n,
         invitedTgd: g.invited_tgd,
         rsvpSubmissions: rr.rows[0].submissions,
         rsvpGuests: rr.rows[0].rsvp_guests,

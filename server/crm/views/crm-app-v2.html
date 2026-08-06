@@ -341,6 +341,7 @@
         <div class="search"><span class="ic">&#128269;</span><input id="q" type="search" placeholder="Tìm tên / SĐT / đơn vị…" data-iph="ph_search"></div>
         <button class="chip" id="chipWait" data-i="only_wait">◔ Chưa đến</button>
         <button class="chip" id="chipDup" data-i="only_dup">⚠ Trùng</button>
+        <input id="fBan" class="sel" style="width:88px" type="search" placeholder="Bàn…" aria-label="Lọc theo bàn">
         <select class="sel" id="attSel"><option value="">Tham dự: tất cả</option><option value="du">Có tham dự</option><option value="khong">Không tham dự</option><option value="cho">Chưa xác nhận</option></select>
         <select class="sel" id="sort"><option value="name" data-i="s_name">Theo tên</option><option value="vip" data-i="s_vip">VIP trước</option><option value="table" data-i="s_tbl">Theo bàn</option><option value="status" data-i="s_st">Chưa đến trước</option></select>
         <button class="chip act" id="impBtn2" style="display:none" data-i="imp_btn">⬆ Import</button>
@@ -621,6 +622,7 @@ async function addShrunk(fd,file){
    if(state.wait&&g.checked_in)return false;
    if(state.dup&&!isDup(g))return false;
    if(state.att&&attOf(g)!==state.att)return false;
+   if(state.ban&&!banKhop(g.table_no,state.ban))return false;
    if(state.q){var s=noAcc(state.q);if(// Đánh chỉ mục cả 3 field JP: sau E3, PG Nhật gõ 山田 mà không ra ai thì
    // dữ liệu JP coi như vô dụng ở cửa.
    noAcc(g.full_name+" "+(g.org||"")+" "+(g.title||"")+" "+(g.phone||"")+" "+(g.name_jp||"")+" "+(g.title_jp||"")+" "+(g.org_jp||"")).indexOf(s)===-1)return false;}
@@ -672,6 +674,15 @@ function ttKey(s){return String(s==null?"":s).normalize("NFC")
   .replace(/[ĐÐ]/g,"D").replace(/[đð]/g,"d")
   .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");}
 var TT_RAC={thamdu:1,khongthamdu:1,choxacnhan:1,chuaxacnhan:1,khongdu:1,codu:1};
+function banKhop(ban,q){
+   q=String(q==null?"":q).trim(); if(!q)return true;
+   ban=String(ban==null?"":ban).trim(); if(!ban)return false;
+   /* Số so BẰNG (bỏ 0 đứng đầu) ⇒ gõ «1» không ra 10/11/19. Ảnh chị Ly gõ
+      «bàn 1» ra 0 là trên MÀN NÀY. */
+   if(/^[0-9]+$/.test(q)&&/^[0-9]+$/.test(ban))return parseInt(ban,10)===parseInt(q,10);
+   /* Chữ so chứa, bỏ dấu — giữ được «Bàn nhân viên» / «Bàn ekip». */
+   return ttKey(ban).indexOf(ttKey(q))>-1;
+ }
 function laChuTrangThai(v){return !!TT_RAC[ttKey(v)];}
 /* Dùng cho MỌI chỗ hiển thị Bàn/Ghế. TUYỆT ĐỐI không dùng cho updRows(): file
    «Xuất để CẬP NHẬT» phải giữ NGUYÊN VĂN chữ đó, vì đó là cách chị Ly nhìn thấy
@@ -982,6 +993,7 @@ window.imgFit=imgFit;
  });
  $("#menuBtn").addEventListener("click",function(e){e.stopPropagation();$("#menu").classList.toggle("open");});
  $("#q").addEventListener("input",function(e){state.q=e.target.value;renderList();});
+ $("#fBan").addEventListener("input",function(e){state.ban=e.target.value;renderList();});
  $("#chipWait").addEventListener("click",function(){state.wait=!state.wait;this.classList.toggle("on",state.wait);renderList();});
  $("#chipDup").addEventListener("click",function(){state.dup=!state.dup;this.classList.toggle("on",state.dup);renderList();});
  $("#attSel").addEventListener("change",function(){state.att=this.value;renderList();});

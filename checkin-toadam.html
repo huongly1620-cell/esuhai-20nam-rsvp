@@ -51,6 +51,10 @@
  /* E08-D040 — dải kho ảnh. THUMB, không phải ảnh gốc: D029 đo được ảnh gốc
     trung bình 1 455 KB còn thumb 17 KB — tỉ lệ 1/86. Dùng ảnh gốc ở đây là dựng
     lại đúng sự cố cửa Gala 13,03 MB. Giữ lazy (D027). */
+ /* Ô lọc bàn: ô RIÊNG, không nhét vào dropdown sắp xếp — ở cửa cần lọc bàn
+    VÀ giữ thứ tự đang xem cùng lúc. */
+ .fban{width:74px;flex:none;border:1.5px solid var(--line2);background:rgba(5,13,24,.5);color:var(--cream);
+   border-radius:12px;padding:9px 10px;font:inherit;font-size:.86rem}
  .kho{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:14px}
  .kho .k1{position:relative;width:62px;height:62px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.05);flex:none}
  .kho .k1 img{width:100%;height:100%;object-fit:cover}
@@ -183,7 +187,7 @@
   <div class="big b-came" data-f="came"><div class="cl" data-i="came_label">ĐÃ ĐẾN</div><div class="cn"><span id="cDone">0</span></div><div class="cs" data-i="guests">Tọa đàm</div></div>
   <div class="big b-no" data-f="no"><div class="cl" data-i="btn_no">CHƯA ĐẾN</div><div class="cn"><span id="cLeft">0</span><b>/<span id="cTot">0</span></b></div><div class="cs" data-i="guests">Tọa đàm</div></div>
 </div></header><div class="upd" id="upd"></div>
-<div class="sr"><div class="box"><span class="ic">&#8981;</span><input id="q" type="search" placeholder="Gõ tên khách (không dấu cũng được)…"></div></div>
+<div class="sr" style="display:flex;gap:8px"><input id="fBan" class="fban" type="search" placeholder="Bàn…" aria-label="Lọc theo bàn"><div class="box" style="flex:1"><span class="ic">&#8981;</span><input id="q" type="search" placeholder="Gõ tên khách (không dấu cũng được)…"></div></div>
 <div class="quick" id="quick">
   <button class="qb" data-q="vip" data-i="vip">★ VIP</button><button class="qb" data-q="nhat" data-i="nhat">🎌 Khách Nhật</button>
   <button class="qb" data-q="noi" data-i="noi">Gia đình-Nội</button><button class="qb" data-q="ngoai" data-i="ngoai">Gia đình-Ngoại</button><button class="qb" data-q="gdtgd" data-i="gdtgd">Gia đình TGĐ</button><button class="qb" data-q="ob" data-i="q_ob">OB Esuhai</button><button class="qb" data-q="dongdu" data-i="q_dongdu">Đông Du</button>
@@ -235,7 +239,7 @@ function isKanji(n){return /[぀-ヿ㐀-䶿一-鿿]/.test(String(n||""));}
 function came(g){return g._came||"";}
 function fmt(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
 function fmtCame(c){return c&&c!=="1"?fmt(c):"✓";}
-var st={q:"",quick:"",f:""},curId=null;
+var st={q:"",quick:"",f:"",ban:""},curId=null;
 function counter(){var done=G.filter(came).length;
  var dn=$("#cDone");if(!dn)return;dn.textContent=done;
  var lf=$("#cLeft");if(lf)lf.textContent=G.length-done;
@@ -408,7 +412,7 @@ function attBadge(g){var a=g.att||"";
  if(a!=="khong"&&a!=="cho")return "";   /* field thiếu (máy chủ cũ) → không bịa */
  return '<span class="bg bg-att-'+a+'">'+esc(attLbl(g))+'</span>';}
 function av(g,big){var u=(big?(g.photoBig||g.photo):g.photo);return u?'<img src="'+esc(u)+'" loading="lazy" decoding="async" onload="imgFit(this)" onerror="this.remove()">'+esc(ini(g.name)):esc(ini(g.name));}
-function renderList(){quickCounts();var rows=G.filter(match);
+function renderList(){quickCounts();var rows=G.filter(match).filter(function(g){return banKhop(g.table||g.seat,st.ban);});
  $("#hint").textContent=(st.q||st.quick||st.f)?t("res",{n:rows.length}):t("total",{n:G.length});
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);
   return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'"><span class="sd'+(cm?" came":"")+'"></span>'
@@ -515,6 +519,17 @@ function ttKey(s){return String(s==null?"":s).normalize("NFC")
   .replace(/[ĐÐ]/g,"D").replace(/[đð]/g,"d")
   .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");}
 var TT_RAC={thamdu:1,khongthamdu:1,choxacnhan:1,chuaxacnhan:1,khongdu:1,codu:1};
+function banKhop(ban,q){
+ q=String(q==null?"":q).trim(); if(!q)return true;
+ ban=String(ban==null?"":ban).trim(); if(!ban)return false;
+ /* Gõ toàn SỐ ⇒ so BẰNG (bỏ 0 đứng đầu): «1» không ra 10/11/19. Dùng indexOf ở
+    đây là hỏng đúng chỗ DoD chỉ ra. */
+ if(/^[0-9]+$/.test(q)&&/^[0-9]+$/.test(ban))return parseInt(ban,10)===parseInt(q,10);
+ /* Gõ có CHỮ ⇒ so chứa, bỏ dấu: prod có «Bàn nhân viên» ×3 và «Bàn ekip» ×1
+    (đo ở D043), ép về số là mất bốn thẻ đó. Dùng lại ttKey của D043, không đẻ
+    hàm chuẩn hoá thứ hai. */
+ return ttKey(ban).indexOf(ttKey(q))>-1;
+}
 function laChuTrangThai(v){return !!TT_RAC[ttKey(v)];}
 /* Dùng cho MỌI chỗ hiển thị Bàn/Ghế. TUYỆT ĐỐI không dùng cho updRows(): file
    «Xuất để CẬP NHẬT» phải giữ NGUYÊN VĂN chữ đó, vì đó là cách chị Ly nhìn thấy
@@ -674,6 +689,7 @@ $("#pfBody").addEventListener("click",function(e){var b=e.target.closest("button
       lastSync=Date.now();counter();openPf(id);renderList();lastSig=sig();
     }).catch(function(){b.disabled=false;toast(t("ci_net"),1);});}});
 $("#q").addEventListener("input",function(e){st.q=e.target.value;renderList();});
+$("#fBan").addEventListener("input",function(e){st.ban=e.target.value;renderList();});
 $("#quick").addEventListener("click",function(e){var b=e.target.closest(".qb");if(!b)return;var q=b.getAttribute("data-q");st.quick=(st.quick===q?"":q);document.querySelectorAll(".qb").forEach(function(x){x.classList.remove("on");});if(st.quick)b.classList.add("on");renderList();});
 document.querySelectorAll(".fb,.big[data-f]").forEach(function(b){b.addEventListener("click",function(){var f=b.getAttribute("data-f");st.f=(st.f===f?"":f);document.querySelectorAll(".fb").forEach(function(x){x.classList.remove("on");});if(st.f)b.classList.add("on");renderList();});});
 $("#lichBtn").addEventListener("click",function(){$("#sheet").classList.add("show");});

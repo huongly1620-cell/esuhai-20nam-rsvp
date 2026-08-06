@@ -202,8 +202,13 @@ function mount(app) {
   });
 
   // Export guests as a CSV for Ly's seating tool (xep-ban.html). "Mã khách" =
-  // guest_ext_id so table numbers round-trip back via import-tables. "Hạng" is a
-  // best-effort default from tags — BTC edits it before seating.
+  // guest_ext_id so table numbers round-trip back. "Hạng" is a best-effort
+  // default from tags — BTC edits it before seating.
+  //
+  // E08-D050 — ĐƯỜNG VỀ nay là /crm → «Nhập file CẬP NHẬT» (D032), KHÔNG còn là
+  // import-tables (tuyến đó đã khoá 410, xem cuối tệp). Sửa luôn câu này vì chú
+  // thích cũ chỉ sang một tuyến đã chết là đúng cái bẫy D053 đang phải đi vá:
+  // người sau đọc chú thích rồi tin, không đọc mã.
   app.get('/admin/api/export-seating.csv', requireAuth, async (req, res) => {
     try {
       const r = await pool.query(
@@ -230,42 +235,31 @@ function mount(app) {
     }
   });
 
-  // Import table numbers (Ly's xep-ban CSV export) into crm_guests.table_no,
-  // matched by "Mã khách" (guest_ext_id, or crm:<id>). Idempotent.
-  app.post('/admin/api/import-tables', requireAuth, crmImport.upload.single('file'), async (req, res) => {
-    try {
-      const rows = crmImport.parseUpload(req);
-      if (!rows || rows.length < 2) return res.status(400).json({ ok: false, error: 'File trống.' });
-      const norm = (h) => String(h || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '');
-      const hdr = rows[0].map(norm);
-      const iMa = hdr.findIndex((h) => h.includes('makhach') || h.includes('maid') || h === 'ma');
-      const iBan = hdr.findIndex((h) => h.includes('soban') || h === 'ban' || h.includes('table'));
-      if (iMa < 0 || iBan < 0) return res.status(400).json({ ok: false, error: 'Cần cột "Mã khách" và "Số bàn".' });
-      let matched = 0; let unmatched = 0;
-      const client = await pool.connect();
-      try {
-        await client.query('BEGIN');
-        for (let r = 1; r < rows.length; r++) {
-          const ma = String(rows[r][iMa] || '').trim();
-          const ban = String(rows[r][iBan] || '').trim();
-          if (!ma) continue;
-          let upd;
-          if (ma.startsWith('crm:')) {
-            upd = await client.query('UPDATE crm_guests SET table_no=$1, updated_at=now() WHERE id=$2 AND deleted_at IS NULL', [ban || null, parseInt(ma.slice(4), 10)]);
-          } else {
-            upd = await client.query('UPDATE crm_guests SET table_no=$1, updated_at=now() WHERE guest_ext_id=$2 AND deleted_at IS NULL', [ban || null, ma]);
-          }
-          if (upd.rowCount > 0) matched++; else unmatched++;
-        }
-        await client.query('COMMIT');
-      } catch (e) { await client.query('ROLLBACK').catch(() => {}); client.release(); throw e; }
-      client.release();
-      return res.json({ ok: true, matched, unmatched, total: rows.length - 1 });
-    } catch (err) {
-      console.error('[admin] import-tables failed:', err.message);
-      return res.status(500).json({ ok: false, error: 'Nhập số bàn lỗi.' });
-    }
-  });
+  /* ---- E08-D050 · TUYẾN NÀY ĐÃ KHOÁ — ĐỪNG KHÔI PHỤC ----
+     Sponsor chốt 06/08 18:4x (CR-77 ③). Trước đó CR-33 (05/08) đã chốt «nạp
+     bàn/ghế qua CRM, không vá admin; bỏ admin sau» — chưa ai bỏ, và hàng rào
+     duy nhất suốt từ đó tới nay là «không ai mở màn đó».
+
+     VÌ SAO KHOÁ, không phải vì gọn gàng:
+     Thân cũ chạy `UPDATE crm_guests SET table_no=$1` với `[ban || null]`, tức
+     một ô **Bàn rỗng** trong file là GHI NULL — xoá số bàn. Cả vòng lặp nằm
+     trong MỘT `BEGIN…COMMIT`, nên **một file thiếu cột Bàn là quét sạch sơ đồ
+     chỗ ngồi** của chị Ly trong đúng một lượt nạp, không popup, không hỏi lại.
+     Khác hẳn vòng D032 (`import-update.js`) đang dùng thật: ở đó ô rỗng nghĩa
+     là «không đổi» (COALESCE), muốn xoá phải gõ tường minh `(xoá)`.
+
+     ĐƯỜNG ĐÚNG: /crm → «Nhập file CẬP NHẬT (Bàn · Ghế · Trạng thái)» — D032.
+
+     Giữ tuyến lại (thay vì gỡ hẳn) để ai còn tab cũ / bookmark cũ bấm vào thì
+     nhận được CHỈ DẪN, không nhận 404 câm. Bỏ `requireAuth` và bỏ multer có
+     chủ đích: thân này không đọc gì, không ghi gì, không chạm CSDL — không còn
+     thứ gì để canh, và bỏ chúng đi thì AC-1 kiểm được bằng một lệnh gọi trần. */
+  app.post('/admin/api/import-tables', (req, res) => res.status(410).json({
+    ok: false,
+    error: 'Tuyến này đã khoá (E08-D050). Nạp bàn/ghế qua CRM → «Nhập file CẬP NHẬT (D032)». '
+         + 'Lý do: ô Bàn rỗng ở đây ghi NULL, một file sai là xoá sạch sơ đồ chỗ ngồi.',
+    thay_bang: '/crm',
+  }));
 }
 
 module.exports = { mount };

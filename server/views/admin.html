@@ -291,8 +291,11 @@
       <button type="button" class="btn" id="importCrmBtn" title="Nhập danh sách khách mời vào công cụ điểm danh (/crm)">&#8593; Nhập DS khách → CRM</button>
       <input type="file" id="importCrmFile" accept=".csv,.xlsx" style="display:none">
       <a class="btn" href="/admin/api/export-seating.csv" title="Xuất DS khách để nạp vào công cụ Xếp bàn của Ly">&#8681; DS cho xếp bàn</a>
-      <button type="button" class="btn" id="importTablesBtn" title="Nhập số bàn (CSV xuất từ công cụ Xếp bàn) → hiện khi check-in">&#8593; Nhập số bàn</button>
-      <input type="file" id="importTablesFile" accept=".csv,.xlsx" style="display:none">
+      <!-- E08-D050 — nút «Nhập số bàn» ĐÃ GỠ cùng tuyến /admin/api/import-tables.
+           Ô Bàn rỗng ở tuyến đó ghi NULL, cả file trong một giao dịch ⇒ một lần
+           nạp sai là xoá sạch sơ đồ chỗ ngồi. Đường đúng: /crm → «Nhập file CẬP
+           NHẬT (Bàn · Ghế · Trạng thái)» (D032), ở đó ô rỗng = KHÔNG đổi.
+           Gỡ nút chứ không để bấm rồi mới báo lỗi — phiếu D050 mục 2. -->
     </div>
   </div>
 
@@ -723,17 +726,10 @@
       else { alert(j.error||"Nhập không thành công."); }
     }catch(e){ alert("Lỗi kết nối, thử lại."); }
   });
-  $("#importTablesBtn").addEventListener("click", function(){ $("#importTablesFile").click(); });
-  $("#importTablesFile").addEventListener("change", async function(){
-    var f=this.files&&this.files[0]; if(!f) return; this.value="";
-    var fd=new FormData(); fd.append("file", f);
-    try{
-      var r=await fetch("/admin/api/import-tables",{method:"POST",body:fd,credentials:"same-origin"});
-      var j=await r.json().catch(function(){return {};});
-      if(r.ok){ alert("Đã nhập số bàn vào CRM:\n• Khớp: "+j.matched+"\n• Không khớp (Mã khách lạ): "+j.unmatched+"\n\nSố bàn hiện trên /crm khi lễ tân điểm danh."); }
-      else { alert(j.error||"Nhập số bàn không thành công."); }
-    }catch(e){ alert("Lỗi kết nối, thử lại."); }
-  });
+  /* E08-D050 — hai bộ bắt sự kiện của «Nhập số bàn» gỡ CÙNG nút ở trên. Để lại
+     mà nút không còn là `$("#importTablesBtn")` trả null ⇒ TypeError ngay lúc
+     nạp trang ⇒ mọi listener đăng ký SAU dòng này chết theo, kể cả nút Đăng
+     xuất. Gỡ nút thì phải gỡ cả tay cầm. */
   $("#logoutBtn").addEventListener("click", function(){
     fetch("/admin/logout", {method:"POST", credentials:"same-origin"}).then(function(){ location.href="/admin"; }).catch(function(){ location.href="/admin"; });
   });

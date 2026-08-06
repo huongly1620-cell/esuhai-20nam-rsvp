@@ -485,7 +485,13 @@ async function addShrunk(fd,file){
  // Buổi HIỆU LỰC do máy chủ tính (tag ∪ form) — không tự đếm tag ở client nữa,
  // đó là chỗ làm tab nói 303 trong khi KPI nói 350 (E08-D028 AC-A).
  function duBuoi(g,t){return t==="toa"?!!g.du_toa_dam:t==="gal"?!!g.du_gala:true;}
- function tabCount(t){return ALL.filter(function(g){return duBuoi(g,t);}).length;}
+ /* E08-D038 mảnh 5b (Gate 2 r1 bắt) — SỐ TRÊN TAB cũng phải trừ nhân viên.
+    #ctAll đã trừ (kh.length) nhưng #ctToa/#ctGal thì chưa: Ly gắn nhãn NV cho
+    người CÓ tag buổi là hai con số cạnh nhau nói khác nhau, và cùng lệch
+    /crm/stats — mà không ai biết bên nào đúng.
+    Chỉ trừ ở SỐ ĐẾM. Danh sách khi chọn tab vẫn hiện nhân viên: Sponsor chốt
+    phải thấy họ để biết ai ngồi đâu (đó là lý do quickOk không bị đụng). */
+ function tabCount(t){return ALL.filter(function(g){return !laNhanVien(g)&&duBuoi(g,t);}).length;}
   /* ---- KPI toàn cục (/crm/stats) — E08-D016 pha 1 ----
      Số ở đây là TOÀN BỘ danh sách, không phụ thuộc tab/bộ lọc đang chọn (AC-9).
      Buổi chia thành ba nhóm RỜI NHAU cộng đúng «Tổng mời» (AC-3b/AC-6b):

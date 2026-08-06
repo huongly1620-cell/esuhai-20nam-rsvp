@@ -27,6 +27,11 @@ function clean(v) { return typeof v === 'string' ? v.trim() : (v == null ? '' : 
 // staff may update these; never id/response_id/deleted_at/guest_ext_id.
 const PATCH_WHITELIST = ['full_name', 'phone', 'email', 'org', 'title', 'note', 'tags'];
 
+// E08-D042 §3a — DANH SÁCH TRƯỜNG RIÊNG CHO `btl`, KHÔNG nâng cả tuyến PATCH lên
+// `btl`. Nâng cả tuyến là chặn luôn PG sửa ghi chú/SĐT — hồi quy một năng lực
+// đang chạy (M1). Hai cột này là SƠ ĐỒ CHỖ NGỒI của lễ nên chỉ BTL ghi được.
+const PATCH_BTL_ONLY = ['table_no', 'seat_no'];
+
 function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
   // E08-D041 — nếu chưa nối làn cửa thì rơi về gác cổng cũ: quên wire là
   // FAIL-CLOSED (cửa đòi auth), không phải fail-open.
@@ -253,11 +258,15 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
       let id;
       try {
         await cli.query('BEGIN');
+        // E08-D042 §3a — tuyến này ĐÃ requireRole('btl') nên thêm hai cột vào
+        // INSERT là đủ, không cần lớp chặn thứ hai. Trước vé này ô nhập ở form có
+        // cũng vô nghĩa: máy chủ không đọc, khách mới luôn ra đời không có bàn.
         const r = await cli.query(
-          `INSERT INTO crm_guests (full_name, phone, phone_norm, email, org, title, note, tags)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+          `INSERT INTO crm_guests (full_name, phone, phone_norm, email, org, title, note, tags, table_no, seat_no)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
           [name, phone || null, phone ? normPhone(phone) : null, clean(b.email) || null,
-           clean(b.org) || null, clean(b.title) || null, clean(b.note) || null, clean(b.tags) || null]
+           clean(b.org) || null, clean(b.title) || null, clean(b.note) || null, clean(b.tags) || null,
+           clean(b.table_no) || null, clean(b.seat_no) || null]
         );
         id = r.rows[0].id;
         await cli.query('UPDATE crm_guests SET guest_ext_id = $1 WHERE id = $2', ['tay-' + id, id]);
@@ -278,9 +287,27 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
     const b = req.body || {};
+
+    /* E08-D042 §3a + M2 — CHẶN Ở ĐÂY, trước MỌI thứ khác.
+       Từ đầu thân tuyến (parseInt id · đọc req.body) đến dòng này KHÔNG có một
+       lời gọi pool.query/client.query nào, và logAudit nằm mãi phía dưới. Nên
+       `return 403` tại điểm này là 0 CÂU SQL — chứng minh được bằng mắt, không
+       phải bằng niềm tin (AC-3). Ghi một nửa rồi mới chặn là thứ M2 cấm. */
+    const btlFields = PATCH_BTL_ONLY.filter((f) => Object.prototype.hasOwnProperty.call(b, f));
+    if (btlFields.length && (!req.actor || req.actor.role !== 'btl')) {
+      return res.status(403).json({ ok: false, error: 'Chỉ ban tổ chức mới sửa được Bàn / Ghế.' });
+    }
+
     const sets = []; const params = []; const changed = {};
-    for (const f of PATCH_WHITELIST) {
+    for (const f of PATCH_WHITELIST.concat(btlFields)) {
       if (Object.prototype.hasOwnProperty.call(b, f)) {
+        /* §3b + M3 — `clean(...) || null` biến "" thành NULL, tức Ô TRỐNG = XOÁ.
+           Với table_no/seat_no đó là CỐ Ý và KHÁC luật COALESCE của D032 (§3b):
+           ở đây là form MỘT khách, Ly NHÌN THẤY giá trị cũ điền sẵn nên xoá text
+           là chủ ý; còn D032 là file 344 dòng, ô trống ở đó nghĩa «đừng đụng».
+           Hai luật khác nhau trên cùng một cột là có chủ đích — ĐỪNG «đồng bộ
+           hoá» chúng cho gọn. Lớp popup ở màn không đủ (gọi API trực tiếp vẫn
+           xoá được) nên audit §3c bên dưới là thứ bắt buộc. */
         params.push(clean(b[f]) || null); sets.push(`${f} = $${params.length}`); changed[f] = true;
         if (f === 'phone') { params.push(clean(b[f]) ? normPhone(b[f]) : null); sets.push(`phone_norm = $${params.length}`); }
       }
@@ -288,6 +315,48 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
     if (!sets.length) return res.status(400).json({ ok: false, error: 'Không có trường hợp lệ để cập nhật.' });
     sets.push('updated_at = now()');
     params.push(id);
+
+    /* §3c — audit phải chép GIÁ TRỊ CŨ → MỚI, không chỉ tên trường. Mất số bàn
+       mà nhật ký chỉ ghi «đã sửa table_no» thì không có cách truy lại ai đổi từ
+       gì sang gì. Chỉ nhánh CÓ bàn/ghế mới mở giao dịch + đọc thêm một câu:
+       lượt PATCH thường (PG sửa ghi chú/SĐT) giữ NGUYÊN hình dạng và chi phí cũ. */
+    if (btlFields.length) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const cu = (await client.query(
+          'SELECT table_no, seat_no FROM crm_guests WHERE id = $1 AND deleted_at IS NULL FOR UPDATE', [id])).rows[0];
+        if (!cu) { await client.query('ROLLBACK'); client.release(); return res.status(404).json({ ok: false, error: 'not found' }); }
+        const r = await client.query(
+          `UPDATE crm_guests SET ${sets.join(', ')} WHERE id = $${params.length} AND deleted_at IS NULL RETURNING table_no, seat_no`, params);
+        if (!r.rows[0]) { await client.query('ROLLBACK'); client.release(); return res.status(404).json({ ok: false, error: 'not found' }); }
+        const meta = { fields: Object.keys(changed) };
+        if (changed.table_no) meta.ban = { cu: cu.table_no, moi: r.rows[0].table_no };
+        if (changed.seat_no) meta.ghe = { cu: cu.seat_no, moi: r.rows[0].seat_no };
+        /* KHÔNG dùng logAudit() ở đây, dù đang truyền `client`. logAudit bọc
+           try/catch và chỉ console.error — mà TRONG một giao dịch, câu INSERT
+           hỏng đã đẩy giao dịch vào trạng thái aborted, và `COMMIT` trên giao
+           dịch aborted KHÔNG ném lỗi: Postgres lặng lẽ ROLLBACK rồi trả về như
+           thường. Kết quả sẽ là: màn báo «Đã lưu ✓», audit không có, và bàn ghế
+           KHÔNG hề đổi — đúng lớp báo-xanh-giả mà cả D028 CỬA-2 lẫn D036 §3g
+           sinh ra để chặn. Ghi thẳng ⇒ lỗi ném ra ⇒ catch bên dưới ROLLBACK và
+           trả 500 thật. */
+        await client.query(
+          `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)
+           VALUES ($1,'guest_update','guest',$2,$3::jsonb,$4)`,
+          [req.actor.email, String(id), JSON.stringify(meta), hashIp(ipOf(req))]);
+        await client.query('COMMIT');
+        client.release();
+        return res.json({ ok: true, table_no: r.rows[0].table_no, seat_no: r.rows[0].seat_no });
+      } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        client.release();
+        if (err.code === '23505') return res.status(409).json({ ok: false, error: 'Số điện thoại đã tồn tại.' });
+        console.error('[crm-guests] patch (btl) failed:', err.message);
+        return res.status(500).json({ ok: false, error: 'update error' });
+      }
+    }
+
     try {
       const r = await pool.query(`UPDATE crm_guests SET ${sets.join(', ')} WHERE id = $${params.length} AND deleted_at IS NULL RETURNING id`, params);
       if (!r.rows[0]) return res.status(404).json({ ok: false, error: 'not found' });

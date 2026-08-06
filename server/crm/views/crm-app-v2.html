@@ -386,7 +386,10 @@
        bg_huy:"Đã huỷ — CHƯA lưu gì cả (kể cả Đơn vị / Chức danh / Ghi chú vừa sửa)",
        att_mat_cho:"⚠ Khách này sẽ MẤT chỗ ngồi:",
        att_mat_cho2:"Bấm lại «Có tham dự» KHÔNG trả số cũ về — phải gán tay.",
-       att_da_xoa:"đã xoá chỗ ngồi:"},
+       att_da_xoa:"đã xoá chỗ ngồi:",
+       jp_h:"Tiếng Nhật (hiện ở màn cửa)",jp_ten:"Họ tên JP",jp_cd:"Chức danh JP",jp_dv:"Đơn vị JP",
+       jp_note:"Để trống rồi Lưu = XOÁ chữ Nhật của ô đó.",
+       hoten:"Họ tên",hoten_trong:"Chưa lưu — Họ tên không được để trống. Đây là tên PG gõ để tra khách ở cửa."},
    jp:{bg_ban_ph:"例: 17 · スタッフ席",bg_ghe_ph:"例: 10",
        bg_xoa_ban:"このゲストのテーブル番号を削除しますか？\n\n欄が空です — OKで削除されます。",
        bg_xoa_ghe:"このゲストの席番号を削除しますか？\n\n欄が空です — OKで削除されます。",
@@ -394,7 +397,10 @@
        bg_huy:"キャンセルしました — 何も保存されていません（所属・役職・備考の変更も含む）",
        att_mat_cho:"⚠ このゲストの座席が削除されます:",
        att_mat_cho2:"「出席」に戻しても番号は戻りません — 手動で再設定が必要です。",
-       att_da_xoa:"座席を削除しました:"}};
+       att_da_xoa:"座席を削除しました:",
+       jp_h:"日本語表記（受付画面に表示）",jp_ten:"氏名（日本語）",jp_cd:"役職（日本語）",jp_dv:"所属（日本語）",
+       jp_note:"空欄のまま保存すると、その日本語表記は削除されます。",
+       hoten:"氏名",hoten_trong:"保存していません — 氏名は必須です。受付での検索に使う名前です。"}};
   for(var l in A){for(var k in A[l]){T[l][k]=A[l][k];}}})();
  function tt(k){return (T[LANG]&&T[LANG][k])||T.vn[k]||k;}
  /* ── checklist (thêm/xoá/tick tự do) ── */
@@ -892,7 +898,16 @@ window.imgFit=imgFit;
       +PL.map(function(x){var on=plCua(g)&&plCua(g).tag===x.tag;
         return '<option value="'+esc(x.tag)+'"'+(on?' selected':'')+'>'+esc(x.ten)+'</option>';}).join("")
       +'</select><button class="btn" id="ePlSave" style="flex:0 0 auto;width:auto;padding:9px 14px">'+tt("save")+'</button></div>':'')
-    +'<div class="sec">'+tt("edit_h")+'</div><div class="fld"><div class="lab">SĐT</div><input class="f" id="ePhone" value="'+esc(g.phone||"")+'"'+(g.phone?"":" readonly")+'>'
+    +'<div class="sec">'+tt("edit_h")+'</div>'
+      /* E08-D054 — ô HỌ TÊN. Trước vé này allowlist máy chủ ĐÃ cho sửa full_name
+         nhưng form không có ô ⇒ chị Ly không sửa nổi một cái tên gõ sai, mà tên
+         là thứ PG gõ để TRA KHÁCH ở cửa: tên sai = tra không ra = khách đứng chờ.
+         Chỉ vẽ cho `btl` dù máy chủ cho cả `staff`: CRM_DOOR_SIGNUP=1 nên `staff`
+         mọc tự do, và đặt một ô đổi-tên-khách trước mặt lớp tài khoản đó là mở
+         thêm cửa mà không ai xin. Không giảm năng lực nào đang chạy — máy chủ
+         giữ nguyên. */
+      +(me.role==="btl"?'<div class="fld"><div class="lab">'+tt("hoten")+'</div><input class="f" id="eName" value="'+esc(g.full_name||"")+'"></div>':'')
+      +'<div class="fld"><div class="lab">SĐT</div><input class="f" id="ePhone" value="'+esc(g.phone||"")+'"'+(g.phone?"":" readonly")+'>'
       /* E08-D041 M7 — chưa mở khoá thì máy chủ trả phone:null ⇒ ô này RỖNG. Nếu
          cứ gửi nó đi thì bấm Lưu là XOÁ SĐT của khách, im lặng, hàng loạt. Nên
          khoá ô lại và bên dưới KHÔNG gửi trường phone khi chưa mở khoá. */
@@ -907,6 +922,16 @@ window.imgFit=imgFit;
          ghi chú/SĐT vẫn đang chạy hôm nay (AC-4). */
       +(me.role==="btl"?'<div class="row2"><div class="fld" style="flex:1"><div class="lab">'+tt("ban")+'</div><input class="f" id="eBan" placeholder="'+esc(tt("bg_ban_ph"))+'" value="'+esc(g.table_no||"")+'"></div>'
         +'<div class="fld" style="flex:1"><div class="lab">'+tt("ghe")+'</div><input class="f" id="eGhe" placeholder="'+esc(tt("bg_ghe_ph"))+'" value="'+esc(g.seat_no||"")+'"></div></div>':'')
+      /* E08-D054 — ba ô TIẾNG NHẬT, cũng chỉ vẽ cho `btl` (khớp PATCH_BTL_ONLY:
+         staff thấy ô rồi bấm Lưu sẽ ăn 403 và mất luôn đường sửa Ghi chú/Đơn vị
+         đang chạy — AC-3). Ba ô này gửi LUÔN, không theo luật «chỉ gửi khi đổi»
+         của Bàn/Ghế: AC-4 chốt ô trống = XOÁ chữ Nhật, không phải «bỏ qua». Nhãn
+         nói thẳng điều đó để chị Ly không xoá nhầm. */
+      +(me.role==="btl"?'<div class="sec" style="margin-top:14px">'+tt("jp_h")+'</div>'
+        +'<div class="fld"><div class="lab">'+tt("jp_ten")+'</div><input class="f" id="eNameJp" value="'+esc(g.name_jp||"")+'"></div>'
+        +'<div class="fld"><div class="lab">'+tt("jp_cd")+'</div><input class="f" id="eTitleJp" value="'+esc(g.title_jp||"")+'"></div>'
+        +'<div class="fld"><div class="lab">'+tt("jp_dv")+'</div><input class="f" id="eOrgJp" value="'+esc(g.org_jp||"")+'"></div>'
+        +'<div class="hint" style="font-size:.74rem;margin:-4px 0 8px">'+esc(tt("jp_note"))+'</div>':'')
       +'<button class="btn gold block" id="eSave">'+tt("save")+'</button>'
     +(canDel?'<button class="btn danger block" id="delBtn" style="margin-top:8px">'+tt("del")+'</button>':'')+'<div class="msg" id="gMsg"></div>';
    /* Ca bắt sự kiện #ciBtn cũ đã gỡ: id="ciBtn" không tồn tại trong tệp này
@@ -968,6 +993,21 @@ window.imgFit=imgFit;
         thật trong CSDL; PATCH_WHITELIST có 'phone' nên nó ghi thẳng. */
      var than={org:$("#eOrg").value,title:$("#eTitle").value,note:$("#eNote").value};
      if(g.phone)than.phone=$("#ePhone").value;
+     /* E08-D054 AC-4b — HỌ TÊN không được rỗng, và chặn Ở ĐÂY chứ không để máy
+        chủ chặn: cột full_name là NOT NULL (crm-db.js:18), mà vòng dựng câu SET
+        biến "" thành NULL ⇒ Postgres từ chối ⇒ chị Ly nhận đúng một chữ
+        «update error» 500, không biết vì sao. Chặn tại màn thì câu báo nói rõ lý
+        do VÀ không có yêu cầu nào bay lên máy chủ. */
+     var oTen=$("#eName");
+     if(oTen){
+       if(!String(oTen.value||"").trim()){gmsg(tt("hoten_trong"),"err");return;}
+       than.full_name=oTen.value;
+     }
+     /* AC-4 — ba ô JP gửi LUÔN (kể cả rỗng): ô trống = xoá chữ Nhật. Chỉ gửi khi
+        ô tồn tại, tức chỉ khi người dùng là btl — staff không có ô nên thân yêu
+        cầu không mang trường btl-only, không ăn 403 (AC-3). */
+     var oJp=[["#eNameJp","name_jp"],["#eTitleJp","title_jp"],["#eOrgJp","org_jp"]];
+     for(var k=0;k<oJp.length;k++){var el=$(oJp[k][0]);if(el)than[oJp[k][1]]=el.value;}
      /* ── E08-D042 §3b — «ô vốn trống» KHÁC «vừa bị làm trống» ──
         Không đoán từ trạng thái ô lúc bấm Lưu. So với GIÁ TRỊ GỐC mà chính màn
         này đã điền vào ô lúc vẽ form (g.table_no / g.seat_no từ máy chủ):

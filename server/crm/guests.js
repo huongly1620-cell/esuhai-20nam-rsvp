@@ -30,7 +30,21 @@ const PATCH_WHITELIST = ['full_name', 'phone', 'email', 'org', 'title', 'note', 
 // E08-D042 §3a — DANH SÁCH TRƯỜNG RIÊNG CHO `btl`, KHÔNG nâng cả tuyến PATCH lên
 // `btl`. Nâng cả tuyến là chặn luôn PG sửa ghi chú/SĐT — hồi quy một năng lực
 // đang chạy (M1). Hai cột này là SƠ ĐỒ CHỖ NGỒI của lễ nên chỉ BTL ghi được.
-const PATCH_BTL_ONLY = ['table_no', 'seat_no'];
+//
+// E08-D054 — thêm ba trường TIẾNG NHẬT vào ĐÂY, dứt khoát KHÔNG vào
+// PATCH_WHITELIST. Lý do là một phép đo, không phải sở thích: `CRM_DOOR_SIGNUP=1`
+// đang bật trên prod (CR-61) ⇒ ai có link cửa, nhập email, nhận OTP là thành
+// `staff` — tài khoản mọc không cần ai cấp. PATCH_WHITELIST mở cho MỌI `staff`,
+// nên để ba trường này vào đó là mở cho lớp người ấy sửa tên khách Nhật giữa lễ.
+// Đặt ở đây thì đúng 5 tài khoản BTL, và chị Ly đã nằm trong đó (đo prod: cả 5
+// tài khoản đều `btl` — yêu cầu «nâng quyền cho chị Ly» hoá ra không phải việc
+// phải làm, thứ chặn chị là danh sách này cộng form thiếu ô).
+//
+// Ba trường này HIỆN LÊN MÀN CỬA qua pairVJ() — sai một chữ Kanji thì hôm nay
+// không có đường nào sửa: không qua CRM, không qua file cập nhật D032
+// (import-update.js chỉ UPDATE org·title·table_no·seat_no·att_override), chỉ nạp
+// được bằng script chạy tay import-vnjb.js.
+const PATCH_BTL_ONLY = ['table_no', 'seat_no', 'name_jp', 'title_jp', 'org_jp'];
 
 function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
   // E08-D041 — nếu chưa nối làn cửa thì rơi về gác cổng cũ: quên wire là

@@ -621,12 +621,18 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
     try {
       client = await pool.connect();
       let before; let after;
+      // E08-D049 — cờ dựng TRONG giao dịch, đọc SAU commit: nhánh có clear tự ghi
+      // audit rồi, nhánh thường vẫn đi đường logAudit cũ.
+      let daGhiAudit = false; let daClear = null;
       try {
         await client.query('BEGIN');
         // Khoá hàng rồi mới đọc: hai người cùng bấm trên hai máy thì lần ghi sau
         // phải thấy giá trị của lần trước, không phải giá trị lúc mở trang.
+        // E08-D049 — lấy LUÔN table_no/seat_no trong chính câu FOR UPDATE này,
+        // không thêm truy vấn thứ hai: giá trị CŨ vừa là thứ để clear, vừa là
+        // thứ audit phải chép (M2 — mất số bàn mà không truy lại được là hỏng).
         const b = await client.query(
-          `SELECT ${att.attSql('', duX)} AS att_status, att_override
+          `SELECT ${att.attSql('', duX)} AS att_status, att_override, table_no, seat_no
              FROM crm_guests WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`,
           [id, SESSION_RE['toa-dam'], SESSION_RE.gala]);
         if (!b.rows[0]) { await client.query('ROLLBACK'); return res.status(404).json({ ok: false, error: 'not found' }); }
@@ -644,16 +650,59 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
           `SELECT ${att.attSql('', duX)} AS att_status FROM crm_guests WHERE id = $1`,
           [id, SESSION_RE['toa-dam'], SESSION_RE.gala]);
         after = a.rows[0];
+
+        /* ---- E08-D049 · KHÔNG THAM DỰ thì trả lại chỗ ngồi ----
+           Ca thật: thẻ #301 (Nguyễn Trí Thông) — chị Ly bấm «không dự» 06/08 10:26,
+           thấy bàn 17 / ghế 10 vẫn nguyên, 54 giây sau bấm trả lại «dự» (đọc được
+           trong `crm_audit_events`). Sơ đồ chỗ ngồi vì thế giữ chỗ «ảo».
+
+           Điều kiện là CHUYỂN TRẠNG THÁI, không phải «giá trị gửi lên là khong»:
+             · `cho`→`du`, `du`→`cho`  ⇒ KHÔNG clear (M1)
+             · đã `khong`, re-POST `khong` ⇒ KHÔNG clear — ô đã NULL thì clear lại
+               chỉ đẻ một dòng audit rỗng, mà 39/41 thẻ `khong` trên prod đang mang
+               chữ rác "Không tham dự" (rác cũ) — dọn chúng là việc của Ly/Excel,
+               spec §6 xếp ngoài phạm vi. Quét hàng loạt 2 ngày trước lễ là ghi 41
+               hàng không ai bấm.
+           Đọc `after.att_status` chứ không đọc `status`: gửi status=null để XOÁ
+           override mà tín hiệu gốc là tag `khong-du` thì kết quả vẫn là «không dự»
+           — spec §3a nói «mọi đường đổi att sang khong», và đây là một đường. */
+        const chuyenSangKhong = before.att_status !== 'khong' && after.att_status === 'khong';
+        const coChoNgoi = before.table_no != null || before.seat_no != null;
+        if (chuyenSangKhong && coChoNgoi) {
+          await client.query(
+            'UPDATE crm_guests SET table_no = NULL, seat_no = NULL, updated_at = now() WHERE id = $1', [id]);
+          /* Audit ghi THẲNG bằng client.query trong CÙNG transaction, KHÔNG qua
+             logAudit(): hàm đó nuốt lỗi có chủ đích (audit.js «Never let audit
+             failure break the main action») — đúng với att thuần, nhưng ở đây nó
+             lật ngược thành: audit hỏng mà số bàn vẫn mất, IM LẶNG, và audit là
+             bản ghi DUY NHẤT còn lại. Cùng lập luận D036 §3g và D040 M8. */
+          await client.query(
+            `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)
+             VALUES ($1,'att_change','guest',$2,$3::jsonb,$4)`,
+            [req.actor.email, String(id),
+              JSON.stringify({
+                tu: before.att_status, den: after.att_status, override: status, nguon: src,
+                ban: { cu: before.table_no, moi: null },
+                ghe: { cu: before.seat_no, moi: null },
+              }), hashIp(ipOf(req))]);
+          daGhiAudit = true;
+          daClear = { ban: before.table_no, ghe: before.seat_no };
+        }
         await client.query('COMMIT');
       } catch (e) { await client.query('ROLLBACK').catch(() => {}); throw e; }
 
-      await logAudit(pool, {
-        actor_email: req.actor.email, event_type: 'att_change', target_type: 'guest', target_id: id,
-        meta: { tu: before.att_status, den: after.att_status, override: status, nguon: src },
-        ip: ipOf(req),
-      });
+      /* Không clear ⇒ giữ NGUYÊN VĂN đường cũ (audit sau COMMIT, nuốt lỗi). Đổi
+         cả hai nhánh sang ghi-trong-giao-dịch là biến «audit hỏng» thành «không
+         đổi được trạng thái» cho 300+ lượt att thường — hồi quy không ai xin. */
+      if (!daGhiAudit) {
+        await logAudit(pool, {
+          actor_email: req.actor.email, event_type: 'att_change', target_type: 'guest', target_id: id,
+          meta: { tu: before.att_status, den: after.att_status, override: status, nguon: src },
+          ip: ipOf(req),
+        });
+      }
       return res.json({ ok: true, att_status: after.att_status, att_override: status,
-        truoc: before.att_status });
+        truoc: before.att_status, daXoaChoNgoi: daClear });
     } catch (err) {
       console.error('[crm-guests] attendance failed:', err.message);
       return res.status(500).json({ ok: false, error: 'attendance error' });

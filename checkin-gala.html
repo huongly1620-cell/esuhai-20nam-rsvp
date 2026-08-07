@@ -161,7 +161,17 @@
      này nhãn và số nằm CÙNG dòng, mỗi giá trị một dòng: cao 2 dòng (~34px, còn
      THẤP HƠN pill một-giá-trị hôm nay) và rộng bằng vế dài nhất, không ăn thêm
      bề ngang của tên. Đây đúng là đường AC-6 spec duyệt sẵn. */
-  .tb.bg>span{display:block}.tb.bg b{display:inline;margin-left:4px}
+  /* E08-D064b — Ly 08/08: xin Bàn và Ghế NẰM NGANG trên một dòng cho dễ đọc.
+     Ba mảnh, thiếu một là vỡ: `white-space:normal` ở VỎ pill để hai vế
+     được phép rơi xuống dòng khi chật; `nowrap` ở TẮNG vế để không bao giờ
+     ngắt giữa nhãn và số («Bàn» một dòng, «17» dòng dưới); `inline-block`
+     để vế rơi xuống nguyên khối.
+     Đo 360px: bàn SỐ gọn một dòng, dòng khách 68px (thấp hơn bản xếp dọc
+     4px, dòng đã check-in 88px thay vì 109px). Bàn tên CHỮ (11 thẻ) tự xuống
+     hai dòng thay vì phình ngang đè lên tên khách — đã chụp ảnh thấy cảnh đè
+     đó khi chưa có `white-space:normal`. */
+  .tb.bg{white-space:normal}
+  .tb.bg>span{display:inline-block;white-space:nowrap}.tb.bg b{display:inline;margin-left:4px}
  .gt{color:var(--green-ok);font-size:.68rem;font-weight:700;white-space:nowrap}
  /* E08-D055 §4a — cột phải. `max-width` + `text-overflow` là thứ giữ AC-6: cột
     này ăn bề ngang của TÊN KHÁCH, mà PG đứng cửa dùng điện thoại 360px. Tên phải
@@ -659,6 +669,11 @@ function renderList(){quickCounts();napBanSelect();var rows=G.filter(match).filt
         (D043 · D030) ⇒ điều kiện tự sai ⇒ không lộ chỗ ngồi. */
      +((bn||gh)?'<span class="tb bg">'
         +(bn?'<span>'+t("ban")+'<b>'+esc(bn)+'</b></span>':'')
+        /* Dấu phân cách là TEXT NODE thật, kèm khoảng trắng hai bên, chứ không
+           phải `:before` của vế sau: nằm trong một span `nowrap` thì nó KHÔNG tạo
+           được chỗ ngắt dòng, và pill bàn tên chữ phình 181px đè lên tên khách
+           (đã dựng thử và chụp được cảnh đó trước khi chọn cách này). */
+        +((bn&&gh)?' \u00b7 ':'')
         +(gh?'<span>'+t("ghe")+'<b>'+esc(gh)+'</b></span>':'')
        +'</span>':'')
      /* E08-D055 AC-6 · ĐƯỜNG LUI Sponsor duyệt sẵn — BỎ nhãn «X Chưa đến».

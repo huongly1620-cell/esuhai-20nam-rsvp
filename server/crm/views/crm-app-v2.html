@@ -1155,6 +1155,13 @@ window.imgFit=imgFit;
        +(j.boQua?'<br><b style="color:var(--red-b)">Bỏ qua '+j.boQua+' dòng thiếu tên</b> — có dữ liệu nhưng không có Họ tên nên KHÔNG được ghi:<br><span style="color:var(--muted);font-size:.76rem">'
          +(j.danhSachBoQua||[]).map(function(k){return 'dòng '+k.dong+(k.noiDung?' ('+esc(k.noiDung)+')':'');}).join('<br>')
          +((j.danhSachBoQua||[]).length<j.boQua?'<br>…':'')+'</span>':'')
+       /* E08-D044 — DANH SÁCH ĐỔI TÊN, không chỉ con số. Họ tên là khoá tra
+          khách ở cả bốn màn, nên chị Ly phải ĐỌC ĐƯỢC từng dòng «cũ → mới»
+          trước khi ghi, giống khối «Bỏ qua» ngay trên. */
+       +(j.doiTenCount?'<br><b style="color:var(--gold-b)">Đổi Họ tên: '+j.doiTenCount+' dòng</b>'
+         +'<br><span style="color:var(--muted);font-size:.76rem">'
+         +(j.doiTen||[]).map(function(k){return 'dòng '+k.dong+' · '+esc(k.ma||'')+' · «'+esc(k.cu)+'» → «'+esc(k.moi)+'»';}).join('<br>')
+         +(j.doiTenCatBot?'<br>… và '+j.doiTenCatBot+' dòng nữa (nhật ký giữ đủ)':'')+'</span>':'')
        +(j.loi?'<br>Dòng lỗi: <b>'+j.loi+'</b>':'')
        +(j.ghiChu?'<br><span style="color:var(--muted);font-size:.78rem">'+esc(j.ghiChu)+'</span>':'')
        +(j.danhSachKhongKhop&&j.danhSachKhongKhop.length?'<br><span style="color:var(--muted);font-size:.76rem">Không khớp: '+j.danhSachKhongKhop.map(function(k){return esc(k.ma);}).slice(0,10).join(", ")+'</span>':'')
@@ -1174,16 +1181,29 @@ window.imgFit=imgFit;
        $("#iuMsg").textContent="";$("#iuNum").innerHTML=tomTat(j);
        if(j.loi){ $("#iuGo").innerHTML='<div class="msg err">Còn '+j.loi+' dòng lỗi — sửa file rồi kiểm thử lại. Chưa ghi được.</div>'; return; }
        /* Chỉ ĐẾN LÚC NÀY nút ghi mới được tạo ra. */
-       $("#iuGo").innerHTML='<button class="btn gold block" id="iuCommit" style="margin-top:12px">② Ghi thật vào hệ thống</button>';
+       /* E08-D044 §4 H2 — >20 tên thì phải TICK mới hiện được nút ghi. Máy chủ
+          chặn lần hai (400 + 0 câu UPDATE); ô tick này chỉ là lớp thứ nhất, và
+          nó tồn tại để chị Ly ĐỌC danh sách trên kia, không phải để thay hàng
+          rào máy chủ. */
+       var canTick=(j.canhBao==='doi_ten_nhieu');
+       $("#iuGo").innerHTML=(canTick?'<label class="msg err" style="display:block;line-height:1.5;cursor:pointer">'
+           +'<input type="checkbox" id="iuXacNhan" style="margin-right:8px">'
+           +'Tôi đã đọc danh sách <b>'+j.doiTenCount+'</b> dòng đổi Họ tên ở trên và xác nhận ghi.</label>':'')
+         +'<button class="btn gold block" id="iuCommit" style="margin-top:12px"'+(canTick?' disabled':'')+'>② Ghi thật vào hệ thống</button>';
+       if(canTick){var ck=$("#iuXacNhan");ck.addEventListener("change",function(){$("#iuCommit").disabled=!ck.checked;});}
        $("#iuCommit").addEventListener("click",async function(){
          /* Cảnh báo đỏ nằm ngay trên nút vàng thì vẫn bấm lướt qua được. Đưa
             tên cột thiếu vào chính câu hỏi — vẫn KHÔNG chặn, chỉ bắt đọc thêm
             một lần. Đây là lần cuối trước khi ghi. */
          var mat=(j.cotDoc||[]).filter(function(x){return !x.co;}).map(function(x){return x.ten;});
          if(!confirm((mat.length?"⚠ Cột "+mat.join(", ")+" KHÔNG đọc được — mọi ô của cột đó sẽ bị bỏ qua.\n\n":"")
+           +(j.doiTenCount?"⚠ File này ĐỔI HỌ TÊN của "+j.doiTenCount+" khách. Tên là thứ PG gõ để tra khách ở cửa.\n\n":"")
            +"Ghi thật "+j.capNhat+" cập nhật và "+(j.taoMoiDuKien||0)+" khách mới vào hệ thống?"))return;
          this.disabled=true;this.textContent="Đang ghi…";
          var fd2=new FormData();fd2.append("file",file);
+         /* Chỉ gửi cờ khi ô tick THẬT SỰ được chọn — không gửi mặc định, kẻo
+            hàng rào máy chủ thành hình thức. */
+         var ckq=$("#iuXacNhan"); if(ckq&&ckq.checked)fd2.append("confirm_doi_ten","1");
          try{
            var r2=await api("/crm/import-update/commit",{method:"POST",body:fd2});
            var j2=await r2.json().catch(function(){return {};});

@@ -13,7 +13,7 @@
 
 const crypto = require('crypto');
 const { pool } = require('../db');
-const { logAudit } = require('./audit');
+const { logAudit, hashIp } = require('./audit');
 const { ipOf } = require('./auth');
 const att = require('./attendance');
 const { nameKey } = require('./vnjb-keys');
@@ -68,6 +68,19 @@ const isDel = (v) => DEL.has(key(v));
 
 const clean = (v) => String(v == null ? '' : v).trim();
 
+/* E08-D044 §Gate1-② — chuẩn hoá CHỈ ĐỂ SO SÁNH tên, GIỮ NGUYÊN DẤU.
+   TUYỆT ĐỐI KHÔNG dùng key() ở trên: key() bóp dấu và mọi ký tự không phải
+   chữ-số, nên key("Lê Hà") === key("Le Ha") ⇒ một lần chị Ly SỬA DẤU — việc chị
+   làm nhiều nhất — sẽ bị nuốt im lặng, tức dựng lại đúng báo-xanh-giả mà vé này
+   sinh ra để dẹp.
+   Ở đây chỉ gỡ ba thứ vô hình mà Excel hay thêm vào khi chị mở/lưu CSV:
+   dạng Unicode (NFD→NFC), khoảng trắng đầu/cuối, và khoảng trắng liên tiếp
+   (gồm cả NBSP U+00A0). Đo prod 07/08: CSDL hôm nay SẠCH cả bốn (0 thẻ lệch),
+   nên đây là bảo hiểm cho bước Excel, không phải vá cho dữ liệu.
+   Giá trị GHI XUỐNG vẫn là chuỗi gốc đã clean(), không phải chuỗi chuẩn hoá. */
+const tenChuan = (v) => String(v == null ? '' : v)
+  .normalize('NFC').replace(/[\s\u00a0]+/g, ' ').trim();
+
 // Khoá cho khách MỚI — tất định từ nội dung, không ngẫu nhiên: chạy đúng file đó
 // hai lần thì lần hai KHỚP dòng cũ và UPDATE, không đẻ bản thứ hai.
 // Cùng công thức `vnjb-<sha1>` của D022.
@@ -84,10 +97,14 @@ async function plan(client, rows) {
   if (idx.ma < 0) { const e = new Error('Cần cột "Mã khách".'); e.code = 'NOMA'; throw e; }
 
   const cur = (await client.query(
-    'SELECT id, guest_ext_id, table_no, seat_no, att_override FROM crm_guests WHERE deleted_at IS NULL')).rows;
+    // E08-D044 §Gate1-① — `full_name` phải có Ở ĐÂY: dry-run đòi báo {cu,moi} mà
+    // `cu` không tồn tại ở đâu khác trong plan(). Thêm một cột vào chính câu
+    // đang chạy, KHÔNG mở truy vấn thứ hai (khuôn D049).
+    'SELECT id, guest_ext_id, full_name, table_no, seat_no, att_override FROM crm_guests WHERE deleted_at IS NULL')).rows;
   const byExt = new Map(cur.filter((x) => x.guest_ext_id).map((x) => [x.guest_ext_id, x]));
 
   const capNhat = []; const taoMoi = []; const khongKhop = []; const loi = []; const boQua = [];
+  const doiTen = [];
   let xoaBan = 0; let xoaGhe = 0; let xoaAtt = 0;
   const seenCode = new Set();
 
@@ -145,8 +162,16 @@ async function plan(client, rows) {
       att: attVal,
     };
 
+    /* E08-D044 — ghi nhận ĐỔI TÊN. Chỉ tính khi ô có chữ VÀ khác tên hiện tại
+       sau chuẩn hoá; ô rỗng = không đổi (§3 spec), giống Đơn vị/Chức danh. */
+    const ghiDoiTen = (h) => {
+      if (!ten) return;
+      if (tenChuan(ten) === tenChuan(h.full_name)) return;   // chỉ khác khoảng trắng/NFC ⇒ KHÔNG phải đổi tên
+      doiTen.push({ dong: rec.dong, ma: rec.ma, cu: h.full_name, moi: ten });
+    };
+
     const hit = ma ? byExt.get(ma) : null;
-    if (hit) { rec.id = hit.id; capNhat.push(rec); continue; }
+    if (hit) { rec.id = hit.id; ghiDoiTen(hit); capNhat.push(rec); continue; }
     if (ma) { khongKhop.push({ dong: r + 1, ma }); continue; }
     // E08-D037 AC-12 — ở đây từng có `if (!ten) continue;`. Đó là NHÁNH CHẾT và
     // đã gỡ: tới dòng này thì `ma` chắc chắn rỗng (có `ma` đã bị hit/khongKhop
@@ -161,7 +186,7 @@ async function plan(client, rows) {
     // «có lỗi thì không ghi gì» sẽ chặn cả file — mà nhập lại cùng file là
     // việc Ly làm thường xuyên nhất.
     const daCo = byExt.get(code);
-    if (daCo) { rec.id = daCo.id; rec.ma = code; capNhat.push(rec); continue; }
+    if (daCo) { rec.id = daCo.id; rec.ma = code; ghiDoiTen(daCo); capNhat.push(rec); continue; }
     // Hai DÒNG trong CÙNG file trùng khoá thì mới là lỗi thật — không im lặng gộp.
     if (seenCode.has(code)) {
       loi.push({ dong: r + 1, ma: code, lyDo: 'Trùng khoá với một dòng khác trong cùng file (cùng tên + đơn vị + chức danh)' });
@@ -171,10 +196,16 @@ async function plan(client, rows) {
     rec.code = code;
     taoMoi.push(rec);
   }
-  return { capNhat, taoMoi, khongKhop, loi, boQua, xoa: { ban: xoaBan, ghe: xoaGhe, att: xoaAtt }, idx };
+  return { capNhat, taoMoi, khongKhop, loi, boQua, doiTen, xoa: { ban: xoaBan, ghe: xoaGhe, att: xoaAtt }, idx };
 }
 
 // Nhãn cột để màn in ra; thứ tự này là thứ tự hiện trên màn.
+/* E08-D044 §4 — ngưỡng bắt xác nhận. PM tổng chốt 20; R1 KHÔNG bác vì không có
+   dữ liệu để bác: số duy nhất đo được là 393/393 thẻ sống đều có guest_ext_id,
+   nên một tai nạn vòng xuất-nhập sinh 393 «đổi tên» — cách 20 rất xa, hàng rào
+   chắc chắn bắt được ca nguy hiểm nhất; còn ca hợp lệ chỉ tốn một cú tick. */
+const NGUONG_DOI_TEN = 20;
+
 const NHAN_COT = { donvi: 'Đơn vị', chuc: 'Chức danh', ban: 'Bàn', ghe: 'Ghế', attn: 'Trạng thái' };
 
 const tomTat = (p) => ({
@@ -191,6 +222,12 @@ const tomTat = (p) => ({
   boQua: (p.boQua || []).length,
   danhSachBoQua: (p.boQua || []).slice(0, 10),
   seXoa: p.xoa,
+  /* E08-D044 — màn cắt 200 dòng cho đỡ vỡ, nhưng AUDIT giữ ĐỦ (xem tuyến
+     commit). Đừng để «đủ 25» của AC-4 phụ thuộc con số hiển thị. */
+  doiTenCount: (p.doiTen || []).length,
+  doiTen: (p.doiTen || []).slice(0, 200),
+  doiTenCatBot: Math.max(0, (p.doiTen || []).length - 200),
+  canhBao: (p.doiTen || []).length > NGUONG_DOI_TEN ? 'doi_ten_nhieu' : undefined,
   danhSachKhongKhop: p.khongKhop.slice(0, 50),
   danhSachLoi: p.loi.slice(0, 50),
   // Cột «Phụ trách» CÓ trong file để Ly nhìn, nhưng KHÔNG ghi: nó lấy từ chuỗi
@@ -231,9 +268,37 @@ function mount(app, requireCrmAuth, requireRole, upload, parseUpload) {
           await client.query('ROLLBACK');
           return res.status(400).json({ ok: false, error: 'Có ' + p.loi.length + ' dòng lỗi — chưa ghi gì.', ...tomTat(p) });
         }
+        /* E08-D044 §4 H2 — HÀNG RÀO ĐỔI TÊN HÀNG LOẠT.
+           Đặt SAU khối `p.loi` và TRƯỚC vòng UPDATE đầu tiên ⇒ từ chối là 0 CÂU
+           UPDATE, đọc được bằng mắt (khuôn M2 của D042). `req.body` đọc được
+           field text kèm file: photos.js đang làm đúng thế trên prod với
+           `interaction_kind`, không phải suy từ tài liệu.
+
+           GIỚI HẠN, ghi ra để không ai đọc nhầm: dry-run và commit là HAI lượt
+           tải file riêng, máy chủ không giữ trạng thái giữa hai lượt. Cái tick
+           nghĩa là «tôi chấp nhận một lần đổi tên hàng loạt», KHÔNG phải «tôi
+           chấp nhận đúng N dòng vừa xem». Hàng rào vẫn đúng vì con số dưới đây
+           đếm trên chính bản parse của lượt COMMIT này. */
+        if (p.doiTen.length > NGUONG_DOI_TEN
+            && String((req.body && req.body.confirm_doi_ten) || '') !== '1') {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ ok: false,
+            error: 'File này đổi ' + p.doiTen.length + ' Họ tên (ngưỡng ' + NGUONG_DOI_TEN
+                 + '). Đọc danh sách rồi tick xác nhận mới ghi được — CHƯA ghi gì.',
+            ...tomTat(p) });
+        }
+
         for (const rec of p.capNhat) {
           await client.query(
             `UPDATE crm_guests SET
+               -- E08-D044 §Gate1-①: COALESCE, KHÔNG phải CASE — cùng idiom với
+               -- org/title ngay dưới. btrim trong SQL là thừa vì clean() đã
+               -- trim ở JS, và để lại nó là chú thích sai bằng mã.
+               -- Ô rỗng KHÔNG ghi NULL qua ba chặng: clean() ra chuỗi rỗng ·
+               -- toán tử || null biến nó thành NULL Ở TẦNG JS (chuỗi rỗng không
+               -- bao giờ tới Postgres) · COALESCE giữ giá trị cũ. Ràng buộc
+               -- full_name NOT NULL còn nguyên làm lưới cuối.
+               full_name = COALESCE($11, full_name),
                org       = COALESCE($2, org),
                title     = COALESCE($3, title),
                table_no  = CASE WHEN $4::boolean THEN $5::text ELSE table_no END,
@@ -247,8 +312,25 @@ function mount(app, requireCrmAuth, requireRole, upload, parseUpload) {
               rec.ban !== undefined, rec.ban === undefined ? null : rec.ban,
               rec.ghe !== undefined, rec.ghe === undefined ? null : rec.ghe,
               rec.att !== undefined, rec.att === undefined ? null : rec.att,
-              req.actor.email]);
+              req.actor.email, rec.ten || null]);
         }
+        /* E08-D044 §Gate1-③ — audit đổi tên ghi THẲNG bằng client.query TRONG
+           giao dịch, KHÔNG qua logAudit(). logAudit nuốt lỗi có chủ đích và
+           chạy SAU COMMIT; với đổi tên thì TÊN CŨ KHÔNG CÒN BẢN SAO NÀO KHÁC ⇒
+           audit hỏng = mất vĩnh viễn, im lặng. Đúng lớp D036 §3g / D040 M8 /
+           D049 M2. Dòng `import_update` tóm tắt vẫn giữ đường cũ.
+           `ds` giữ ĐỦ, không cắt 200 như bản gửi cho màn (AC-4). Trần cứng là
+           393 dòng (đo: 393/393 thẻ sống có khoá) ≈ 31 KB jsonb. */
+        if (p.doiTen.length) {
+          await client.query(
+            `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)
+             VALUES ($1,'import_doi_ten','crm_guests',NULL,$2::jsonb,$3)`,
+            [req.actor.email,
+              JSON.stringify({ so: p.doiTen.length, boi: req.actor.email,
+                confirm: p.doiTen.length > NGUONG_DOI_TEN, ds: p.doiTen }),
+              hashIp(ipOf(req))]);
+        }
+
         // ON CONFLICT DO NOTHING có thể chèn hụt trong im lặng. Đếm số dòng THẬT
         // SỰ chèn được và báo con số đó, đừng báo lại độ dài danh sách dự kiến.
         let daChen = 0;

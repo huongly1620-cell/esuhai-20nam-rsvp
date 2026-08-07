@@ -32,10 +32,19 @@ const PATCH_WHITELIST = ['full_name', 'phone', 'email', 'org', 'title', 'note', 
 // đang chạy (M1). Hai cột này là SƠ ĐỒ CHỖ NGỒI của lễ nên chỉ BTL ghi được.
 //
 // E08-D054 — thêm ba trường TIẾNG NHẬT vào ĐÂY, dứt khoát KHÔNG vào
-// PATCH_WHITELIST. Lý do là một phép đo, không phải sở thích: `CRM_DOOR_SIGNUP=1`
-// đang bật trên prod (CR-61) ⇒ ai có link cửa, nhập email, nhận OTP là thành
-// `staff` — tài khoản mọc không cần ai cấp. PATCH_WHITELIST mở cho MỌI `staff`,
-// nên để ba trường này vào đó là mở cho lớp người ấy sửa tên khách Nhật giữa lễ.
+// PATCH_WHITELIST.
+//
+// ⚠️ SỬA LẠI LÝ DO (commit 12): bản đầu R1 viết «CRM_DOOR_SIGNUP=1 đang bật ⇒ ai
+// có link cửa là thành staff» — SAI, vì `doorSignup()` (auth.js) đòi
+// `!doorOpen() && CRM_DOOR_SIGNUP==='1'`. Prod đang `CRM_DOOR_OPEN=1` nên
+// self-signup ĐANG TẮT (đúng M6/CR-61: cửa mở thì signup tắt). R1 dẫn một tiền
+// đề mà không grep — cùng lớp lỗi với `ttKey` và `not_yet`.
+//
+// LÝ DO ĐÚNG, vẫn dẫn tới cùng kết luận: PATCH_WHITELIST mở cho MỌI `staff`, và
+// tập `staff` KHÔNG cố định theo thời gian — chỉ cần ai đó tắt `CRM_DOOR_OPEN`
+// (đóng cửa sau lễ, hoặc gạt nhầm) là signup bật lại và tài khoản mọc tự do.
+// Ba trường này HIỆN LÊN MÀN CỬA, nên quyền sửa chúng phải buộc vào VAI (`btl`,
+// 5 tài khoản), không buộc vào một cần gạt môi trường có thể đổi sau lưng.
 // Đặt ở đây thì đúng 5 tài khoản BTL, và chị Ly đã nằm trong đó (đo prod: cả 5
 // tài khoản đều `btl` — yêu cầu «nâng quyền cho chị Ly» hoá ra không phải việc
 // phải làm, thứ chặn chị là danh sách này cộng form thiếu ô).

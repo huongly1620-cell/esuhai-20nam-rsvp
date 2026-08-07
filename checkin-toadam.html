@@ -162,7 +162,18 @@
  .rb{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none;max-width:38%}
  .rb .pt{font-size:.64rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
  /* §3b — «đã đến» NỔI: nền xanh, chữ đậm. Đây là thứ PG cần thấy ngay. */
- .rb .ci-y{font-size:.66rem;font-weight:800;white-space:nowrap;color:#04220f;background:var(--green-ok);border-radius:8px;padding:3px 7px}
+ /* E08-D055 AC-6 (commit 12) — huy hiệu «đã đến» XUỐNG HAI DÒNG.
+    `.rb` là cột dọc nên bề rộng của nó = MAX các con, không phải tổng. Ở dạng
+    một dòng, «O Đã đến · 18:05» đo được 100,80 px và tự nó kéo cả cột — đó là
+    chỗ ca B mất 37 px của TÊN khách. Tách giờ xuống dòng bằng một con `display:
+    block` thì bề rộng nội tại thành max(«O Đã đến» 62,97 · «18:05» 43,75)
+    = 62,97 px — ĐO ĐƯỢC, không phải «≈55» như bản nháp đầu. Vẫn DƯỚI
+    ngưỡng 64 px, mà GIỮ ĐƯỢC cả chữ lẫn giờ — đúng thứ Sponsor xin.
+    Giữ `white-space:nowrap` để chữ không tự gãy giữa từ; xuống dòng là do con
+    block, không do wrap. Dòng cao thêm một dòng chữ: đổi chiều cao lấy bề ngang,
+    PG tìm bằng ô tìm kiếm chứ không cuộn. */
+ .rb .ci-y{font-size:.66rem;font-weight:800;white-space:nowrap;color:#04220f;background:var(--green-ok);border-radius:8px;padding:3px 7px;text-align:right;line-height:1.25}
+ .rb .ci-y b{display:block;font-weight:800}
  /* §3b — «chưa đến» MỜ: mặc định của 384/393 dòng, không nền không viền. */
  .rb .ci-n{font-size:.66rem;font-weight:600;white-space:nowrap;color:var(--muted2)}
  /* E08-D028 CỬA-1: banner cụm cửa dùng z-index 99999 nên đè kín nút «←».
@@ -268,7 +279,11 @@ var T={"vn": {"ci": "CHECK-IN · Tọa đàm", "lich": "📅 Lịch trình", "ca
       undo:"Huỷ check-in",undo_ing:"Đang huỷ…",
       undo_ask:"Huỷ check-in {buoi} cho khách này?\n\nGiờ đến {gio} sẽ bị XOÁ. Check-in lại sẽ ghi giờ mới.",
       undo_ok_gio:"Đã huỷ check-in ✓ — giờ đến {gio} đã xoá",
-      undo_fail:"Máy chủ từ chối — CHƯA huỷ được",
+      /* CR-104 — nhãn cũ nói «từ chối» cho MỌI mã lỗi, nhưng 503 là «đang bận»
+         (D058 vá pool.connect). Câu chung phải đúng cho cả hai, và phải nói rõ
+         thứ PG cần biết: CHƯA huỷ được ⇒ giờ đến vẫn còn. */
+      undo_fail:"CHƯA huỷ được — giờ đến vẫn còn, thử lại",
+      buoi_ten:"Tọa đàm",
       undo_role:"Chỉ người đã ghi dòng này hoặc ban tổ chức mới huỷ được",
       undo_net:"Mất mạng — CHƯA huỷ được",
       /* E08-D056 — nhãn MÀN. Chuỗi ghi xuống CSDL là QD_TANG/QD_HUY, cố ý KHÔNG
@@ -284,7 +299,8 @@ var T={"vn": {"ci": "CHECK-IN · Tọa đàm", "lich": "📅 Lịch trình", "ca
       undo:"受付取消",undo_ing:"取消中…",
       undo_ask:"{buoi}のチェックインを取り消しますか？\n\n受付時刻 {gio} は削除されます。再受付すると新しい時刻になります。",
       undo_ok_gio:"取り消しました ✓ — 受付時刻 {gio} を削除",
-      undo_fail:"サーバーが拒否 — 取り消せません",
+      undo_fail:"取り消せませんでした — 受付時刻は残っています。再試行してください",
+      buoi_ten:"座談会",
       undo_role:"記録した本人または主催者のみ取り消せます",
       undo_net:"通信エラー — 取り消せません",
       qd_nut:"引き出物をお渡し済み",qd_roi:"お渡し済み",qd_boi:"担当:",
@@ -586,8 +602,13 @@ function renderList(){quickCounts();napBanSelect();var rows=G.filter(match).filt
    +'<div class="rb">'
      +(g.handler?'<span class="pt">'+esc(g.handler)+'</span>':'')
      +((!cm&&bgHien(g.table))?'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>':'')
-     +(cm?'<span class="ci-y">O '+t("btn_came")+' · '+fmtCame(cm)+'</span>'
-         :'<span class="ci-n">X '+t("chua_den")+'</span>')
+     /* E08-D055 AC-6 · ĐƯỜNG LUI Sponsor duyệt sẵn — BỎ nhãn «X Chưa đến».
+        Đo được: nhãn đó rộng 61,16px và hiện trên MỌI dòng chưa đến, kể cả dòng
+        trước đây cột phải RỖNG hoàn toàn ⇒ một mình nó lấy 52px của TÊN ở ca D.
+        Phương án xuống dòng không chạm được nó (chỉ sửa nhánh «đã đến»), nên
+        đây là thứ duy nhất đóng được AC-6b. «Chưa đến» vẫn đọc được: không có
+        huy hiệu xanh nghĩa là chưa đến — đúng quy ước D033 dùng cho nhóm đông. */
+     +(cm?'<span class="ci-y">O '+t("btn_came")+'<b>'+fmtCame(cm)+'</b></span>':'')
    +'</div></div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
 
 /* E08-D028 AC-C — chụp ảnh khách tại cửa → kệ MinIO.
@@ -955,7 +976,10 @@ async function huyCheckin(id,btn){
  var g=byId(id), r=ciCuaBuoi(g);
  /* §4c — confirm nêu RÕ buổi + giờ sắp mất, không hỏi chung chung. */
  var gio=r&&r.checked_in_at?fmt(r.checked_in_at):"";
- if(!confirm(t("undo_ask",{buoi:t("ci"),gio:gio})))return;
+ /* CR-102 §4a — trước đây truyền t("ci") = «CHECK-IN · Gala» nên câu hỏi ra
+    «Huỷ check-in CHECK-IN · Gala cho khách này?» — lắp chữ. Dùng nhãn tên BUỔI
+    riêng (`buoi_ten`), không tái dùng tiêu đề trang. */
+ if(!confirm(t("undo_ask",{buoi:t("buoi_ten"),gio:gio})))return;
  btn.disabled=true;var nhan=btn.textContent;btn.textContent=t("undo_ing");
  function moKhoa(){btn.disabled=false;btn.textContent=nhan;}
  try{

@@ -603,6 +603,133 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
     }
   });
 
+  // ---- đổi BUỔI của khách (btl) — E08-D063 ----
+  //
+  // §a VÌ SAO TUYẾN RIÊNG, không nhét field vào PATCH /crm/guests/:id: cùng mìn
+  // D038 §3b — tuyến đó ghi ĐÈ nguyên chuỗi `tags` (tags = $n, không merge). Gộp
+  // vào đấy là mỗi lần Ly sửa Buổi thì `vip` · `kcode:K0xx` · `pl:*` · `vnjb-*`
+  // bay sạch. Merge ở MÁY CHỦ, trong một giao dịch có FOR UPDATE, chứ không ở
+  // trình duyệt: tối 08/08 nhiều người dùng chung, hai tab cùng lưu sẽ đè nhau.
+  //
+  // §b GIỚI HẠN ĐÃ ĐO — ĐỌC TRƯỚC KHI «SỬA»:
+  // Buổi HIỆU LỰC = tag ∪ buổi khai trên FORM (`att.duSql`, có từ D026; lọc theo
+  // tag không thôi đã từng giấu 47 khách khỏi trang check-in — xem :92). Gỡ token
+  // ở ĐÂY KHÔNG hạ được vế FORM. Đo prod 08/08: 414 thẻ sống · 48 thẻ có
+  // `response_id`, trong đó **48 form khai Gala** và **7 form khai Tọa đàm** ⇒ với
+  // đúng ngần ấy thẻ, thao tác «tắt» là VÔ HIỆU trên màn.
+  //
+  // Nên tuyến này ĐỌC LẠI buổi hiệu lực SAU KHI GHI và trả kèm `canh_bao`. Màn vẽ
+  // theo số máy chủ trả, KHÔNG theo cái người dùng vừa bấm. Bỏ bước đó thì Ly bỏ
+  // tick Gala → tick tắt → refresh thấy bật lại: đúng lớp báo-xanh-giả mà D028
+  // CỬA-2 / D036 §3g / D049 sinh ra để chặn.
+  //
+  // Muốn TẮT THẬT (kể cả khi form khai) phải đổi luật ở BỐN chỗ SQL độc lập:
+  // `att.duSql` · du_* ở list (:127) · du_* ở hồ sơ (:212) · và bộ lọc `?session=`
+  // (:97) — chỗ cuối quyết định khách có hiện ở CỬA hay không. Sửa sót một chỗ là
+  // hồ sơ nói «không Gala» mà cửa vẫn tra ra. Đó là phương án PC, Sponsor HOLD
+  // sang sau lễ. Đừng làm nửa vời ngay tại đây.
+  app.patch('/crm/guests/:id/buoi', requireCrmAuth, requireRole('btl'), async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
+    const b = req.body || {};
+
+    /* Chặn TRƯỚC mọi SQL. Bắt boolean THẬT chứ không ép kiểu: `"false"` và `0`
+       ép ra kết quả khác nhau tuỳ chỗ viết, và một màn gửi nhầm kiểu sẽ TẮT buổi
+       của khách mà không ai thấy. Thiếu field cũng chặn — vắng mặt KHÔNG phải là
+       «giữ nguyên»: thân đủ hai field là hợp đồng của tuyến này, đoán hộ ở đây là
+       tự chế một luật thứ hai. */
+    const laBool = (v) => v === true || v === false;
+    if (!laBool(b.toa_dam) || !laBool(b.gala)) {
+      return res.status(400).json({ ok: false, error: 'Cần {toa_dam, gala} kiểu boolean.' });
+    }
+    const muon = { 'toa-dam': b.toa_dam, gala: b.gala };
+
+    let client;
+    try {
+      /* `pool.connect()` TRONG try. Ngoài try thì lời hứa bị từ chối không ai
+         bắt, Express 4 không thấy, Node 24 giết tiến trình — cùng vá D058 :655.
+         Đây là mìn ① của phiếu D063. */
+      client = await pool.connect();
+      await client.query('BEGIN');
+
+      const g0 = (await client.query(
+        'SELECT tags, response_id FROM crm_guests WHERE id = $1 AND deleted_at IS NULL FOR UPDATE',
+        [id])).rows[0];
+      if (!g0) { await client.query('ROLLBACK'); return res.status(404).json({ ok: false, error: 'not found' }); }
+
+      /* Nhận diện token phải RỘNG BẰNG cách SQL đếm, kẻo gỡ hụt: SQL so
+         `ILIKE '%,gala,%'` — không phân biệt hoa thường — nên một token `Gala`
+         cũng được đếm là BẬT. Vậy khi tắt phải bỏ MỌI biến thể hoa/thường; bỏ
+         sót một cái là màn báo đã tắt mà cửa vẫn tra ra khách.
+         Ghi lại luôn ở dạng chữ thường chuẩn, không có khoảng trắng — vì cùng
+         phép ILIKE đó đòi đúng `,gala,`: một token `, gala` (có dấu cách) sẽ
+         KHÔNG được đếm là bật, tức là bật mà như tắt. */
+      const cu = String(g0.tags || '').split(',').map((x) => x.trim()).filter(Boolean);
+      const laBuoi = (x) => x.toLowerCase() === 'toa-dam' || x.toLowerCase() === 'gala';
+      const truocTag = {
+        'toa-dam': cu.some((x) => x.toLowerCase() === 'toa-dam'),
+        gala: cu.some((x) => x.toLowerCase() === 'gala'),
+      };
+      // Mọi token KHÁC giữ nguyên và giữ đúng thứ tự cũ — AC-3.
+      const giu = cu.filter((x) => !laBuoi(x));
+      if (muon['toa-dam']) giu.push('toa-dam');
+      if (muon.gala) giu.push('gala');
+      const chuoi = giu.join(',');
+
+      await client.query('UPDATE crm_guests SET tags = $1, updated_at = now() WHERE id = $2',
+        [chuoi || null, id]);
+
+      /* Buổi hiệu lực đọc lại TRONG cùng giao dịch, bằng CHÍNH `att.duSql` mà
+         list · hồ sơ · KPI · cửa đang dùng. Không chép luật ra bản thứ năm: bản
+         chép là thứ lệch dần rồi không ai biết màn nào đang nói thật. */
+      const du = att.duSql('', 'crm_guests.response_id', '$2', '$3');
+      const g1 = (await client.query(
+        `SELECT tags, ${du.td} AS du_toa_dam, ${du.ga} AS du_gala
+           FROM crm_guests WHERE id = $1`,
+        [id, SESSION_RE['toa-dam'], SESSION_RE.gala])).rows[0];
+
+      const hieuLuc = { 'toa-dam': !!g1.du_toa_dam, gala: !!g1.du_gala };
+      // Xin TẮT mà vẫn BẬT ⇒ form đang ghim. Đây đúng là thứ màn phải nói ra.
+      const ghim = ['toa-dam', 'gala'].filter((k) => !muon[k] && hieuLuc[k]);
+
+      /* Audit ghi THẲNG, KHÔNG qua `logAudit`: hàm đó nuốt lỗi có chủ đích
+         (audit.js:18 «Never let audit failure break the main action»). Trong một
+         giao dịch, nuốt lỗi lật ngược thành: audit hỏng ⇒ giao dịch đã abort ⇒
+         `COMMIT` trên giao dịch abort âm thầm hoá ROLLBACK và KHÔNG NÉM ⇒ tuyến
+         trả ok:true trong khi tag không đổi. Cùng lập luận D036 §3g · D040 M8 ·
+         D049 M2. Đây là mìn ② của phiếu D063. */
+      await client.query(
+        `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)
+         VALUES ($1,'buoi_set','guest',$2,$3::jsonb,$4)`,
+        [req.actor.email, String(id),
+          JSON.stringify({
+            cu_toa: truocTag['toa-dam'], cu_gala: truocTag.gala,
+            moi_toa: muon['toa-dam'], moi_gala: muon.gala,
+            hieu_luc_toa: hieuLuc['toa-dam'], hieu_luc_gala: hieuLuc.gala,
+            tags_truoc: g0.tags || null, tags_sau: chuoi || null,
+            response_id: g0.response_id, form_ghim: ghim,
+          }), hashIp(ipOf(req))]);
+
+      await client.query('COMMIT');
+      return res.json({
+        ok: true,
+        tags: g1.tags,
+        du_toa_dam: hieuLuc['toa-dam'],
+        du_gala: hieuLuc.gala,
+        // null = làm được đúng như bấm. Khác null = màn phải nói vì sao còn bật.
+        canh_bao: ghim.length ? { buoi: ghim, response_id: g0.response_id } : null,
+      });
+    } catch (err) {
+      if (client) await client.query('ROLLBACK').catch(() => {});
+      console.error('[crm-guests] buoi failed:', err.message);
+      // Không lấy được kết nối ⇒ chưa ghi gì ⇒ 503 «thử lại», không phải 500.
+      if (!client) return res.status(503).json({ ok: false, error: 'Máy chủ đang bận — CHƯA lưu được, thử lại.' });
+      return res.status(500).json({ ok: false, error: 'buoi error' });
+    } finally {
+      if (client) client.release();
+    }
+  });
+
   // ---- huỷ check-in (btl) — E08-D036 ----
   // Bảng có `guest_id UNIQUE` nên huỷ = XOÁ DÒNG, không có cột đánh dấu. Sponsor
   // chốt hướng xoá thật vì `crm_check_ins` bị ĐỌC ở 5 chỗ (stats · list · hồ sơ ·

@@ -170,6 +170,15 @@
   .sec{font-size:.63rem;text-transform:uppercase;letter-spacing:.13em;color:var(--gold);margin:18px 0 8px;text-align:left;display:flex;align-items:center;gap:8px;font-weight:700}.sec::after{content:"";flex:1;height:1px;background:var(--line)}
   input.f,select.f,textarea.f{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--inp);color:var(--text);font:inherit}input.f:focus,textarea.f:focus,select.f:focus{outline:none;border-color:var(--line2);box-shadow:0 0 0 3px var(--gold-soft)}
   .fld{margin:9px 0;text-align:left}.fld .lab{font-size:.68rem;color:var(--muted);margin-bottom:4px}
+  /* E08-D063 — ô tick Buổi. Vùng chạm cả khối chứ không riêng ô vuông: đêm lễ
+     bấm bằng ngón cái trên điện thoại, ô 17px là bấm trượt sang ô bên cạnh. */
+  .buoick{flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;padding:9px 11px;
+    border:1px solid var(--line2);border-radius:9px;font-size:.8rem;user-select:none;
+    /* Đo 360px: nhãn VN «Tọa đàm chuyên đề» xuống 2 dòng → ô cao 57px, nhưng nhãn
+       JP «座談会» chỉ 1 dòng → 39px, dưới ngưỡng chạm ngón cái. min-height cho hai
+       thứ tiếng cùng một vùng bấm. */
+    min-height:44px;box-sizing:border-box}
+  .buoick input{width:17px;height:17px;flex:0 0 auto;accent-color:var(--gold);margin:0}
   /* E08-D031 — trạng thái THAM DỰ. Trục khác hẳn «đã đến»: đây là khách CÓ dự
      sự kiện không (số vào báo cáo BTC), kia là đã tới cửa chưa. */
   /* E08-D033 — ba HÌNH khác nhau, màu chỉ là lớp thứ hai (AC-4). */
@@ -404,7 +413,15 @@
           và R1 tin spec thay vì grep. Thiếu khoá thì tt() rơi về `||k` ⇒ ~384 dòng
           trên /crm hiện chữ trần «X not_yet». `arrived` thì có thật. */
        not_yet:"Chưa đến",
-       hoten:"Họ tên",hoten_trong:"Chưa lưu — Họ tên không được để trống. Đây là tên PG gõ để tra khách ở cửa."},
+       hoten:"Họ tên",hoten_trong:"Chưa lưu — Họ tên không được để trống. Đây là tên PG gõ để tra khách ở cửa.",
+       /* E08-D063 — sửa Buổi. `buoi_ghim*` KHÔNG phải câu báo lỗi: thao tác đã
+          ghi đúng, chỉ là buổi vẫn bật vì FORM đăng ký khai. Chia hai khoá rời
+          nhau (không nhét {x} vào giữa câu) vì tt() ở màn này không có phép thế
+          chuỗi, và vì trật tự chữ tiếng Nhật khác tiếng Việt. */
+       buoi_set:"Sửa Buổi",
+       buoi_fail:"CHƯA lưu được Buổi — thử lại",
+       buoi_ghim1:"vẫn BẬT: bản đăng ký của khách đã khai buổi này, nên gỡ ở đây không tắt được.",
+       buoi_ghim2:"Muốn bỏ hẳn: sửa bản đăng ký, hoặc đặt «Tham dự» = «Không dự» (bỏ CẢ HAI buổi)."},
    jp:{bg_ban_ph:"例: 17 · スタッフ席",bg_ghe_ph:"例: 10",
        bg_xoa_ban:"このゲストのテーブル番号を削除しますか？\n\n欄が空です — OKで削除されます。",
        bg_xoa_ghe:"このゲストの席番号を削除しますか？\n\n欄が空です — OKで削除されます。",
@@ -416,7 +433,11 @@
        jp_h:"日本語表記（受付画面に表示）",jp_ten:"氏名（日本語）",jp_cd:"役職（日本語）",jp_dv:"所属（日本語）",
        jp_note:"空欄のまま保存すると、その日本語表記は削除されます。",
        not_yet:"未受付",
-       hoten:"氏名",hoten_trong:"保存していません — 氏名は必須です。受付での検索に使う名前です。"}};
+       hoten:"氏名",hoten_trong:"保存していません — 氏名は必須です。受付での検索に使う名前です。",
+       buoi_set:"セッション変更",
+       buoi_fail:"セッションを保存できませんでした — 再試行してください",
+       buoi_ghim1:"はまだ ON です: ゲストの登録内容にこのセッションの記載があるため、ここで外しても OFF になりません。",
+       buoi_ghim2:"完全に外すには: 登録内容を修正するか、「出欠」を「欠席」にしてください（両方のセッションが外れます）。"}};
   for(var l in A){for(var k in A[l]){T[l][k]=A[l][k];}}})();
  function tt(k){return (T[LANG]&&T[LANG][k])||T.vn[k]||k;}
  /* ── checklist (thêm/xoá/tick tự do) ── */
@@ -446,6 +467,18 @@
  // đọc tag. Nếu không, 47 khách đã đăng ký hiện trong tab Gala nhưng hồ sơ ghi
  // "BUỔI: —" và CSV cũng "—" (E08-D028 L3).
  function buoiOf(g){var t=!!g.du_toa_dam,ga=!!g.du_gala;return t&&ga?tt("toa")+" + "+tt("gal"):t?tt("toa"):ga?tt("gal"):"—";}
+ /* E08-D063 — cảnh báo «form còn ghim buổi». Giữ ở dạng DỮ LIỆU
+    ({id, buoi[], response_id}) chứ không giữ câu chữ đã dựng: đổi sang 日本語 thì
+    setLang() gọi lại openGuest() ⇒ câu được dựng lại bằng đúng thứ tiếng đang
+    xem. Nhớ câu chữ là đóng băng nó theo thứ tiếng lúc bấm. */
+ var buoiCanhBao=null;
+ function buoiTenGhim(b){return ((b&&b.buoi)||[]).map(function(x){return x==="gala"?tt("gal"):tt("toa");}).join(" + ");}
+ function buoiCanhBaoHtml(g){
+   var b=buoiCanhBao;if(!b||String(b.id)!==String(g.id))return "";
+   var ten=buoiTenGhim(b);
+   return '<div class="dupwarn" style="margin-top:8px">⚠ '+esc(ten)+' '+esc(tt("buoi_ghim1"))
+     +(b.response_id?' (RSVP #'+esc(b.response_id)+')':'')+'<br>'+esc(tt("buoi_ghim2"))+'</div>';
+ }
  function vipOf(g){var m=tagList(g).filter(function(x){return /vip/i.test(x)&&x.toLowerCase()!=="khách vip";});return m[0]||"";}
  /* AC-F2: tag trong DB là chữ THƯỜNG `vip` (import-vnjb ghi 48 thẻ) — cột
     "Hạng" và badge không được hiện chữ thường. Chuẩn hoá lúc HIỂN THỊ; xếp
@@ -888,7 +921,9 @@ function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
    }).join("");
  }
  /* ---- hồ sơ khách (giữ nguyên endpoint) — SĐT ẩn khi hiển thị ---- */
- async function openGuest(id){try{var j=await jget("/crm/guests/"+id);curId=id;renderGuest(j);$("#sheet").classList.add("show");}catch(e){}}
+ // E08-D063 — cảnh báo «form còn ghim» thuộc về THAO TÁC vừa làm trên ĐÚNG thẻ
+ // này; mở thẻ khác thì bỏ, kẻo nó theo sang hồ sơ người không liên quan.
+ async function openGuest(id){if(String(curId)!==String(id))buoiCanhBao=null;try{var j=await jget("/crm/guests/"+id);curId=id;renderGuest(j);$("#sheet").classList.add("show");}catch(e){}}
 // onload="imgFit(this)" trong HTML chạy ở GLOBAL scope, không thấy hàm nằm
 // trong IIFE — phải phơi ra window. Smoke bắt được: "imgFit is not defined".
 window.imgFit=imgFit;
@@ -951,6 +986,15 @@ window.imgFit=imgFit;
      +(bgHien(j.guest&&j.guest.seat_no)?'<div><div class="k">'+tt("ghe")+'</div><div class="v num">'+esc(j.guest.seat_no)+'</div></div>':'')
      +'</div>'
     +'<div class="facts"><div class="ft"><div class="k">'+tt("buoi")+'</div><div class="v">'+esc(buoiOf(g))+'</div></div>'+(vipLbl(g)?'<div class="ft"><div class="k">'+tt("hang")+'</div><div class="v">'+esc(vipLbl(g))+'</div></div>':'')+(gt?'<div class="ft"><div class="k">'+tt("gioitinh")+'</div><div class="v">'+esc(gt)+'</div></div>':'')+'</div>'
+    /* E08-D063 — control Buổi, CHỈ btl, đặt ngay dưới field Buổi vừa vẽ ở trên.
+       Tick vẽ theo `du_*` (buổi HIỆU LỰC = tag ∪ form) chứ không theo tag, đúng
+       như chữ hiện ở field Buổi — hai chỗ cạnh nhau mà lệch nguồn thì không ai
+       tin chỗ nào. Sau khi lưu, tick cũng vẽ lại theo số MÁY CHỦ trả về. */
+    +(me.role==="btl"?'<div class="fld"><label class="lb">'+tt("buoi_set")+'</label>'
+      +'<div class="row2">'
+      +'<label class="buoick"><input type="checkbox" id="buoiToa"'+(g.du_toa_dam?' checked':'')+'><span>'+esc(tt("toa"))+'</span></label>'
+      +'<label class="buoick"><input type="checkbox" id="buoiGala"'+(g.du_gala?' checked':'')+'><span>'+esc(tt("gal"))+'</span></label>'
+      +'</div>'+buoiCanhBaoHtml(g)+'</div>':'')
     +'<div class="info"><div class="ir"><span class="k">'+tt("contact")+'</span><span class="v">'+esc(contact)+'</span></div>'
     +(ph?'<div class="ir"><span class="k">'+tt("phutrach")+'</span><span class="v">'+esc(ph)+'</span></div>':'')+'</div>'
     +'<div style="margin-top:12px">'+ciBlock+'</div>'
@@ -1112,6 +1156,33 @@ window.imgFit=imgFit;
      else gmsg((r.status===403?tt("bg_role"):null)||r.body.error||"Lỗi.","err");});
    var delBtn=$("#delBtn");if(delBtn)delBtn.addEventListener("click",async function(){if(!confirm("Xoá khách "+g.full_name+"?"))return;var r=await jsend("/crm/guests/"+g.id,"DELETE");if(r.ok){$("#sheet").classList.remove("show");toast("Đã xoá","ok");loadAll();}else gmsg(r.body.error||"Lỗi.","err");});
    var aSel=$("#attSel1");if(aSel)aSel.addEventListener("change",function(){setAtt(g.id,this.value,this,g);});
+   /* E08-D063 — lưu NGAY khi tick, không thêm nút «Lưu» riêng: hai ô này là
+      trạng thái nhị phân, thêm một nút là thêm một chỗ để quên bấm rồi tưởng đã
+      lưu. Gửi CẢ HAI field mỗi lượt vì tuyến máy chủ đòi đủ `{toa_dam, gala}`. */
+   var bT=$("#buoiToa"),bG=$("#buoiGala");
+   if(bT&&bG){
+     var luuBuoi=async function(){
+       bT.disabled=true;bG.disabled=true;
+       var r=await jsend("/crm/guests/"+g.id+"/buoi","PATCH",{toa_dam:bT.checked,gala:bG.checked});
+       if(!r.ok){
+         /* Trả tick về đúng trạng thái CSDL đang có. Để tick nằm ở chỗ DB không
+            có là báo-xanh-giả ngay trên chính ô vừa bấm. */
+         bT.checked=!!g.du_toa_dam;bG.checked=!!g.du_gala;
+         bT.disabled=false;bG.disabled=false;
+         toast((r.body&&r.body.error)||tt("buoi_fail"),"err");return;
+       }
+       var d=r.body||{};
+       buoiCanhBao=d.canh_bao?{id:g.id,buoi:d.canh_bao.buoi,response_id:d.canh_bao.response_id}:null;
+       /* Xin tắt mà form còn ghim thì KHÔNG báo xanh «Đã lưu ✓»: ghi thì có ghi
+          thật, nhưng thứ chị vừa bấm KHÔNG thành. Báo xanh ở đây là đúng nghĩa
+          báo-xanh-giả — nói thẳng, và khối cảnh báo bên dưới nói cách xử lý. */
+       if(buoiCanhBao)toast(buoiTenGhim(buoiCanhBao)+" "+tt("buoi_ghim1"),"err");
+       else toast(tt("saved"),"ok");
+       /* Vẽ lại từ MÁY CHỦ — tick, chữ Buổi và cảnh báo cùng một nguồn. */
+       openGuest(g.id);loadAll();
+     };
+     bT.addEventListener("change",luuBuoi);bG.addEventListener("change",luuBuoi);
+   }
    $("#photoInput").addEventListener("change",async function(){var f=this.files&&this.files[0];if(!f)return;gmsg("Đang tải ảnh…","ok");var fd=new FormData();fd.append("photo",f);await addShrunk(fd,f);try{var r=await api("/crm/guests/"+g.id+"/photos",{method:"POST",body:fd});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else{var jj=await r.json().catch(function(){return {};});gmsg(jj.error||"Lỗi tải ảnh.","err");}}catch(e){gmsg("Lỗi tải ảnh.","err");}});
  }
  function gmsg(t,c){var m=$("#gMsg");if(m){m.textContent=t;m.className="msg"+(c?(" "+c):"");}}
@@ -1307,7 +1378,7 @@ window.imgFit=imgFit;
  $("#langBtn").addEventListener("click",function(){setLang(LANG==="jp"?"vn":"jp");});
  $("#themeBtn").addEventListener("click",function(){var d=document.documentElement.getAttribute("data-theme")==="light"?"":"light";if(d)document.documentElement.setAttribute("data-theme",d);else document.documentElement.removeAttribute("data-theme");localStorage.setItem("crm_theme",d);this.innerHTML=d?"&#9788;":"&#9789;";});
  $("#venueEdit").addEventListener("click",function(e){e.stopPropagation();openCfg();});
- $("#sheetClose").addEventListener("click",function(){$("#sheet").classList.remove("show");curId=null;});
+ $("#sheetClose").addEventListener("click",function(){$("#sheet").classList.remove("show");curId=null;buoiCanhBao=null;});
  $("#sheet2Close").addEventListener("click",function(){$("#sheet2").classList.remove("show");});
  $("#sheet").addEventListener("click",function(e){if(e.target===this){this.classList.remove("show");curId=null;}});
  $("#sheet2").addEventListener("click",function(e){if(e.target===this)this.classList.remove("show");});

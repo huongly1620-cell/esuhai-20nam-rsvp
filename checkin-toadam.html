@@ -155,6 +155,13 @@
  .av{width:46px;height:46px;border-radius:10px;flex:none;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,var(--ph1),var(--ph2));border:1px solid var(--line2);color:var(--gold-b);font-family:serif;font-size:1rem}.av img{width:100%;height:100%;object-fit:cover}
  .gm{flex:1;min-width:0}.gm .n1{font-family:serif;font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gm .n2{font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .tb{font-size:.64rem;font-weight:700;color:var(--acc);border:1px solid var(--line2);border-radius:8px;padding:3px 7px;white-space:nowrap;text-align:center}.tb b{font-family:serif;font-size:.88rem;display:block}
+  /* E08-D064 — pill mang HAI giá trị (Bàn + Ghế). `.tb b` mặc định là block:
+     để nguyên thì "Bàn·17·Ghế·10" xuống BỐN dòng, pill cao 78px và dòng khách
+     phình từ 68px lên 137px — PG thấy chưa nổi nửa số khách mỗi màn. Ở biến thể
+     này nhãn và số nằm CÙNG dòng, mỗi giá trị một dòng: cao 2 dòng (~34px, còn
+     THẤP HƠN pill một-giá-trị hôm nay) và rộng bằng vế dài nhất, không ăn thêm
+     bề ngang của tên. Đây đúng là đường AC-6 spec duyệt sẵn. */
+  .tb.bg>span{display:block}.tb.bg b{display:inline;margin-left:4px}
  .gt{color:var(--green-ok);font-size:.68rem;font-weight:700;white-space:nowrap}
  /* E08-D055 §4a — cột phải. `max-width` + `text-overflow` là thứ giữ AC-6: cột
     này ăn bề ngang của TÊN KHÁCH, mà PG đứng cửa dùng điện thoại 360px. Tên phải
@@ -583,15 +590,63 @@ function napBanSelect(){
  if(cur&&!ok){st.ban="";}
  else if(ok){st.ban=pick;el.value=pick;}
 }
+/* ═══ E08-D064 · THỨ TỰ DÒNG ═══════════════════════════════════════════════
+   Ly 00:47: lọc một bàn ra 8 dòng thì thứ tự «như random», PG dò từng dòng tìm
+   ghế trong khi khách đứng chờ. Trước vé này `renderList` KHÔNG sắp gì cả — dòng
+   nằm đúng thứ tự máy chủ trả (`ORDER BY` của tuyến list), tức là theo trục
+   chẳng liên quan gì tới chỗ ngồi.
+
+   Sắp theo BÀN → GHẾ → TÊN, và sắp trên `rows` (mảng mới do .filter sinh ra),
+   KHÔNG trên `G`: `G` là kho gốc mà `byId`, hồ sơ và vòng poll cùng đọc.
+
+   CỬA TỌA ĐÀM vẫn hưởng phần BÀN: `table`/`ghe` rỗng theo D043/D030 nên màn
+   không lộ chỗ ngồi, nhưng `banKey` vẫn giữ `table_no` (để ô lọc Bàn chạy được)
+   ⇒ dòng vẫn nhóm theo bàn. Ghế luôn rỗng ⇒ vế thứ hai không đổi gì, rơi thẳng
+   xuống so tên.
+
+   Vì sao khoá sắp đi qua `bgHien()`: ~40 thẻ mang `table_no` = chữ trạng thái
+   («Không tham dự»). `bgHien` ẩn chúng khỏi màn — nếu sắp bằng giá trị THÔ thì
+   chúng nằm lẫn giữa nhóm bàn-chữ trong khi ô bàn hiện trống, tức mắt thấy một
+   đằng thứ tự một nẻo. Sắp bằng ĐÚNG thứ đang hiện thì hai cái luôn khớp.
+
+   `Intl.Collator` dựng MỘT lần: `renderList` chạy lại theo từng phím gõ ô tìm
+   kiếm và mỗi vòng poll; `localeCompare` có locale gọi ~3.400 lần cho 393 dòng
+   là đủ để thấy khựng trên máy PG. */
+var COLL=(typeof Intl!=="undefined"&&Intl.Collator)?new Intl.Collator("vi"):null;
+function cmpChu(a,b){return COLL?COLL.compare(a,b):String(a).localeCompare(String(b),"vi");}
+/* Một ô có thể là SỐ ("17"), CHỮ ("Bàn nhân viên") hoặc RỖNG. Luật: rỗng xuống
+   CUỐI · số trước chữ · số so bằng giá trị (để 9 đứng trước 10, không phải sau). */
+function cmpO(a,b){
+ var sa=String(a==null?"":a).trim(), sb=String(b==null?"":b).trim();
+ if(!sa&&!sb)return 0;
+ if(!sa)return 1;
+ if(!sb)return -1;
+ var na=/^\d+$/.test(sa)?parseInt(sa,10):null, nb=/^\d+$/.test(sb)?parseInt(sb,10):null;
+ if(na!==null&&nb!==null)return na-nb;
+ if(na!==null)return -1;
+ if(nb!==null)return 1;
+ return cmpChu(sa,sb);
+}
+function sxDong(a,b){
+ return cmpO(bgHien(a.banKey),bgHien(b.banKey))
+     || cmpO(bgHien(a.ghe),bgHien(b.ghe))
+     || cmpChu(String(a.name||""),String(b.name||""));
+}
 function renderList(){quickCounts();napBanSelect();var rows=G.filter(match).filter(function(g){return banKhop(g.banKey||g.table||g.seat,st.ban);}).filter(function(g){return ptKhop(g.handler,st.pt);});
+ rows.sort(sxDong);
  $("#hint").textContent=(st.q||st.quick||st.f||st.ban||st.pt)?t("res",{n:rows.length}):t("total",{n:G.length});
- $("#list").innerHTML=rows.map(function(g){var cm=came(g);
+ $("#list").innerHTML=rows.map(function(g){var cm=came(g);var bn=bgHien(g.table),gh=bgHien(g.ghe);
   /* E08-D055 §4b — chấm check-in ĐÃ GỠ. Lý do nặng hơn «chấm khó đọc»: dòng này
      từng mang HAI chấm 9×9 tròn cùng màu --green-ok nói hai chuyện khác hẳn nhau
      — `.sd.came` (đã tới cửa) và `.attd` của D033 (có tham dự). Đổi sang chữ vừa
      dễ đọc vừa gỡ một chỗ đọc nhầm được. `.attd` GIỮ NGUYÊN, đó là trục khác. */
   return '<div class="gc'+(cm?" done":"")+'" data-id="'+esc(g.id)+'">'
-   +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+pairVJ(g.name,g.name_jp)+'</div><div class="n2">'+pairVJ(g.title||g.org||"",g.title_jp||g.org_jp||"")+'</div>'+badges(g)+'</div>'
+   /* E08-D064 §2.1 — `.n2` trước đây là `title||org`: có chức vụ thì NUỐT đơn vị.
+      Ly 00:47 — list cửa phải đọc được như CRM. Chép đúng khuôn v2 (:911):
+      ghép cả hai bằng " · ", thiếu phía nào thì còn phía kia. KHÁC v2 một điểm
+      có chủ đích: v2 rơi về "—" khi trống cả hai, list cửa để RỖNG (spec §2.1) —
+      384 dòng mang một gạch ngang vô nghĩa chỉ tổ chật chỗ của tên. */
+   +'<div class="av">'+av(g)+'</div><div class="gm"><div class="n1">'+pairVJ(g.name,g.name_jp)+'</div><div class="n2">'+pairVJ([g.org,g.title].filter(Boolean).join(" · "),[g.org_jp,g.title_jp].filter(Boolean).join(" · "))+'</div>'+badges(g)+'</div>'
    /* §4a — CỘT PHẢI (khuôn `.rb` của v2). Trước đây vùng phải là MỘT span đơn,
       XOR giữa giờ và pill Bàn; «Người phụ trách» thì nhét trong `.n2`, tức bên
       trái. Nay: phụ trách · (Bàn khi chưa đến) · trạng thái cửa.
@@ -601,7 +656,18 @@ function renderList(){quickCounts();napBanSelect();var rows=G.filter(match).filt
       chưa đến = chữ mờ, không nền, không viền. */
    +'<div class="rb">'
      +(g.handler?'<span class="pt">'+esc(g.handler)+'</span>':'')
-     +((!cm&&bgHien(g.table))?'<span class="tb">'+t("ban")+'<b>'+esc(g.table)+'</b></span>':'')
+     /* E08-D064 §2.2 — BÀN + GHẾ, và hiện CẢ KHI ĐÃ ĐẾN.
+        Điều kiện `!cm` cũ giấu số bàn ngay sau khi điểm danh — đúng lúc PG cần
+        nó nhất, vì việc kế tiếp là dẫn khách vào chỗ. Bỏ `!cm`.
+        MỘT pill mang cả hai chứ không hai pill: `.rb` là cột dọc, hai pill là
+        thêm một dòng cho MỌI khách có chỗ ngồi ⇒ dòng cao lên, PG thấy ít khách
+        hơn mỗi màn. Đo 360px ở dưới xác nhận một pill không tràn.
+        TỌA ĐÀM không cần nhánh riêng: `table` và `ghe` ra rỗng ngay từ `mapRow`
+        (D043 · D030) ⇒ điều kiện tự sai ⇒ không lộ chỗ ngồi. */
+     +((bn||gh)?'<span class="tb bg">'
+        +(bn?'<span>'+t("ban")+'<b>'+esc(bn)+'</b></span>':'')
+        +(gh?'<span>'+t("ghe")+'<b>'+esc(gh)+'</b></span>':'')
+       +'</span>':'')
      /* E08-D055 AC-6 · ĐƯỜNG LUI Sponsor duyệt sẵn — BỎ nhãn «X Chưa đến».
         Đo được: nhãn đó rộng 61,16px và hiện trên MỌI dòng chưa đến, kể cả dòng
         trước đây cột phải RỖNG hoàn toàn ⇒ một mình nó lấy 52px của TÊN ở ca D.

@@ -167,6 +167,13 @@ async function plan(client, rows) {
     const ghiDoiTen = (h) => {
       if (!ten) return;
       if (tenChuan(ten) === tenChuan(h.full_name)) return;   // chỉ khác khoảng trắng/NFC ⇒ KHÔNG phải đổi tên
+      /* E08-D044 M1 (Gate 2) — `tenMoi` là NGUỒN DUY NHẤT cho cả hai việc: báo
+         ra màn VÀ ghi xuống CSDL. Bản đầu để câu UPDATE bind thẳng `rec.ten`,
+         nên ca «chỉ khác khoảng trắng» ra doiTen=0 (đúng) mà CSDL VẪN bị ghi
+         chuỗi hai-khoảng-trắng của Excel (sai) — màn báo «không đổi tên» trong
+         khi tên thật đã đổi. Đặt `tenMoi` ở ĐÂY, sau cả hai cửa loại, thì
+         «thứ báo» và «thứ ghi» không thể lệch nhau được nữa. */
+      rec.tenMoi = ten;
       doiTen.push({ dong: rec.dong, ma: rec.ma, cu: h.full_name, moi: ten });
     };
 
@@ -312,7 +319,7 @@ function mount(app, requireCrmAuth, requireRole, upload, parseUpload) {
               rec.ban !== undefined, rec.ban === undefined ? null : rec.ban,
               rec.ghe !== undefined, rec.ghe === undefined ? null : rec.ghe,
               rec.att !== undefined, rec.att === undefined ? null : rec.att,
-              req.actor.email, rec.ten || null]);
+              req.actor.email, rec.tenMoi || null]);   // M1: chỉ ghi khi ĐỔI THẬT
         }
         /* E08-D044 §Gate1-③ — audit đổi tên ghi THẲNG bằng client.query TRONG
            giao dịch, KHÔNG qua logAudit(). logAudit nuốt lỗi có chủ đích và

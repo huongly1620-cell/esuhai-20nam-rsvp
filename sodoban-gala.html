@@ -139,15 +139,17 @@ a{color:inherit}
 
 .aura{position:absolute;border-radius:50%;pointer-events:none;
   transition:background .5s ease}
-.tbl-lab{position:absolute;transform:translate(-50%,-100%);text-align:center;pointer-events:none;
-  transition:opacity .25s}
-.tbl-lab .tname{font-size:10.5px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);letter-spacing:.02em}
-.tbl-lab .tfree{font-size:9.5px;font-weight:800;border-radius:99px;padding:1px 7px;margin-top:2px;
-  display:inline-block;box-shadow:0 1px 4px rgba(0,0,0,.4)}
-.tfree[data-s="has"]{background:rgba(216,184,118,.92);color:#241a06}
-.tfree[data-s="full"]{background:rgba(255,255,255,.14);color:#cfc9b8}
-.tfree[data-s="none"]{background:rgba(255,255,255,.08);color:#8f886f}
-.tbl-lab.hl .tname{color:var(--gold-b)}
+.tbl-lab{position:absolute;transform:translate(-50%,-50%);text-align:center;pointer-events:none;
+  transition:opacity .25s;display:flex;flex-direction:column;align-items:center;gap:1px;
+  width:74%;max-width:100px}
+.tbl-lab .tname{font-size:11px;font-weight:800;color:#3a2710;letter-spacing:.01em;line-height:1.05;
+  white-space:nowrap}
+.tbl-lab .tfree{font-size:8px;font-weight:800;border-radius:99px;padding:1px 6px;
+  display:inline-block;box-shadow:0 1px 3px rgba(0,0,0,.25);white-space:nowrap;letter-spacing:.01em}
+.tfree[data-s="has"]{background:rgba(120,84,26,.16);color:#5a3d13}
+.tfree[data-s="full"]{background:rgba(58,39,16,.12);color:#6b5a3f}
+.tfree[data-s="none"]{background:rgba(58,39,16,.08);color:#8a7a5f}
+.tbl-lab.hl .tname{color:#8a4a10}
 .tbl-lab.dim{opacity:.32}
 
 .seat{position:absolute;width:21px;height:21px;margin:-10.5px 0 0 -10.5px;border-radius:50%;
@@ -413,8 +415,8 @@ function render(){
     // external image, so shape+position can never drift out of sync with the chairs again.
     var bx0=Infinity,bx1=-Infinity,by0=Infinity,by1=-Infinity;
     seatPos.forEach(function(p){ if(p[0]<bx0)bx0=p[0]; if(p[0]>bx1)bx1=p[0]; if(p[1]<by0)by0=p[1]; if(p[1]>by1)by1=p[1]; });
-    var tblW=isFinite(bx1-bx0)?(bx1-bx0)*0.62:r*1.1, tblH=isFinite(by1-by0)?(by1-by0)*0.62:r*1.1;
-    tblW=Math.max(tblW, r*0.85); tblH=Math.max(tblH, r*0.85);
+    var tblW=isFinite(bx1-bx0)?(bx1-bx0)*0.74:r*1.3, tblH=isFinite(by1-by0)?(by1-by0)*0.74:r*1.3;
+    tblW=Math.max(tblW, r*1.05); tblH=Math.max(tblH, r*1.05);
     var tbl=document.createElement("div");
     tbl.className="tbl";
     tbl.style.width=tblW+"px"; tbl.style.height=tblH+"px";
@@ -442,7 +444,7 @@ function render(){
     // label + free-seat pill (the core "wow": literal, honest count)
     var lab=document.createElement("div");
     lab.className="tbl-lab";
-    lab.style.left=t.x+"px"; lab.style.top=(ty-seatRingR-15)+"px";
+    lab.style.left=t.x+"px"; lab.style.top=ty+"px";
     var freeState = tCap<1 ? "none" : (tEmpty>0 ? "has" : "full");
     var freeTxt = tCap<1 ? "Chưa có DL" : (tEmpty>0 ? ("Trống "+tEmpty) : "Đủ ghế");
     lab.innerHTML='<div class="tname">'+esc(t.label||("VIP"+ban))+'</div>'+

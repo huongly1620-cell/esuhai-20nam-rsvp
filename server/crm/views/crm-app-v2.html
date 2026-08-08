@@ -210,6 +210,31 @@
      một dải ảnh lẫn lộn thì không biết tấm nào là khách. Viền hổ phách + nhãn
      🎁 cho ảnh có interaction_id; ảnh chân dung giữ nguyên như cũ. */
   .thumbs .th1{position:relative;display:inline-block;line-height:0}
+  /* ═══ E08-D061 · xem ảnh lớn trong hồ sơ ═══════════════════════════════════
+     Chép hành vi từ lightbox cửa (checkin-gala.html:705-757, D048 §3c) nhưng
+     ĐỔI TÊN LỚP `.lb` → `.lbx`. Cửa đặt vỏ overlay là `.lb` với luật TRẦN
+     `.lb{position:fixed;inset:0;display:none}`. Ở v2 thì `lb` đã mang nghĩa
+     khác từ trước: nó là lớp NHÃN, đang dùng ở BỐN chỗ đang sống — nhãn khối
+     đếm (:323), nhãn dòng checklist (:774), nhãn «Đổi trạng thái» (:981) và
+     nhãn «Sửa Buổi» của D063 (:993). `.counter .lb` / `.chk .lb` không khai
+     `display`, nên luật trần kia THẮNG ở đúng thuộc tính đó và cả bốn nhãn
+     biến mất khỏi màn. Chép nguyên xi là hỏng bảng tổng quan + form hồ sơ,
+     chẳng dính gì tới việc xem ảnh. Đo trước khi chép, không chép rồi mới đo.
+     `.th1 img` để `zoom-in` — chỉ trên ảnh, KHÔNG trên nút ghim/xoá. */
+  .thumbs .th1 img{cursor:zoom-in}
+  .lbx{position:fixed;inset:0;z-index:100002;display:none}
+  .lbx.show{display:block}
+  .lbx .lbx-bd{position:absolute;inset:0;background:rgba(3,8,16,.94)}
+  .lbx img{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    max-width:96vw;max-height:82vh;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+  .lbx button{position:absolute;border:1px solid var(--line2);background:rgba(9,18,32,.85);
+    color:#e9e2d2;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .lbx .lbx-x{top:14px;right:14px;padding:9px 15px;font-size:.82rem}
+  .lbx .lbx-p,.lbx .lbx-n{top:50%;transform:translateY(-50%);width:46px;height:64px;font-size:1.7rem;line-height:1}
+  .lbx .lbx-p{left:8px} .lbx .lbx-n{right:8px}
+  .lbx .lbx-c{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);color:var(--muted);
+    font-size:.8rem;letter-spacing:.06em}
+  .lbx .lbx-q{position:absolute;left:50%;top:14px;transform:translateX(-50%);color:#f0b34a;font-size:.78rem;font-weight:700}
   .thumbs .th1.qua img{border:2px solid var(--amber)}
   .thumbs .th1 .qbadge{position:absolute;left:-5px;top:-7px;font-size:.78rem;line-height:1;
     background:var(--card,#1a1a1a);border:1px solid var(--amber);border-radius:7px;padding:2px 4px;
@@ -421,7 +446,10 @@
        buoi_set:"Sửa Buổi",
        buoi_fail:"CHƯA lưu được Buổi — thử lại",
        buoi_ghim1:"vẫn BẬT: bản đăng ký của khách đã khai buổi này, nên gỡ ở đây không tắt được.",
-       buoi_ghim2:"Muốn bỏ hẳn: sửa bản đăng ký, hoặc đặt «Tham dự» = «Không dự» (bỏ CẢ HAI buổi)."},
+       buoi_ghim2:"Muốn bỏ hẳn: sửa bản đăng ký, hoặc đặt «Tham dự» = «Không dự» (bỏ CẢ HAI buổi).",
+       /* E08-D061 — lấy NGUYÊN VĂN chuỗi của cửa (checkin-gala.html) để hai màn
+          không lệch chữ trên cùng một tấm ảnh. `close` v2 chưa hề có: grep 0. */
+       close:"Đóng",lb_qua:"🎁 Ảnh quà",lb_ghim:"✓ Ảnh đại diện"},
    jp:{bg_ban_ph:"例: 17 · スタッフ席",bg_ghe_ph:"例: 10",
        bg_xoa_ban:"このゲストのテーブル番号を削除しますか？\n\n欄が空です — OKで削除されます。",
        bg_xoa_ghe:"このゲストの席番号を削除しますか？\n\n欄が空です — OKで削除されます。",
@@ -437,7 +465,8 @@
        buoi_set:"セッション変更",
        buoi_fail:"セッションを保存できませんでした — 再試行してください",
        buoi_ghim1:"はまだ ON です: ゲストの登録内容にこのセッションの記載があるため、ここで外しても OFF になりません。",
-       buoi_ghim2:"完全に外すには: 登録内容を修正するか、「出欠」を「欠席」にしてください（両方のセッションが外れます）。"}};
+       buoi_ghim2:"完全に外すには: 登録内容を修正するか、「出欠」を「欠席」にしてください（両方のセッションが外れます）。",
+       close:"閉じる",lb_qua:"🎁 贈り物の写真",lb_ghim:"✓ プロフィール写真"}};
   for(var l in A){for(var k in A[l]){T[l][k]=A[l][k];}}})();
  function tt(k){return (T[LANG]&&T[LANG][k])||T.vn[k]||k;}
  /* ── checklist (thêm/xoá/tick tự do) ── */
@@ -927,6 +956,83 @@ function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
 // onload="imgFit(this)" trong HTML chạy ở GLOBAL scope, không thấy hàm nằm
 // trong IIFE — phải phơi ra window. Smoke bắt được: "imgFit is not defined".
 window.imgFit=imgFit;
+
+/* ═══ E08-D061 · XEM ẢNH LỚN TRONG HỒ SƠ ════════════════════════════════════
+   D048 §3e cố ý KHÔNG đưa album sang CRM; Sponsor test 07/08 thấy lỗ nên mở vé
+   này. Hành vi là bản sao của cửa (checkin-gala.html:705-757) — cùng phím tắt,
+   cùng cách vuốt, cùng đường lùi ảnh — để ai đứng cửa xong vào CRM không phải
+   học lại. Chỉ đổi hai thứ, cả hai vì v2 đã có sẵn tên đó:
+     · lớp CSS `.lb` → `.lbx`  (xem chú thích ở khối CSS)
+     · thuộc tính chỉ số ảnh `data-i` → `data-pi`.
+   `data-i` ở v2 là KHOÁ i18n: setLang() quét `[data-i]` trên 28 phần tử rồi
+   GHI ĐÈ innerHTML bằng tt(khoá). Đặt `data-i="0"` lên thumb thì mỗi lần đổi
+   ngôn ngữ, tt("0") trả về "0" và cái thẻ <img> bị thay bằng chữ số. Ở cửa
+   bệnh này bị `openPf()` cuối setLang che mất; dựa vào một lần vẽ lại để giấu
+   một chỗ sai là thứ hỏng lúc người sau đụng tới.
+
+   M5 (poll giẫm overlay) — CHỌN «giữ overlay NGOÀI #sheetBody», không chọn
+   «đóng lightbox khi vẽ lại». Đo: `pollList()` chỉ gọi renderDash + renderList,
+   grep `openGuest|sheetBody` trong thân nó = 0, và bất biến ấy đã được ghi
+   thành chú thích AC-7b (:565). Overlay treo thẳng vào document.body nên nằm
+   ngoài cả #list lẫn #sheetBody ⇒ poll không có đường chạm. Thêm luật «đóng
+   khi vẽ lại» là vá một bệnh không tồn tại, và tự đẻ bệnh mới: ảnh đang xem
+   tắt ngang mỗi 25 giây. `lbList` lại là mảng JS chụp lúc mở, nên kể cả hồ sơ
+   có vẽ lại thì việc lật ảnh vẫn chạy. */
+var lbList=[],lbIdx=-1,lbGhim="",lbX0=null;
+function lbEl(){return document.getElementById("lbx");}
+function lbDung(){
+ if(lbEl())return;
+ var d=document.createElement("div");d.id="lbx";d.className="lbx";
+ d.innerHTML='<div class="lbx-bd"></div><div class="lbx-q" id="lbxQ"></div><img id="lbxImg" alt="">'
+  +'<button class="lbx-x" id="lbxX"></button>'
+  +'<button class="lbx-p" id="lbxP" aria-label="prev">&#8249;</button>'
+  +'<button class="lbx-n" id="lbxN" aria-label="next">&#8250;</button><div class="lbx-c" id="lbxC"></div>';
+ document.body.appendChild(d);
+ d.addEventListener("click",function(e){
+  var b=e.target.closest("button");
+  if(b&&b.id==="lbxP"){lbGo(-1);return;}
+  if(b&&b.id==="lbxN"){lbGo(1);return;}
+  if(b&&b.id==="lbxX"){lbDong();return;}
+  /* Nền = đóng. Bấm trúng ảnh thì KHÔNG đóng — chạm nhầm giữa màn là chuyện thường. */
+  if(e.target.id==="lbxImg")return;
+  lbDong();});
+ /* Vuốt: chỉ tính khi đi ngang đủ 40px, kẻo cuộn dọc cũng nhảy ảnh. */
+ d.addEventListener("touchstart",function(e){lbX0=e.touches[0].clientX;},{passive:true});
+ d.addEventListener("touchend",function(e){
+  if(lbX0===null)return;var dx=e.changedTouches[0].clientX-lbX0;lbX0=null;
+  if(Math.abs(dx)>40)lbGo(dx<0?1:-1);},{passive:true});
+}
+function lbVe(){
+ var p=lbList[lbIdx];if(!p)return;
+ /* AC-6 — chỉ đặt src của TẤM ĐANG XEM. Nạp sẵn cả album là ~157 KB/tấm nhân
+    số ảnh, đúng lớp bệnh D029 đã dẹp. */
+ document.getElementById("lbxImg").src=p.view_url||p.url;
+ document.getElementById("lbxC").textContent=(lbIdx+1)+" / "+lbList.length;
+ /* Chữ đặt Ở ĐÂY chứ không lúc dựng: lbDung() chỉ chạy MỘT lần (`if(lbEl())
+    return`), nên nhúng cứng tt("close") vào innerHTML là nút đóng băng theo
+    ngôn ngữ của lần mở ĐẦU TIÊN. Đúng lỗi đã phải vá ở cửa. */
+ document.getElementById("lbxX").textContent=tt("close");
+ var q=document.getElementById("lbxQ");
+ q.textContent=p.interaction_id?tt("lb_qua"):(String(p.id)===String(lbGhim||"")?tt("lb_ghim"):"");
+}
+function lbMo(ds,ghim,i){
+ lbList=ds||[];if(!lbList.length)return;
+ lbGhim=ghim||"";lbIdx=Math.max(0,Math.min(i|0,lbList.length-1));
+ lbDung();lbVe();lbEl().classList.add("show");
+}
+function lbGo(d){if(!lbList.length)return;lbIdx=(lbIdx+d+lbList.length)%lbList.length;lbVe();}
+function lbDong(){var d=lbEl();if(d){d.classList.remove("show");
+ /* Bỏ src để trình duyệt thả ảnh lớn — mở/đóng nhiều lần không dồn bộ nhớ. */
+ var im=document.getElementById("lbxImg");if(im)im.removeAttribute("src");}
+ lbIdx=-1;lbList=[];}
+document.addEventListener("keydown",function(e){
+ if(lbIdx<0)return;
+ if(e.key==="Escape")lbDong();
+ else if(e.key==="ArrowLeft")lbGo(-1);
+ else if(e.key==="ArrowRight")lbGo(1);});
+/* Ảnh của hồ sơ ĐANG mở. Giữ ở đây thay vì đọc lại DOM: dải thumb bị vẽ lại mỗi
+   lần lưu một ô, còn mảng này thì không. */
+var PF_ANH=[],PF_GHIM="";
  function renderGuest(j){
    var g=j.guest;var canDel=(me.role==="btl");
    /* E08-D047: checkIns[] theo buổi; fallback checkIn cũ. */
@@ -957,7 +1063,10 @@ window.imgFit=imgFit;
        +'</div>';
    }).join("")
      :'<div class="ci-off">'+tt("ci_at_door")+'</div>';
-   var thumbs=(j.photos||[]).map(function(p){
+   /* E08-D061 — chụp lại danh sách ảnh + tấm đang ghim của hồ sơ đang mở, để
+      lightbox lật ảnh mà không phải đọc lại DOM. */
+   PF_ANH=j.photos||[];PF_GHIM=ghim||"";
+   var thumbs=(j.photos||[]).map(function(p,pi){
      /* Chỉ ảnh có interaction_id mới là ảnh quà/ghi nhận quầy. Luật avatar của
         list KHÔNG đổi — vẫn chỉ lấy tấm interaction_id rỗng. */
      var q=!!p.interaction_id;
@@ -965,7 +1074,9 @@ window.imgFit=imgFit;
      /* Ảnh QUÀ không có nút ghim (M2 — máy chủ cũng từ chối). Nút xoá thì mọi
         ảnh đều có: bệnh «tấm này không nên nằm trong hồ sơ này» xảy ra với cả
         ảnh quà (PG bấm nhầm thẻ). */
-     return '<span class="thwrap"><span class="th1'+(q?' qua':'')+(laGhim?' ghim':'')+'"'+(q?' title="'+esc(tt("qua_anh"))+'"':'')+'>'
+     /* `data-pi` chứ KHÔNG phải `data-i` như ở cửa: `data-i` ở màn này là khoá
+        i18n, setLang() sẽ ghi đè innerHTML của thumb bằng chính con số đó. */
+     return '<span class="thwrap"><span class="th1'+(q?' qua':'')+(laGhim?' ghim':'')+'" data-pi="'+pi+'"'+(q?' title="'+esc(tt("qua_anh"))+'"':'')+'>'
        +'<img src="'+esc(p.thumb_url||p.url)+'" loading="lazy" onload="imgFit(this)">'
        +(q?'<span class="qbadge">&#127873;</span>':'')+'</span>'
        +(me.role==="btl"?'<span class="thact">'
@@ -1379,6 +1490,23 @@ window.imgFit=imgFit;
  $("#themeBtn").addEventListener("click",function(){var d=document.documentElement.getAttribute("data-theme")==="light"?"":"light";if(d)document.documentElement.setAttribute("data-theme",d);else document.documentElement.removeAttribute("data-theme");localStorage.setItem("crm_theme",d);this.innerHTML=d?"&#9788;":"&#9789;";});
  $("#venueEdit").addEventListener("click",function(e){e.stopPropagation();openCfg();});
  $("#sheetClose").addEventListener("click",function(){$("#sheet").classList.remove("show");curId=null;buoiCanhBao=null;});
+ /* E08-D061 — bắt click ảnh bằng UỶ NHIỆM trên #sheetBody, gắn MỘT lần lúc khởi
+    động. #sheetBody là nút tĩnh trong khung trang (:373), chỉ bị thay innerHTML
+    khi vẽ lại hồ sơ — nên uỷ nhiệm sống qua mọi lần vẽ, không phải gắn lại và
+    không đẻ listener trùng như nếu gắn trong renderGuest.
+
+    AC-4 — nút «Đặt làm ảnh đại diện» / «Xoá ảnh» KHÔNG được mở lightbox. Hai
+    lớp chặn, và lớp thứ nhất là CẤU TRÚC chứ không phải luật: hai nút nằm trong
+    `<span class="thact">` — ANH EM của `.th1`, không nằm trong nó — nên
+    closest(".th1") bấm trúng nút đã trả null. `closest("button")` là lớp thứ
+    hai, rẻ, và giữ đúng chữ spec §3c. (Nút xoá là `data-xoaanh`, không phải
+    `data-xoa` như spec ghi — nhưng luật này không đọc tên thuộc tính nên
+    không lệ thuộc vào chỗ đó.) */
+ $("#sheetBody").addEventListener("click",function(e){
+   if(e.target.closest("button"))return;
+   var th=e.target.closest(".th1");if(!th)return;
+   lbMo(PF_ANH,PF_GHIM,parseInt(th.getAttribute("data-pi"),10)||0);
+ });
  $("#sheet2Close").addEventListener("click",function(){$("#sheet2").classList.remove("show");});
  $("#sheet").addEventListener("click",function(e){if(e.target===this){this.classList.remove("show");curId=null;}});
  $("#sheet2").addEventListener("click",function(e){if(e.target===this)this.classList.remove("show");});

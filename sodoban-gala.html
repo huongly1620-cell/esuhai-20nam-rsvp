@@ -67,7 +67,11 @@ a{color:inherit}
   border-bottom:1px solid var(--line);padding:9px 14px 10px}
 .kpi-row{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
 .kpi{flex:1 1 88px;min-width:78px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);
-  border-radius:10px;padding:7px 10px;text-align:left}
+  border-radius:10px;padding:7px 10px;text-align:left;font:inherit;color:inherit;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:background .15s,border-color .15s,transform .1s}
+.kpi:hover{background:rgba(255,255,255,.07)}
+.kpi:active{transform:scale(.97)}
+.kpi.on{border-color:var(--gold);background:rgba(216,184,118,.14);box-shadow:0 0 0 1px var(--gold) inset}
 .kpi b{display:block;font-size:1.15rem;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
 .kpi span{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .kpi.tong b{color:var(--cream)}
@@ -207,8 +211,9 @@ a{color:inherit}
   transform:translateX(105%);transition:transform .25s cubic-bezier(.2,.8,.2,1);overflow:auto;
   box-shadow:-16px 0 40px rgba(0,0,0,.4)}
 .panel.show{transform:none}
-.panel .avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;
+.panel .avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;position:relative;overflow:hidden;
   font-family:"Playfair Display",serif;font-weight:700;font-size:1.2rem;color:#08111F;margin-bottom:10px}
+.panel .avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
 .panel h2{font-family:"Playfair Display",Georgia,serif;font-size:1.2rem;margin:0 0 4px;font-weight:700}
 .panel .sub{color:var(--muted);font-size:.8rem;margin-bottom:14px}
 .panel .badge{display:inline-block;font-size:.66rem;font-weight:800;border-radius:99px;padding:3px 10px;margin-right:6px}
@@ -251,11 +256,11 @@ a{color:inherit}
 </header>
 
 <div class="kpi-wrap">
-  <div class="kpi-row">
-    <div class="kpi tong"><b id="kTong">0</b><span>Tổng số ghế</span></div>
-    <div class="kpi ok"><b id="kOk">0</b><span>Đã đến</span></div>
-    <div class="kpi no"><b id="kNo">0</b><span>Chưa đến</span></div>
-    <div class="kpi trong"><b id="kTrong">0</b><span>Trống</span></div>
+  <div class="kpi-row" id="kpiRow">
+    <button type="button" class="kpi tong" data-f="" title="Bấm để bỏ lọc"><b id="kTong">0</b><span>Tổng số ghế</span></button>
+    <button type="button" class="kpi ok" data-f="ok" title="Bấm để chỉ nổi bật khách đã đến"><b id="kOk">0</b><span>Đã đến</span></button>
+    <button type="button" class="kpi no" data-f="no" title="Bấm để chỉ nổi bật khách chưa đến"><b id="kNo">0</b><span>Chưa đến</span></button>
+    <button type="button" class="kpi trong" data-f="trong" title="Bấm để chỉ nổi bật ghế trống"><b id="kTrong">0</b><span>Trống</span></button>
   </div>
   <div class="bar"><i class="b-ok" id="barOk"></i><i class="b-no" id="barNo"></i><i class="b-tr" id="barTr"></i></div>
   <div class="tools">
@@ -322,7 +327,7 @@ var PAD_TOP=46, PAD_BOTTOM=18; // breathing room so front-row labels clear the s
 var META=null, G=[], byKey={}, scale=1, pollBusy=false, sel=null;
 var prevArrived={}; // id -> bool, to detect fresh check-ins between polls
 var firstLoadDone=false;
-var onlyFree=false, qText="";
+var onlyFree=false, qText="", kpiFilter=""; // kpiFilter: ""=all, "ok"|"no"|"trong" = only highlight that seat state
 
 function $(s){return document.querySelector(s);}
 function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
@@ -452,6 +457,10 @@ function render(){
     if(hasSearch){
       if(String(ban).toLowerCase().indexOf(qText)>-1 || String(t.label||"").toLowerCase().indexOf(qText)>-1) tableMatches=true;
     }
+    // slicer: bàn không còn ghế nào khớp bộ lọc KPI đang bấm thì mờ đi (nhãn + vòng heat)
+    var kpiTableMiss = kpiFilter==="ok" ? (tOk+tOkOv)===0 :
+      kpiFilter==="no" ? (tNo+tNoOv)===0 :
+      kpiFilter==="trong" ? tEmpty===0 : false;
 
     // Table plate — every one of the 34 VIP tables is drawn as a PERFECT CIRCLE in the source
     // CAD (measured directly off pollux.png: the pink disc's own bounding box is square and
@@ -483,7 +492,7 @@ function render(){
     }
     aura.style.webkitMask="radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px))";
     aura.style.mask="radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px))";
-    aura.style.opacity= (onlyFree && tEmpty===0 && tCap>0) ? .18 : .85;
+    aura.style.opacity= ((onlyFree && tEmpty===0 && tCap>0) || kpiTableMiss) ? .18 : .85;
     root.appendChild(aura);
 
     // label + free-seat pill (the core "wow": literal, honest count)
@@ -497,6 +506,11 @@ function render(){
     if(hasSearch && !tableMatches) lab.classList.add("dim");
     if(tableMatches) lab.classList.add("hl");
     if(onlyFree && tEmpty===0 && tCap>0) lab.classList.add("dim");
+    // slicer: mờ nhãn của bàn không còn ghế nào khớp bộ lọc đang bấm
+    var kpiTableMiss = kpiFilter==="ok" ? (tOk+tOkOv)===0 :
+      kpiFilter==="no" ? (tNo+tNoOv)===0 :
+      kpiFilter==="trong" ? tEmpty===0 : false;
+    if(kpiTableMiss) lab.classList.add("dim");
     lab.setAttribute("data-ban", ban);
     root.appendChild(lab);
 
@@ -532,6 +546,7 @@ function render(){
         el.title="Ghế trống · Bàn "+ban+" · Ghế "+s2+" · chưa xếp khách";
         if(hasSearch && !tableMatches) el.classList.add("dim");
         if(dimSeat) el.classList.add("dim");
+        if(kpiFilter==="ok"||kpiFilter==="no") el.classList.add("dim"); // slicer: ghế trống không phải "đã đến" hay "chưa đến"
         root.appendChild(el);
         continue;
       }
@@ -558,6 +573,8 @@ function render(){
         if(hasSearch && !tableMatches && !qMatch) el.classList.add("dim");
         if(qMatch) el.classList.add("match");
         if(dimSeat) el.classList.add("dim");
+        // slicer: "Đã đến"/"Chưa đến" chỉ nổi bật đúng nhóm bấm chọn; "Trống" thì ghế có khách luôn mờ
+        if(kpiFilter==="trong" || (kpiFilter==="ok" && !ok) || (kpiFilter==="no" && ok)) el.classList.add("dim");
         if(sel && sel.ban===String(ban) && sel.ghe===String(s2) && String(sel.id)===String(g.id)) el.classList.add("on");
         nextArrived[g.id]=ok;
         if(firstLoadDone && ok && prevArrived[g.id]===false){
@@ -601,7 +618,13 @@ function render(){
 function openPanel(g, ban, ghe){
   sel={ban:String(ban), ghe:String(ghe), id:String(g.id)};
   var ok=cameGala(g), nv=isNv(g);
-  var av=$("#pAv"); av.textContent=initials(g.full_name);
+  var av=$("#pAv"), ini=initials(g.full_name), photoUrl=g.photo_view_url||g.photo_url||"";
+  // Ảnh hồ sơ (cùng nguồn `/crm/photos/:id/thumb|preview` mà cửa check-in đã dùng) —
+  // ảnh mất/chưa chụp thì tự rơi về chữ cái đầu tên (onerror gỡ <img>, chữ cái đã
+  // nằm sẵn phía dưới nên không có khoảng trống trắng nào lộ ra).
+  av.innerHTML = photoUrl
+    ? '<img src="'+esc(photoUrl)+'" loading="lazy" decoding="async" onerror="this.remove()">'+esc(ini)
+    : esc(ini);
   av.style.background=ok?"var(--ok)":"var(--gold-b)"; av.style.color="#141414";
   $("#pName").textContent=g.full_name||"—";
   $("#pSub").textContent=[g.org,g.title].filter(Boolean).join(" · ")||"—";
@@ -697,6 +720,17 @@ $("#z").addEventListener("input", function(){ applyZoom(); });
 $("#q").addEventListener("input", function(e){ qText=String(e.target.value||"").trim().toLowerCase(); render(); });
 $("#fOnlyFree").addEventListener("click", function(){
   onlyFree=!onlyFree; $("#fOnlyFree").classList.toggle("on", onlyFree); render();
+});
+// KPI strip doubles as a slicer: bấm "Đã đến/Chưa đến/Trống" để chỉ nổi bật đúng nhóm ghế đó
+// trên bản đồ (những ghế còn lại mờ đi); bấm lại hoặc bấm "Tổng số ghế" để bỏ lọc.
+$("#kpiRow").addEventListener("click", function(e){
+  var b=e.target.closest(".kpi"); if(!b) return;
+  var f=b.getAttribute("data-f")||"";
+  kpiFilter = (kpiFilter===f && f!=="") ? "" : f;
+  document.querySelectorAll("#kpiRow .kpi").forEach(function(el){
+    el.classList.toggle("on", el.getAttribute("data-f")===kpiFilter && kpiFilter!=="");
+  });
+  render();
 });
 $("#top5").addEventListener("click", function(e){
   var c=e.target.closest(".t5chip"); if(!c) return;

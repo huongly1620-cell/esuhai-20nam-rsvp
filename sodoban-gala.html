@@ -13,6 +13,8 @@
   --bg1:#0b1a30;--bg2:#0b2330;--bg3:#08111F;--acc:#2E7FCC;
   --ok:#43e08d;--no:#e2503a;--empty:rgba(255,255,255,.16);--nv:#f0d999;
   --panel-bg:linear-gradient(180deg,#0e2238,#08111F);
+  --tbl-top:#f8f1de;--tbl-bot:#d8c393;
+  --tierA-ring:#ecc978;--tierB-ring:#9fc2e6;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -29,7 +31,9 @@ a{color:inherit}
   background:linear-gradient(180deg,rgba(8,17,31,.97),rgba(8,17,31,.88));
   border-bottom:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.35);
   padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));
-  display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.top-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.top-div{width:1px;align-self:stretch;min-height:22px;background:var(--line);margin:0 1px}
 .brand{display:flex;align-items:center;gap:8px;margin-right:4px}
 .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(67,224,141,.22);
   animation:live-blink 2.4s ease-in-out infinite}
@@ -44,8 +48,16 @@ a{color:inherit}
 .btn:active{transform:scale(.96)}
 .btn.acc{border-color:var(--acc);color:#bfe0ff;background:rgba(46,127,204,.12)}
 .btn.acc:hover{background:rgba(46,127,204,.22)}
-.zoom{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:.68rem}
-.zoom input{width:80px;accent-color:var(--gold)}
+.zoom{display:flex;gap:7px;align-items:center;color:var(--muted);font-size:.68rem}
+.zoom input{width:84px;height:16px;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
+.zoom input::-webkit-slider-runnable-track{height:4px;border-radius:99px;
+  background:linear-gradient(90deg,var(--gold),rgba(255,255,255,.14))}
+.zoom input::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--gold-b);border:2px solid #241a06;margin-top:-5px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.zoom input::-moz-range-track{height:4px;border-radius:99px;background:rgba(255,255,255,.14)}
+.zoom input::-moz-range-progress{height:4px;border-radius:99px;background:var(--gold)}
+.zoom input::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--gold-b);
+  border:2px solid #241a06;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .spacer{margin-left:auto}
 .upd{font-size:.68rem;color:var(--muted2);display:flex;align-items:center;gap:5px;white-space:nowrap}
 .upd .ok-ic{color:var(--ok)}
@@ -83,7 +95,9 @@ a{color:inherit}
 .top5 .t5chip:hover{background:rgba(216,184,118,.18)}
 
 /* ---------- legend ---------- */
-.leg{display:flex;gap:14px;flex-wrap:wrap;padding:8px 14px;font-size:.68rem;color:var(--muted);align-items:center}
+.leg{display:flex;gap:8px 16px;flex-wrap:wrap;margin:8px 14px;padding:9px 14px;font-size:.68rem;
+  color:var(--muted);align-items:center;background:rgba(255,255,255,.028);
+  border:1px solid rgba(255,255,255,.07);border-radius:12px}
 .leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
 .leg .ok{background:var(--ok)}.leg .no{background:var(--no)}.leg .empty{background:var(--empty);border:1px dashed rgba(255,255,255,.4)}
 .leg .nv{box-shadow:0 0 0 2px var(--nv)}
@@ -97,12 +111,31 @@ a{color:inherit}
 .hint{padding:4px 14px 8px;font-size:.7rem;color:var(--muted2);min-height:1.1em}
 
 /* ---------- stage ---------- */
-.wrap{overflow:auto;-webkit-overflow-scrolling:touch;padding:6px 6px 44px;cursor:grab;touch-action:pan-x pan-y}
+.wrap{overflow:auto;-webkit-overflow-scrolling:touch;padding:0 6px 44px;cursor:grab;touch-action:pan-x pan-y;
+  position:relative}
 .wrap.grabbing{cursor:grabbing}
-.stage{position:relative;width:min(1493px,100%);margin:0 auto;user-select:none}
-.stage img.bg{display:block;width:100%;height:auto;user-select:none;pointer-events:none;
-  opacity:.94;filter:saturate(1.05)}
+.stagebar{position:sticky;top:6px;z-index:8;display:flex;justify-content:center;pointer-events:none;
+  margin:8px 0 -30px}
+.stagebar span{background:linear-gradient(90deg,transparent,rgba(216,184,118,.3),transparent);
+  border-top:2px solid rgba(216,184,118,.65);color:var(--gold-b);font-size:10px;font-weight:800;
+  letter-spacing:.16em;text-transform:uppercase;padding:6px 24px 5px;border-radius:0 0 12px 12px;
+  box-shadow:0 8px 18px rgba(0,0,0,.4);backdrop-filter:blur(4px);white-space:nowrap}
+.stage{position:relative;width:min(1493px,100%);margin:6px auto 0;user-select:none}
+.floor{position:absolute;left:0;top:0;border-radius:22px;overflow:hidden;
+  background:
+    radial-gradient(1400px 460px at 50% -6%,rgba(216,184,118,.17),transparent 60%),
+    radial-gradient(900px 500px at 8% 100%,rgba(46,127,204,.10),transparent 55%),
+    repeating-linear-gradient(45deg,rgba(255,255,255,.016) 0 2px,transparent 2px 30px),
+    linear-gradient(165deg,#122540,#0d1c30 55%,#080f1a);
+  box-shadow:inset 0 0 100px rgba(0,0,0,.55),inset 0 0 0 1px rgba(216,184,118,.16)}
 .seats{position:absolute;inset:0}
+
+.tbl{position:absolute;border-radius:50%;transform:translate(-50%,-50%);
+  background:radial-gradient(circle at 36% 30%,var(--tbl-top),var(--tbl-bot) 78%);
+  box-shadow:0 10px 20px rgba(0,0,0,.5),inset 0 2px 5px rgba(255,255,255,.55),inset 0 -7px 15px rgba(0,0,0,.2);
+  border:2px solid rgba(255,255,255,.55)}
+.tbl::after{content:"";position:absolute;inset:-6px;border-radius:inherit;
+  border:1.5px solid var(--ring-color,var(--tierA-ring));opacity:.6;pointer-events:none}
 
 .aura{position:absolute;border-radius:50%;pointer-events:none;
   transition:background .5s ease}
@@ -118,12 +151,14 @@ a{color:inherit}
 .tbl-lab.dim{opacity:.32}
 
 .seat{position:absolute;width:21px;height:21px;margin:-10.5px 0 0 -10.5px;border-radius:50%;
-  border:1.5px solid rgba(255,255,255,.35);font-size:8.5px;font-weight:800;color:#111;
-  display:grid;place-items:center;cursor:pointer;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.35);
-  transition:transform .15s,opacity .25s,box-shadow .25s}
+  border:1.5px solid rgba(255,255,255,.4);font-size:8.5px;font-weight:800;color:#111;
+  display:grid;place-items:center;cursor:pointer;line-height:1;
+  box-shadow:0 2px 5px rgba(0,0,0,.4),inset 0 1.5px 2px rgba(255,255,255,.55),inset 0 -3px 4px rgba(0,0,0,.14);
+  transition:transform .15s,opacity .25s,box-shadow .25s,background-color .35s}
 .seat.ok{background:var(--ok)}
 .seat.no{background:var(--no);color:#fff}
-.seat.empty{background:transparent;border:1.5px dashed rgba(255,255,255,.4);color:#8f886f;cursor:default}
+.seat.empty{background:rgba(255,255,255,.03);border:1.5px dashed rgba(255,255,255,.4);color:#8f886f;cursor:default;
+  box-shadow:none}
 .seat.nv{box-shadow:0 0 0 2px var(--nv),0 1px 3px rgba(0,0,0,.35)}
 .seat.dup{box-shadow:0 0 0 2px #ff8a3d,0 1px 3px rgba(0,0,0,.35)}
 .seat.overflow{box-shadow:0 0 0 2px #ff3d6a,0 1px 3px rgba(0,0,0,.35)}
@@ -149,6 +184,10 @@ a{color:inherit}
   padding:8px 16px;border-radius:99px;font-size:.75rem;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.45);
   opacity:0;transform:translateY(-8px);transition:opacity .25s,transform .25s;white-space:nowrap}
 .toast.show{opacity:1;transform:translateY(0)}
+
+.scrim{position:fixed;inset:0;z-index:49;background:rgba(4,8,16,.5);backdrop-filter:blur(2px);
+  opacity:0;pointer-events:none;transition:opacity .25s}
+.scrim.show{opacity:1;pointer-events:auto}
 
 /* ---------- side panel ---------- */
 .panel{position:fixed;right:0;top:0;bottom:0;width:min(380px,100%);z-index:50;
@@ -230,14 +269,16 @@ a{color:inherit}
 <div class="hint" id="hint">Đang tải sơ đồ…</div>
 
 <div class="wrap" id="wrap">
+  <div class="stagebar"><span>🎤 Phía sân khấu</span></div>
   <div class="stage" id="stage">
-    <img class="bg" id="bg" alt="Layout Pollux" draggable="false">
+    <div class="floor" id="floor"></div>
     <div class="seats" id="seats"></div>
   </div>
 </div>
 
 <div class="toast-wrap" id="toastWrap"></div>
 
+<div class="scrim" id="scrim"></div>
 <aside class="panel" id="panel">
   <button class="btn close" type="button" id="pClose">Đóng</button>
   <div style="margin-top:40px">
@@ -265,6 +306,7 @@ a{color:inherit}
 (function(){
 "use strict";
 var POLL_MS=25000;
+var PAD_TOP=46, PAD_BOTTOM=18; // breathing room so front-row labels clear the sticky stage banner
 var META=null, G=[], byKey={}, scale=1, pollBusy=false, sel=null;
 var prevArrived={}; // id -> bool, to detect fresh check-ins between polls
 var firstLoadDone=false;
@@ -348,6 +390,7 @@ function render(){
     var seatPos=t.seats||[]; // real chair coordinates measured off the venue layout
     var cap=seatPos.length;  // physical capacity — fixed, honest, independent of CRM completeness
     var r=t.r||36;
+    var ty=t.y+PAD_TOP; // shifted center — PAD_TOP just adds canvas margin, never touches raw measured data
     var seatRingR=r; // how far the real chairs actually extend from center — for label/aura clearance
     seatPos.forEach(function(p){ var dd=Math.hypot(p[0]-t.x,p[1]-t.y); if(dd>seatRingR) seatRingR=dd; });
     var knownMax=maxSeatKnown(ban);
@@ -366,12 +409,25 @@ function render(){
       if(String(ban).toLowerCase().indexOf(qText)>-1 || String(t.label||"").toLowerCase().indexOf(qText)>-1) tableMatches=true;
     }
 
+    // table plate — drawn from real seat geometry (bbox of measured chairs), never from an
+    // external image, so shape+position can never drift out of sync with the chairs again.
+    var bx0=Infinity,bx1=-Infinity,by0=Infinity,by1=-Infinity;
+    seatPos.forEach(function(p){ if(p[0]<bx0)bx0=p[0]; if(p[0]>bx1)bx1=p[0]; if(p[1]<by0)by0=p[1]; if(p[1]>by1)by1=p[1]; });
+    var tblW=isFinite(bx1-bx0)?(bx1-bx0)*0.62:r*1.1, tblH=isFinite(by1-by0)?(by1-by0)*0.62:r*1.1;
+    tblW=Math.max(tblW, r*0.85); tblH=Math.max(tblH, r*0.85);
+    var tbl=document.createElement("div");
+    tbl.className="tbl";
+    tbl.style.width=tblW+"px"; tbl.style.height=tblH+"px";
+    tbl.style.left=t.x+"px"; tbl.style.top=ty+"px";
+    tbl.style.setProperty("--ring-color", t.vip==="yellow" ? "var(--tierB-ring)" : "var(--tierA-ring)");
+    root.appendChild(tbl);
+
     // aura ring (macro heat) — conic gradient donut via mask
     var aura=document.createElement("div");
     aura.className="aura";
     var auraR=r+11;
     aura.style.width=(auraR*2)+"px"; aura.style.height=(auraR*2)+"px";
-    aura.style.left=(t.x-auraR)+"px"; aura.style.top=(t.y-auraR)+"px";
+    aura.style.left=(t.x-auraR)+"px"; aura.style.top=(ty-auraR)+"px";
     if(tCap>0){
       var p1=(tOk/tCap*100).toFixed(2), p2=((tOk+tNo)/tCap*100).toFixed(2);
       aura.style.background="conic-gradient(var(--ok) 0% "+p1+"%, var(--no) "+p1+"% "+p2+"%, rgba(255,255,255,.13) "+p2+"% 100%)";
@@ -386,7 +442,7 @@ function render(){
     // label + free-seat pill (the core "wow": literal, honest count)
     var lab=document.createElement("div");
     lab.className="tbl-lab";
-    lab.style.left=t.x+"px"; lab.style.top=(t.y-seatRingR-15)+"px";
+    lab.style.left=t.x+"px"; lab.style.top=(ty-seatRingR-15)+"px";
     var freeState = tCap<1 ? "none" : (tEmpty>0 ? "has" : "full");
     var freeTxt = tCap<1 ? "Chưa có DL" : (tEmpty>0 ? ("Trống "+tEmpty) : "Đủ ghế");
     lab.innerHTML='<div class="tname">'+esc(t.label||("VIP"+ban))+'</div>'+
@@ -406,11 +462,14 @@ function render(){
       var isOverflow = s2>cap;
       var x,y;
       if(!isOverflow){
-        x=seatPos[s2-1][0]; y=seatPos[s2-1][1]; // absolute coords, measured directly off the layout
+        x=seatPos[s2-1][0]; y=seatPos[s2-1][1]+PAD_TOP; // absolute coords, measured directly off the layout
       } else {
-        // no real chair for this CRM seat_no — place just outside the ring, clearly flagged
-        var oAng=-Math.PI/2 + (2*Math.PI*(s2-cap-1))/Math.max(1,overflow);
-        x=t.x+Math.cos(oAng)*(seatRingR+22); y=t.y+Math.sin(oAng)*(seatRingR+22);
+        // no real chair for this CRM seat_no — place just outside the ring, clearly flagged.
+        // Sweep the LOWER arc only (away from the table label which sits above) so the
+        // overflow warning never collides with the "Trống N" pill.
+        var oi=s2-cap-1;
+        var oAng=overflow<=1 ? Math.PI/2 : (0.2*Math.PI + (0.6*Math.PI)*(oi/(overflow-1)));
+        x=t.x+Math.cos(oAng)*(seatRingR+22); y=ty+Math.sin(oAng)*(seatRingR+22);
       }
       var gs=byKey[seatKey(ban,s2)]||[];
       var dimSeat = (onlyFree && tEmpty===0 && tCap>0);
@@ -510,7 +569,14 @@ function openPanel(g, ban, ghe){
   $("#pDoor").href="/checkin-gala.html";
   $("#pCrm").href="/crm";
   $("#panel").classList.add("show");
+  $("#scrim").classList.add("show");
   render();
+}
+
+function closePanel(){
+  $("#panel").classList.remove("show");
+  $("#scrim").classList.remove("show");
+  sel=null; render();
 }
 
 function focusTable(ban){
@@ -525,16 +591,17 @@ function applyZoom(){
   scale=(parseInt($("#z").value,10)||100)/100;
   var st=$("#stage");
   var w=(META&&META.image_w)||1493;
-  var h=(META&&META.image_h)||1050;
-  var img=$("#bg");
+  var h=((META&&META.image_h)||1050)+PAD_TOP+PAD_BOTTOM;
+  var floor=$("#floor");
   var seats=$("#seats");
   seats.style.width=w+"px";
   seats.style.height=h+"px";
   seats.style.transform="scale("+scale+")";
   seats.style.transformOrigin="top left";
-  img.style.width=w+"px";
-  img.style.transform="scale("+scale+")";
-  img.style.transformOrigin="top left";
+  floor.style.width=w+"px";
+  floor.style.height=h+"px";
+  floor.style.transform="scale("+scale+")";
+  floor.style.transformOrigin="top left";
   st.style.width=(w*scale)+"px";
   st.style.height=(h*scale)+"px";
 }
@@ -547,10 +614,6 @@ async function loadAll(manual){
       $("#hint").innerHTML='<div class="skel"><div class="ring"></div>Đang tải sơ đồ Pollux…</div>';
       var mj=await fetch("/sodoban/tables.json",{credentials:"same-origin"});
       META=await mj.json();
-      $("#bg").src="/sodoban/pollux.png";
-      await new Promise(function(res,rej){
-        $("#bg").onload=res; $("#bg").onerror=function(){rej(new Error("png"));};
-      });
     }
     var j=await jget("/crm/guests?session=gala&limit=1000");
     indexGuests(j.rows||[]);
@@ -577,7 +640,8 @@ $("#seats").addEventListener("click", function(e){
   if(!g) return;
   openPanel(g, b.getAttribute("data-ban"), b.getAttribute("data-ghe"));
 });
-$("#pClose").addEventListener("click", function(){ $("#panel").classList.remove("show"); sel=null; render(); });
+$("#pClose").addEventListener("click", closePanel);
+$("#scrim").addEventListener("click", closePanel);
 $("#rf").addEventListener("click", function(){ loadAll(true); });
 $("#z").addEventListener("input", function(){ applyZoom(); });
 $("#q").addEventListener("input", function(e){ qText=String(e.target.value||"").trim().toLowerCase(); render(); });

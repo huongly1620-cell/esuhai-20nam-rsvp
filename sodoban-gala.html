@@ -237,6 +237,9 @@ a{color:inherit}
   .ttl{font-size:.8rem}
   .kpi span{font-size:.58rem}
   .kpi b{font-size:1.02rem}
+  /* 4 ô KPI ở màn hẹp (360px PG hay dùng) từng dồn lệch 3+1 vì flex-wrap tự do —
+     ép lưới 2×2 đều nhau, không còn ô nào trơ trọi một mình một hàng. */
+  .kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 }
 </style>
 </head>

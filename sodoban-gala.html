@@ -136,6 +136,14 @@ a{color:inherit}
   border:2px solid rgba(255,255,255,.55)}
 .tbl::after{content:"";position:absolute;inset:-6px;border-radius:inherit;
   border:1.5px solid var(--ring-color,var(--tierA-ring));opacity:.6;pointer-events:none}
+.tbl.perfect{border-color:rgba(255,255,255,.75)}
+.tbl.perfect::after{border:2.5px solid var(--ok);opacity:1;
+  box-shadow:0 0 0 4px rgba(67,224,141,.28),0 0 22px 6px rgba(67,224,141,.5);
+  animation:perfectGlow 2.6s ease-in-out infinite}
+@keyframes perfectGlow{
+  0%,100%{box-shadow:0 0 0 4px rgba(67,224,141,.22),0 0 16px 4px rgba(67,224,141,.38)}
+  50%{box-shadow:0 0 0 6px rgba(67,224,141,.36),0 0 28px 10px rgba(67,224,141,.6)}
+}
 
 .aura{position:absolute;border-radius:50%;pointer-events:none;
   transition:background .5s ease}
@@ -149,6 +157,7 @@ a{color:inherit}
 .tfree[data-s="has"]{background:rgba(120,84,26,.16);color:#5a3d13}
 .tfree[data-s="full"]{background:rgba(58,39,16,.12);color:#6b5a3f}
 .tfree[data-s="none"]{background:rgba(58,39,16,.08);color:#8a7a5f}
+.tfree[data-s="perfect"]{background:rgba(30,140,80,.16);color:#0f5c34;font-weight:900}
 .tbl-lab.hl .tname{color:#8a4a10}
 .tbl-lab.dim{opacity:.32}
 
@@ -266,6 +275,7 @@ a{color:inherit}
   <span><i class="no"></i>Chưa đến</span>
   <span><i class="empty"></i>Ghế trống (chưa xếp khách)</span>
   <span><i class="ok nv"></i>Nhân viên (viền vàng)</span>
+  <span>🟢 Viền bàn sáng xanh = <b style="color:#8ef0bb">đủ khách hoàn hảo</b> (hết ghế trống, tất cả đã check-in)</span>
   <span class="note">"Trống" ≠ "Chưa đến": Trống là ghế chưa có ai được xếp; Chưa đến là khách đã có tên nhưng chưa tới cửa.</span>
 </div>
 <div class="hint" id="hint">Đang tải sơ đồ…</div>
@@ -406,6 +416,17 @@ function render(){
       guests.forEach(function(g){ if(cameGala(g)) tOk++; else tNo++; });
     }
     var tCap=cap;
+    // "perfect" = every physical seat is filled AND everyone (incl. any overflow guest) has
+    // actually arrived — the strongest, most honest "this table is fully done" signal.
+    var allPresent = tCap>0 && tNo===0 && tEmpty===0;
+    if(allPresent && overflow>0){
+      for(var so=cap+1; so<=cap+overflow; so++){
+        var gso=byKey[seatKey(ban,so)]||[];
+        if(!gso.length){ allPresent=false; break; }
+        if(gso.some(function(g){ return !cameGala(g); })){ allPresent=false; break; }
+      }
+    }
+    var perfect=allPresent;
     var tableMatches=false;
     if(hasSearch){
       if(String(ban).toLowerCase().indexOf(qText)>-1 || String(t.label||"").toLowerCase().indexOf(qText)>-1) tableMatches=true;
@@ -422,6 +443,7 @@ function render(){
     tbl.style.width=tblW+"px"; tbl.style.height=tblH+"px";
     tbl.style.left=t.x+"px"; tbl.style.top=ty+"px";
     tbl.style.setProperty("--ring-color", t.vip==="yellow" ? "var(--tierB-ring)" : "var(--tierA-ring)");
+    if(perfect) tbl.classList.add("perfect");
     root.appendChild(tbl);
 
     // aura ring (macro heat) — conic gradient donut via mask
@@ -445,8 +467,8 @@ function render(){
     var lab=document.createElement("div");
     lab.className="tbl-lab";
     lab.style.left=t.x+"px"; lab.style.top=ty+"px";
-    var freeState = tCap<1 ? "none" : (tEmpty>0 ? "has" : "full");
-    var freeTxt = tCap<1 ? "Chưa có DL" : (tEmpty>0 ? ("Trống "+tEmpty) : "Đủ ghế");
+    var freeState = tCap<1 ? "none" : (tEmpty>0 ? "has" : (perfect ? "perfect" : "full"));
+    var freeTxt = tCap<1 ? "Chưa có DL" : (tEmpty>0 ? ("Trống "+tEmpty) : (perfect ? "✓ Đủ khách" : "Đủ ghế"));
     lab.innerHTML='<div class="tname">'+esc(t.label||("VIP"+ban))+'</div>'+
       '<div class="tfree" data-s="'+freeState+'">'+esc(freeTxt)+'</div>';
     if(hasSearch && !tableMatches) lab.classList.add("dim");

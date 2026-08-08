@@ -28,7 +28,8 @@ function mount(app) {
   //   * Bảng điều khiển `/crm` — CHỈ role `btl` (5 người). Trước đây bất kỳ
   //     phiên hợp lệ nào cũng mở được shell, nên thêm một PG là thêm một người
   //     xoá được khách và tải được nhật ký PII.
-  const DOOR_PATHS = ['/checkin-toadam.html', '/checkin-gala.html'];
+  // E08-D066 — sơ đồ bàn dùng chung session cửa/CRM
+  const DOOR_PATHS = ['/checkin-toadam.html', '/checkin-gala.html', '/sodoban-gala.html'];
   function serveShell(req, res, file) {
     const a = auth.currentActor(req);
     // PG bấm nhầm link /crm sau khi đã đăng nhập: đưa thẳng về cửa, đừng bắt

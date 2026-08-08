@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Sơ đồ bàn · Gala Pollux</title>
+<style>
+:root{
+  --cream:#f5efe1;--muted:#b9b096;--line:rgba(216,184,118,.28);
+  --bg:#08111F;--acc:#2E7FCC;--ok:rgba(67,224,141,.72);--no:rgba(226,58,46,.78);
+  --empty:rgba(180,180,180,.35);--nv:#f0d999;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Be Vietnam Pro","Segoe UI",system-ui,sans-serif;color:var(--cream);
+  background:linear-gradient(170deg,#0b1a30,#0b2330 55%,#08111F);min-height:100vh}
+.top{position:sticky;top:0;z-index:40;backdrop-filter:blur(10px);
+  background:linear-gradient(180deg,rgba(8,17,31,.96),rgba(8,17,31,.82));
+  border-bottom:2px solid var(--acc);padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top));
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.ttl{font-weight:800;letter-spacing:.06em;font-size:.78rem;text-transform:uppercase;color:var(--acc)}
+.btn{border:1px solid var(--line);background:transparent;color:var(--cream);border-radius:8px;
+  padding:7px 11px;font:inherit;font-size:.72rem;font-weight:700;cursor:pointer;text-decoration:none}
+.btn.acc{border-color:var(--acc);color:var(--acc)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;font-size:.72rem;color:var(--muted);margin-left:auto}
+.stats b{color:var(--cream)}
+.leg{display:flex;gap:12px;flex-wrap:wrap;padding:8px 12px;font-size:.7rem;color:var(--muted)}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.leg .ok{background:var(--ok)}.leg .no{background:var(--no)}.leg .empty{background:var(--empty)}
+.leg .nv{box-shadow:0 0 0 2px var(--nv)}
+.wrap{overflow:auto;-webkit-overflow-scrolling:touch;padding:8px 8px 40px;max-height:calc(100vh - 120px)}
+.stage{position:relative;width:min(1493px,100%);margin:0 auto;transform-origin:top left}
+.stage img.bg{display:block;width:100%;height:auto;user-select:none;pointer-events:none;opacity:.92}
+.seats{position:absolute;inset:0}
+.seat{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.35);font-size:9px;font-weight:800;color:#111;
+  display:grid;place-items:center;cursor:pointer;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.seat.ok{background:var(--ok)}.seat.no{background:var(--no)}.seat.empty{background:var(--empty);color:#444;cursor:default}
+.seat.nv{box-shadow:0 0 0 2px var(--nv),0 1px 3px rgba(0,0,0,.35)}
+.seat.on{outline:2px solid #fff;z-index:2}
+.tbl-lab{position:absolute;transform:translate(-50%,-50%);font-size:10px;font-weight:800;
+  color:#fff;text-shadow:0 1px 2px #000;pointer-events:none;opacity:.9}
+.hint{padding:6px 12px;font-size:.72rem;color:var(--muted);min-height:1.2em}
+.panel{position:fixed;right:0;top:0;bottom:0;width:min(360px,100%);z-index:50;
+  background:linear-gradient(180deg,#0e2238,#08111F);border-left:2px solid var(--acc);
+  padding:16px 16px 28px;padding-top:max(16px,env(safe-area-inset-top));
+  transform:translateX(105%);transition:transform .2s;overflow:auto}
+.panel.show{transform:none}
+.panel h2{font-family:Georgia,serif;font-size:1.15rem;margin:0 0 6px}
+.panel .sub{color:var(--muted);font-size:.78rem;margin-bottom:12px}
+.panel .row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:.8rem}
+.panel .k{color:var(--muted)}.panel .v{font-weight:700;text-align:right}
+.panel .close{position:absolute;left:12px;top:max(12px,env(safe-area-inset-top));}
+.err{color:#ff9a8f;padding:20px;text-align:center}
+.zoom{display:flex;gap:6px;align-items:center}
+.zoom input{width:90px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="ttl">Sơ đồ bàn · Gala · Pollux</div>
+  <a class="btn" href="/checkin-gala.html">← Cửa Gala</a>
+  <a class="btn" href="/crm">CRM</a>
+  <button class="btn acc" type="button" id="rf">↻ Làm mới</button>
+  <div class="zoom">
+    <label for="z" style="font-size:.7rem;color:var(--muted)">Zoom</label>
+    <input id="z" type="range" min="50" max="160" value="100">
+  </div>
+  <div class="stats">
+    <span>Đã đến <b id="nOk">0</b></span>
+    <span>Chưa <b id="nNo">0</b></span>
+    <span>NV <b id="nNv">0</b></span>
+    <span id="upd"></span>
+  </div>
+</header>
+<div class="leg">
+  <span><i class="ok"></i>Đã check-in Gala</span>
+  <span><i class="no"></i>Chưa đến</span>
+  <span><i class="empty"></i>Ghế trống</span>
+  <span><i class="ok nv"></i>Nhân viên (viền vàng)</span>
+</div>
+<div class="hint" id="hint">Đang tải sơ đồ…</div>
+<div class="wrap" id="wrap">
+  <div class="stage" id="stage">
+    <img class="bg" id="bg" alt="Layout Pollux" draggable="false">
+    <div class="seats" id="seats"></div>
+  </div>
+</div>
+<aside class="panel" id="panel">
+  <button class="btn close" type="button" id="pClose">Đóng</button>
+  <div style="margin-top:36px">
+    <h2 id="pName">—</h2>
+    <div class="sub" id="pSub"></div>
+    <div class="row"><span class="k">Bàn / Ghế</span><span class="v" id="pBan"></span></div>
+    <div class="row"><span class="k">Check-in Gala</span><span class="v" id="pCi"></span></div>
+    <div class="row"><span class="k">Nhân viên</span><span class="v" id="pNv"></span></div>
+    <div class="row"><span class="k">Mã thẻ</span><span class="v" id="pId"></span></div>
+    <p style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn acc" id="pDoor" href="#">Mở ở cửa Gala</a>
+      <a class="btn" id="pCrm" href="/crm" target="_blank" rel="noopener">Mở CRM</a>
+    </p>
+  </div>
+</aside>
+<script>
+(function(){
+"use strict";
+var POLL_MS=25000;
+var META=null, G=[], byKey={}, scale=1, pollBusy=false, sel=null;
+
+function $(s){return document.querySelector(s);}
+function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function tagArr(t){return String(t||"").split(/[,;]+/).map(function(s){return s.trim();}).filter(Boolean);}
+function isNv(g){return tagArr(g.tags).indexOf("pl:nhan-vien")>-1;}
+function cameGala(g){return !!(g.checked_in_gala || (g.checked_in && String(g.session||"").toLowerCase()==="gala"));}
+
+async function api(url, opts){
+  opts=opts||{}; opts.credentials="same-origin";
+  var r=await fetch(url, opts);
+  if(r.status===401){
+    location.href="/crm?next="+encodeURIComponent("/sodoban-gala.html");
+    throw new Error("unauth");
+  }
+  return r;
+}
+async function jget(url){
+  var r=await api(url); var j=await r.json().catch(function(){return {};});
+  if(!r.ok) throw new Error(j.error||("HTTP "+r.status));
+  return j;
+}
+
+function seatKey(ban,ghe){return String(ban)+"|"+String(ghe);}
+
+function indexGuests(rows){
+  byKey={}; G=rows||[];
+  G.forEach(function(g){
+    var ban=String(g.table_no||"").trim(), ghe=String(g.seat_no||"").trim();
+    if(!/^\d+$/.test(ban)||!/^\d+$/.test(ghe)) return;
+    var k=seatKey(ban,ghe);
+    if(!byKey[k]) byKey[k]=[];
+    byKey[k].push(g);
+  });
+}
+
+function maxSeatForTable(ban){
+  var m=0;
+  Object.keys(byKey).forEach(function(k){
+    var p=k.split("|"); if(p[0]!==String(ban)) return;
+    var n=parseInt(p[1],10); if(n>m) m=n;
+  });
+  return m||0;
+}
+
+function render(){
+  var root=$("#seats"); root.innerHTML="";
+  var tables=(META&&META.tables)||{};
+  var nOk=0,nNo=0,nNv=0, nSeat=0;
+  Object.keys(tables).forEach(function(ban){
+    var t=tables[ban];
+    var lab=document.createElement("div");
+    lab.className="tbl-lab";
+    lab.style.left=t.x+"px"; lab.style.top=t.y+"px";
+    lab.textContent=t.label||("VIP"+ban);
+    root.appendChild(lab);
+
+    var maxS=maxSeatForTable(ban);
+    // show at least seats present; if table empty in CRM, skip seat dots
+    if(maxS<1) return;
+    for(var s=1;s<=maxS;s++){
+      var ang=-Math.PI/2 + (2*Math.PI*(s-1))/maxS;
+      var r=t.r||36;
+      var x=t.x + Math.cos(ang)*r;
+      var y=t.y + Math.sin(ang)*r;
+      var guests=byKey[seatKey(ban,s)]||[];
+      var el=document.createElement("button");
+      el.type="button";
+      el.className="seat";
+      el.style.left=x+"px"; el.style.top=y+"px";
+      el.textContent=String(s);
+      el.setAttribute("data-ban",ban);
+      el.setAttribute("data-ghe",String(s));
+      if(!guests.length){
+        el.classList.add("empty");
+        el.title="Ghế trống · Bàn "+ban+" · Ghế "+s;
+      } else {
+        nSeat++;
+        var g=guests[0];
+        var ok=cameGala(g);
+        var nv=isNv(g);
+        el.classList.add(ok?"ok":"no");
+        if(nv){ el.classList.add("nv"); nNv++; }
+        if(ok) nOk++; else nNo++;
+        el.title=(g.full_name||"")+" · Bàn "+ban+" Ghế "+s+(nv?" · NV":"")+(ok?" · Đã đến":" · Chưa đến");
+        el.setAttribute("data-id", String(g.id));
+        if(guests.length>1) el.title+=" · ⚠ trùng ghế ×"+guests.length;
+      }
+      if(sel && sel.ban===ban && sel.ghe===String(s)) el.classList.add("on");
+      root.appendChild(el);
+    }
+  });
+  $("#nOk").textContent=String(nOk);
+  $("#nNo").textContent=String(nNo);
+  $("#nNv").textContent=String(nNv);
+  $("#hint").textContent="Bàn CRM 1–34 = VIP1–34 trên Pollux · "+G.length+" khách Gala · ghế có người: "+nSeat;
+}
+
+function openPanel(g, ban, ghe){
+  sel={ban:String(ban), ghe:String(ghe)};
+  $("#pName").textContent=g.full_name||"—";
+  $("#pSub").textContent=[g.org,g.title].filter(Boolean).join(" · ")||"—";
+  $("#pBan").textContent="Bàn "+ban+" · Ghế "+ghe;
+  $("#pCi").textContent=cameGala(g)?"Đã đến":"Chưa đến";
+  $("#pNv").textContent=isNv(g)?"Có":"Không";
+  $("#pId").textContent="#"+g.id;
+  $("#pDoor").href="/checkin-gala.html";
+  $("#pCrm").href="/crm";
+  $("#panel").classList.add("show");
+  render();
+}
+
+function applyZoom(){
+  scale=(parseInt($("#z").value,10)||100)/100;
+  var st=$("#stage");
+  var w=(META&&META.image_w)||1493;
+  st.style.width=(w*scale)+"px";
+  // seats layer uses raw pixel coords matching PNG natural size;
+  // scale whole stage via width on img; absolute seats need same scale
+  st.style.transform="scale(1)"; // width-driven
+  var img=$("#bg");
+  // position seats relative to displayed image: use % of natural size
+  // Our seat coords are in natural pixels; stage width = natural*scale via img width 100% of stage
+  // Keep stage width = natural * scale
+  st.style.width=(w*scale)+"px";
+  img.style.width=(w*scale)+"px";
+  // seats are positioned in natural px — wrap them in a scaled layer
+  var seats=$("#seats");
+  seats.style.width=w+"px";
+  seats.style.height=((META&&META.image_h)||1050)+"px";
+  seats.style.transform="scale("+scale+")";
+  seats.style.transformOrigin="top left";
+  img.style.width=w+"px";
+  img.style.transform="scale("+scale+")";
+  img.style.transformOrigin="top left";
+  st.style.width=(w*scale)+"px";
+  st.style.height=(((META&&META.image_h)||1050)*scale)+"px";
+}
+
+async function loadAll(){
+  if(pollBusy) return;
+  pollBusy=true;
+  try{
+    if(!META){
+      var mj=await fetch("/sodoban/tables.json",{credentials:"same-origin"});
+      META=await mj.json();
+      $("#bg").src="/sodoban/pollux.png";
+      await new Promise(function(res,rej){
+        $("#bg").onload=res; $("#bg").onerror=function(){rej(new Error("png"));};
+      });
+    }
+    var j=await jget("/crm/guests?session=gala&limit=1000");
+    indexGuests(j.rows||[]);
+    applyZoom();
+    render();
+    $("#upd").textContent="· "+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  }catch(e){
+    $("#hint").innerHTML='<span class="err">Không tải được sơ đồ / dữ liệu. Đăng nhập CRM hoặc cửa rồi thử lại. ('+esc(e.message)+')</span>';
+  }finally{ pollBusy=false; }
+}
+
+$("#seats").addEventListener("click", function(e){
+  var b=e.target.closest(".seat"); if(!b||b.classList.contains("empty")) return;
+  var id=b.getAttribute("data-id");
+  var g=G.filter(function(x){return String(x.id)===String(id);})[0];
+  if(!g) return;
+  openPanel(g, b.getAttribute("data-ban"), b.getAttribute("data-ghe"));
+});
+$("#pClose").addEventListener("click", function(){ $("#panel").classList.remove("show"); sel=null; render(); });
+$("#rf").addEventListener("click", function(){ loadAll(); });
+$("#z").addEventListener("input", function(){ applyZoom(); });
+
+loadAll();
+setInterval(function(){ loadAll(); }, POLL_MS);
+})();
+</script>
+</body>
+</html>

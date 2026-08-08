@@ -453,15 +453,17 @@ function render(){
       if(String(ban).toLowerCase().indexOf(qText)>-1 || String(t.label||"").toLowerCase().indexOf(qText)>-1) tableMatches=true;
     }
 
-    // table plate — drawn from real seat geometry (bbox of measured chairs), never from an
-    // external image, so shape+position can never drift out of sync with the chairs again.
-    var bx0=Infinity,bx1=-Infinity,by0=Infinity,by1=-Infinity;
-    seatPos.forEach(function(p){ if(p[0]<bx0)bx0=p[0]; if(p[0]>bx1)bx1=p[0]; if(p[1]<by0)by0=p[1]; if(p[1]>by1)by1=p[1]; });
-    var tblW=isFinite(bx1-bx0)?(bx1-bx0)*0.74:r*1.3, tblH=isFinite(by1-by0)?(by1-by0)*0.74:r*1.3;
-    tblW=Math.max(tblW, r*1.05); tblH=Math.max(tblH, r*1.05);
+    // Table plate — every one of the 34 VIP tables is drawn as a PERFECT CIRCLE in the source
+    // CAD (measured directly off pollux.png: the pink disc's own bounding box is square and
+    // matches `r` to within ~1-2px, checked on VIP1/5/9/19). Earlier code derived width/height
+    // separately from the bounding box of the *chairs* instead — that broke for VIP1-8, whose
+    // 8 chairs only wrap 3 sides of the table (one side left open, e.g. facing an aisle/stage),
+    // so their chair bbox is wide-and-short and rendered a false oval on a table that is truly
+    // round. Always draw a circle sized from the measured radius `r` itself.
+    var tblD=r*2;
     var tbl=document.createElement("div");
     tbl.className="tbl";
-    tbl.style.width=tblW+"px"; tbl.style.height=tblH+"px";
+    tbl.style.width=tblD+"px"; tbl.style.height=tblD+"px";
     tbl.style.left=t.x+"px"; tbl.style.top=ty+"px";
     tbl.style.setProperty("--ring-color", t.vip==="yellow" ? "var(--tierB-ring)" : "var(--tierA-ring)");
     if(perfect) tbl.classList.add("perfect");

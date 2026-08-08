@@ -150,7 +150,7 @@ a{color:inherit}
 .tbl-lab{position:absolute;transform:translate(-50%,-50%);text-align:center;pointer-events:none;
   transition:opacity .25s;display:flex;flex-direction:column;align-items:center;gap:1px;
   width:74%;max-width:100px}
-.tbl-lab .tname{font-size:11px;font-weight:800;color:#3a2710;letter-spacing:.01em;line-height:1.05;
+.tbl-lab .tname{font-size:33px;font-weight:800;color:#3a2710;letter-spacing:-.01em;line-height:1;
   white-space:nowrap}
 .tbl-lab .tfree{font-size:8px;font-weight:800;border-radius:99px;padding:1px 6px;
   display:inline-block;box-shadow:0 1px 3px rgba(0,0,0,.25);white-space:nowrap;letter-spacing:.01em}
@@ -423,7 +423,9 @@ function render(){
     var knownMax=maxSeatKnown(ban);
     var overflow=Math.max(0, knownMax-cap); // CRM has seat_no beyond real chair count — flag, don't hide
 
-    // count this table's stats first (for aura + badge) — only within real capacity
+    // Stats within REAL physical capacity only — this is what the aura donut ring
+    // (drawn at the physical chair radius) must use, so its percentage can never
+    // exceed 100% and desync from what's actually drawn.
     var tOk=0,tNo=0,tEmpty=0;
     for(var s=1;s<=cap;s++){
       var guests=byKey[seatKey(ban,s)]||[];
@@ -431,17 +433,21 @@ function render(){
       guests.forEach(function(g){ if(cameGala(g)) tOk++; else tNo++; });
     }
     var tCap=cap;
-    // "perfect" = every physical seat is filled AND everyone (incl. any overflow guest) has
-    // actually arrived — the strongest, most honest "this table is fully done" signal.
-    var allPresent = tCap>0 && tNo===0 && tEmpty===0;
-    if(allPresent && overflow>0){
-      for(var so=cap+1; so<=cap+overflow; so++){
-        var gso=byKey[seatKey(ban,so)]||[];
-        if(!gso.length){ allPresent=false; break; }
-        if(gso.some(function(g){ return !cameGala(g); })){ allPresent=false; break; }
-      }
+    // Overflow guests (CRM seat_no beyond the real chair count) are REAL people who
+    // ARE drawn on the map with their own flagged seat icon — counting them only in
+    // `nSeat` (the footer hint) but never in the "Đã đến/Chưa đến" KPI totals would
+    // silently undercount arrivals by however many overflow guests exist. Tally them
+    // separately (tOkOv/tNoOv) and fold into the GLOBAL totals below, but keep them
+    // OUT of tOk/tNo/tCap so the per-table aura ring stays a clean 0–100% of real seats.
+    var tOkOv=0,tNoOv=0,hasEmptyOv=false;
+    for(var so=cap+1; so<=cap+overflow; so++){
+      var gso=byKey[seatKey(ban,so)]||[];
+      if(!gso.length){ hasEmptyOv=true; continue; }
+      gso.forEach(function(g){ if(cameGala(g)) tOkOv++; else tNoOv++; });
     }
-    var perfect=allPresent;
+    // "perfect" = every physical seat filled AND everyone incl. any overflow guest
+    // has actually arrived — the strongest, most honest "this table is fully done" signal.
+    var perfect = tCap>0 && tNo===0 && tEmpty===0 && tNoOv===0 && !hasEmptyOv;
     var tableMatches=false;
     if(hasSearch){
       if(String(ban).toLowerCase().indexOf(qText)>-1 || String(t.label||"").toLowerCase().indexOf(qText)>-1) tableMatches=true;
@@ -493,7 +499,10 @@ function render(){
     root.appendChild(lab);
 
     if(tEmpty>0) freeList.push({ban:ban, label:t.label||("VIP"+ban), free:tEmpty});
-    nCap+=tCap; nOk+=tOk; nNo+=tNo; nEmpty+=tEmpty;
+    // nCap stays PHYSICAL capacity only (a fixed venue fact). nOk/nNo — the "Đã đến/Chưa đến"
+    // KPI — include overflow guests too, so the global totals honestly reflect every real
+    // person on the map, not just the ones sitting in a real chair.
+    nCap+=tCap; nOk+=tOk+tOkOv; nNo+=tNo+tNoOv; nEmpty+=tEmpty;
 
     if(cap<1) return;
     var seatTotal=cap+overflow;
@@ -575,8 +584,8 @@ function render(){
     t5.appendChild(c);
   });
 
-  $("#hint").textContent="Bàn CRM 1–34 = VIP1–34 trên Pollux · "+G.length+" khách Gala trong CSDL · ghế có người: "+nSeat+
-    (nCap? (" · sức chứa đã biết: "+nCap) : "");
+  $("#hint").textContent="Tổng số khách đã xếp bàn: "+nSeat+" / "+G.length+" khách Gala trong CSDL"+
+    (nCap? (" · sức chứa 34 bàn VIP: "+nCap+" ghế") : "")+" · Bàn CRM 1–34 = VIP1–34 trên Pollux";
 
   prevArrived=nextArrived;
   firstLoadDone=true;

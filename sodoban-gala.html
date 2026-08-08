@@ -240,7 +240,7 @@ a{color:inherit}
   <div class="brand"><span class="dot"></span></div>
   <div class="ttl">Sơ đồ bàn · Gala<small>Pollux Ballroom</small></div>
   <a class="btn" href="/checkin-gala.html">← Cửa Gala</a>
-  <a class="btn" href="/crm">CRM</a>
+  <a class="btn only-btl" href="/crm" id="navCrm" style="display:none">CRM</a>
   <button class="btn acc" type="button" id="rf">↻ Làm mới</button>
   <div class="zoom">
     <label for="z">Zoom</label>
@@ -305,7 +305,7 @@ a{color:inherit}
     <div class="dupwarn" id="pDup" style="display:none"></div>
     <p class="actions">
       <a class="btn acc" id="pDoor" href="#">Mở ở cửa Gala</a>
-      <a class="btn" id="pCrm" href="/crm" target="_blank" rel="noopener">Mở CRM</a>
+      <a class="btn only-btl" id="pCrm" href="/crm" target="_blank" rel="noopener" style="display:none">Mở CRM</a>
     </p>
   </div>
 </aside>
@@ -332,6 +332,21 @@ function cameGala(g){return !!(g.checked_in_gala || (g.checked_in && String(g.se
 function initials(name){
   var p=String(name||"").trim().split(/\s+/); if(!p.length||!p[0]) return "?";
   return (p[p.length-1][0]||"?").toUpperCase();
+}
+
+// The "CRM" links are dead ends for anyone who isn't `btl` — the server hard-blocks
+// /crm for other roles (403 "trang đón tiếp"), and PG at an open door often has no
+// personal session at all, so /crm would even bounce them to a login screen that
+// can't issue them a code. Ask /crm/me directly (bypasses the shared api() helper,
+// which would otherwise force a login redirect on 401 for perfectly normal PG use)
+// and only reveal the buttons once we've confirmed the viewer really is btl.
+async function refreshRoleUI(){
+  var isBtl=false;
+  try{
+    var r=await fetch("/crm/me",{credentials:"same-origin"});
+    if(r.ok){ var j=await r.json().catch(function(){return {};}); isBtl = j.role==="btl"; }
+  }catch(e){ /* no session / offline — treat as non-btl, buttons stay hidden */ }
+  document.querySelectorAll(".only-btl").forEach(function(el){ el.style.display = isBtl ? "" : "none"; });
 }
 
 async function api(url, opts){
@@ -717,6 +732,7 @@ window.addEventListener("offline", function(){ $("#banOff").className="banner er
 window.addEventListener("online", function(){ $("#banOff").className="banner"; loadAll(); });
 
 loadAll();
+refreshRoleUI();
 setInterval(function(){ loadAll(); }, POLL_MS);
 })();
 </script>

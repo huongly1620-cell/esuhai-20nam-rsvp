@@ -134,7 +134,12 @@
  .fb{border:1px solid var(--line);background:rgba(5,13,24,.5);color:var(--muted);border-radius:20px;padding:9px 14px;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap}
  .fb .mk{width:15px;height:15px;border-radius:50%;border:2px solid currentColor;display:inline-block;flex:none}.fb .xx{font-size:1rem}
  .fb.came.on{background:var(--green-ok);border-color:var(--green-ok);color:#042a17}.fb.no.on{background:var(--amber);border-color:var(--amber);color:#2a1e05}
- .sr{padding:2px 14px 8px;position:sticky;top:52px;z-index:20;background:linear-gradient(180deg,var(--sr1),var(--sr2));backdrop-filter:blur(8px)}
+ /* E08-D085 việc A · top:52px là chiều cao header ĐOÁN từ lúc viết. Header ở
+    đây có padding-top:env(safe-area-inset-top) nên trên iPhone tai thỏ nó cao
+    hơn 52px — khu tìm kiếm chui xuống dưới header và bị che. Và z-index:20
+    thấp hơn header (30) nên khi lệch là bị đè hẳn. Nay dính đúng dưới chiều
+    cao đo được, và nằm trên header về thứ tự xếp lớp. */
+ .sr{padding:2px 14px 8px;position:sticky;top:var(--top-h,52px);z-index:20;background:linear-gradient(180deg,var(--sr1),var(--sr2));backdrop-filter:blur(8px)}
  /* Chỉ #q trong .box — KHÔNG dính #fBan. `.sr input` specificity thắng `.fban`
     (0,1,1 > 0,1,0) ⇒ ô Bàn width:100% nuốt cả hàng, ô tìm tên flex:1 còn ~0px
     (D038 LIVE 06/08 — Ly/Sponsor báo mất tìm tên). */
@@ -1161,7 +1166,34 @@ async function enrich(g,id){try{var j=await jget("/crm/guests/"+id);g._enriched=
  /* E08-D058 — `_ci` là nguồn của cờ can_undo. Máy chủ tính, cửa chỉ vẽ theo. */
  g._ci=j.checkIns||[];
  g._inter=j.interactions||[];g.phone=(j.guest&&j.guest.phone)||"";var p=parseNote(j.guest&&j.guest.note);g.diet=p.diet||"";g.role=p.role||"";g.handler=p.handler||"";g.seat=p.seat||"";if(curId===id)openPf(id);}catch(e){g._enriched=true;}}
-function setLang(l){LANG=l;localStorage.setItem("esuhai_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";
+
+/* E08-D085 việc A · đo chiều cao THẬT của header rồi phát ra biến CSS --top-h.
+   Vì sao phải đo thay vì viết số: chiều cao header đổi theo ngôn ngữ (nhãn tiếng
+   Nhật ngắn hơn, có breakpoint xuống dòng khác), theo bề rộng màn, và ở hai trang
+   cửa còn cộng thêm safe-area-inset-top của máy có tai thỏ. Một con số cứng thì
+   đúng trên máy người viết và sai trên máy người dùng — đúng bệnh cũ top:52px. */
+function dongBoChieuCaoHeader(){
+  var t=document.querySelector(".top"); if(!t) return;
+  var h=Math.round(t.getBoundingClientRect().height);
+  document.documentElement.style.setProperty("--top-h", h+"px");
+}
+
+/* Đăng ký MỘT LẦN ở tầng ngoài.
+   Dùng ResizeObserver thay vì gọi tay sau mỗi sự kiện, vì gọi tay đã sai một lần:
+   đặt lời gọi ở đầu setLang thì nó đo header TRƯỚC khi nhãn kịp đổi, nên --top-h
+   luôn trễ một nhịp (đo được: header 248px mà biến ghi 241px, đổi ngôn ngữ lại
+   thành 241 vs 248). Tự đi tìm "đúng thời điểm" là tự nhận một danh sách sự kiện
+   không bao giờ đủ — ngôn ngữ, xoay máy, đổi cỡ, font tải xong muộn. Để trình
+   duyệt báo khi kích thước ĐÃ đổi thật thì không sót nguồn nào. */
+dongBoChieuCaoHeader();
+if (typeof ResizeObserver === "function") {
+  try { new ResizeObserver(dongBoChieuCaoHeader).observe(document.querySelector(".top")); } catch (e) {}
+} else {
+  addEventListener("resize", dongBoChieuCaoHeader);
+  addEventListener("orientationchange", dongBoChieuCaoHeader);
+}
+function setLang(l){
+LANG=l;localStorage.setItem("esuhai_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";
  document.querySelectorAll("[data-i]").forEach(function(el){var k=el.getAttribute("data-i");var v=t(k);if(v)el.textContent=v;});
  /* Theo đúng khuôn /crm v2: placeholder và nhãn trợ năng dịch QUA THUỘC TÍNH,
     không viết tay từng ô. Trước đây chỉ mỗi `#q` được dịch, nên ô «Phụ trách…»

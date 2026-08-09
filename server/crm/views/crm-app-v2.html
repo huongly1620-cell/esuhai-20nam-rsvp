@@ -125,7 +125,21 @@
   .addtask button{border:1px solid var(--line2);background:var(--gold-soft);color:var(--gold-b);border-radius:9px;padding:0 14px;font:inherit;font-weight:700;cursor:pointer}
 
   /* ── FILTER BAR (sticky) ── */
-  .fbar{position:sticky;top:0;z-index:30;margin-top:16px;padding-top:10px;background:linear-gradient(180deg,var(--bg2) 72%,transparent)}
+  /* E08-D085 việc A · khu tìm kiếm đã `sticky` từ trước, hỏng vì DÍNH ĐÚNG CHỖ
+     header đang đứng: cả hai `top:0`, mà header `z-index:40` cao hơn nên nó nằm
+     đè kín. Vá đúng bệnh là hạ khu tìm kiếm xuống dưới header đúng bằng chiều
+     cao THẬT của header — chiều cao đó co giãn theo ngôn ngữ (vn/jp khác số
+     dòng) và theo breakpoint, nên đo bằng JS rồi gán vào `--top-h`, tuyệt đối
+     không chép thêm một con số cứng nữa (đó chính là lỗi của `.sr{top:52px}` ở
+     hai trang cửa). `0px` chỉ là giá trị đỡ khi JS chưa kịp chạy.
+     GIỮ z-index:30 (thấp hơn header 40) — ĐỪNG nâng lên. Bản vá đầu nâng lên 41
+     và chôn mất 5/8 mục của menu ⋯: `.top` có `backdrop-filter` nên nó tự tạo một
+     stacking context, `.menu-pop{z-index:50}` bị nhốt bên trong và so với thế giới
+     ngoài chỉ đứng ở mức 40 — thanh lọc 41 vẽ đè lên TOÀN BỘ cây con của header,
+     kể cả dropdown. Mà một khi đã có `top:var(--top-h)` thì hai thứ không còn chồng
+     nhau nữa, nên thứ tự vẽ giữa chúng vô nghĩa: 41 là phần thừa, không phải phần
+     chữa. Cùng họ lỗi với D083 (backdrop-filter tạo containing block phá dải đáy). */
+  .fbar{position:sticky;top:var(--top-h,0px);z-index:30;margin-top:16px;padding-top:10px;background:linear-gradient(180deg,var(--bg2) 72%,transparent)}
   :root[data-theme=light] .fbar{background:linear-gradient(180deg,var(--bg1) 72%,transparent)}
   .tabs{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.tabs::-webkit-scrollbar{display:none}
   .tab{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:12px;padding:9px 16px;font-weight:700;font-size:.83rem;cursor:pointer;white-space:nowrap;display:flex;gap:7px;align-items:center;transition:.18s}
@@ -1861,7 +1875,34 @@ var PF_ANH=[],PF_GHIM="";
  function exportXls(){var th=EXP_HDR.map(function(h){return "<th style='background:#0b2130;color:#e0bd77;padding:6px;border:1px solid #999'>"+esc(h)+"</th>";}).join("");var tr=guestRows().map(function(r){return "<tr>"+r.map(function(c){return "<td style='border:1px solid #ccc;padding:5px'>"+esc(c)+"</td>";}).join("")+"</tr>";}).join("");var html="<html><head><meta charset='utf-8'></head><body><table><thead><tr>"+th+"</tr></thead><tbody>"+tr+"</tbody></table></body></html>";dl("DS_khach_ESUHAI20_"+ymd()+".xls","\uFEFF"+html,"application/vnd.ms-excel");}
  function ymd(){var d=new Date();return d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");}
  /* ---- i18n + theme + countdown ---- */
- function setLang(l){LANG=l;localStorage.setItem("esuhai_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";document.querySelectorAll("[data-i]").forEach(function(el){var v=tt(el.getAttribute("data-i"));if(v)el.innerHTML=v;});document.querySelectorAll("[data-iph]").forEach(function(el){el.placeholder=tt(el.getAttribute("data-iph"));});$("#langBtn").textContent=(l==="jp"?"\uD83C\uDF10 Tiếng Việt":"\uD83C\uDF10 日本語");/* 🌐 — cùng ký hiệu với hai cửa, để nút ngôn ngữ ở MỌI trang nhìn giống nhau */renderDash();renderList();tickCd();if(curId)openGuest(curId);}
+
+/* E08-D085 việc A · đo chiều cao THẬT của header rồi phát ra biến CSS --top-h.
+   Vì sao phải đo thay vì viết số: chiều cao header đổi theo ngôn ngữ (nhãn tiếng
+   Nhật ngắn hơn, có breakpoint xuống dòng khác), theo bề rộng màn, và ở hai trang
+   cửa còn cộng thêm safe-area-inset-top của máy có tai thỏ. Một con số cứng thì
+   đúng trên máy người viết và sai trên máy người dùng — đúng bệnh cũ top:52px. */
+function dongBoChieuCaoHeader(){
+  var t=document.querySelector(".top"); if(!t) return;
+  var h=Math.round(t.getBoundingClientRect().height);
+  document.documentElement.style.setProperty("--top-h", h+"px");
+}
+
+/* Đăng ký MỘT LẦN ở tầng ngoài.
+   Dùng ResizeObserver thay vì gọi tay sau mỗi sự kiện, vì gọi tay đã sai một lần:
+   đặt lời gọi ở đầu setLang thì nó đo header TRƯỚC khi nhãn kịp đổi, nên --top-h
+   luôn trễ một nhịp (đo được: header 248px mà biến ghi 241px, đổi ngôn ngữ lại
+   thành 241 vs 248). Tự đi tìm "đúng thời điểm" là tự nhận một danh sách sự kiện
+   không bao giờ đủ — ngôn ngữ, xoay máy, đổi cỡ, font tải xong muộn. Để trình
+   duyệt báo khi kích thước ĐÃ đổi thật thì không sót nguồn nào. */
+dongBoChieuCaoHeader();
+if (typeof ResizeObserver === "function") {
+  try { new ResizeObserver(dongBoChieuCaoHeader).observe(document.querySelector(".top")); } catch (e) {}
+} else {
+  addEventListener("resize", dongBoChieuCaoHeader);
+  addEventListener("orientationchange", dongBoChieuCaoHeader);
+}
+ function setLang(l){
+LANG=l;localStorage.setItem("esuhai_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";document.querySelectorAll("[data-i]").forEach(function(el){var v=tt(el.getAttribute("data-i"));if(v)el.innerHTML=v;});document.querySelectorAll("[data-iph]").forEach(function(el){el.placeholder=tt(el.getAttribute("data-iph"));});$("#langBtn").textContent=(l==="jp"?"\uD83C\uDF10 Tiếng Việt":"\uD83C\uDF10 日本語");/* 🌐 — cùng ký hiệu với hai cửa, để nút ngôn ngữ ở MỌI trang nhìn giống nhau */renderDash();renderList();tickCd();if(curId)openGuest(curId);}
  function cdParts(target){var t=new Date(target.replace(" ","T"))-new Date();if(isNaN(t))return null;if(t<0)return {over:true};var d=Math.floor(t/864e5),h=Math.floor(t/36e5)%24,m=Math.floor(t/6e4)%60,s=Math.floor(t/1e3)%60;return {d:d,h:h,m:m,s:s};}
  function P(x){return String(x).padStart(2,"0");}
  function cdText(p,full){if(!p)return "—";if(p.over)return tt("over");var base=p.d+" "+tt("days")+" "+P(p.h)+":"+P(p.m)+(full?":"+P(p.s):"");return base;}

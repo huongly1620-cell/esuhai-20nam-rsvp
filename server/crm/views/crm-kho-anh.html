@@ -2,88 +2,300 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kho ảnh sự kiện · CRM</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Kho ảnh sự kiện · ESUHAI 20 năm</title>
+<!-- E08-D083 · polish UI/UX lên ngang bậc /crm. Design token + modal + toast chép khuôn
+     từ crm-app-v2.html:9-34 / :605-918 — CHÉP, không import: kiến trúc hiện tại là
+     self-contained per view, không có gói dùng chung giữa các trang. -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@500;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0b1a30; --panel:#12233d; --panel2:#0e1c31; --line:#1e3454;
-  --ink:#eef2f8; --mute:#9fb0c8; --gold:#C9A227; --green:#0F955A; --blue:#2E7FCC; --red:#C0392B;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.5}
-a{color:#8ec2ff}
-.wrap{max-width:1180px;margin:0 auto;padding:16px}
-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid var(--line)}
-header h1{font-size:20px;margin:0;font-weight:700}
-.spacer{flex:1}
-.btn{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-size:15px;font-weight:600;cursor:pointer}
-.btn:hover:not(:disabled){border-color:#33598c}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.btn.gold{background:var(--gold);color:#20180a;border-color:var(--gold)}
-.btn.green{background:var(--green);color:#fff;border-color:var(--green)}
-.btn.red{background:var(--red);color:#fff;border-color:var(--red)}
-.btn.sm{padding:6px 12px;font-size:13px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:16px}
-.hint{color:var(--mute);font-size:13.5px}
-.bad{background:#3a1414;border:1px solid #7a2626;color:#ffd9d9;border-radius:12px;padding:14px 16px;margin-top:16px}
-.good{background:#0f2c20;border:1px solid #1e6b46;color:#c9f2dd;border-radius:12px;padding:12px 16px;margin-top:16px}
-.warn{background:#332a10;border:1px solid #7a6220;color:#ffeec2;border-radius:12px;padding:12px 16px;margin-top:16px}
-.srcbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.drop{margin-top:14px;border:2px dashed var(--line);border-radius:14px;padding:26px;text-align:center;color:var(--mute)}
-.drop.on{border-color:var(--gold);color:var(--ink);background:#132844}
-.stat{display:flex;gap:22px;flex-wrap:wrap;margin-top:10px}
-.stat div b{display:block;font-size:22px;font-weight:800}
-.stat div span{color:var(--mute);font-size:12.5px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px;margin-top:14px}
-.tile{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden;aspect-ratio:1;cursor:pointer}
-.tile img{width:100%;height:100%;object-fit:cover;display:block}
-.tile .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#43607f;font-size:11px;padding:6px;text-align:center;word-break:break-all}
-.tile .nm{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.85));font-size:10.5px;padding:14px 6px 4px;color:#dfe8f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tile .ck{position:absolute;top:6px;left:6px;width:22px;height:22px;border-radius:6px;background:rgba(6,16,30,.75);border:1px solid #4d6d95;display:flex;align-items:center;justify-content:center;font-size:14px;color:transparent}
-.tile.sel{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,162,39,.35) inset}
-.tile.sel .ck{background:var(--gold);border-color:var(--gold);color:#20180a}
-.tile .st{position:absolute;top:6px;right:6px;font-size:10px;padding:2px 6px;border-radius:999px;background:rgba(6,16,30,.85);border:1px solid var(--line)}
-.tile.done .st{background:var(--green);border-color:var(--green);color:#fff}
-.tile.dup .st{background:#2b4a6e;border-color:#2b4a6e;color:#dbe9ff}
-.tile.err{border-color:var(--red)}
-.tile.err .st{background:var(--red);border-color:var(--red);color:#fff}
-.bar{height:8px;background:#0a1729;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:10px}
-.bar i{display:block;height:100%;background:var(--gold);width:0}
-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
-th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
-th{color:var(--mute);font-weight:600}
-code{background:#0a1729;padding:1px 5px;border-radius:5px;font-size:12.5px}
-.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
-.log{max-height:190px;overflow:auto;background:#0a1729;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12.5px;color:var(--mute);margin-top:12px;white-space:pre-wrap}
+  :root{
+    /* ── DARK (mặc định) ── khớp 1:1 tên biến với crm-app-v2.html:12-24 */
+    --gold:#e0bd77;--gold-b:#f6e6bd;--gold-d:#b8963f;--gold-soft:rgba(224,189,119,.14);
+    --green:#1fb073;--green-b:#5fe4a6;--blue:#4a97e6;--blue-b:#96c8ff;
+    --red:#ec5140;--red-b:#ff8676;--amber:#f2b74e;--ok:#45e08e;
+    --bg1:#0a1826;--bg2:#0b2130;--bg3:#081019;--glow:rgba(31,176,115,.14);--glow2:rgba(224,189,119,.06);
+    --panel:rgba(255,255,255,.05);--panel2:rgba(7,16,27,.66);--card:rgba(255,255,255,.032);--hover:rgba(255,255,255,.07);
+    --text:#f4eede;--muted:#aca592;--muted2:#837c66;--line:rgba(224,189,119,.16);--line2:rgba(224,189,119,.32);--inp:rgba(4,11,22,.55);
+    --shadow:0 10px 32px rgba(0,0,0,.36);--r:16px;--ok-glow:rgba(69,224,142,.28);
+    --fs-micro:.62rem;--fs-small:.72rem;--fs-body:.88rem;--fs-label:.78rem;
+    --fs-title:1.05rem;--fs-display:1.55rem;
+  }
+  :root[data-theme=light]{
+    /* ── LIGHT (ivory) ── khớp 1:1 với crm-app-v2.html:25-34 */
+    --gold:#a97f2e;--gold-b:#8a6414;--gold-d:#c6a458;--gold-soft:rgba(169,127,46,.1);
+    --green:#0e955f;--green-b:#0b7a4d;--blue:#2f74c4;--blue-b:#2560a8;
+    --red:#d23a2a;--red-b:#b02a1c;--amber:#c8892a;--ok:#12a15f;
+    --bg1:#faf6ec;--bg2:#f5efe1;--bg3:#efe7d5;--glow:rgba(20,140,100,.08);--glow2:rgba(169,127,46,.07);
+    --panel:rgba(255,255,255,.75);--panel2:rgba(255,255,255,.92);--card:rgba(255,255,255,.9);--hover:#fff;
+    --text:#2a2418;--muted:#6d6552;--muted2:#9a9078;--line:rgba(120,92,36,.18);--line2:rgba(120,92,36,.34);--inp:#fff;
+    --shadow:0 8px 26px rgba(120,92,40,.13);--ok-glow:rgba(18,161,95,.2);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:"Be Vietnam Pro",-apple-system,"Segoe UI",system-ui,Arial,sans-serif;
+    color:var(--text);line-height:1.45;font-size:var(--fs-body);min-height:100vh;
+    background:radial-gradient(1200px 600px at 82% -12%,var(--glow),transparent 60%),radial-gradient(760px 380px at 6% 2%,var(--glow2),transparent 58%),linear-gradient(166deg,var(--bg1),var(--bg2) 50%,var(--bg3))}
+  body.jp{font-family:"Noto Sans JP","Be Vietnam Pro",sans-serif;letter-spacing:.005em}
+  h1,h2,h3{font-family:"Playfair Display",Georgia,Cambria,serif;font-weight:600;margin:0}
+  body.jp h1,body.jp h2,body.jp h3{font-family:"Noto Serif JP","Playfair Display",serif}
+  .num{font-variant-numeric:tabular-nums;letter-spacing:.01em}
+  ::selection{background:var(--gold-soft)}
+  a{color:var(--blue-b)}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 14px 40px}
+
+  /* AC-13 · focus-visible toàn trang: mỗi lần Tab dừng chân phải THẤY được.
+     Dùng :focus-visible (không phải :focus) để chuột bấm không bị viền bám. */
+  :focus-visible{outline:2px solid var(--gold-b);outline-offset:2px;border-radius:8px}
+
+  header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 0 12px;border-bottom:1px solid var(--line)}
+  header h1{font-size:var(--fs-title);letter-spacing:.01em}
+  .sub{color:var(--muted2);font-size:var(--fs-micro);letter-spacing:.06em;text-transform:uppercase}
+  .spacer{flex:1 1 auto}
+  .me{display:none;align-items:center;gap:7px;font-size:var(--fs-micro);color:var(--muted);
+    border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--panel2);max-width:100%;overflow:hidden}
+  .me b{color:var(--gold-b);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .me span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .btn{font:inherit;font-size:.82rem;font-weight:600;border:1px solid var(--line);background:var(--panel2);
+    color:var(--text);border-radius:11px;padding:11px 14px;cursor:pointer;white-space:nowrap;transition:.15s;
+    min-height:40px;display:inline-flex;align-items:center;gap:7px;justify-content:center}
+  .btn:hover:not(:disabled){border-color:var(--line2);background:var(--hover)}
+  .btn:active:not(:disabled){transform:scale(.97)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.gold{background:linear-gradient(180deg,var(--gold-b),var(--gold-d));color:#2a1e05;border-color:transparent;font-weight:700}
+  .btn.green{background:linear-gradient(180deg,var(--green-b),var(--green));color:#04241a;border-color:transparent;font-weight:700}
+  .btn.danger-fill{background:linear-gradient(180deg,#ff8676,var(--red));color:#fff;border-color:transparent;font-weight:700}
+  .btn.sm{padding:7px 11px;font-size:var(--fs-small);min-height:34px}
+  .lang{border:1px solid var(--line2);background:transparent;color:var(--gold-b);border-radius:9px;padding:6px 11px;
+    font:inherit;font-size:.68rem;font-weight:700;cursor:pointer;letter-spacing:.02em;transition:.15s;min-height:34px}
+  .lang:hover{background:var(--gold-soft)}
+  .icobtn{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);
+    color:var(--text);cursor:pointer;font-size:1rem;display:grid;place-items:center;transition:.15s}
+  .icobtn:hover{border-color:var(--line2);background:var(--hover)}
+
+  /* AC-19 · kính mờ. @supports là bắt buộc chứ không phải lịch sự: Firefox tắt
+     backdrop-filter theo mặc định ở một số bản, và khi nó không chạy thì nền
+     trong suốt làm chữ nằm đè lên ảnh phía sau — không đọc được. Fallback là
+     nền ĐẶC, không phải nền mờ hỏng. */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-top:14px;box-shadow:var(--shadow)}
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .card{background:var(--panel);-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
+  }
+  .hint{color:var(--muted);font-size:var(--fs-small)}
+  /* .good/.bad/.warn — TÊN LỚP CỐ ĐỊNH: doNangLucEXIF() (vùng cấm chạm) gán thẳng
+     box.className = 'good'|'bad'. Đổi tên lớp ở đây là làm hỏng hàng rào EXIF. */
+  .good,.bad,.warn{border-radius:12px;padding:13px 15px;margin-top:14px;font-size:var(--fs-body);line-height:1.55}
+  .good{background:rgba(31,176,115,.1);border:1px solid var(--green);color:var(--text)}
+  .bad{background:rgba(236,81,64,.1);border:1px solid var(--red);color:var(--text)}
+  .warn{background:rgba(242,183,78,.1);border:1px solid var(--amber);color:var(--text)}
+
+  .srcbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .srclbl{font-weight:700;font-size:var(--fs-label);color:var(--muted)}
+  .cloud{position:relative}
+  /* AC-15 · badge NHÌN THẤY được. `title` không hiện trên màn cảm ứng và chỉ hiện khi rê
+     chuột — trên điện thoại nó tương đương không tồn tại. */
+  .soon{display:inline-block;font-size:var(--fs-micro);font-weight:700;letter-spacing:.03em;
+    background:var(--gold-soft);color:var(--gold-b);border:1px solid var(--line2);border-radius:999px;padding:1px 7px;margin-left:2px}
+  .drop{margin-top:13px;border:2px dashed var(--line);border-radius:13px;padding:24px 14px;text-align:center;color:var(--muted);transition:.15s}
+  .drop.on{border-color:var(--gold);color:var(--text);background:var(--gold-soft)}
+
+  .stat{display:flex;gap:20px;flex-wrap:wrap}
+  .stat div b{display:block;font-size:1.35rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--gold-b)}
+  .stat div span{color:var(--muted2);font-size:var(--fs-micro)}
+  .toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .why{margin-top:8px;font-size:var(--fs-small);color:var(--amber);min-height:1.2em}
+  .barwrap{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .bar{flex:1 1 auto;height:8px;background:var(--inp);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold-b));width:0;transition:width .2s}
+  .barnum{font-size:var(--fs-small);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;min-width:96px;text-align:right}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:9px;margin-top:13px}
+  .tile{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:11px;overflow:hidden;aspect-ratio:1;cursor:pointer;transition:.15s}
+  .tile:hover{border-color:var(--line2)}
+  .tile img{width:100%;height:100%;object-fit:cover;display:block}
+  .tile .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted2);
+    font-size:var(--fs-micro);padding:6px;text-align:center;word-break:break-all}
+  .tile .nm{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.85));
+    font-size:var(--fs-micro);padding:14px 6px 4px;color:#e9eef7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  :root[data-theme=light] .tile .nm{background:linear-gradient(transparent,rgba(40,30,10,.8))}
+  .tile .ck{position:absolute;top:6px;left:6px;width:22px;height:22px;border-radius:7px;background:var(--panel2);
+    border:1px solid var(--line2);display:grid;place-items:center;font-size:13px;color:transparent}
+  .tile[aria-checked=true]{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-soft) inset}
+  .tile[aria-checked=true] .ck{background:var(--gold);border-color:var(--gold);color:#2a1e05}
+  .tile .st{position:absolute;top:6px;right:6px;font-size:var(--fs-micro);padding:2px 7px;border-radius:999px;
+    background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
+  .tile.done .st{background:var(--green);border-color:var(--green);color:#04241a;font-weight:700}
+  .tile.dup .st{background:var(--blue);border-color:var(--blue);color:#04101f;font-weight:700}
+  .tile.err{border-color:var(--red)}
+  .tile.err .st{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
+
+  /* ── AC-20 · ảnh hiện dần + ô chờ có shimmer ──
+     Ảnh đọc từ đĩa nên tới rất nhanh, nhưng "rất nhanh" vẫn là một cú nhảy khựng
+     khi 200 ô cùng đổi. Fade 320ms biến cú nhảy thành chuyển động. */
+  .tile img{opacity:0;transition:opacity .32s ease}
+  .tile img.on{opacity:1}
+  .tile.loading::before{content:"";position:absolute;inset:0;
+    background:linear-gradient(100deg,transparent 20%,var(--hover) 45%,transparent 70%);
+    background-size:220% 100%;animation:shim 1.25s linear infinite}
+  @keyframes shim{0%{background-position:120% 0}100%{background-position:-120% 0}}
+  /* Tick nảy nhẹ khi vừa được chọn — phản hồi tức thì cho thao tác chính của trang. */
+  @keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+  .tile[aria-checked=true] .ck{animation:pop .22s cubic-bezier(.2,.8,.2,1)}
+  /* AC-22 · "lún" khi bấm. */
+  .tile:active{transform:scale(.975)}
+  /* Nút phóng to: ô ảnh là checkbox (AC-5), nên xem ảnh phải có nút RIÊNG —
+     nhập hai việc vào một cú bấm là mất một trong hai. */
+  .zoom{position:absolute;bottom:6px;right:6px;width:30px;height:30px;border-radius:9px;
+    border:1px solid var(--line2);background:var(--panel2);color:var(--text);cursor:pointer;
+    display:grid;place-items:center;font-size:13px;opacity:0;transition:opacity .18s,transform .12s;padding:0}
+  .tile:hover .zoom,.zoom:focus-visible{opacity:1}
+  .zoom:active{transform:scale(.9)}
+  @media (hover:none){ .zoom{opacity:.92} }   /* chạm không có hover → luôn hiện */
+
+  /* ── AC-17 · khung kéo chọn (rubber band) ── */
+  .rubber{position:fixed;z-index:40;border:1px solid var(--gold);background:var(--gold-soft);
+    border-radius:4px;pointer-events:none;display:none}
+  .rubber.on{display:block}
+  #grid{position:relative}
+  body.dangkeo{user-select:none;-webkit-user-select:none}
+
+  /* ── AC-18 · chế độ chọn trên chạm ── */
+  .selbar{display:none;align-items:center;gap:10px;margin-top:10px;padding:9px 12px;border-radius:11px;
+    background:var(--gold-soft);border:1px solid var(--line2);font-size:var(--fs-small)}
+  body.chonmode .selbar{display:flex}
+  body.chonmode .tile .ck{opacity:1}
+
+  /* ── AC-16 · lightbox ── */
+  .lb{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
+    background:rgba(3,8,16,.9);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding:24px}
+  .lb.show{display:flex}
+  .lb img{max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 24px 70px rgba(0,0,0,.6);
+    transform-origin:top left;will-change:transform}
+  .lb-cap{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));text-align:center;
+    color:#e9eef7;font-size:var(--fs-small);padding:0 16px;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+  .lb-x{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:12px;width:44px;height:44px;border-radius:12px;
+    border:1px solid var(--line2);background:var(--panel2);color:var(--text);font-size:18px;cursor:pointer}
+  .lb-nav{position:fixed;top:50%;transform:translateY(-50%);width:44px;height:64px;border-radius:12px;
+    border:1px solid var(--line2);background:var(--panel2);color:var(--text);font-size:20px;cursor:pointer}
+  .lb-prev{left:10px}.lb-next{right:10px}
+
+  .log{max-height:190px;overflow:auto;background:var(--inp);border:1px solid var(--line);border-radius:11px;
+    padding:10px 12px;font-size:var(--fs-small);color:var(--muted);margin-top:12px;white-space:pre-wrap;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  code{background:var(--inp);padding:1px 6px;border-radius:6px;font-size:var(--fs-small)}
+
+  /* ── Modal (khuôn appDlg của crm-app-v2.html) ── */
+  .appdlg{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;
+    padding:18px;background:rgba(3,8,16,.72);backdrop-filter:blur(4px)}
+  .appdlg.show{display:flex}
+  .appdlg-in{width:100%;max-width:400px;background:linear-gradient(180deg,var(--bg2),var(--bg3));
+    border:1px solid var(--line2);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+  .appdlg-msg{font-size:var(--fs-body);line-height:1.55;color:var(--text);white-space:pre-wrap;margin:0 0 14px;text-align:left}
+  .appdlg-acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+  .appdlg-acts .btn{min-width:96px}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--panel2);
+    backdrop-filter:blur(12px);border:1px solid var(--line2);color:var(--text);padding:11px 18px;border-radius:30px;
+    font-size:var(--fs-label);font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;
+    transition:.28s cubic-bezier(.2,.8,.2,1);z-index:95}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.ok{border-color:var(--ok);color:var(--ok)}.toast.err{border-color:var(--red-b);color:var(--red-b)}
+
+  /* AC-12 · 360px. Hai lần trong chương trình này (D076, D055) lỗi rơi đúng ở khổ hẹp:
+     hàng nút nowrap + overflow ẩn thì nút cuối biến mất mà không ai thấy. */
+  @media (max-width:520px){
+    header{gap:8px}
+    header h1{font-size:1rem;width:100%}
+    .sub{display:none}
+    .me{order:9;width:100%;justify-content:flex-start}
+    .srcbar .btn{flex:1 1 auto}
+    .stat{gap:14px}
+    .stat div b{font-size:1.15rem}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+    .barnum{min-width:0}
+  }
+
+  /* ── AC-23 · vùng chạm ≥44×44 (Apple HIG) và AC-24 · dải hành động cố định đáy ──
+     Ngón tay không có con trỏ: nút 34px là nút bấm trượt. Và ở khổ này thanh
+     hành động phải bám đáy — cuộn giữa 300 ô ảnh rồi phải cuộn ngược lên đầu để
+     bấm Đồng bộ là lỗi dùng được, không phải lỗi thẩm mỹ.
+     KHÔNG nhân đôi nút: chính `.toolbar` biến thành dải đáy, nên không bao giờ có
+     hai nút Đồng bộ lệch trạng thái nhau. */
+  @media (max-width:480px){
+    .btn,.icobtn,.lang{min-height:44px;padding-top:11px;padding-bottom:11px}
+    .btn.sm{min-height:44px}
+    .icobtn{width:44px;height:44px}
+    .zoom{width:44px;height:44px;border-radius:11px}
+    .tile .ck{width:26px;height:26px}
+    body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+    /* AC-19 vs AC-24 — XUNG ĐỘT THẬT, bắt được bằng ảnh chụp chứ không bằng đọc code:
+       một phần tử có `backdrop-filter` trở thành CONTAINING BLOCK cho mọi con
+       `position:fixed`. Nên `.toolbar` nằm trong `#pickCard` (thẻ kính mờ) sẽ neo
+       vào thẻ đó chứ KHÔNG neo vào màn hình — dải hành động trôi lửng giữa lưới.
+       Ở khổ điện thoại, cho đúng một thẻ này rơi về nền đặc — tức chính cái
+       fallback mà AC-19 đã mô tả sẵn. Đổi lại dải đáy hoạt động thật.
+       (Cách khác là nhân đôi nút Đồng bộ ra ngoài thẻ — bị loại vì hai nút cùng
+       chức năng là hai trạng thái phải giữ đồng bộ, sớm muộn lệch nhau.) */
+    #pickCard{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--panel2)}
+    #actBar{position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0;
+      padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
+      background:var(--panel2);border-top:1px solid var(--line2);box-shadow:0 -8px 24px rgba(0,0,0,.28)}
+    @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+      #actBar{-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+    }
+    #actBar .btn{flex:1 1 auto}
+    #actBar .spacer{display:none}
+    .lb-nav{width:44px;height:72px}
+  }
+
+  /* ── AC-21 · TÔN TRỌNG prefers-reduced-motion ──
+     Không phải mục trang trí: chuyển động lớn gây chóng mặt và buồn nôn thật với
+     người rối loạn tiền đình. Cờ này là người dùng đã NÓI RA yêu cầu ở mức hệ
+     điều hành — bỏ qua nó là phớt lờ một câu trả lời đã có sẵn.
+     Tắt TOÀN BỘ: transition, keyframe, shimmer, và cả FLIP của lightbox (phần JS
+     đọc cùng cờ này ở `GIAM_DONG`). */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{
+      animation-duration:.001ms !important;animation-iteration-count:1 !important;
+      transition-duration:.001ms !important;scroll-behavior:auto !important}
+    .tile img{opacity:1}
+    .tile.loading::before{animation:none;background:var(--hover)}
+    .tile:active,.zoom:active,.btn:active:not(:disabled){transform:none}
+    .tile[aria-checked=true] .ck{animation:none}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
 
 <header>
-  <h1>📸 Kho ảnh sự kiện</h1>
-  <span class="hint">E08-D082 · Pha 1</span>
+  <h1 data-i="h_title">📸 Kho ảnh sự kiện</h1>
+  <span class="sub" data-i="h_sub">E08-D082 · Pha 1</span>
   <div class="spacer"></div>
-  <a class="btn sm" href="/crm">← Về CRM</a>
+  <!-- AC-11 · định danh phiên. Fail-safe: lỗi/401 ẩn hẳn khối này (khuôn D071). -->
+  <div class="me" id="meBox"><b id="meRole">—</b><span id="meMail"></span></div>
+  <button class="lang" id="langBtn" type="button">日本語</button>
+  <button class="icobtn" id="themeBtn" type="button" title="Sáng/Tối" aria-label="Sáng/Tối">&#9789;</button>
+  <a class="btn sm" href="/crm" data-i="back">← Về CRM</a>
 </header>
 
-<!-- ── Chốt chặn EXIF. Trang KHÔNG cho đồng bộ tới khi phép dò đạt. ── -->
-<div id="exifBox" class="warn">⏳ Đang thử đường thu nhỏ trên ảnh mẫu có cờ xoay…</div>
+<!-- Chốt chặn EXIF. Trang KHÔNG cho đồng bộ tới khi phép dò đạt. -->
+<div id="exifBox" class="warn" data-i="exif_wait">⏳ Đang thử đường thu nhỏ trên ảnh mẫu có cờ xoay…</div>
 
 <div class="card">
   <div class="srcbar">
-    <strong>Nguồn:</strong>
-    <button class="btn gold" id="btnFolder">📁 Chọn thư mục</button>
-    <button class="btn" id="btnFiles">🖼 Chọn từng ảnh</button>
-    <button class="btn" disabled title="Chưa cấu hình — Pha 1b">Dropbox</button>
-    <button class="btn" disabled title="Chưa cấu hình — Pha 1b">OneDrive</button>
-    <button class="btn" disabled title="Chưa cấu hình — Pha 1b">Google Drive</button>
-    <span class="hint">Ba nút cloud bật ở Pha 1b khi có credential.</span>
+    <strong class="srclbl" data-i="src_lbl">Nguồn:</strong>
+    <button class="btn gold" id="btnFolder" type="button" data-i="btn_folder">📁 Chọn thư mục</button>
+    <button class="btn" id="btnFiles" type="button" data-i="btn_files">🖼 Chọn từng ảnh</button>
+    <button class="btn cloud" type="button" disabled>Dropbox <span class="soon" data-i="soon">Sắp có · Pha 1b</span></button>
+    <button class="btn cloud" type="button" disabled>OneDrive <span class="soon" data-i="soon">Sắp có · Pha 1b</span></button>
+    <button class="btn cloud" type="button" disabled>Google Drive <span class="soon" data-i="soon">Sắp có · Pha 1b</span></button>
   </div>
-  <div class="drop" id="drop">…hoặc kéo thả thư mục / ảnh vào đây</div>
+  <div class="drop" id="drop" data-i="drop">…hoặc kéo thả thư mục / ảnh vào đây</div>
   <input type="file" id="fFolder" webkitdirectory directory multiple hidden>
   <input type="file" id="fFiles" accept="image/*" multiple hidden>
-  <p class="hint" style="margin:12px 0 0">
+  <p class="hint" style="margin:12px 0 0" data-i="privacy">
     Ảnh <b>đọc thẳng từ đĩa</b> để xem trước — chưa một byte nào lên mạng. Chỉ khi bấm
     <b>Đồng bộ</b> mới thu nhỏ và đẩy lên kho.
   </p>
@@ -91,26 +303,41 @@ code{background:#0a1729;padding:1px 5px;border-radius:5px;font-size:12.5px}
 
 <div class="card" id="pickCard" style="display:none">
   <div class="stat">
-    <div><b id="nTotal">0</b><span>ảnh đọc được</span></div>
-    <div><b id="nSel">0</b><span>đang tick chọn</span></div>
-    <div><b id="nSkip">0</b><span>bỏ qua (HEIC/không đọc được)</span></div>
-    <div><b id="nDone">0</b><span>đã vào kho lượt này</span></div>
+    <div><b class="num" id="nTotal">0</b><span data-i="st_total">ảnh đọc được</span></div>
+    <div><b class="num" id="nSel">0</b><span data-i="st_sel">đang tick chọn</span></div>
+    <div><b class="num" id="nSkip">0</b><span data-i="st_skip">bỏ qua (HEIC)</span></div>
+    <div><b class="num" id="nDone">0</b><span data-i="st_done">đã vào kho lượt này</span></div>
   </div>
-  <div class="toolbar">
-    <button class="btn sm" id="selAll">Chọn hết</button>
-    <button class="btn sm" id="selNone">Bỏ chọn hết</button>
+  <div class="toolbar" id="actBar">
+    <button class="btn sm" id="selAll" type="button" data-i="sel_all">Chọn hết</button>
+    <button class="btn sm" id="selNone" type="button" data-i="sel_none">Bỏ chọn hết</button>
     <div class="spacer"></div>
-    <button class="btn green" id="btnSync" disabled>⬆ Đồng bộ ảnh đã chọn</button>
+    <button class="btn green" id="btnSync" type="button" disabled data-i="sync">⬆ Đồng bộ ảnh đã chọn</button>
   </div>
-  <div class="bar"><i id="prog"></i></div>
+  <!-- AC-9 · nút xám phải nói vì sao xám -->
+  <p class="why" id="whySync" aria-live="polite"></p>
+  <div class="barwrap">
+    <div class="bar"><i id="prog"></i></div>
+    <!-- AC-10 · số đọc được cạnh thanh, không bắt người dùng ước lượng bằng mắt -->
+    <span class="barnum num" id="progNum">0/0 · 0%</span>
+  </div>
+  <!-- AC-7 · tóm tắt NGẮN cho trình đọc màn hình. Log dài bên dưới cố ý KHÔNG aria-live:
+       đọc nguyên văn vài trăm dòng log là tra tấn, không phải trợ năng. -->
+  <p class="hint" id="srStatus" role="status" aria-live="polite"></p>
+  <!-- AC-18 · chỉ hiện sau khi nhấn giữ trên màn cảm ứng -->
+  <div class="selbar" id="selBar">
+    <span data-i="sel_mode">Chế độ chọn — chạm để tick, không cần giữ nữa.</span>
+    <div class="spacer"></div>
+    <button class="btn sm" id="selDone" type="button" data-i="sel_done">Xong</button>
+  </div>
   <div class="grid" id="grid"></div>
   <div class="log" id="log" style="display:none"></div>
 </div>
 
 <div class="card">
   <div class="toolbar" style="margin:0">
-    <strong>Đã có trong kho</strong>
-    <button class="btn sm" id="btnReload">Tải lại</button>
+    <strong data-i="kho_h">Đã có trong kho</strong>
+    <button class="btn sm" id="btnReload" type="button" data-i="reload">Tải lại</button>
     <div class="spacer"></div>
     <span class="hint" id="khoStat">…</span>
   </div>
@@ -119,12 +346,34 @@ code{background:#0a1729;padding:1px 5px;border-radius:5px;font-size:12.5px}
 
 </div>
 
+<div class="appdlg" id="appDlg" role="dialog" aria-modal="true" aria-labelledby="appDlgMsg" hidden>
+  <div class="appdlg-in">
+    <p class="appdlg-msg" id="appDlgMsg"></p>
+    <div class="appdlg-acts">
+      <button type="button" class="btn" id="appDlgCancel">Huỷ</button>
+      <button type="button" class="btn gold" id="appDlgOk">Đồng ý</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="rubber" id="rubber" aria-hidden="true"></div>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Xem ảnh" hidden>
+  <!-- AC-6 · alt KHÔNG được rỗng kể cả lúc lightbox đang đóng: phép đo của AC-6 là
+       querySelectorAll('img[alt=""]') trên TOÀN trang. Khi mở, alt được thay bằng
+       tên file thật. -->
+  <img id="lbImg" alt="Ảnh phóng sự">
+  <button class="lb-x" id="lbX" type="button" aria-label="Đóng">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" type="button" aria-label="Ảnh trước">‹</button>
+  <button class="lb-nav lb-next" id="lbNext" type="button" aria-label="Ảnh sau">›</button>
+  <div class="lb-cap" id="lbCap"></div>
+</div>
+
 <script src="/crm/kho-anh/exif6.fixture.js"></script>
 <script>
 'use strict';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   E08-D082 Pha 1 · trang nạp kho ảnh sự kiện
+   E08-D082 Pha 1 · trang nạp kho ảnh sự kiện   (D083: polish UI/UX)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 var $ = function (s) { return document.querySelector(s); };
@@ -132,6 +381,158 @@ function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 function fmtMB(n){ return (n/1048576).toFixed(1) + ' MB'; }
 function ghiLog(s){ var el = $('#log'); el.style.display='block'; el.textContent += s + '\n'; el.scrollTop = el.scrollHeight; }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   D083 · song ngữ. Nhật là ngôn ngữ làm việc thật ở vé này, không phải trang trí:
+   khách Nhật là trọng tâm sự kiện (CR-87/CR-135). tt() rơi về T.vn rồi về CHÍNH
+   KHOÁ nếu thiếu — nên thiếu khoá thì nút hiện chữ `btn_folder` trần, không lỗi
+   console. Đó là lý do mọi khoá phải có ở CẢ HAI bảng.
+   Log kỹ thuật (#log) cố ý giữ nguyên tiếng Việt — nó là dấu vết cho người sửa
+   lỗi, không phải văn bản giao diện.                                          */
+var LANG = localStorage.getItem('kho_lang') || 'vn';
+var T = {
+  vn:{
+    h_title:'📸 Kho ảnh sự kiện', h_sub:'E08-D082 · Pha 1', back:'← Về CRM',
+    src_lbl:'Nguồn:', btn_folder:'📁 Chọn thư mục', btn_files:'🖼 Chọn từng ảnh',
+    soon:'Sắp có · Pha 1b', drop:'…hoặc kéo thả thư mục / ảnh vào đây',
+    privacy:'Ảnh <b>đọc thẳng từ đĩa</b> để xem trước — chưa một byte nào lên mạng. Chỉ khi bấm <b>Đồng bộ</b> mới thu nhỏ và đẩy lên kho.',
+    st_total:'ảnh đọc được', st_sel:'đang tick chọn', st_skip:'bỏ qua (HEIC)', st_done:'đã vào kho lượt này',
+    sel_all:'Chọn hết', sel_none:'Bỏ chọn hết', sync:'⬆ Đồng bộ ảnh đã chọn', sync_n:'⬆ Đồng bộ {n} ảnh đã chọn',
+    why_exif:'Đang khoá: phép dò cờ xoay chưa đạt — không nạp ảnh khi chưa chắc hướng ảnh đúng.',
+    why_none:'Đang khoá: chưa tick chọn ảnh nào.',
+    why_run:'Đang chạy — chờ đợt hiện tại xong đã.',
+    kho_h:'Đã có trong kho', reload:'Tải lại', retry:'↻ Thử lại',
+    kho_empty:'Kho chưa có ảnh sự kiện nào.',
+    kho_note:'Hiện 24 tấm mới nhất. Gỡ cả đợt: <code>DELETE /crm/event-photos/batch/&lt;mã đợt&gt;</code>',
+    kho_err:'Không đọc được kho:',
+    exif_wait:'⏳ Đang thử đường thu nhỏ trên ảnh mẫu có cờ xoay…',
+    exif_ok_h:'Cờ xoay EXIF được áp đúng.',
+    exif_ok_b:'Ảnh mẫu {a} (ngang trong pixel, cờ xoay 6) qua đường thu nhỏ thật ra <b>{b}</b> — dọc.',
+    exif_ac9:'AC-9 đạt.',
+    exif_bad_h:'Trình duyệt này KHÔNG áp cờ xoay EXIF.',
+    exif_bad_b:'Ảnh mẫu {a} ra {b} — vẫn ngang. Nạp bằng trình duyệt này thì ảnh chụp dọc vào kho sẽ nằm ngang và phần nhận diện khuôn mặt (D077) hỏng theo.<br><b>Đồng bộ đã bị khoá.</b> Mở lại bằng Chrome/Edge bản mới, hoặc Safari 17 trở lên.',
+    dlg_cancel:'Huỷ', dlg_ok:'Đồng ý', dlg_close:'Đóng',
+    ask_sync:'Sắp nạp {n} ảnh ({mb} bản gốc trên đĩa).\n\nBản lưu vào kho là 2048px — KHÔNG phải bản gốc in khổ lớn.\n\nTiếp tục?',
+    ask_sync_ok:'Nạp ảnh',
+    no_exif:'Phép dò cờ xoay chưa đạt — không đồng bộ.',
+    sr_run:'Đang đẩy {d}/{t} ảnh.', sr_done:'Xong: {x} nạp mới, {c} đã có sẵn, {e} lỗi.',
+    t_done:'Đã nạp {x} ảnh ✓', t_err:'{e} ảnh lỗi — xem nhật ký bên dưới',
+    st_new:'đã nạp', st_dup:'đã có', st_bad:'lỗi', st_pass:'bỏ qua', heic:'HEIC — bỏ qua',
+    sel_mode:'Chế độ chọn — chạm để tick, không cần giữ nữa.', sel_done:'Xong',
+    zoom:'Xem ảnh lớn', lb_close:'Đóng', lb_prev:'Ảnh trước', lb_next:'Ảnh sau', lb_of:'{i}/{n}'
+  },
+  jp:{
+    h_title:'📸 イベント写真庫', h_sub:'E08-D082 · フェーズ1', back:'← CRMへ戻る',
+    src_lbl:'取込元:', btn_folder:'📁 フォルダを選ぶ', btn_files:'🖼 写真を個別に選ぶ',
+    soon:'近日 · フェーズ1b', drop:'…またはフォルダ/画像をここにドラッグ',
+    privacy:'プレビューは<b>ディスクから直接</b>読み込みます — この時点で通信は発生しません。<b>同期</b>を押して初めて縮小してアップロードします。',
+    st_total:'読み込めた枚数', st_sel:'選択中', st_skip:'スキップ (HEIC)', st_done:'今回アップロード済',
+    sel_all:'すべて選択', sel_none:'選択を解除', sync:'⬆ 選択した写真を同期', sync_n:'⬆ {n}枚を同期',
+    why_exif:'ロック中：回転フラグの判定に失敗 — 向きが確実でないまま取り込みません。',
+    why_none:'ロック中：写真が1枚も選択されていません。',
+    why_run:'実行中 — 現在のバッチの完了をお待ちください。',
+    kho_h:'保管済みの写真', reload:'再読み込み', retry:'↻ 再試行',
+    kho_empty:'イベント写真はまだありません。',
+    kho_note:'最新24枚を表示。バッチ削除： <code>DELETE /crm/event-photos/batch/&lt;バッチID&gt;</code>',
+    kho_err:'保管庫を読めません：',
+    exif_wait:'⏳ 回転フラグ付きサンプルで縮小処理を検証中…',
+    exif_ok_h:'EXIF回転フラグは正しく適用されています。',
+    exif_ok_b:'サンプル {a}（画素上は横・回転フラグ6）が実際の縮小処理で <b>{b}</b> — 縦になりました。',
+    exif_ac9:'AC-9 合格。',
+    exif_bad_h:'このブラウザはEXIF回転フラグを適用しません。',
+    exif_bad_b:'サンプル {a} が {b} のまま横向きです。このブラウザで取り込むと縦写真が横向きで保管され、顔認識（D077）も連鎖して失敗します。<br><b>同期はロックされました。</b>最新のChrome/Edge、またはSafari 17以降でお開きください。',
+    dlg_cancel:'キャンセル', dlg_ok:'OK', dlg_close:'閉じる',
+    ask_sync:'{n}枚（ディスク上の原本 {mb}）を取り込みます。\n\n保管されるのは2048pxです — 大判印刷用の原本ではありません。\n\n続行しますか？',
+    ask_sync_ok:'取り込む',
+    no_exif:'回転フラグの判定が未合格のため同期できません。',
+    sr_run:'{t}枚中 {d}枚を送信中。', sr_done:'完了：新規 {x}枚、既存 {c}枚、失敗 {e}枚。',
+    t_done:'{x}枚を取り込みました ✓', t_err:'{e}枚が失敗 — 下のログをご確認ください',
+    st_new:'取込済', st_dup:'既存', st_bad:'失敗', st_pass:'除外', heic:'HEIC — 除外',
+    sel_mode:'選択モード — 長押し不要、タップで選べます。', sel_done:'完了',
+    zoom:'拡大表示', lb_close:'閉じる', lb_prev:'前の写真', lb_next:'次の写真', lb_of:'{i}/{n}'
+  }
+};
+function tt(k){ return (T[LANG] && T[LANG][k]) || T.vn[k] || k; }
+function fmt(k, o){ var s = tt(k); for (var i in o) s = s.split('{'+i+'}').join(o[i]); return s; }
+function setLang(l){
+  LANG = l; localStorage.setItem('kho_lang', l);
+  document.body.classList.toggle('jp', l === 'jp');
+  document.documentElement.lang = (l === 'jp') ? 'ja' : 'vi';
+  document.querySelectorAll('[data-i]').forEach(function(el){
+    var v = tt(el.getAttribute('data-i')); if (v) el.innerHTML = v;
+  });
+  $('#langBtn').textContent = (l === 'jp') ? 'Tiếng Việt' : '日本語';
+  $('#appDlgCancel').textContent = tt('dlg_cancel');
+  $('#lbX').setAttribute('aria-label', tt('lb_close'));
+  $('#lbPrev').setAttribute('aria-label', tt('lb_prev'));
+  $('#lbNext').setAttribute('aria-label', tt('lb_next'));
+  trangTriExifBox();          // hộp EXIF do hàm vùng cấm vẽ — dựng lại theo ngôn ngữ
+  capNhatNutSync();
+  if (ITEMS.length) veLuoi();
+  taiKho();
+}
+
+/* ── theme sáng/tối (khuôn #themeBtn của crm-app-v2) ── */
+function apDungTheme(d){
+  if (d) document.documentElement.setAttribute('data-theme', d);
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('crm_theme', d || '');
+  $('#themeBtn').innerHTML = d ? '&#9788;' : '&#9789;';
+}
+
+/* ── toast ── */
+var toastT;
+function toast(msg, type){
+  var el = $('#toast'); el.textContent = msg;
+  el.className = 'toast show' + (type ? (' ' + type) : '');
+  clearTimeout(toastT);
+  toastT = setTimeout(function(){ el.className = 'toast' + (type ? (' ' + type) : ''); }, 2600);
+}
+
+/* ── Modal thay alert()/confirm() (khuôn appDlg của crm-app-v2.html:841-916).
+      Hộp thoại gốc trình duyệt chặn luồng render, không style được, và trên iOS
+      hiện tên miền lên trước câu hỏi. ── */
+var _dlgResolve = null, _dlgPrevFocus = null;
+function _dlgClose(val){
+  var dlg = $('#appDlg'); if (!dlg) return;
+  dlg.classList.remove('show'); dlg.hidden = true;
+  document.removeEventListener('keydown', _dlgKey, true);
+  if (_dlgPrevFocus && _dlgPrevFocus.focus) try { _dlgPrevFocus.focus(); } catch(_){}
+  var r = _dlgResolve; _dlgResolve = null; _dlgPrevFocus = null;
+  if (r) r(val);
+}
+function _dlgKey(e){
+  if (!_dlgResolve) return;
+  if (e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); _dlgClose(null); return; }
+  if (e.key !== 'Tab') return;
+  var dlg = $('#appDlg'); if (!dlg || !dlg.classList.contains('show')) return;
+  var foc = dlg.querySelectorAll('button:not([disabled])');
+  if (!foc.length) return;
+  var first = foc[0], last = foc[foc.length - 1];
+  if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+}
+function _dlgOpen(msg, opts){
+  opts = opts || {};
+  return new Promise(function(resolve){
+    if (_dlgResolve) _dlgClose(null);
+    _dlgResolve = resolve; _dlgPrevFocus = document.activeElement;
+    var dlg = $('#appDlg'), btnOk = $('#appDlgOk'), btnCancel = $('#appDlgCancel');
+    $('#appDlgMsg').textContent = String(msg == null ? '' : msg);
+    btnCancel.textContent = opts.cancelLabel || tt('dlg_cancel');
+    btnCancel.style.display = opts.onlyOk ? 'none' : '';
+    btnOk.textContent = opts.okLabel || tt('dlg_ok');
+    btnOk.className = 'btn' + (opts.danger ? ' danger-fill' : ' gold');
+    dlg.hidden = false; dlg.classList.add('show');
+    document.addEventListener('keydown', _dlgKey, true);
+    requestAnimationFrame(function(){ (opts.danger ? btnCancel : btnOk).focus(); });
+  });
+}
+function appConfirm(msg, opts){ return _dlgOpen(msg, opts).then(function(v){ return v === true; }); }
+function appAlert(msg){ return _dlgOpen(msg, { onlyOk: true, okLabel: tt('dlg_close') }); }
+$('#appDlgCancel').addEventListener('click', function(){ _dlgClose(null); });
+$('#appDlgOk').addEventListener('click', function(){ _dlgClose(true); });
+$('#appDlg').addEventListener('click', function(e){ if (e.target === this) _dlgClose(null); });
 
 /* ───────────────────────────────────────────────────────────────────────────
    1 · GIẢI MÃ ẢNH — chỗ mìn M3/M4 nằm
@@ -151,7 +552,9 @@ function ghiLog(s){ var el = $('#log'); el.style.display='block'; el.textContent
    đời này áp cờ ở cả ba lối. Hệ quả thẳng vào thiết kế: KHÔNG được dò năng lực
    bằng cách so 'none' với 'from-image' (luôn bằng nhau ⇒ luôn báo "ổn", kể cả
    trên trình duyệt hỏng). Phép dò phải dò KẾT QUẢ: cho ảnh mẫu chạy qua đúng
-   đường thu nhỏ thật rồi hỏi ảnh ra có dọc không.                              */
+   đường thu nhỏ thật rồi hỏi ảnh ra có dọc không.
+
+   D083: TOÀN BỘ khối dưới đây là vùng CẤM CHẠM — giữ nguyên từng byte.          */
 function coCreateImageBitmap(){ return typeof createImageBitmap === 'function'; }
 
 async function giaiMaDungHuong(blob){
@@ -211,9 +614,48 @@ async function doNangLucEXIF(){
   }
   capNhatNutSync();
 }
+/* ── hết vùng cấm chạm số 1 ── */
+
+/* D083 · LỚP TRÌNH BÀY cho hộp EXIF.
+   Vì sao phải làm vòng vèo thế này thay vì sửa thẳng doNangLucEXIF(): hàm đó nằm
+   trong danh mục cấm chạm của phiếu (hàng rào AC-9 đã Gate 2 PASS), mà nó lại
+   nhúng sẵn chữ tiếng Việt. Nên phần trình bày được dựng LẠI ở đây từ tt(), lấy
+   hai cặp số đo ra từ chính DOM mà hàm kia vừa vẽ. Không lấy được số thì giữ
+   nguyên văn bản gốc — xấu hơn nhưng không bao giờ mất thông tin.
+   Đây là một đánh đổi có chủ ý, đã ghi vào báo cáo Gate 2 để PM tổng phán. */
+function trangTriExifBox(){
+  var box = $('#exifBox'); if (!box) return;
+  var cls = box.className;
+  if (cls !== 'good' && cls !== 'bad') return;               // còn đang chờ
+  var so = (box.textContent.match(/\d+×\d+/g) || []);
+  if (cls === 'good' && so.length >= 2){
+    box.innerHTML = '✅ <b>' + tt('exif_ok_h') + '</b> '
+      + fmt('exif_ok_b', { a: so[0], b: so[1] })
+      + ' <span class="hint">' + tt('exif_ac9') + '</span>';
+  } else if (cls === 'bad' && so.length >= 2){
+    box.innerHTML = '⛔ <b>' + tt('exif_bad_h') + '</b> ' + fmt('exif_bad_b', { a: so[0], b: so[1] });
+  }
+  if (cls === 'bad') themNutThuLai(box, chayDoEXIF);          // AC-8
+}
+/* AC-8 · nút Thử lại. Lỗi tạm (mạng chớp, fixture chưa nạp) không đáng bắt người
+   dùng tải lại cả trang rồi chọn lại thư mục từ đầu. */
+function themNutThuLai(box, fn){
+  if (box.querySelector('.retry-btn')) return;
+  var b = document.createElement('button');
+  b.type = 'button'; b.className = 'btn sm retry-btn'; b.style.marginTop = '10px';
+  b.textContent = tt('retry');
+  b.addEventListener('click', function(){ b.disabled = true; fn(); });
+  box.appendChild(document.createElement('br'));
+  box.appendChild(b);
+}
+function chayDoEXIF(){
+  var box = $('#exifBox');
+  box.className = 'warn'; box.textContent = tt('exif_wait');
+  return doNangLucEXIF().then(trangTriExifBox);
+}
 
 /* ───────────────────────────────────────────────────────────────────────────
-   2 · SourceItem — LỚP NGUỒN (AC-1a)
+   2 · SourceItem — LỚP NGUỒN (AC-1a của D082) · VÙNG CẤM CHẠM
    ───────────────────────────────────────────────────────────────────────────
    Mọi nguồn trả về đúng hình dạng này. Lưới và đường đẩy bên dưới KHÔNG được
    chạm `File`, `FileList`, hay File System Access API — chỉ ăn SourceItem.
@@ -273,6 +715,7 @@ var ThietBiAdapter = {
     return out;
   }
 };
+/* ── hết vùng cấm chạm số 2 ── */
 
 /* ───────────────────────────────────────────────────────────────────────────
    3 · Lưới kiểm duyệt — CHỈ ăn SourceItem
@@ -313,22 +756,54 @@ function veLuoi(){
   ITEMS.forEach(function(it){
     var st = TRANG_THAI[it.id] || 'cho';
     var d = document.createElement('div');
-    d.className = 'tile' + (CHON[it.id] ? ' sel' : '')
+    d.className = 'tile'
       + (st === 'xong' ? ' done' : '') + (st === 'trung' ? ' dup' : '') + (st === 'loi' ? ' err' : '');
     d.setAttribute('data-id', it.id);
-    var nhan = st === 'xong' ? 'đã nạp' : st === 'trung' ? 'đã có' : st === 'loi' ? 'lỗi' : st === 'bo' ? 'bỏ qua' : '';
-    d.innerHTML = HEIC.test(it.name)
-      ? '<div class="ph">HEIC — bỏ qua<br>' + esc(it.name) + '</div>'
-      : '<img alt="">';
-    d.innerHTML += '<div class="ck">✓</div>'
-      + (nhan ? '<div class="st">' + nhan + '</div>' : '')
-      + '<div class="nm" title="' + esc(it.relativePath) + '">' + esc(it.name) + '</div>';
-    d.onclick = function(){
+    /* AC-5 · lưới chọn-nhiều-ảnh là tương tác CHÍNH của trang. Trước D083 nó là
+       <div onclick>, tức chỉ dùng được bằng chuột/chạm. role=checkbox +
+       aria-checked cho trình đọc màn hình biết đây là ô tick, không phải ảnh. */
+    d.setAttribute('role', 'checkbox');
+    d.setAttribute('tabindex', '0');
+    d.setAttribute('aria-checked', CHON[it.id] ? 'true' : 'false');
+    d.setAttribute('aria-label', it.relativePath || it.name);
+    var nhan = st === 'xong' ? tt('st_new') : st === 'trung' ? tt('st_dup')
+             : st === 'loi' ? tt('st_bad') : st === 'bo' ? tt('st_pass') : '';
+    /* AC-6 · alt = tên file. Ảnh ở đây LÀ nội dung, không phải trang trí — alt
+       rỗng nói với trình đọc màn hình "bỏ qua tôi", sai hẳn ngữ cảnh. */
+    var laHeic = HEIC.test(it.name);
+    d.innerHTML = laHeic
+      ? '<div class="ph">' + tt('heic') + '<br>' + esc(it.name) + '</div>'
+      : '<img alt="' + esc(it.name) + '">';
+    d.innerHTML += '<div class="ck" aria-hidden="true">✓</div>'
+      + (nhan ? '<div class="st">' + esc(nhan) + '</div>' : '')
+      + '<div class="nm" title="' + esc(it.relativePath) + '">' + esc(it.name) + '</div>'
+      + (laHeic ? '' : '<button class="zoom" type="button" aria-label="' + esc(tt('zoom')) + '">⤢</button>');
+    if (!laHeic){
+      d.classList.add('loading');                       // AC-20 · shimmer trong lúc chờ
+      var im = d.querySelector('img');
+      im.addEventListener('load', function(){ d.classList.remove('loading'); im.classList.add('on'); });
+      im.addEventListener('error', function(){ d.classList.remove('loading'); });
+      /* AC-16 · nút phóng to có đường bàn phím riêng và KHÔNG lan cú bấm lên ô —
+         nếu lan thì mỗi lần xem ảnh lại vô tình tick/bỏ tick tấm đó. */
+      d.querySelector('.zoom').addEventListener('click', function(e){
+        e.stopPropagation(); moLightbox(it.id);
+      });
+    }
+    function bat(){
       if (CHON[it.id]) delete CHON[it.id]; else CHON[it.id] = 1;
-      d.classList.toggle('sel'); demLai();
-    };
+      d.setAttribute('aria-checked', CHON[it.id] ? 'true' : 'false');
+      demLai();
+    }
+    d.addEventListener('click', function(e){
+      if (BO_QUA_CLICK){ BO_QUA_CLICK = false; return; }   // vừa kéo/nhấn giữ xong
+      bat();
+    });
+    d.addEventListener('keydown', function(e){
+      if (e.key === ' ' || e.key === 'Enter' || e.key === 'Spacebar'){ e.preventDefault(); bat(); }
+    });
+    ganNhanGiu(d, it);                                   // AC-18
     g.appendChild(d);
-    if (!HEIC.test(it.name)) quanSat.observe(d);
+    if (!laHeic) quanSat.observe(d);
   });
   demLai();
 }
@@ -341,10 +816,160 @@ function demLai(){
 }
 function capNhatNutSync(){
   var n = Object.keys(CHON).length;
-  var b = $('#btnSync');
+  var b = $('#btnSync'); var why = $('#whySync');
   if (!b) return;
   b.disabled = !(EXIF_OK && n > 0 && !DANG_CHAY);
-  b.textContent = n ? ('⬆ Đồng bộ ' + n + ' ảnh đã chọn') : '⬆ Đồng bộ ảnh đã chọn';
+  b.textContent = n ? fmt('sync_n', { n: n }) : tt('sync');
+  /* AC-9 · ba lý do khoá khác nhau ⇒ ba câu khác nhau. Một câu chung chung thì
+     người dùng vẫn không biết phải làm gì tiếp, tức vẫn là nút xám câm. */
+  if (!why) return;
+  if (!EXIF_OK) why.textContent = tt('why_exif');
+  else if (DANG_CHAY) why.textContent = tt('why_run');
+  else if (!n) why.textContent = tt('why_none');
+  else why.textContent = '';
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   3b · D083 Đợt 2 — xem ảnh lớn, kéo chọn, nhấn giữ
+   ───────────────────────────────────────────────────────────────────────────
+   Ràng buộc của phiếu: mọi thứ dưới đây CHỈ được đổi `CHON[it.id]`. Không đụng
+   `ITEMS`, không đụng `dongBo()`, không thêm một request nào.                  */
+
+/* AC-21 · đọc cờ giảm động MỘT LẦN ở JS, dùng chung với khối @media. Hai nơi
+   cùng một nguồn sự thật, không có chỗ nào "quên". */
+var GIAM_DONG = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+if (window.matchMedia) try {
+  window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', function(e){ GIAM_DONG = e.matches; });
+} catch(_){}
+
+var BO_QUA_CLICK = false;    // nuốt đúng một cú click sau khi kéo / nhấn giữ
+var LB_IDX = -1, LB_URL_TAM = null, LB_TRA_FOCUS = null;
+
+function oCuaItem(id){
+  return Array.prototype.filter.call(document.querySelectorAll('.tile'), function(el){
+    return el.getAttribute('data-id') === id; })[0];
+}
+function anhXemDuoc(){ return ITEMS.filter(function(it){ return !HEIC.test(it.name); }); }
+
+/* AC-16 · phóng ảnh nở ra TỪ ĐÚNG Ô vừa bấm (kỹ thuật FLIP): đo ô nguồn, đặt ảnh
+   lớn về đúng khung đó rồi thả về vị trí thật. Mắt bám được ảnh nào đang mở,
+   không bị "ảnh lạ nhảy ra giữa màn".
+   Cấm 7 của phiếu: KHÔNG thêm request — dùng lại chính blob URL mà ô đang hiển
+   thị; chỉ khi ô chưa kịp tải mới gọi getBlob(). */
+function bayFLIP(o, img){
+  if (GIAM_DONG || !o) return;
+  var a = o.getBoundingClientRect(), b = img.getBoundingClientRect();
+  if (!b.width || !b.height) return;
+  var dx = a.left - b.left, dy = a.top - b.top;
+  img.style.transition = 'none';
+  img.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale('
+    + (a.width / b.width) + ',' + (a.height / b.height) + ')';
+  requestAnimationFrame(function(){
+    img.style.transition = 'transform .34s cubic-bezier(.2,.8,.2,1)';
+    img.style.transform = 'none';
+  });
+}
+function veLightbox(i, oNguon){
+  var ds = anhXemDuoc(); if (!ds.length) return;
+  LB_IDX = (i + ds.length) % ds.length;
+  var it = ds[LB_IDX];
+  var lb = $('#lb'), img = $('#lbImg');
+  img.alt = it.name;
+  $('#lbCap').textContent = it.relativePath + '  ·  ' + fmt('lb_of', { i: LB_IDX + 1, n: ds.length });
+  var o = oNguon || oCuaItem(it.id);
+  var sanCo = o && o.querySelector('img') && o.querySelector('img').src;
+  var lay = sanCo ? Promise.resolve(sanCo)
+                  : it.getBlob().then(function(b){
+                      if (LB_URL_TAM) URL.revokeObjectURL(LB_URL_TAM);
+                      LB_URL_TAM = URL.createObjectURL(b); return LB_URL_TAM;
+                    });
+  lay.then(function(u){
+    img.style.transition = 'none'; img.style.transform = 'none';
+    img.onload = function(){ bayFLIP(o, img); };
+    img.src = u;
+    lb.hidden = false; lb.classList.add('show');
+    $('#lbX').focus();
+  }).catch(function(){ /* ảnh hỏng: không mở, không làm gì thêm */ });
+}
+function moLightbox(id){
+  var ds = anhXemDuoc();
+  var i = -1;
+  for (var k = 0; k < ds.length; k++) if (ds[k].id === id){ i = k; break; }
+  if (i < 0) return;
+  LB_TRA_FOCUS = document.activeElement;
+  veLightbox(i, oCuaItem(id));
+}
+function dongLightbox(){
+  var lb = $('#lb');
+  lb.classList.remove('show'); lb.hidden = true;
+  $('#lbImg').removeAttribute('src');
+  if (LB_URL_TAM){ URL.revokeObjectURL(LB_URL_TAM); LB_URL_TAM = null; }
+  LB_IDX = -1;
+  if (LB_TRA_FOCUS && LB_TRA_FOCUS.focus) try { LB_TRA_FOCUS.focus(); } catch(_){}
+}
+
+/* AC-17 · kéo chuột quét chọn nhiều ô (khuôn Finder/Photos).
+   Bắt đầu kéo CHỈ khi nhấn xuống khoảng trống của lưới — nhấn lên một ô vẫn là
+   tick ô đó như cũ. Giữ Shift/⌘ để cộng dồn thay vì thay thế. */
+var keo = null, keoRAF = 0;
+function hinhKeo(e){
+  return { l: Math.min(keo.x, e.clientX), t: Math.min(keo.y, e.clientY),
+           r: Math.max(keo.x, e.clientX), b: Math.max(keo.y, e.clientY) };
+}
+function apKeo(e){
+  var q = hinhKeo(e), rb = $('#rubber');
+  rb.classList.add('on');
+  rb.style.left = q.l + 'px'; rb.style.top = q.t + 'px';
+  rb.style.width = (q.r - q.l) + 'px'; rb.style.height = (q.b - q.t) + 'px';
+  if (!keo.them) CHON = Object.create(null);
+  else { CHON = Object.create(null); for (var k in keo.goc) CHON[k] = 1; }
+  Array.prototype.forEach.call(document.querySelectorAll('.tile'), function(el){
+    var a = el.getBoundingClientRect();
+    var cham = !(a.right < q.l || a.left > q.r || a.bottom < q.t || a.top > q.b);
+    if (cham) CHON[el.getAttribute('data-id')] = 1;
+    el.setAttribute('aria-checked', CHON[el.getAttribute('data-id')] ? 'true' : 'false');
+  });
+  demLai();
+}
+$('#grid').addEventListener('mousedown', function(e){
+  if (e.button !== 0) return;
+  if (e.target.closest && e.target.closest('.tile')) return;   // bấm lên ô = tick, không phải kéo
+  var goc = Object.create(null); for (var k in CHON) goc[k] = 1;
+  keo = { x: e.clientX, y: e.clientY, them: e.shiftKey || e.metaKey || e.ctrlKey, goc: goc, di: false };
+  document.body.classList.add('dangkeo');
+  e.preventDefault();
+});
+document.addEventListener('mousemove', function(e){
+  if (!keo) return;
+  keo.di = true;
+  if (keoRAF) return;
+  keoRAF = requestAnimationFrame(function(){ keoRAF = 0; if (keo) apKeo(e); });
+});
+document.addEventListener('mouseup', function(){
+  if (!keo) return;
+  if (keo.di) BO_QUA_CLICK = true;
+  keo = null;
+  document.body.classList.remove('dangkeo');
+  $('#rubber').classList.remove('on');
+});
+
+/* AC-18 · trên màn cảm ứng KHÔNG có "kéo chuột" — kéo ngón tay là cuộn trang.
+   Nên chạm dùng cử chỉ riêng: nhấn giữ 400ms để vào chế độ chọn. Cố tình KHÔNG
+   port rubber-band sang touch, vì làm vậy là cướp mất thao tác cuộn. */
+function ganNhanGiu(el, it){
+  var t = null;
+  el.addEventListener('touchstart', function(){
+    t = setTimeout(function(){
+      t = null;
+      document.body.classList.add('chonmode');
+      if (!CHON[it.id]){ CHON[it.id] = 1; el.setAttribute('aria-checked', 'true'); demLai(); }
+      BO_QUA_CLICK = true;                       // nuốt cú click sinh ra sau touchend
+      if (navigator.vibrate && !GIAM_DONG) try { navigator.vibrate(12); } catch(_){}
+    }, 400);
+  }, { passive: true });
+  ['touchend','touchmove','touchcancel'].forEach(function(ev){
+    el.addEventListener(ev, function(){ if (t){ clearTimeout(t); t = null; } }, { passive: true });
+  });
 }
 
 function nhanItems(list){
@@ -370,6 +995,7 @@ function nhanItems(list){
 
 var DANG_CHAY = false;
 
+/* ── VÙNG CẤM CHẠM số 3: sha256 / hoiDaCo / daySchema — 0 đổi contract ── */
 async function sha256(blob){
   if (!(window.crypto && window.crypto.subtle))
     throw new Error('Trình duyệt không mở crypto.subtle (cần HTTPS) — không tính được mã trùng lặp.');
@@ -418,18 +1044,19 @@ async function daySchema(item, sha, batchId){
   if (!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
   return j;
 }
+/* ── hết vùng cấm chạm số 3 ── */
 
 async function dongBo(){
-  if (!EXIF_OK){ alert('Phép dò cờ xoay chưa đạt — không đồng bộ.'); return; }
+  if (!EXIF_OK){ await appAlert(tt('no_exif')); return; }
   var chon = ITEMS.filter(function(it){ return CHON[it.id]; });
   if (!chon.length) return;
 
   // Gate 1 · đếm rồi báo TRƯỚC khi nạp cả kho. Ba nghìn tấm là ~15 phút và
   // ~1,8 GB — không phải thứ để bấm nhầm rồi mới đọc con số.
   var tongMB = chon.reduce(function(a, it){ return a + (it.size || 0); }, 0);
-  if (!confirm('Sắp nạp ' + chon.length + ' ảnh (' + fmtMB(tongMB) + ' bản gốc trên đĩa).\n\n'
-      + 'Bản lưu vào kho là 2048px — KHÔNG phải bản gốc in khổ lớn.\n'
-      + 'Tiếp tục?')) return;
+  var dongY = await appConfirm(fmt('ask_sync', { n: chon.length, mb: fmtMB(tongMB) }),
+                               { okLabel: tt('ask_sync_ok') });
+  if (!dongY) return;
 
   DANG_CHAY = true; capNhatNutSync();
   var batchId = 'dot-' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)
@@ -437,7 +1064,13 @@ async function dongBo(){
   ghiLog('── đợt ' + batchId + ' · ' + chon.length + ' ảnh ──');
 
   var xong = 0, trung = 0, loi = 0, lamXong = 0;
-  function tien(){ $('#prog').style.width = Math.round(lamXong / chon.length * 100) + '%'; }
+  function tien(){
+    var pc = Math.round(lamXong / chon.length * 100);
+    $('#prog').style.width = pc + '%';
+    $('#progNum').textContent = lamXong + '/' + chon.length + ' · ' + pc + '%';   // AC-10
+    $('#srStatus').textContent = fmt('sr_run', { d: lamXong, t: chon.length });   // AC-7
+  }
+  tien();
 
   // Bước 1 — tính sha256 rồi hỏi cái nào đã có. Tránh đẩy lại cả nghìn tấm.
   var shaCua = Object.create(null);
@@ -475,8 +1108,14 @@ async function dongBo(){
 
   DANG_CHAY = false;
   veLuoi();
+  $('#srStatus').textContent = fmt('sr_done', { x: xong, c: trung, e: loi });
   ghiLog('xong: ' + xong + ' nạp mới · ' + trung + ' đã có sẵn · ' + loi + ' lỗi');
-  if (loi) ghiLog('CÁC TẤM LỖI VẪN CÒN TRÊN ĐĨA — chọn lại thư mục rồi đồng bộ lần nữa, tấm đã nạp sẽ tự nhận là "đã có".');
+  if (loi){
+    ghiLog('CÁC TẤM LỖI VẪN CÒN TRÊN ĐĨA — chọn lại thư mục rồi đồng bộ lần nữa, tấm đã nạp sẽ tự nhận là "đã có".');
+    toast(fmt('t_err', { e: loi }), 'err');
+  } else {
+    toast(fmt('t_done', { x: xong }), 'ok');
+  }
   taiKho();
 }
 
@@ -494,17 +1133,36 @@ async function taiKho(){
     }
     var r = await (await fetch('/crm/event-photos?limit=24')).json();
     var w = $('#khoWrap');
-    if (!r.ok || !r.items.length){ w.innerHTML = '<p class="hint">Kho chưa có ảnh sự kiện nào.</p>'; return; }
+    if (!r.ok || !r.items.length){ w.innerHTML = '<p class="hint">' + tt('kho_empty') + '</p>'; return; }
     var h = '<div class="grid">';
     r.items.forEach(function(x){
-      h += '<div class="tile"><img loading="lazy" src="' + x.thumb_url + '" alt="">'
+      // AC-6 · alt = tên file gốc, không để rỗng.
+      h += '<div class="tile"><img loading="lazy" src="' + x.thumb_url + '" alt="' + esc(x.orig_name) + '">'
         + '<div class="nm" title="' + esc(x.rel_path || x.orig_name) + '">' + esc(x.orig_name) + '</div></div>';
     });
     h += '</div>';
-    h += '<p class="hint" style="margin-top:10px">Hiện 24 tấm mới nhất. Gỡ cả đợt: '
-       + '<code>DELETE /crm/event-photos/batch/&lt;mã đợt&gt;</code></p>';
+    h += '<p class="hint" style="margin-top:10px">' + tt('kho_note') + '</p>';
     w.innerHTML = h;
-  } catch (e){ $('#khoWrap').innerHTML = '<p class="hint">Không đọc được kho: ' + esc(e.message) + '</p>'; }
+  } catch (e){
+    // AC-8 · nhánh lỗi thứ hai: mạng chớp thì cho bấm lại, đừng bắt tải lại trang.
+    var w2 = $('#khoWrap');
+    w2.innerHTML = '<p class="bad" style="margin-top:0">' + tt('kho_err') + ' ' + esc(e.message) + '</p>';
+    themNutThuLai(w2.querySelector('.bad'), taiKho);
+  }
+}
+
+/* AC-11 · định danh phiên. Fail-safe: 401/lỗi/mất mạng đều ẨN khối, không hiện
+   ô trống cũng không hiện chữ "không rõ" — khuôn D071. */
+async function napMe(){
+  try {
+    var r = await fetch('/crm/me');
+    if (!r.ok) throw new Error('401');
+    var j = await r.json();
+    if (!j || !j.email) throw new Error('thiếu email');
+    $('#meRole').textContent = j.role || '—';
+    $('#meMail').textContent = j.email;
+    $('#meBox').style.display = 'flex';
+  } catch (e){ $('#meBox').style.display = 'none'; }
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -518,6 +1176,21 @@ $('#selAll').onclick  = function(){ ITEMS.forEach(function(it){ CHON[it.id] = 1;
 $('#selNone').onclick = function(){ CHON = Object.create(null); veLuoi(); };
 $('#btnSync').onclick = dongBo;
 $('#btnReload').onclick = taiKho;
+$('#langBtn').onclick = function(){ setLang(LANG === 'jp' ? 'vn' : 'jp'); };
+$('#selDone').onclick = function(){ document.body.classList.remove('chonmode'); };
+$('#lbX').onclick = dongLightbox;
+$('#lbPrev').onclick = function(){ veLightbox(LB_IDX - 1, null); };
+$('#lbNext').onclick = function(){ veLightbox(LB_IDX + 1, null); };
+$('#lb').addEventListener('click', function(e){ if (e.target === this) dongLightbox(); });
+document.addEventListener('keydown', function(e){
+  if (LB_IDX < 0) return;
+  if (e.key === 'Escape'){ e.preventDefault(); dongLightbox(); }
+  else if (e.key === 'ArrowLeft'){ e.preventDefault(); veLightbox(LB_IDX - 1, null); }
+  else if (e.key === 'ArrowRight'){ e.preventDefault(); veLightbox(LB_IDX + 1, null); }
+});
+$('#themeBtn').onclick = function(){
+  apDungTheme(document.documentElement.getAttribute('data-theme') === 'light' ? '' : 'light');
+};
 
 var drop = $('#drop');
 ['dragenter','dragover'].forEach(function(ev){
@@ -531,8 +1204,10 @@ drop.addEventListener('drop', async function(e){
   catch (err){ ghiLog('kéo thả lỗi: ' + err.message); }
 });
 
-doNangLucEXIF();
-taiKho();
+apDungTheme(localStorage.getItem('crm_theme') === 'light' ? 'light' : '');
+setLang(LANG);
+napMe();
+chayDoEXIF();
 </script>
 </body>
 </html>

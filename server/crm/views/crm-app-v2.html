@@ -112,18 +112,6 @@
   .bar-h{font-size:.68rem;text-transform:uppercase;letter-spacing:.11em;color:var(--gold);margin-bottom:11px;font-weight:700}
   .bar-row{margin-bottom:12px}.bar-row:last-child{margin-bottom:0}.bar-row .t{display:flex;justify-content:space-between;align-items:baseline;font-size:.84rem;margin-bottom:5px}.bar-row .t .nm{display:flex;gap:7px;align-items:center}.sw{width:9px;height:9px;border-radius:2px}.bar-track{height:10px;border-radius:6px;background:rgba(140,140,140,.16);overflow:hidden}.bar-fill{height:100%;border-radius:6px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
   .bar-row .t b{font-size:1.02rem;font-family:"Playfair Display",serif}
-  /* E08-D084 · nút vào KHO ẢNH ở hero. CỐ Ý không theo khuôn `.venue-edit`
-     (viền đứt, nền trong, chữ mảnh): cái đó là nút sửa cấu hình, liếc qua không
-     thấy cũng không sao. Nút này là lối vào một tính năng chính vừa được kéo ra
-     khỏi menu ⋯ — nếu vẫn mờ như ghost thì coi như chưa kéo ra. Nền vàng đặc,
-     chữ đậm trên nền tối, bắt mắt ngay lần lướt đầu. */
-  .kho-btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
-    background:linear-gradient(180deg,var(--gold-b),var(--gold-d));color:#2a1e05;
-    border:0;border-radius:12px;padding:13px 14px;font:inherit;font-size:.92rem;font-weight:800;
-    letter-spacing:.01em;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.22);transition:.15s}
-  .kho-btn:hover{filter:brightness(1.05)}
-  .kho-btn:active{transform:scale(.985)}
-  .kho-btn:focus-visible{outline:2px solid var(--gold-b);outline-offset:3px}
 
   .chk-card{border-top:1px dashed var(--line);padding-top:14px}
   /* E08-D084 · vị trí mới (dưới `#list`, ngoài `.ov-in`) nên phải tự dựng lại lề
@@ -463,10 +451,27 @@
   .appdlg-acts .btn.gold,.appdlg-acts .btn.danger-fill{flex:0 0 auto}
   /* ---- KPI mời ↔ đăng ký ↔ buổi (E08-D016) ---- */
   /* khung tự đứng — shell R0 không có class .card, cũng không có .hint */
-  .cknav{display:flex;gap:6px;margin-left:8px}
+  .cknav{display:flex;gap:6px;margin-left:8px;flex-wrap:wrap}
   .cknav a{font-size:.72rem;font-weight:600;text-decoration:none;color:var(--gold);
     border:1px solid var(--line);border-radius:20px;padding:4px 11px;white-space:nowrap;transition:.15s}
   .cknav a:hover{background:var(--gold-soft,rgba(200,160,80,.12))}
+  /* E08-D084 · nút KHO ẢNH đứng cùng hàng với hai cửa và sơ đồ bàn (Sponsor chốt).
+     Cùng hình dạng viên thuốc, cùng cỡ chữ để hàng không gãy nhịp — nhưng NỀN ĐẶC
+     thay vì viền rỗng: ba cái kia là lối đi phụ mở tab mới, cái này là tính năng
+     vừa được kéo ra khỏi menu ⋯, để mờ ngang chúng thì coi như chưa kéo ra. */
+  /* `background-color` khai TRƯỚC rồi mới chồng gradient lên: gradient nằm ở
+     `background-image`, nên nếu chỉ khai gradient thì `backgroundColor` vẫn là
+     trong suốt — trình duyệt nào không dựng được gradient sẽ cho chữ đen nằm
+     trên nền tối, không đọc nổi. (Đúng lỗi này vừa làm phép đo tương phản của
+     worker trả về 1,1 thay vì giá trị thật.) */
+  .cknav .kho-btn{font:inherit;font-size:.72rem;font-weight:800;color:#2a1e05;cursor:pointer;
+    background-color:var(--gold-d);
+    background-image:linear-gradient(180deg,var(--gold-b),var(--gold-d));border:1px solid transparent;
+    border-radius:20px;padding:4px 12px;white-space:nowrap;transition:.15s;
+    display:inline-flex;align-items:center;gap:5px}
+  .cknav .kho-btn:hover{filter:brightness(1.06)}
+  .cknav .kho-btn:active{transform:scale(.97)}
+  .cknav .kho-btn:focus-visible{outline:2px solid var(--gold-b);outline-offset:2px}
   /* Ở màn hẹp `.top-in` là flex nowrap, nên nav mới đẩy tràn header 163px:
      nút 日本語, đổi giao diện và ⋯ (chứa Đăng xuất) văng ra ngoài màn. PG dùng
      điện thoại là mất luôn đường đăng xuất và đổi ngôn ngữ. Cho header xuống
@@ -474,7 +479,11 @@
   @media(max-width:640px){
     .top-in{flex-wrap:wrap}
     .cknav{flex-basis:100%;margin-left:0;order:9;justify-content:center;padding-top:2px}
-    .cknav a{padding:4px 10px;font-size:.7rem;flex:1;text-align:center}
+    /* Bốn mục thay vì ba: `flex:1` chia đều sẽ bóp nhãn dài nhất ("Kho ảnh sự
+       kiện") tới mức tràn. Cho phép xuống dòng và co theo nội dung thay vì ép
+       bằng nhau — đúng bài học D076/D055: hàng nút ở khổ 360px mà nowrap thì có
+       thứ bị đẩy ra khỏi màn mà không ai thấy. */
+    .cknav a,.cknav .kho-btn{padding:4px 10px;font-size:.7rem;flex:0 1 auto;text-align:center}
   }
   .kpi{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px;margin:2px 0 4px}
   .kpi .hint{margin-top:8px;margin-bottom:0}
@@ -531,6 +540,14 @@
         <a href="/checkin-gala.html" target="_blank" rel="noopener" data-i="nav_gala">Cửa Gala</a>
         <!-- E08-D066 — sơ đồ bàn Gala kiểu rạp (Pollux) -->
         <a href="/sodoban-gala.html" target="_blank" rel="noopener" data-i="nav_sodo">Sơ đồ bàn</a>
+        <!-- E08-D084 (Sponsor 09/08 19:5x) · KHO ẢNH đứng ngang hàng hai cửa và sơ
+             đồ bàn. Ghi chú cũ của D082 nói không được để ở đây vì "cknav hiện với
+             mọi role, PG sẽ thấy link dẫn tới 403" — đo lại thì ghi chú đó SAI:
+             `/crm` đi qua `serveShell` (crm/index.js:46) vốn đã trả 403 cho mọi
+             role khác `btl`, nên PG không bao giờ nhìn thấy thanh này. Cái phải
+             giữ là điều kiện `role==='btl'` bên dưới, vì SMOKE_EMAIL vào được
+             `/crm` mà không phải `btl` — nút phải tiếp tục ẩn với tài khoản đó. -->
+        <button class="kho-btn" id="khoAnhBtn" style="display:none" data-i="kho_anh">📸 Kho ảnh sự kiện</button>
       </nav>
       <div class="top-r">
         <button class="lang" id="langBtn">日本語</button>
@@ -576,11 +593,6 @@
         <span class="chev">▾</span>
       </div>
       <div class="ov-wrap"><div class="ov-body"><div class="ov-in">
-        <!-- E08-D084 · phần tử ĐẦU TIÊN trong hero. Trước đây nằm trong menu ⋯ nên
-             muốn vào kho ảnh phải biết trước là có nó ở đó — tính năng chính mà
-             giấu sau ba chấm thì coi như không có. Cùng id/handler/khoá i18n như
-             cũ, chỉ đổi chỗ đứng. -->
-        <button class="kho-btn" id="khoAnhBtn" style="display:none" data-i="kho_anh">📸 Kho ảnh sự kiện</button>
         <div class="cd2">
           <div class="cdbox toa"><div class="tag2" data-i="toa_full">TỌA ĐÀM CHUYÊN ĐỀ</div><div class="cd-big num" id="cdToa">—</div><div class="hh" id="hhToa">—</div><div class="cdv"><span class="pin">📍</span><span id="venueToaTxt">—</span></div></div>
           <div class="cdbox gala"><div class="tag2" data-i="gala_full">GALA TRI ÂN</div><div class="cd-big num" id="cdGala">—</div><div class="hh" id="hhGala">—</div><div class="cdv"><span class="pin">📍</span><span id="venueGalaTxt">—</span></div></div>

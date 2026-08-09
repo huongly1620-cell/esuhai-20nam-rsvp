@@ -272,13 +272,25 @@
      hai cửa: `.rb` là cột dọc nên bề rộng = MAX các con. «O Đã đến · 18:07» một
      dòng đo được 97,11 px và tự nó kéo cả cột; tách giờ xuống dòng thì còn
      max(«O Đã đến», «18:07»), mà giữ nguyên cả chữ lẫn giờ. */
-  .tag.in b{display:block;font-weight:800}
+  /* E08-D085 việc C · vỏ badge đã đồng bộ hai theme thì ruột cũng phải: phần
+     giờ HH:MM trước đây 800 ở dark và 700 ở light. Lấy 700 cho cả hai. */
+  .tag.in b{display:block;font-weight:700}
   .rb .tag.in{text-align:right;line-height:1.25;white-space:nowrap}
-  .tag{font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;letter-spacing:.02em}
+  /* E08-D085 việc C · MỘT bộ hình dạng cho cả hai theme, lấy theo bản light đã
+     polish sáng nay: 600/.58rem/3px 7px/bo 4px. Trước đây dark là viên thuốc bo
+     20px chữ 800 còn light là nhãn bo 4px chữ 600 — cùng một dữ liệu mà đổi theme
+     là đổi hình dạng, người dùng phải học lại chỗ nhìn. Màu vẫn để riêng: nền tối
+     và nền ivory cần độ tương phản khác nhau. */
+  .tag{font-size:.58rem;font-weight:600;padding:3px 7px;border-radius:4px;white-space:nowrap;letter-spacing:.045em}
   /* VIP không còn là pill trong hàng badge (dữ liệu thật không chỉ 4 mức, xem
      lịch sử ở comment cũ đã gỡ) — giờ là `.vip-chip` gắn trên viền thẻ, xem
      khối CSS cạnh `.g.is-vip` phía trên. */
-  .tag.tbl{color:var(--gold-b);border:1px solid var(--line2)}.tag.rsvp{color:var(--green-b);border:1px solid rgba(95,228,166,.36)}.tag.in{color:#04220f;background:var(--ok)}
+  .tag.tbl{color:var(--gold-b);border:1px solid var(--line2)}.tag.rsvp{color:var(--green-b);border:1px solid rgba(95,228,166,.36)}
+  /* "Đã đến" dark: bỏ nền xanh ĐẶC (chữ gần đen trên nền sáng chói, chọi hẳn với
+     phần còn lại của hàng badge vốn là chữ màu trên nền trong). Chuyển sang đúng
+     cấu trúc của bản light — chữ màu + nền wash + viền — nhưng dùng tông có sẵn
+     `--ok`/`--ok-glow` cho nền tối, không thêm biến màu mới. */
+  .tag.in{color:var(--ok);background:var(--ok-glow);border:1px solid rgba(69,224,142,.4)}
   /* Light — nhãn khách: bỏ capsule đặc/gradient thô → label wash mực, bo nhẹ.
      Dark giữ pill nổi (đọc trên nền tối); ivory cần tinh tế hơn, màu ở chữ + wash.
      Ngoại lệ VIP: vẫn nền vàng + viền nổi — hạng khách phải đọc được ngay. */
@@ -295,7 +307,6 @@
   :root[data-theme=light] .tag.in{
     color:#0a5c38;background:rgba(18,161,95,.11);border-color:rgba(18,161,95,.24);
   }
-  :root[data-theme=light] .tag.in b{font-weight:700}
   :root[data-theme=light] .tag.dup{
     color:#9a2a1c;background:rgba(210,58,42,.09);border-color:rgba(210,58,42,.3);
     animation:none;

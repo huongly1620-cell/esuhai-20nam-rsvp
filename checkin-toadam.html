@@ -262,14 +262,14 @@
 <header class="top"><div class="top-in">
   <img class="logo" src="logo-esuhai-mark.png" alt=""><div class="ttl" data-i="ci">CHECK-IN · Tọa đàm</div>
   <button class="lang" id="langBtn">日本語</button>
-  <button class="lich" id="rfBtn" aria-label="Tải lại số" title="Tải lại số">&#8635;</button>
+  <button class="lich" id="rfBtn" data-ilb="rf_lbl" aria-label="Tải lại số" title="Tải lại số">&#8635;</button>
   <button class="lich" id="lichBtn" data-i="lich">📅 Lịch trình</button>
 </div>
 <div class="cnt">
   <div class="big b-came" data-f="came"><div class="cl" data-i="came_label">ĐÃ ĐẾN</div><div class="cn"><span id="cDone">0</span></div><div class="cs" data-i="guests">Tọa đàm</div></div>
   <div class="big b-no" data-f="no"><div class="cl" data-i="btn_no">CHƯA ĐẾN</div><div class="cn"><span id="cLeft">0</span><b>/<span id="cTot">0</span></b></div><div class="cs" data-i="guests">Tọa đàm</div></div>
 </div></header><div class="upd"><span id="cNv"></span> <span id="upd"></span></div>
-<div class="sr" style="display:flex;gap:8px"><select id="fBan" class="fban" aria-label="Lọc theo bàn"><option value="">Bàn…</option></select><input id="fPt" class="fban fpt" type="search" placeholder="Phụ trách…" aria-label="Lọc theo người phụ trách"><div class="box" style="flex:1"><span class="ic">&#8981;</span><input id="q" type="search" placeholder="Gõ tên khách (không dấu cũng được)…"></div></div>
+<div class="sr" style="display:flex;gap:8px"><select id="fBan" class="fban" data-ilb="fban_lbl" aria-label="Lọc theo bàn"><option value="">Bàn…</option></select><input id="fPt" class="fban fpt" type="search" data-iph="fpt_ph" data-ilb="fpt_lbl" placeholder="Phụ trách…" aria-label="Lọc theo người phụ trách"><div class="box" style="flex:1"><span class="ic">&#8981;</span><input id="q" type="search" data-iph="search" placeholder="Gõ tên khách (không dấu cũng được)…"></div></div>
 <div class="quick" id="quick">
   <button class="qb" data-q="vip" data-i="vip">★ VIP</button><button class="qb" data-q="nhat" data-i="nhat">🎌 Khách Nhật</button>
   <button class="qb" data-q="noi" data-i="noi">Gia đình-Nội</button><button class="qb" data-q="ngoai" data-i="ngoai">Gia đình-Ngoại</button><button class="qb" data-q="gdtgd" data-i="gdtgd">Gia đình TGĐ</button><button class="qb" data-q="ob" data-i="q_ob">OB Esuhai</button><button class="qb" data-q="dongdu" data-i="q_dongdu">Đông Du</button>
@@ -326,7 +326,25 @@ var T={"vn": {"ci": "CHECK-IN · Tọa đàm", "lich": "📅 Lịch trình", "ca
       qd_da_tick:"お渡し済みとして記録しました ✓",qd_da_go:"記録を取り消しました ✓",
       qd_fail:"サーバーが拒否 — 記録できません"}};
  for(var l in A){for(var k in A[l]){T[l][k]=A[l][k];}}})();
+/* E08 09/08 — ĐỢT 2 ĐỦ NGHĨA. Bảng T+A đã đủ đôi vn/jp, nhưng vẫn còn chữ Việt
+   CỨNG nằm ngoài bảng: nhãn trợ năng, placeholder ô lọc, tên buổi, món ăn, và
+   MÀN LỖI TẢI. Màn lỗi là nặng nhất — nó thay cả <body> nên không `data-i` nào
+   chạm tới, PG Nhật mất mạng sẽ thấy nguyên khối tiếng Việt. */
+(function(){var B={
+  vn:{rf_lbl:"Tải lại số",fban_lbl:"Lọc theo bàn",fban_ph:"Bàn…",
+      fpt_lbl:"Lọc theo người phụ trách",fpt_ph:"Phụ trách…",
+      sess_toa:"Tọa đàm",sess_gala:"Gala",diet_chay:"Món chay",
+      err_h:"Lỗi tải dữ liệu",err_p:"Kiểm tra kết nối rồi thử lại.",err_btn:"Tải lại"},
+  jp:{rf_lbl:"件数を更新",fban_lbl:"テーブルで絞り込み",fban_ph:"テーブル…",
+      fpt_lbl:"ご担当者で絞り込み",fpt_ph:"ご担当…",
+      sess_toa:"座談会",sess_gala:"ガラ",diet_chay:"精進(ベジタリアン)",
+      err_h:"データを読み込めません",err_p:"通信状態をご確認のうえ、再度お試しください。",err_btn:"再読み込み"}};
+ for(var l in B){for(var k in B[l]){T[l][k]=B[l][k];}}})();
 function t(k,rep){var s=(T[LANG]&&T[LANG][k])||T.vn[k]||k;if(rep)for(var x in rep)s=s.replace("{"+x+"}",rep[x]);return s;}
+/* Buổi & món ăn ĐẾN TỪ CSDL bằng tiếng Việt. Dịch lúc VẼ, không đụng chuỗi dùng
+   để SO KHỚP — đổi chuỗi khớp là hỏng lọc/dữ liệu (xem QD_TANG, phanloai). */
+function buoiLbl(g){var b=[];if(g&&g.du_toa_dam)b.push(t("sess_toa"));if(g&&g.du_gala)b.push(t("sess_gala"));return b.join(" + ");}
+function dietLbl(v){if(!v)return "—";return v==="Món chay"?t("diet_chay"):v;}
 // --- API layer (SoT = /crm + Postgres) — thay hẳn localStorage check-in ---
 async function api(u,o){o=o||{};o.credentials="same-origin";return fetch(u,o);}
 async function jget(u){var r=await api(u);if(!r.ok)throw{status:r.status};return r.json();}
@@ -586,7 +604,7 @@ function banDanhSach(){
 function napBanSelect(){
  var el=$("#fBan"); if(!el)return;
  var opts=banDanhSach(),cur=String(st.ban||"").trim(),ok=false,pick="";
- var html='<option value="">Bàn…</option>';
+ var html='<option value="">'+esc(t("fban_ph"))+'</option>';
  for(var i=0;i<opts.length;i++){
   var b=opts[i],sel=false;
   if(cur){
@@ -1101,7 +1119,7 @@ function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came
  $("#pfBody").innerHTML='<div class="pf-av">'+av(g,1)+(hangOf(g)?'<span class="av-vip">'+esc(hangOf(g))+'</span>':'')+'</div><div class="pf-nm">'+pairVJ(g.name,g.name_jp)+'</div><div class="pf-rl"><b>'+(pairVJ(g.title,g.title_jp)||"—")+'</b>'+((g.org||g.org_jp)?'<br>'+pairVJ(g.org,g.org_jp):'')+'</div>'
   +thBox(g)
   +badges(g,1)
-  +'<div class="facts">'+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(g.buoi)+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(g.diet||"—")+'</div></div></div>'
+  +'<div class="facts">'+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(buoiLbl(g))+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(dietLbl(g.diet))+'</div></div></div>'
   +'<div class="info"><div class="ir"><span class="k">'+t("phutrach")+'</span><span class="v">'+esc(g.handler||"—")+'</span></div>'
   /* E08-D051 (Sponsor chốt 06/08 18:45 · CR-78) — ĐÃ GỠ hai dòng khỏi hồ sơ cửa:
        · «Vai trò / đi cùng»
@@ -1128,7 +1146,13 @@ async function enrich(g,id){try{var j=await jget("/crm/guests/"+id);g._enriched=
  g._inter=j.interactions||[];g.phone=(j.guest&&j.guest.phone)||"";var p=parseNote(j.guest&&j.guest.note);g.diet=p.diet||"";g.role=p.role||"";g.handler=p.handler||"";g.seat=p.seat||"";if(curId===id)openPf(id);}catch(e){g._enriched=true;}}
 function setLang(l){LANG=l;localStorage.setItem("ci_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";
  document.querySelectorAll("[data-i]").forEach(function(el){var k=el.getAttribute("data-i");var v=t(k);if(v)el.textContent=v;});
- $("#q").placeholder=t("search");$("#langBtn").textContent=l==="jp"?"Tiếng Việt":"日本語";renderList();if(curId)openPf(curId);}
+ /* Theo đúng khuôn /crm v2: placeholder và nhãn trợ năng dịch QUA THUỘC TÍNH,
+    không viết tay từng ô. Trước đây chỉ mỗi `#q` được dịch, nên ô «Phụ trách…»
+    và hai `aria-label` vĩnh viễn tiếng Việt. */
+ document.querySelectorAll("[data-iph]").forEach(function(el){el.placeholder=t(el.getAttribute("data-iph"));});
+ document.querySelectorAll("[data-ilb]").forEach(function(el){var v=t(el.getAttribute("data-ilb"));el.setAttribute("aria-label",v);if(el.hasAttribute("title"))el.setAttribute("title",v);});
+ var o0=document.querySelector("#fBan option[value='']");if(o0)o0.textContent=t("fban_ph");
+ $("#langBtn").textContent=l==="jp"?"Tiếng Việt":"日本語";renderList();if(curId)openPf(curId);}
 $("#list").addEventListener("click",function(e){var c=e.target.closest(".gc");if(c)openPf(c.getAttribute("data-id"));});
 $("#pfBack").addEventListener("click",function(){$("#pf").classList.remove("show");document.body.style.overflow="";curId=null;refresh();});
 $("#pfBody").addEventListener("click",function(e){
@@ -1200,8 +1224,8 @@ async function boot(){
     fail-closed, không phải màn trắng. */
  try{await jget("/crm/me");}catch(e){
    if(e&&e.status===401){/* chưa đăng nhập — cửa vẫn mở, đi tiếp */}else{
-   return gate('<div><h2>Lỗi tải dữ liệu</h2><p style="color:#b9b096">Kiểm tra kết nối rồi thử lại.</p><button onclick="location.reload()" style="margin-top:12px;background:#d8b876;color:#1a1204;padding:10px 20px;border:0;border-radius:8px;font-weight:700;cursor:pointer">Tải lại</button></div>');}}
- try{var j=await jget("/crm/guests?session="+SESSION+"&limit=1000");G=(j.rows||[]).map(mapRow);}catch(e){return gate('<div><h2>Lỗi tải dữ liệu</h2><p style="color:#b9b096">Kiểm tra kết nối rồi thử lại.</p><button onclick="location.reload()" style="margin-top:12px;background:#d8b876;color:#1a1204;padding:10px 20px;border:0;border-radius:8px;font-weight:700;cursor:pointer">Tải lại</button></div>');}
+   return gate('<div><h2>'+esc(t("err_h"))+'</h2><p style="color:#b9b096">'+esc(t("err_p"))+'</p><button onclick="location.reload()" style="margin-top:12px;background:#d8b876;color:#1a1204;padding:10px 20px;border:0;border-radius:8px;font-weight:700;cursor:pointer">'+esc(t("err_btn"))+'</button></div>');}}
+ try{var j=await jget("/crm/guests?session="+SESSION+"&limit=1000");G=(j.rows||[]).map(mapRow);}catch(e){return gate('<div><h2>'+esc(t("err_h"))+'</h2><p style="color:#b9b096">'+esc(t("err_p"))+'</p><button onclick="location.reload()" style="margin-top:12px;background:#d8b876;color:#1a1204;padding:10px 20px;border:0;border-radius:8px;font-weight:700;cursor:pointer">'+esc(t("err_btn"))+'</button></div>');}
  lastSync=Date.now();counter();setLang(LANG);lastSig=sig();
 }
 boot();

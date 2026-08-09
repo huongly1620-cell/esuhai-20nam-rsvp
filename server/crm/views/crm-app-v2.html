@@ -17,7 +17,10 @@
     --bg1:#0a1826;--bg2:#0b2130;--bg3:#081019;--glow:rgba(31,176,115,.14);--glow2:rgba(224,189,119,.06);
     --panel:rgba(255,255,255,.05);--panel2:rgba(7,16,27,.66);--card:rgba(255,255,255,.032);--hover:rgba(255,255,255,.07);
     --text:#f4eede;--muted:#aca592;--muted2:#837c66;--line:rgba(224,189,119,.16);--line2:rgba(224,189,119,.32);--inp:rgba(4,11,22,.55);
-    --shadow:0 10px 32px rgba(0,0,0,.36);--r:16px;
+    --shadow:0 10px 32px rgba(0,0,0,.36);--r:16px;--ok-glow:rgba(69,224,142,.28);
+    /* Type scale gọn (polish 09/08) — micro/small/body/label/title/display */
+    --fs-micro:.62rem;--fs-small:.72rem;--fs-body:.88rem;--fs-label:.78rem;
+    --fs-title:1.05rem;--fs-display:1.55rem;
   }
   :root[data-theme=light]{
     /* ── LIGHT (ivory sang trọng) ── */
@@ -27,7 +30,7 @@
     --bg1:#faf6ec;--bg2:#f5efe1;--bg3:#efe7d5;--glow:rgba(20,140,100,.08);--glow2:rgba(169,127,46,.07);
     --panel:rgba(255,255,255,.75);--panel2:rgba(255,255,255,.92);--card:rgba(255,255,255,.9);--hover:#fff;
     --text:#2a2418;--muted:#6d6552;--muted2:#9a9078;--line:rgba(120,92,36,.18);--line2:rgba(120,92,36,.34);--inp:#fff;
-    --shadow:0 8px 26px rgba(120,92,40,.13);
+    --shadow:0 8px 26px rgba(120,92,40,.13);--ok-glow:rgba(18,161,95,.2);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html{scroll-behavior:smooth}
@@ -45,7 +48,7 @@
   :root[data-theme=light] .top{background:linear-gradient(180deg,rgba(250,246,236,.94),rgba(250,246,236,.72))}
   .top-in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:10px 14px}
   .logo{height:27px;filter:drop-shadow(0 1px 5px rgba(0,0,0,.35))}
-  .brand{line-height:1.03}.brand .b1{font-family:"Playfair Display",serif;font-size:1rem;font-weight:700;letter-spacing:.015em}.brand .b2{font-size:.56rem;text-transform:uppercase;letter-spacing:.24em;color:var(--gold)}
+  .brand{line-height:1.03}.brand .b1{font-family:"Playfair Display",serif;font-size:var(--fs-title);font-weight:700;letter-spacing:.015em}.brand .b2{font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.2em;color:var(--gold)}
   .hanh{display:flex;gap:4px;margin-left:1px}.hanh i{width:8px;height:8px;border-radius:2px;transform:rotate(45deg)}.h-kim{background:#ece6d3;border:1px solid #b7a06a}.h-moc{background:#2fae6a}.h-thuy{background:#4a97e6}.h-hoa{background:#ec5140}.h-tho{background:#c79a3e}
   .role{font-size:.56rem;color:var(--gold-b);background:var(--gold-soft);border:1px solid var(--line);border-radius:20px;padding:2px 9px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
   .top-r{margin-left:auto;display:flex;gap:7px;align-items:center}
@@ -60,9 +63,29 @@
   .cdm{display:flex;align-items:center;gap:6px;font-size:.72rem;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid var(--line);background:var(--panel)}
   .cdm .dt{width:6px;height:6px;border-radius:50%}.cdm.toa .dt{background:var(--green);box-shadow:0 0 7px var(--green)}.cdm.gala .dt{background:var(--blue);box-shadow:0 0 7px var(--blue)}
   .cdm .k{color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:.6rem}.cdm .v{color:var(--text)}
-  .counter{margin-left:auto;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:30px;padding:5px 14px 5px 6px}
-  .counter .lb{font-size:.56rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}.counter .big{font-family:"Playfair Display",serif;font-weight:800;font-size:1.1rem;color:var(--ok);line-height:1}.counter .tot{color:var(--muted);font-size:.82rem}
-  .ring{width:32px;height:32px;border-radius:50%;background:conic-gradient(var(--ok) var(--p,0deg),rgba(140,140,140,.2) 0);display:grid;place-items:center}.ring i{width:23px;height:23px;border-radius:50%;background:var(--bg2);display:grid;place-items:center;font-size:.55rem;color:var(--ok);font-style:normal;font-weight:800}
+  /* Điểm nhấn thị giác chính của thanh metabar — số ĐÃ ĐẾN là con số quan trọng
+     nhất trong đêm sự kiện, nhưng trước đây chỉ là một pill nhỏ (32px ring) có
+     trọng lượng NGANG BẰNG hai chip đếm ngược bên cạnh ⇒ mắt không biết neo vào
+     đâu. Giờ: to hơn hẳn, viền + glow màu theo tiến độ, số lớn hơn — mắt buộc
+     phải dừng lại đây trước khi đọc phần còn lại của thanh. */
+  .counter{
+    margin-left:auto;display:flex;align-items:center;gap:12px;
+    background:linear-gradient(135deg,var(--panel),var(--gold-soft) 160%);
+    border:1.5px solid var(--line2);border-radius:30px;padding:6px 18px 6px 7px;
+    box-shadow:0 2px 10px var(--ok-glow),inset 0 1px 0 rgba(255,255,255,.05);
+    animation:counterPulse 3.4s ease-in-out infinite;
+  }
+  @keyframes counterPulse{0%,100%{box-shadow:0 2px 10px var(--ok-glow),inset 0 1px 0 rgba(255,255,255,.05)}50%{box-shadow:0 4px 18px var(--ok-glow),inset 0 1px 0 rgba(255,255,255,.05)}}
+  .cstat{display:flex;flex-direction:column;gap:1px}
+  .counter .lb{font-size:.6rem;text-transform:uppercase;letter-spacing:.14em;color:var(--gold);font-weight:800;display:flex;align-items:center;gap:5px}
+  .counter .lb .dt{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok);flex:none;animation:dotlive 1.8s ease-in-out infinite}
+  @keyframes dotlive{0%,100%{opacity:1}50%{opacity:.4}}
+  .counter .big{font-family:"Playfair Display",serif;font-weight:800;font-size:1.5rem;color:var(--ok);line-height:1}
+  .counter .tot{color:var(--muted);font-size:.86rem;font-weight:500}
+  .counter .cnv{font-size:.6rem;color:var(--muted2);margin-top:1px}
+  .ring{width:46px;height:46px;border-radius:50%;background:conic-gradient(var(--ok) var(--p,0deg),var(--line) 0);display:grid;place-items:center;flex:none;box-shadow:0 0 0 3px var(--card),0 2px 8px rgba(0,0,0,.22)}
+  .ring i{width:34px;height:34px;border-radius:50%;background:var(--bg2);display:grid;place-items:center;font-family:"Playfair Display",serif;font-size:.76rem;color:var(--ok);font-style:normal;font-weight:800}
+  :root[data-theme=light] .ring{box-shadow:0 0 0 3px var(--card),0 2px 6px rgba(120,92,40,.18)}
 
   /* ── OVERVIEW ── */
   .ov{margin:14px 0 0}
@@ -118,22 +141,103 @@
   .statline{font-size:.76rem;color:var(--muted);padding:11px 2px 5px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}.statline b{color:var(--text)}.statline .ok{color:var(--ok)}
 
   /* ── LIST ── */
-  .list{display:flex;flex-direction:column;gap:8px;padding-bottom:20px;animation:fadein .3s}
+  .list{display:flex;flex-direction:column;gap:10px;padding-bottom:20px;animation:fadein .3s}
   @keyframes fadein{from{opacity:0}}
-  .g{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:14px;background:var(--card);padding:11px 13px;cursor:pointer;transition:transform .14s,border-color .14s,background .14s}
-  .g:hover{border-color:var(--line2);background:var(--hover);transform:translateY(-1px)}
+  /* Thẻ khách — nâng cấp thẩm mỹ 09/08: bo tròn rộng hơn (14→16), đệm rộng hơn
+     cho khoảng thở, thêm bóng đổ RẤT nhẹ ngay ở trạng thái nghỉ (trước đây thẻ
+     phẳng tuyệt đối, chỉ có viền mảnh — không có chiều sâu); hover nhấc nhẹ hơn
+     kèm bóng rõ hơn thay vì chỉ đổi viền. */
+  .g{position:relative;display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:16px;background:var(--card);padding:13px 15px;cursor:pointer;
+    box-shadow:0 1px 2px rgba(0,0,0,.14);transition:transform .16s cubic-bezier(.2,.8,.2,1),border-color .16s,background .16s,box-shadow .16s}
+  .g:hover{border-color:var(--line2);background:var(--hover);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.22)}
+  :root[data-theme=light] .g{box-shadow:0 1px 3px rgba(120,92,40,.08)}
+  :root[data-theme=light] .g:hover{box-shadow:0 8px 22px rgba(120,92,40,.14)}
   .g:active{transform:scale(.988)}
   .g.done{border-color:rgba(69,224,142,.3);background:linear-gradient(90deg,rgba(69,224,142,.08),transparent 62%)}
-  .av{width:48px;height:48px;border-radius:12px;flex:none;display:grid;place-items:center;overflow:hidden;background:linear-gradient(155deg,#17475c,#0d2648);border:1px solid var(--line2);color:var(--gold-b);font-family:"Playfair Display",serif;font-size:1rem;font-weight:600;position:relative}
-  :root[data-theme=light] .av{background:linear-gradient(155deg,#e8ddc2,#d8c9a4);color:#6a4e12}
+  /* VIP — cả DÒNG thẻ nổi so với khách thường (không chỉ badge). */
+  .g.is-vip{
+    border:1.5px solid var(--gold);
+    background:linear-gradient(105deg,var(--gold-soft) 0%,var(--card) 55%);
+    box-shadow:0 0 0 1px rgba(224,189,119,.12),0 4px 14px rgba(184,150,63,.18);
+  }
+  .g.is-vip:hover{border-color:var(--gold-b);box-shadow:0 0 0 1px rgba(224,189,119,.22),0 10px 24px rgba(184,150,63,.26)}
+  .g.is-vip .av{border-color:var(--gold);box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),0 0 0 2px rgba(224,189,119,.3),0 2px 6px rgba(184,150,63,.3)}
+  .g.is-vip .n1{color:var(--text)}
+  /* VIP + đã đến: giữ viền vàng VIP, thêm wash xanh nhẹ bên phải */
+  .g.is-vip.done{
+    border-color:var(--gold);
+    background:linear-gradient(105deg,var(--gold-soft) 0%,rgba(69,224,142,.07) 70%,transparent);
+  }
+  :root[data-theme=light] .g.is-vip{
+    border:1.5px solid #b8922e;
+    background:linear-gradient(105deg,rgba(217,178,74,.22) 0%,rgba(250,246,236,.95) 58%);
+    box-shadow:0 1px 0 rgba(169,127,46,.2),0 4px 12px rgba(169,127,46,.14);
+  }
+  :root[data-theme=light] .g.is-vip:hover{
+    border-color:#8a6414;
+    box-shadow:0 1px 0 rgba(169,127,46,.28),0 6px 16px rgba(169,127,46,.2);
+  }
+  :root[data-theme=light] .g.is-vip .av{border-color:#b8922e;box-shadow:inset 0 0 0 2px rgba(255,255,255,.5),0 0 0 2px rgba(184,146,46,.35),0 2px 6px rgba(169,127,46,.24)}
+  :root[data-theme=light] .g.is-vip.done{
+    border-color:#b8922e;
+    background:linear-gradient(105deg,rgba(217,178,74,.2) 0%,rgba(18,161,95,.07) 72%,#faf6ec);
+  }
+  /* VIP — chip GẮN TRÊN VIỀN, góc trên-phải thẻ (không còn nằm trong hàng badge
+     lẫn với NV/Bàn/Đã đến). Ý đồ: một huy hiệu ĐÍNH vào cạnh thẻ như huy hiệu
+     kim loại/xi mạ — ngay ngắn (không nghiêng), có viền ánh kim + một dải sáng
+     hắt phía trên (gloss) cho cảm giác bóng, và một quầng màu nền thẻ quanh chip
+     để nó nổi hẳn lên khỏi viền vàng bên dưới, đúng như "dán/gắn" chứ không chìm
+     vào viền. */
+  .vip-chip{
+    position:absolute;top:-9px;right:16px;z-index:3;
+    display:inline-flex;align-items:center;gap:4px;
+    padding:3px 10px;border-radius:6px;
+    font-size:.6rem;font-weight:800;letter-spacing:.06em;white-space:nowrap;
+    color:#2a1c02;
+    background:linear-gradient(160deg,#fff7dd 0%,var(--gold) 42%,var(--gold-d) 100%);
+    border:1px solid var(--gold-b);
+    box-shadow:0 0 0 3px var(--card),0 3px 9px rgba(184,150,63,.42),
+      inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 3px rgba(110,74,10,.28);
+  }
+  .vip-chip::before{content:"★";font-size:.92em;line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+  /* dải sáng hắt lên nửa trên chip — chất "bóng bẩy" xi mạ, không phải chữ phẳng */
+  .vip-chip::after{
+    content:"";position:absolute;left:2px;right:2px;top:1px;height:48%;
+    border-radius:5px 5px 8px 8px/5px 5px 10px 10px;
+    background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,255,255,0));
+    pointer-events:none;
+  }
+  :root[data-theme=light] .vip-chip{
+    color:#3a2606;
+    background:linear-gradient(160deg,#fdf0c8 0%,#d9b24a 42%,#b8922e 100%);
+    border:1px solid #8a6414;
+    box-shadow:0 0 0 3px var(--card),0 3px 8px rgba(169,127,46,.36),
+      inset 0 1px 0 rgba(255,255,255,.8),inset 0 -2px 3px rgba(90,60,8,.22);
+  }
+  /* Avatar — thêm viền khung ảnh + bóng trong nhẹ cho MỌI khách (trước chỉ VIP
+     có viền nổi, khách thường trơn phẳng khiến hàng VIP bị tách rời hẳn khỏi
+     ngôn ngữ chung của thẻ). Viền mảnh này là "khung ảnh", VIP chồng thêm màu
+     vàng đậm hơn ở khối .is-vip .av phía trên — cùng một ngôn ngữ, khác cấp độ. */
+  .av{width:49px;height:49px;border-radius:13px;flex:none;display:grid;place-items:center;overflow:hidden;background:linear-gradient(155deg,#17475c,#0d2648);border:1px solid var(--line2);color:var(--gold-b);font-family:"Playfair Display",serif;font-size:1rem;font-weight:600;position:relative;
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.22)}
+  :root[data-theme=light] .av{background:linear-gradient(155deg,#e8ddc2,#d8c9a4);color:#6a4e12;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55),0 1px 2px rgba(120,92,40,.16)}
   .av img{width:100%;height:100%;object-fit:cover}
   .av .sd{position:absolute;right:-2px;bottom:-2px;width:14px;height:14px;border-radius:50%;border:2.5px solid var(--bg2);background:var(--amber)}.av .sd.in{background:var(--ok)}
   :root[data-theme=light] .av .sd{border-color:#fff}
-  .g .nm{flex:1;min-width:0}.g .n1{font-family:"Playfair Display",serif;font-size:1.06rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}.g .n2{color:var(--muted2);font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  .g .nm{flex:1;min-width:0}.g .n1{font-family:"Playfair Display",serif;font-size:var(--fs-title);font-weight:600;letter-spacing:.003em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}.g .n2{color:var(--muted2);font-size:var(--fs-small);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
   /* E08-D055 — cột phải nay mang thêm «phụ trách» + nhãn cửa. max-width giữ
      AC-6: cột này ăn bề ngang của TÊN khách trên màn 360px. */
-  .rb{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none;max-width:40%}
-  .rb .pt{font-size:.64rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .rb{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none;max-width:40%}
+  /* Polish 09/08 — trước mỗi tag (NV/đến-hay-chưa/VIP) là một flex item RIÊNG
+     trong `.rb` (flex-direction:column) ⇒ tự thành một DÒNG, có thẻ chồng tới
+     4-5 dòng cho một khách. Gom hết badge vào MỘT hàng ngang, chỉ còn 2 dòng:
+     hàng badge + dòng phụ trách. */
+  .rb-main{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  /* «Phụ trách» tách hẳn khỏi hàng badge bằng một gạch mảnh phía trên thay vì
+     chỉ dựa vào khoảng cách — hai tầng thông tin (trạng thái khách / người lo)
+     giờ đọc được là hai tầng, không phải một cụm chữ chung. */
+  .rb .pt{font-size:.64rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+    padding-top:5px;border-top:1px dashed var(--line);letter-spacing:.01em}
   /* §3b — «chưa đến» là mặc định của 384/393 dòng ⇒ mờ, không nền, không viền. */
   .rb .ci-n{font-size:.64rem;font-weight:600;white-space:nowrap;color:var(--muted)}
   /* E08-D055 AC-6 (commit 12) — huy hiệu «đã đến» XUỐNG HAI DÒNG, cùng lý do như
@@ -143,10 +247,33 @@
   .tag.in b{display:block;font-weight:800}
   .rb .tag.in{text-align:right;line-height:1.25;white-space:nowrap}
   .tag{font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;letter-spacing:.02em}
-  .tag.v1{color:#3a2600;background:linear-gradient(180deg,#f6e6bd,#dcb75e)}.tag.v2{color:#241802;background:linear-gradient(180deg,var(--gold),var(--gold-d))}
-  .tag.v3{color:var(--gold-b);border:1px solid var(--line2)}.tag.v4{color:var(--muted);border:1px solid var(--line)}
+  /* VIP không còn là pill trong hàng badge (dữ liệu thật không chỉ 4 mức, xem
+     lịch sử ở comment cũ đã gỡ) — giờ là `.vip-chip` gắn trên viền thẻ, xem
+     khối CSS cạnh `.g.is-vip` phía trên. */
   .tag.tbl{color:var(--gold-b);border:1px solid var(--line2)}.tag.rsvp{color:var(--green-b);border:1px solid rgba(95,228,166,.36)}.tag.in{color:#04220f;background:var(--ok)}
+  /* Light — nhãn khách: bỏ capsule đặc/gradient thô → label wash mực, bo nhẹ.
+     Dark giữ pill nổi (đọc trên nền tối); ivory cần tinh tế hơn, màu ở chữ + wash.
+     Ngoại lệ VIP: vẫn nền vàng + viền nổi — hạng khách phải đọc được ngay. */
+  :root[data-theme=light] .tag{
+    font-weight:600;font-size:.58rem;padding:3px 7px;border-radius:4px;
+    letter-spacing:.045em;border:1px solid transparent;background:transparent;
+  }
+  :root[data-theme=light] .tag.tbl{
+    color:#6e5a32;background:rgba(120,92,36,.06);border-color:rgba(120,92,36,.2);
+  }
+  :root[data-theme=light] .tag.rsvp{
+    color:#0b6b45;background:rgba(18,161,95,.08);border-color:rgba(18,161,95,.22);
+  }
+  :root[data-theme=light] .tag.in{
+    color:#0a5c38;background:rgba(18,161,95,.11);border-color:rgba(18,161,95,.24);
+  }
+  :root[data-theme=light] .tag.in b{font-weight:700}
+  :root[data-theme=light] .tag.dup{
+    color:#9a2a1c;background:rgba(210,58,42,.09);border-color:rgba(210,58,42,.3);
+    animation:none;
+  }
   .empty{color:var(--muted);text-align:center;padding:46px 16px}.empty .em-ic{font-size:2.1rem;opacity:.5;margin-bottom:8px}
+  .empty .btn{margin-top:14px;display:inline-flex}
   .skel{height:70px;border-radius:14px;background:linear-gradient(90deg,var(--card),var(--panel),var(--card));background-size:200% 100%;animation:sh 1.2s infinite}
   @keyframes sh{to{background-position:-200% 0}}
 
@@ -162,14 +289,31 @@
   .pf-av{width:190px;height:190px;border-radius:18px;margin:6px auto 0;display:grid;place-items:center;overflow:hidden;background:linear-gradient(155deg,#17475c,#0d2648);border:2px solid var(--gold);color:var(--gold-b);font-family:"Playfair Display",serif;font-size:3.3rem;box-shadow:var(--shadow)}
   :root[data-theme=light] .pf-av{background:linear-gradient(155deg,#e8ddc2,#d8c9a4);color:#6a4e12}
   .pf-av img{width:100%;height:100%;object-fit:cover}
-  .pf-nm{font-family:"Playfair Display",serif;font-size:1.58rem;font-weight:700;color:var(--text);margin-top:14px;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
-  .pf-rl{color:var(--muted);font-size:.9rem;margin-top:4px}
-  .th{margin:15px auto 4px;display:inline-flex;border:1.5px solid var(--gold);border-radius:15px;background:var(--gold-soft);overflow:hidden}.th>div{padding:11px 26px}.th>div+div{border-left:1.5px solid var(--line2)}.th .k{font-size:.55rem;text-transform:uppercase;letter-spacing:.16em;color:var(--muted)}.th .v{font-family:"Playfair Display",serif;font-size:2rem;font-weight:700;color:var(--gold-b);line-height:1;margin-top:2px}
-  .facts{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:12px 0 4px}.ft{border:1px solid var(--line);border-radius:10px;padding:7px 13px;font-size:.8rem;background:var(--panel)}.ft .k{font-size:.5rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted2)}.ft .v{color:var(--text);font-weight:600;margin-top:1px}
-  .info{text-align:left;margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden}.ir{display:flex;justify-content:space-between;gap:14px;padding:11px 13px;font-size:.88rem}.ir+.ir{border-top:1px solid var(--line)}.ir .k{color:var(--muted)}.ir .v{color:var(--text);text-align:right;font-weight:500}
-  .sec{font-size:.63rem;text-transform:uppercase;letter-spacing:.13em;color:var(--gold);margin:18px 0 8px;text-align:left;display:flex;align-items:center;gap:8px;font-weight:700}.sec::after{content:"";flex:1;height:1px;background:var(--line)}
-  input.f,select.f,textarea.f{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--inp);color:var(--text);font:inherit}input.f:focus,textarea.f:focus,select.f:focus{outline:none;border-color:var(--line2);box-shadow:0 0 0 3px var(--gold-soft)}
-  .fld{margin:9px 0;text-align:left}.fld .lab{font-size:.68rem;color:var(--muted);margin-bottom:4px}
+  .pf-nm{font-family:"Playfair Display",serif;font-size:var(--fs-display);font-weight:700;color:var(--text);margin-top:14px;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
+  .pf-rl{color:var(--muted);font-size:var(--fs-body);margin-top:4px}
+  /* Info-chip gốc (polish 09/08) — một ngôn ngữ cho Bàn/Ghế · facts · KPI · info.
+     Trước: .th / .ft / .ir / .kbox / .kp định nghĩa rời, cảm giác 4 app ghép. */
+  .ichip{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--inp);text-align:left}
+  .ichip .k,.ichip .kl,.ichip .kpl{font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.08em;color:var(--muted2);font-weight:700}
+  .ichip .v,.ichip .kn,.ichip .kpn{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;line-height:1.15}
+  /* Biến thể nổi — Bàn/Ghế hồ sơ (số lớn, viền gold) */
+  .th{margin:15px auto 4px;display:inline-flex;border:1.5px solid var(--gold);border-radius:14px;background:var(--gold-soft);overflow:hidden}
+  .th>div{padding:11px 26px}.th>div+div{border-left:1.5px solid var(--line2)}
+  .th .k{font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}
+  .th .v{font-family:"Playfair Display",serif;font-size:var(--fs-display);font-weight:700;color:var(--gold-b);line-height:1;margin-top:2px}
+  /* Biến thể gọn — facts hồ sơ */
+  .facts{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:12px 0 4px}
+  .ft{border:1px solid var(--line);border-radius:10px;padding:7px 13px;font-size:var(--fs-small);background:var(--inp)}
+  .ft .k{font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.08em;color:var(--muted2)}.ft .v{color:var(--text);font-weight:600;margin-top:1px}
+  .info{text-align:left;margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--inp)}
+  .ir{display:flex;justify-content:space-between;gap:14px;padding:11px 13px;font-size:var(--fs-body)}
+  .ir+.ir{border-top:1px solid var(--line)}.ir .k{color:var(--muted);font-size:var(--fs-small)}.ir .v{color:var(--text);text-align:right;font-weight:600}
+  .sec{font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.13em;color:var(--gold);margin:18px 0 8px;text-align:left;display:flex;align-items:center;gap:8px;font-weight:700}.sec::after{content:"";flex:1;height:1px;background:var(--line)}
+  .sec.sheet-title{margin:4px 0 12px;font-size:var(--fs-label);letter-spacing:.1em}
+  .hint{color:var(--muted);font-size:var(--fs-small);line-height:1.55;margin:0 0 12px;text-align:left}
+  .hint b{color:var(--muted2);font-weight:600}
+  input.f,select.f,textarea.f{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--inp);color:var(--text);font:inherit;font-size:var(--fs-body)}input.f:focus,textarea.f:focus,select.f:focus{outline:none;border-color:var(--line2);box-shadow:0 0 0 3px var(--gold-soft)}
+  .fld{margin:9px 0;text-align:left}.fld .lab{font-size:var(--fs-small);color:var(--muted);margin-bottom:4px;font-weight:600}
   /* E08-D063 — ô tick Buổi. Vùng chạm cả khối chứ không riêng ô vuông: đêm lễ
      bấm bằng ngón cái trên điện thoại, ô 17px là bấm trượt sang ô bên cạnh. */
   .buoick{flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;padding:9px 11px;
@@ -193,16 +337,28 @@
  .thact button.xoa{color:var(--red-b)}
  .thwrap{display:inline-block;vertical-align:top;margin:0 4px 6px 0}
  /* E08-D038 — nhãn Nhân viên. Luật D033: phân biệt bằng HÌNH, không chỉ màu —
-    in đen trắng hoặc mắt kém màu vẫn phải đọc được. Các tag khác là pill bo
-    tròn nền đặc; cái này là khung VUÔNG, viền liền, nền rỗng. */
+    in đen trắng hoặc mắt kém màu vẫn phải đọc được. Dark: khung VUÔNG vs pill
+    tròn nền đặc; Light: mọi tag đã là label bo nhẹ → NV giữ cạnh vuông hơn + viền đậm hơn. */
  .tag.nv{border:1.5px solid var(--muted);background:transparent;color:var(--muted);border-radius:3px;font-weight:800}
+ :root[data-theme=light] .tag.nv{
+   color:#6a6250;border:1px solid rgba(106,98,80,.38);background:rgba(106,98,80,.04);
+   border-radius:2px;font-weight:600;
+ }
  .attb{display:inline-block;font-size:.62rem;font-weight:800;padding:2px 7px;white-space:nowrap;letter-spacing:.02em;vertical-align:middle}
   .attb.khong{color:#2a1e05;background:var(--amber);border:1px solid var(--amber);border-radius:3px}
   .attb.cho{color:var(--muted);background:transparent;border:1.5px dashed var(--line2);border-radius:999px}
+  :root[data-theme=light] .attb{font-weight:600;letter-spacing:.04em;padding:3px 7px}
+  :root[data-theme=light] .attb.khong{
+    color:#8a5a12;background:rgba(200,137,42,.12);border:1px solid rgba(200,137,42,.32);border-radius:4px;
+  }
+  :root[data-theme=light] .attb.cho{
+    color:var(--muted);border:1px dashed rgba(120,92,36,.32);border-radius:4px;background:rgba(120,92,36,.03);
+  }
   /* nhóm bình thường: chỉ một chấm TRÒN ĐẶC, không chữ — 320 dòng mà gắn chữ
      là nhồi thêm một cột vào hàng vốn đã có VIP + giờ đến / số bàn. */
   .attd{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green,#43e08d);
     border:1px solid rgba(0,0,0,.45);vertical-align:middle;flex:none}
+  :root[data-theme=light] .attd{border-color:rgba(10,92,56,.28);box-shadow:0 0 0 1px rgba(18,161,95,.12)}
   .attsel{width:100%;font:inherit;font-size:.92rem;color:var(--cream,#eee);background:rgba(5,13,24,.5);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:6px}
   .thumbs{display:flex;gap:8px;flex-wrap:wrap}.thumbs img{width:70px;height:70px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
   /* E08-D028 L-01: dải ảnh hồ sơ trộn ảnh mặt khách với ảnh QUÀ chụp tại quầy
@@ -247,12 +403,32 @@
   .btn.gold{background:linear-gradient(180deg,var(--gold-b),var(--gold-d));color:#2a1e05;border-color:transparent;font-weight:700}
   .btn.green{background:linear-gradient(180deg,var(--green-b),var(--green));color:#04220f;border-color:transparent;font-weight:800}
   .btn.danger{color:var(--red-b);border-color:rgba(236,81,64,.34)}
+  /* 96% — nút Xác nhận phá huỷ phải đặc, không chỉ viền đỏ mảnh (bản 95% để
+     `.btn.danger` ghost → cạnh Huỷ trông mạnh hơn nút nguy hiểm). */
+  .btn.danger-fill{background:linear-gradient(180deg,#ff8676,var(--red));color:#fff;border-color:transparent;font-weight:700}
+  .btn.danger-fill:hover{filter:brightness(1.05)}
+  .btn:disabled,.btn[disabled]{opacity:.45;cursor:default;transform:none;pointer-events:none}
   .btn.block{width:100%;justify-content:center;padding:14px;font-size:.98rem;display:flex;gap:8px;align-items:center}
   table.aud{width:100%;border-collapse:collapse;font-size:.78rem}table.aud td{border-bottom:1px solid var(--line);padding:7px 5px;vertical-align:top}
   .to-top{position:fixed;right:16px;bottom:18px;width:46px;height:46px;border-radius:50%;background:var(--panel2);backdrop-filter:blur(8px);border:1px solid var(--line2);color:var(--gold-b);font-size:1.15rem;cursor:pointer;box-shadow:var(--shadow);display:none;z-index:25;transition:.15s}.to-top:hover{transform:translateY(-2px)}.to-top.show{display:grid;place-items:center}
   /* toast */
-  .toast{position:fixed;left:50%;bottom:74px;transform:translateX(-50%) translateY(20px);background:var(--panel2);backdrop-filter:blur(12px);border:1px solid var(--line2);color:var(--text);padding:11px 18px;border-radius:30px;font-size:.85rem;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.8,.2,1);z-index:80;display:flex;gap:8px;align-items:center}
+  .toast{position:fixed;left:50%;bottom:74px;transform:translateX(-50%) translateY(20px);background:var(--panel2);backdrop-filter:blur(12px);border:1px solid var(--line2);color:var(--text);padding:11px 18px;border-radius:30px;font-size:var(--fs-label);font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.8,.2,1);z-index:80;display:flex;gap:8px;align-items:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.toast.ok{border-color:var(--ok);color:var(--ok)}.toast.err{border-color:var(--red-b);color:var(--red-b)}
+
+  /* ── Modal xác nhận (thay confirm/prompt trình duyệt) ── */
+  .appdlg{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;
+    background:rgba(3,8,16,.78);backdrop-filter:blur(5px);padding:18px}
+  .appdlg.show{display:flex;animation:fade .18s}
+  .appdlg-in{width:100%;max-width:400px;background:linear-gradient(180deg,var(--bg2),var(--bg3));
+    border:1px solid var(--line2);border-top:2px solid var(--gold);border-radius:16px;
+    padding:18px 18px 16px;box-shadow:var(--shadow);animation:pop .18s ease}
+  .appdlg-msg{font-size:var(--fs-body);line-height:1.55;color:var(--text);white-space:pre-wrap;margin:0 0 14px;text-align:left}
+  .appdlg-inp{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
+    background:var(--inp);color:var(--text);font:inherit;font-size:var(--fs-body);margin:-4px 0 14px}
+  .appdlg-inp:focus{outline:none;border-color:var(--line2);box-shadow:0 0 0 3px var(--gold-soft)}
+  .appdlg-acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+  .appdlg-acts .btn{min-width:96px;padding:10px 14px}
+  .appdlg-acts .btn.gold,.appdlg-acts .btn.danger-fill{flex:0 0 auto}
   /* ---- KPI mời ↔ đăng ký ↔ buổi (E08-D016) ---- */
   /* khung tự đứng — shell R0 không có class .card, cũng không có .hint */
   .cknav{display:flex;gap:6px;margin-left:8px}
@@ -269,27 +445,26 @@
     .cknav a{padding:4px 10px;font-size:.7rem;flex:1;text-align:center}
   }
   .kpi{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px;margin:2px 0 4px}
-  .kpi .hint{color:var(--muted);font-size:.74rem;line-height:1.55;margin-top:8px}
-  .kpi .hint b{color:var(--muted2);font-weight:600}
+  .kpi .hint{margin-top:8px;margin-bottom:0}
   .kpi .khead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-  .kpi .scope{font-size:.68rem;color:var(--gold);border:1px solid var(--line);border-radius:20px;padding:2px 9px;text-transform:uppercase;letter-spacing:.04em}
+  .kpi .scope{font-size:var(--fs-micro);color:var(--gold);border:1px solid var(--line);border-radius:20px;padding:2px 9px;text-transform:uppercase;letter-spacing:.04em}
   .kgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   @media(min-width:700px){.kgrid{grid-template-columns:repeat(4,1fr)}}
   .kbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--inp)}
-  .kbox .kn{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15}
-  .kbox .kl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-top:2px}
-  .kbox .ks{font-size:.72rem;color:var(--muted2);margin-top:4px}
+  .kbox .kn{font-size:var(--fs-display);font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;color:var(--text)}
+  .kbox .kl{font-size:var(--fs-micro);color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;font-weight:700}
+  .kbox .ks{font-size:var(--fs-small);color:var(--muted2);margin-top:4px}
   .ksec{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
-  .ksec>h4{margin:0 0 8px;font-size:.72rem;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:inherit;font-weight:700}
+  .ksec>h4{margin:0 0 8px;font-size:var(--fs-micro);color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:inherit;font-weight:700}
   .kpart{display:grid;gap:8px}
-  .kp{border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+  .kp{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--inp)}
   .kp .kpt{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-  .kp .kpn{font-size:1.12rem;font-weight:700;font-variant-numeric:tabular-nums}
-  .kp .kpl{font-size:.78rem}
-  .kpd{font-size:.72rem;color:var(--muted);margin-top:3px}
-  .ksum{margin-top:10px;font-size:.8rem;line-height:1.7}
+  .kp .kpn{font-size:var(--fs-title);font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+  .kp .kpl{font-size:var(--fs-label);color:var(--muted)}
+  .kpd{font-size:var(--fs-small);color:var(--muted);margin-top:3px}
+  .ksum{margin-top:10px;font-size:var(--fs-small);line-height:1.7}
   .ksum b{font-variant-numeric:tabular-nums}
-  .kwarn{margin-top:10px;border:1px solid var(--amber);border-radius:10px;padding:9px 12px;font-size:.76rem;color:var(--amber)}
+  .kwarn{margin-top:10px;border:1px solid var(--amber);border-radius:10px;padding:9px 12px;font-size:var(--fs-small);color:var(--amber)}
   .ci-off{margin-top:12px;border:1px dashed var(--line);border-radius:11px;padding:11px 13px;
     font-size:.78rem;color:var(--muted);line-height:1.5;text-align:center}
 
@@ -347,7 +522,7 @@
     <div class="metabar">
       <div class="cdm toa"><span class="dt"></span><span class="k" data-i="toa_s">Tọa đàm</span><span class="v num" id="cdmToa">—</span></div>
       <div class="cdm gala"><span class="dt"></span><span class="k" data-i="gala_s">Gala</span><span class="v num" id="cdmGala">—</span></div>
-      <div class="counter"><div class="ring" id="ring"><i id="ringPct">0%</i></div><div><div class="lb"><span data-i="arrived">Đã đến</span> <span id="cNv" style="color:var(--muted);font-weight:400;font-size:.72rem"></span></div><div><span class="big num" id="cIn">0</span><span class="tot num" id="cTot"> / 0</span></div></div></div>
+      <div class="counter"><div class="ring" id="ring"><i id="ringPct">0%</i></div><div class="cstat"><div class="lb"><span class="dt"></span><span data-i="arrived">Đã đến</span></div><div><span class="big num" id="cIn">0</span><span class="tot num" id="cTot"> / 0</span></div><div class="cnv" id="cNv"></div></div></div>
     </div>
   </div>
 
@@ -392,9 +567,9 @@
         <div class="search"><span class="ic">&#128269;</span><input id="q" type="search" placeholder="Tìm tên / SĐT / đơn vị…" data-iph="ph_search"></div>
         <button class="chip" id="chipWait" data-i="only_wait">◔ Chưa đến</button>
         <button class="chip" id="chipDup" data-i="only_dup">⚠ Trùng</button>
-        <select id="fBan" class="sel" style="width:110px" aria-label="Lọc theo bàn"><option value="">Bàn…</option></select>
-        <input id="fPt" class="sel" style="width:118px" type="search" placeholder="Phụ trách…" aria-label="Lọc theo người phụ trách">
-        <select class="sel" id="attSel"><option value="">Tham dự: tất cả</option><option value="du">Có tham dự</option><option value="khong">Không tham dự</option><option value="cho">Chưa xác nhận</option></select>
+        <select id="fBan" class="sel" style="width:110px" aria-label="Lọc theo bàn"><option value="" data-i="f_ban">Bàn…</option></select>
+        <input id="fPt" class="sel" style="width:118px" type="search" placeholder="Phụ trách…" data-iph="f_pt" aria-label="Lọc theo người phụ trách">
+        <select class="sel" id="attSel"><option value="" data-i="f_att_all">Tham dự: tất cả</option><option value="du" data-i="att_du">Có tham dự</option><option value="khong" data-i="att_khong">Không tham dự</option><option value="cho" data-i="att_cho">Chưa xác nhận</option></select>
         <select class="sel" id="sort"><option value="name" data-i="s_name">Theo tên</option><option value="vip" data-i="s_vip">VIP trước</option><option value="table" data-i="s_tbl">Theo bàn</option><option value="status" data-i="s_st">Chưa đến trước</option></select>
         <button class="chip act" id="impBtn2" style="display:none" data-i="imp_btn">⬆ Import</button>
         <button class="chip act" id="expBtn2" data-i="exp_btn">⬇ Xuất</button>
@@ -405,9 +580,20 @@
   </div>
 
   <button class="to-top" id="toTop" title="Lên đầu">↑</button>
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="sheet" id="sheet"><div class="sheet-in"><div class="grab"></div><button class="btn close" id="sheetClose">✕</button><div class="pf-b" id="sheetBody"></div></div></div>
   <div class="sheet" id="sheet2"><div class="sheet-in"><div class="grab"></div><button class="btn close" id="sheet2Close">✕</button><div id="sheet2Body"></div></div></div>
+  <!-- Modal xác nhận dùng chung — thay confirm()/prompt() trình duyệt (polish 09/08) -->
+  <div class="appdlg" id="appDlg" role="dialog" aria-modal="true" aria-labelledby="appDlgMsg" hidden>
+    <div class="appdlg-in">
+      <p class="appdlg-msg" id="appDlgMsg"></p>
+      <input class="appdlg-inp" id="appDlgInp" type="password" autocomplete="current-password" style="display:none" aria-label="">
+      <div class="appdlg-acts">
+        <button type="button" class="btn" id="appDlgCancel">Huỷ</button>
+        <button type="button" class="btn gold" id="appDlgOk">Đồng ý</button>
+      </div>
+    </div>
+  </div>
 
 <script>
 (function(){
@@ -451,7 +637,25 @@
        buoi_ghim2:"Muốn bỏ hẳn: sửa bản đăng ký, hoặc đặt «Tham dự» = «Không dự» (bỏ CẢ HAI buổi).",
        /* E08-D061 — lấy NGUYÊN VĂN chuỗi của cửa (checkin-gala.html) để hai màn
           không lệch chữ trên cùng một tấm ảnh. `close` v2 chưa hề có: grep 0. */
-       close:"Đóng",lb_qua:"🎁 Ảnh quà",lb_ghim:"✓ Ảnh đại diện"},
+       close:"Đóng",lb_qua:"🎁 Ảnh quà",lb_ghim:"✓ Ảnh đại diện",
+      /* Polish 09/08 — 4 nhãn ô Sửa (SĐT/Đơn vị/Chức danh/Ghi chú) trước viết
+         trần tiếng Việt trong lúc cả màn có nút chuyển 日本語 — người dùng JP
+         bấm nút mà 4 ô này không đổi chữ. */
+      edt_sdt:"SĐT",edt_donvi:"Đơn vị",edt_chucdanh:"Chức danh",edt_ghichu:"Ghi chú nội bộ",
+      dlg_cancel:"Huỷ",dlg_ok:"Đồng ý",dlg_ok_danger:"Xác nhận",
+      /* 96% — sheet phụ + toast/lỗi còn cứng VN khi bật 日本語 (sau polish 95%) */
+      add_h:"Thêm khách mới",add_create:"Tạo khách",add_need_name:"Nhập họ tên.",
+      imp_h:"Nhập CSV/Excel",imp_upd_h:"Nhập file CẬP NHẬT",aud_h:"Nhật ký (audit)",
+      aud_empty:"Chưa có.",del_ask:"Xoá khách",del_ok:"Đã xoá",
+      err_generic:"Lỗi.",err_inter:"Nhập nội dung.",err_photo:"Lỗi tải ảnh.",photo_uploading:"Đang tải ảnh…",
+      saving:"Đang lưu…",f_ban:"Bàn…",f_pt:"Phụ trách…",f_att_all:"Tham dự: tất cả",
+      /* 97% — phân biệt trạng thái rỗng (logic, không chỉ chữ) */
+      list_empty:"Chưa có khách trong danh sách.",
+      clr_filt:"Xóa bộ lọc",
+      load_fail:"Không tải được danh sách khách.",
+      retry:"Thử lại",
+      by_list:"theo danh sách",
+      dup_suf:" trùng"},
    jp:{bg_ban_ph:"例: 17 · スタッフ席",bg_ghe_ph:"例: 10",
        bg_xoa_ban:"このゲストのテーブル番号を削除しますか？\n\n欄が空です — OKで削除されます。",
        bg_xoa_ghe:"このゲストの席番号を削除しますか？\n\n欄が空です — OKで削除されます。",
@@ -468,7 +672,20 @@
        buoi_fail:"セッションを保存できませんでした — 再試行してください",
        buoi_ghim1:"はまだ ON です: ゲストの登録内容にこのセッションの記載があるため、ここで外しても OFF になりません。",
        buoi_ghim2:"完全に外すには: 登録内容を修正するか、「出欠」を「欠席」にしてください（両方のセッションが外れます）。",
-       close:"閉じる",lb_qua:"🎁 贈り物の写真",lb_ghim:"✓ プロフィール写真"}};
+       close:"閉じる",lb_qua:"🎁 贈り物の写真",lb_ghim:"✓ プロフィール写真",
+      edt_sdt:"電話番号",edt_donvi:"所属",edt_chucdanh:"役職",edt_ghichu:"内部メモ",
+      dlg_cancel:"キャンセル",dlg_ok:"OK",dlg_ok_danger:"確認",
+      add_h:"ゲスト追加",add_create:"作成",add_need_name:"氏名を入力してください。",
+      imp_h:"CSV/Excel取込",imp_upd_h:"更新ファイル取込",aud_h:"監査ログ",
+      aud_empty:"まだありません。",del_ask:"ゲストを削除",del_ok:"削除しました",
+      err_generic:"エラー。",err_inter:"内容を入力してください。",err_photo:"写真のアップロードに失敗しました。",photo_uploading:"写真をアップロード中…",
+      saving:"保存中…",f_ban:"テーブル…",f_pt:"ご担当…",f_att_all:"出欠: すべて",
+      list_empty:"ゲストがまだ登録されていません。",
+      clr_filt:"絞り込みを解除",
+      load_fail:"ゲスト一覧を読み込めませんでした。",
+      retry:"再試行",
+      by_list:"名簿ベース",
+      dup_suf:" 件重複"}};
   for(var l in A){for(var k in A[l]){T[l][k]=A[l][k];}}})();
  function tt(k){return (T[LANG]&&T[LANG][k])||T.vn[k]||k;}
  /* ── checklist (thêm/xoá/tick tự do) ── */
@@ -576,7 +793,7 @@ async function addShrunk(fd,file){
      var cho=[bgHien(g&&g.table_no)?tt("ban")+" "+bgHien(g.table_no):"",
               bgHien(g&&g.seat_no)?tt("ghe")+" "+bgHien(g.seat_no):""].filter(Boolean).join(" · ");
      var hoi=tt("att_ask")+(cho?"\n\n"+tt("att_mat_cho")+" "+cho+"\n"+tt("att_mat_cho2"):"");
-     if(!confirm(hoi)){if(el)el.value=el.getAttribute("data-cur")||"";return;}
+     if(!(await appConfirm(hoi,{danger:true}))){if(el)el.value=el.getAttribute("data-cur")||"";return;}
    }
    if(el)el.disabled=true;
    try{
@@ -595,10 +812,93 @@ async function addShrunk(fd,file){
    }catch(e){if(el){el.disabled=false;el.value=el.getAttribute("data-cur")||"";}
      toast(tt("att_fail"),"err");}}
  function vipLbl(g){var v=vipOf(g);return /^v?vip/i.test(v)?v.toUpperCase():v;}
- function vipRank(g){var v=noAcc(vipOf(g)).replace(/[^0-9]/g,"");return v?parseInt(v,10):(vipOf(g)?1:99);}
+ /* Polish 09/08 — trước strip HẾT chữ không phải số rồi ghép lại: tag thật
+    "VIP2 - Hàng 3" ra "23" (số "3" của "Hàng 3" dính vào), sort "VIP trước"
+    xếp sai chỗ. Giờ chỉ lấy đúng chữ số NGAY SAU "vip". */
+ function vipRank(g){var v=noAcc(vipOf(g));var m=/vip\s*([0-9]+)/.exec(v);if(m)return parseInt(m[1],10);return vipOf(g)?1:99;}
  function noteF(g,label){var m=new RegExp(label+"\\s*[:：]\\s*([^·]+)").exec(g.note||"");return m?m[1].trim():"";}
  /* ---- toast ---- */
  var toastT;function toast(msg,type){var el=$("#toast");el.textContent=msg;el.className="toast show"+(type?(" "+type):"");clearTimeout(toastT);toastT=setTimeout(function(){el.className="toast"+(type?(" "+type):"");},2200);}
+
+ /* ── Modal xác nhận (thay confirm/prompt) — polish 09/08 ──
+    Promise + style theo .sheet/.btn; focus nút mặc định; Tab trap; Escape = Huỷ.
+    opts: {okLabel, cancelLabel, danger, input (false|true|"password"|"text"),
+           defaultValue, placeholder} */
+ var _dlgResolve=null,_dlgPrevFocus=null;
+ function _dlgClose(val){
+   var dlg=$("#appDlg"); if(!dlg) return;
+   dlg.classList.remove("show"); dlg.hidden=true;
+   var inp=$("#appDlgInp"); if(inp){inp.style.display="none";inp.value="";}
+   document.removeEventListener("keydown",_dlgKey,true);
+   if(_dlgPrevFocus&&_dlgPrevFocus.focus) try{_dlgPrevFocus.focus();}catch(_){}
+   var r=_dlgResolve; _dlgResolve=null; _dlgPrevFocus=null;
+   if(r) r(val);
+ }
+ function _dlgKey(e){
+   if(!_dlgResolve) return;
+   if(e.key==="Escape"){e.preventDefault();e.stopPropagation();_dlgClose(null);return;}
+   if(e.key!=="Tab") return;
+   var dlg=$("#appDlg"); if(!dlg||!dlg.classList.contains("show")) return;
+   var foc=dlg.querySelectorAll('button:not([disabled]),input:not([disabled]):not([style*="display: none"]):not([style*="display:none"])');
+   if(!foc.length) return;
+   var first=foc[0], last=foc[foc.length-1];
+   if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+   else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+ }
+ function _dlgOpen(msg,opts){
+   opts=opts||{};
+   return new Promise(function(resolve){
+     if(_dlgResolve) _dlgClose(null);
+     _dlgResolve=resolve;
+     _dlgPrevFocus=document.activeElement;
+     var dlg=$("#appDlg"), msgEl=$("#appDlgMsg"), inp=$("#appDlgInp");
+     var btnOk=$("#appDlgOk"), btnCancel=$("#appDlgCancel");
+     msgEl.textContent=String(msg==null?"":msg);
+     btnCancel.textContent=opts.cancelLabel||tt("dlg_cancel");
+     btnOk.textContent=opts.okLabel||(opts.danger?tt("dlg_ok_danger"):tt("dlg_ok"));
+     /* danger → nền đỏ đặc (danger-fill), không dùng .danger viền mảnh */
+     btnOk.className="btn"+(opts.danger?" danger-fill":" gold");
+     var needInp=!!opts.input;
+     if(needInp){
+       inp.style.display="";
+       inp.type=(opts.input==="text")?"text":"password";
+       inp.value=opts.defaultValue||"";
+       inp.placeholder=opts.placeholder||"";
+       inp.setAttribute("aria-label",opts.placeholder||tt("sdt_hoi"));
+     } else {
+       inp.style.display="none"; inp.value="";
+     }
+     dlg.hidden=false; dlg.classList.add("show");
+     document.addEventListener("keydown",_dlgKey,true);
+     requestAnimationFrame(function(){
+       if(needInp) inp.focus();
+       /* Phá huỷ: focus Huỷ (an toàn hơn) — Enter/Space không vô tình xoá.
+          Xác nhận thường: focus Đồng ý như trước. */
+       else if(opts.danger) btnCancel.focus();
+       else btnOk.focus();
+     });
+   });
+ }
+ function appConfirm(msg,opts){
+   return _dlgOpen(msg,opts).then(function(v){return v===true;});
+ }
+ function appPrompt(msg,opts){
+   opts=Object.assign({input:"password"},opts||{});
+   return _dlgOpen(msg,opts).then(function(v){
+     /* null = Huỷ; string (kể cả "") = OK */
+     return v===null?null:String(v);
+   });
+ }
+ $("#appDlgCancel").addEventListener("click",function(){_dlgClose(null);});
+ $("#appDlgOk").addEventListener("click",function(){
+   var inp=$("#appDlgInp");
+   if(inp&&inp.style.display!=="none") _dlgClose(inp.value);
+   else _dlgClose(true);
+ });
+ $("#appDlg").addEventListener("click",function(e){if(e.target===this)_dlgClose(null);});
+ $("#appDlgInp").addEventListener("keydown",function(e){
+   if(e.key==="Enter"){e.preventDefault();$("#appDlgOk").click();}
+ });
  /* ---- tải toàn bộ khách ---- */
  /* E08-D038 mảnh 4 — bảng nhãn Phân loại ĐỌC TỪ MÁY CHỦ, không chép sang đây.
     Một nguồn duy nhất: sửa PL_NHAN trong guests.js là màn đổi theo. */
@@ -607,7 +907,12 @@ async function addShrunk(fd,file){
  function plCua(g){ var t=tagList(g); for(var i=0;i<PL.length;i++) if(t.indexOf(PL[i].tag)>-1) return PL[i]; return null; }
  async function loadAll(){
    try{var j=await jget("/crm/guests?mine=0&limit=1000");ALL=j.rows||[];computeDup();renderDash();renderList();}
-   catch(e){if(e.message!=="unauth")$("#list").innerHTML='<div class="empty"><div class="em-ic">⚠️</div>Lỗi tải dữ liệu.</div>';}
+   catch(e){
+     if(e.message==="unauth")return;
+     $("#list").innerHTML='<div class="empty"><div class="em-ic">⚠️</div>'+esc(tt("load_fail"))
+       +'<br><button type="button" class="btn gold" id="retryLoad">'+esc(tt("retry"))+'</button></div>';
+     var rb=$("#retryLoad"); if(rb) rb.addEventListener("click",function(){loadAll();});
+   }
  }
 
  /* ---- E08-D055 §4c · /crm TỰ LÀM MỚI 25 giây ----
@@ -780,7 +1085,7 @@ async function addShrunk(fd,file){
    var kh=ALL.filter(function(g){return !laNhanVien(g);});
    var nv=ALL.length-kh.length;
    var toa=tabCount("toa"),gal=tabCount("gal"),inN=kh.filter(function(g){return g.checked_in;}).length,tot=kh.length;
-   var nvEl=$("#cNv");if(nvEl)nvEl.textContent=nv?("· nhân viên "+nv):"";
+   var nvEl=$("#cNv");if(nvEl)nvEl.textContent=nv?("(không tính "+nv+" nhân viên)"):"";
    $("#cIn").textContent=inN;$("#cTot").textContent=" / "+tot;
    var pct=tot?Math.round(inN/tot*100):0;$("#ringPct").textContent=pct+"%";$("#ring").style.setProperty("--p",(pct*3.6)+"deg");
    $("#ctAll").textContent=tot;$("#ctToa").textContent=toa;$("#ctGal").textContent=gal;
@@ -791,7 +1096,8 @@ async function addShrunk(fd,file){
      $("#mToa").textContent=tt("b_du")+" "+tt("toa_s")+" "+((_sl.anyToaDam||0)+(_fk.toaDamGala||0)+(_fk.toaDamOnly||0));
      $("#mGala").textContent=tt("b_du")+" "+tt("gala_s")+" "+((_sl.anyGala||0)+(_fk.gala||0)+(_fk.toaDamGala||0));
    }else{
-     $("#mToa").textContent=tt("toa_s")+" "+toa+" (theo danh sách)";$("#mGala").textContent="Gala "+gal+" (theo danh sách)";
+     $("#mToa").textContent=tt("toa_s")+" "+toa+" ("+tt("by_list")+")";
+     $("#mGala").textContent=tt("gala_s")+" "+gal+" ("+tt("by_list")+")";
    }
    $("#venueToaTxt").textContent=CFG.venueToa;$("#venueGalaTxt").textContent=CFG.venueGala;
    // «Buổi tham dự» KHÔNG còn đếm tag rời ở client. Hai bar `toa 17 · gala 107`
@@ -900,7 +1206,7 @@ function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
  function napBanSelect(){
    var el=$("#fBan"); if(!el)return;
    var opts=banDanhSach(),cur=String(state.ban||"").trim(),ok=false,pick="";
-   var html='<option value="">Bàn…</option>';
+   var html='<option value="">'+esc(tt("f_ban"))+'</option>';
    for(var i=0;i<opts.length;i++){
      var b=opts[i],sel=false;
      if(cur){
@@ -914,6 +1220,24 @@ function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
    if(cur&&!ok){state.ban="";}
    else if(ok){state.ban=pick;el.value=pick;}
  }
+ /* 97% — có lọc đang bật (tab≠Tất cả · chip · ô tìm · bàn · phụ trách · att).
+    Dùng để phân biệt «DB trống» vs «lọc hết» và nút «Xóa bộ lọc». */
+ function hasExtraFilter(){
+   return !!(state.wait||state.dup||state.att||state.ban||state.pt||state.q||state.tab!=="all");
+ }
+ function clearFilters(){
+   state.wait=false; state.dup=false; state.att=""; state.ban=""; state.pt=""; state.q="";
+   state.tab="all";
+   var q=$("#q"); if(q) q.value="";
+   var pt=$("#fPt"); if(pt) pt.value="";
+   var att=$("#attSel"); if(att) att.value="";
+   var cw=$("#chipWait"); if(cw) cw.classList.remove("on");
+   var cd=$("#chipDup"); if(cd) cd.classList.remove("on");
+   document.querySelectorAll(".tab").forEach(function(t){
+     t.classList.toggle("on", t.getAttribute("data-tab")==="all");
+   });
+   renderList();
+ }
  function renderList(){
    napBanSelect();
    var rows=ALL.filter(match);
@@ -922,11 +1246,28 @@ function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
    else if(state.sort==="status")rows.sort(function(a,b){return (daDenBuoi(a)?1:0)-(daDenBuoi(b)?1:0)||String(a.full_name).localeCompare(String(b.full_name),"vi");});
    else rows.sort(function(a,b){return String(a.full_name).localeCompare(String(b.full_name),"vi");});
    var inShown=rows.filter(daDenBuoi).length;
-   var nd=ALL.filter(isDup).length;$("#statline").innerHTML=tt("showing")+' <b>'+rows.length+'</b> '+tt("of")+' '+ALL.length+' · <span class="ok">'+inShown+'</span> '+tt("arr2")+(nd?' · <span style="color:var(--red-b)">⚠ '+nd+(LANG==="jp"?" 件重複":" trùng")+'</span>':'');
-   if(!rows.length){$("#list").innerHTML='<div class="empty"><div class="em-ic">🔍</div>'+tt("notfound")+'</div>';return;}
+   var nd=ALL.filter(isDup).length;$("#statline").innerHTML=tt("showing")+' <b>'+rows.length+'</b> '+tt("of")+' '+ALL.length+' · <span class="ok">'+inShown+'</span> '+tt("arr2")+(nd?' · <span style="color:var(--red-b)">⚠ '+nd+esc(tt("dup_suf"))+'</span>':'');
+   if(!rows.length){
+     /* Trước: DB trống và «lọc hết» cùng hiện «Không tìm thấy khách phù hợp»
+        — nói dối khi chưa có ai trong CSDL, và không có đường gỡ lọc. */
+     if(!ALL.length){
+       $("#list").innerHTML='<div class="empty"><div class="em-ic">📋</div>'+esc(tt("list_empty"))+'</div>';
+     } else {
+       var clr=hasExtraFilter()
+         ? '<br><button type="button" class="btn" id="clrFilt">'+esc(tt("clr_filt"))+'</button>' : "";
+       $("#list").innerHTML='<div class="empty"><div class="em-ic">🔍</div>'+esc(tt("notfound"))+clr+'</div>';
+       var bf=$("#clrFilt"); if(bf) bf.addEventListener("click", clearFilters);
+     }
+     return;
+   }
    $("#list").innerHTML=rows.map(function(g){
-     var vip=vipLbl(g),vr=vipRank(g),den=daDenBuoi(g);
-     return '<div class="g'+(den?" done":"")+'" data-id="'+g.id+'">'
+     var vip=vipLbl(g),den=daDenBuoi(g);
+     return '<div class="g'+(vip?" is-vip":"")+(den?" done":"")+'" data-id="'+g.id+'">'
+      /* VIP — chip huy hiệu GẮN TRÊN VIỀN góc trên-phải thẻ (không còn là pill
+         trong hàng badge, xem `.vip-chip`). Đặt là con TRỰC TIẾP của `.g` (không
+         phải `.rb`) vì nó định vị `position:absolute` theo cả thẻ, không theo
+         cột phải. */
+      +(vip?'<div class="vip-chip">'+esc(vip)+'</div>':'')
       /* E08-D055 AC-7c — CHÚ THÍCH CŨ ĐÃ SAI, sửa tại chỗ vì nó vừa suýt cắt mất
          một AC. Bản cũ viết «ảnh là object GỐC (293 MB tổng…)»: đúng với thời
          TRƯỚC D029, nhưng từ D029 `photo_url` do máy chủ trả là
@@ -942,13 +1283,16 @@ function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
       +'<div class="nm"><div class="n1">'+pairVJ(g.full_name,g.name_jp)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+(isDup(g)?' <span class="tag dup">⚠ TRÙNG</span>':'')+'</div><div class="n2">'+(pairVJ([g.org,g.title].filter(Boolean).join(" · "),[g.org_jp,g.title_jp].filter(Boolean).join(" · "))||"—")+'</div></div>'
       /* E08-D055 §4a — «Người phụ trách» rời `.n2` (bên trái) sang cột phải.
          §4b — chấm `.av .sd` đã gỡ, thay bằng chữ. §3b — hai vế khác trọng
-         lượng: đã đến nổi (nền xanh, khuôn `.tag.in` sẵn có), chưa đến mờ. */
-      +'<div class="rb">'+(laNhanVien(g)?'<span class="tag nv">'+tt("pl_nv")+'</span>':'')+attBadge(g)+(vip?'<span class="tag v'+vr+'">'+esc(vip)+'</span>':'')
-       +(ptOf(g)?'<span class="pt">'+esc(ptOf(g))+'</span>':'')
+         lượng: đã đến nổi (nền xanh, khuôn `.tag.in` sẵn có), chưa đến mờ.
+         Polish 09/08 — gom badge vào `.rb-main` (một hàng ngang, bọc dòng nếu
+         cần) thay vì mỗi tag một dòng riêng; Bàn/Đã đến đặt CUỐI hàng (sát mép
+         phải, chỗ mắt neo khi lướt danh sách) để hai trạng thái quan trọng
+         nhất — VIP và vị trí khách — luôn nổi bật nhất trong cụm. */
+      +'<div class="rb"><div class="rb-main">'+(laNhanVien(g)?'<span class="tag nv">'+tt("pl_nv")+'</span>':'')+attBadge(g)
        +((!den&&bgHien(g.table_no))?'<span class="tag tbl">'+tt("ban")+' '+esc(g.table_no)+'</span>':'')
        /* E08-D055 AC-6 · ĐƯỜNG LUI — bỏ «X Chưa đến» (xem chú thích ở hai cửa). */
-       +(den?'<span class="tag in">O '+tt("arrived")+'<b>'+hhmm(g.checked_in_at)+'</b></span>':'')
-      +'</div></div>';
+       +(den?'<span class="tag in">● '+tt("arrived")+'<b>'+hhmm(g.checked_in_at)+'</b></span>':'')
+      +'</div>'+(ptOf(g)?'<span class="pt">'+esc(ptOf(g))+'</span>':'')+'</div></div>';
    }).join("");
  }
  /* ---- hồ sơ khách (giữ nguyên endpoint) — SĐT ẩn khi hiển thị ---- */
@@ -1028,10 +1372,20 @@ function lbDong(){var d=lbEl();if(d){d.classList.remove("show");
  var im=document.getElementById("lbxImg");if(im)im.removeAttribute("src");}
  lbIdx=-1;lbList=[];}
 document.addEventListener("keydown",function(e){
+ /* Polish 09/08 — Escape đóng theo lớp trên cùng: dialog → lightbox → sheet phụ → hồ sơ.
+    Dialog đã bắt Escape bằng capture trong _dlgKey; ở đây chỉ xử lý khi dialog tắt. */
+ if(e.key==="Escape"){
+   var dlg=$("#appDlg");
+   if(dlg&&dlg.classList.contains("show")) return; /* _dlgKey lo */
+   if(lbIdx>=0){lbDong();return;}
+   if($("#sheet2")&&$("#sheet2").classList.contains("show")){$("#sheet2").classList.remove("show");return;}
+   if($("#sheet")&&$("#sheet").classList.contains("show")){$("#sheet").classList.remove("show");curId=null;buoiCanhBao=null;return;}
+   return;
+ }
  if(lbIdx<0)return;
- if(e.key==="Escape")lbDong();
- else if(e.key==="ArrowLeft")lbGo(-1);
- else if(e.key==="ArrowRight")lbGo(1);});
+ if(e.key==="ArrowLeft")lbGo(-1);
+ else if(e.key==="ArrowRight")lbGo(1);
+});
 /* Ảnh của hồ sơ ĐANG mở. Giữ ở đây thay vì đọc lại DOM: dải thumb bị vẽ lại mỗi
    lần lưu một ô, còn mảng này thì không. */
 var PF_ANH=[],PF_GHIM="";
@@ -1091,11 +1445,14 @@ var PF_ANH=[],PF_GHIM="";
     +'<div class="pf-nm">'+pairVJ(g.full_name,g.name_jp)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+'</div><div class="pf-rl">'+(pairVJ([g.org,g.title].filter(Boolean).join(" · "),[g.org_jp,g.title_jp].filter(Boolean).join(" · "))||"—")+'</div>'
     +'<div style="margin:8px 0"><span class="attb '+(attOf(j.guest)||"cho")+'">'+esc(attLbl(attOf(j.guest)))+'</span>'
      +(j.guest&&j.guest.att_override?' <span class="hint" style="font-size:.7rem">('+tt("att_manual")+')</span>':'')+'</div>'
-    +(me.role==="btl"?'<div class="fld"><label class="lb">'+tt("att_set")+'</label>'
+    +(me.role==="btl"?'<div class="fld"><label class="lab">'+tt("att_set")+'</label>'
       +'<select class="attsel" id="attSel1" data-cur="'+esc(attOf(j.guest))+'">'
       +['du','khong','cho'].map(function(v){return '<option value="'+v+'"'+(attOf(j.guest)===v?' selected':'')+'>'+esc(attLbl(v))+'</option>';}).join("")
       +'</select></div>':'')
-    +(isDup(g)?'<div class="dupwarn">⚠ '+tt("dup_warn")+'</div>':'')+'<div class="th"><div><div class="k">'+tt("ban")+'</div><div class="v num">'+esc(bgHien(g.table_no)||"—")+'</div></div>'
+   /* Polish 09/08 — `class="lb"` (label «Đổi trạng thái» ở trên, «Sửa Buổi»
+      dưới đây) không khớp CSS `.fld .lab` (khác tên lớp!) nên render trần,
+      không nhỏ/mờ như mọi nhãn ô khác trong form — đã đổi cả hai thành `.lab`. */
+   +(isDup(g)?'<div class="dupwarn">⚠ '+tt("dup_warn")+'</div>':'')+'<div class="th"><div><div class="k">'+tt("ban")+'</div><div class="v num">'+esc(bgHien(g.table_no)||"—")+'</div></div>'
      +(bgHien(j.guest&&j.guest.seat_no)?'<div><div class="k">'+tt("ghe")+'</div><div class="v num">'+esc(j.guest.seat_no)+'</div></div>':'')
      +'</div>'
     +'<div class="facts"><div class="ft"><div class="k">'+tt("buoi")+'</div><div class="v">'+esc(buoiOf(g))+'</div></div>'+(vipLbl(g)?'<div class="ft"><div class="k">'+tt("hang")+'</div><div class="v">'+esc(vipLbl(g))+'</div></div>':'')+(gt?'<div class="ft"><div class="k">'+tt("gioitinh")+'</div><div class="v">'+esc(gt)+'</div></div>':'')+'</div>'
@@ -1103,7 +1460,7 @@ var PF_ANH=[],PF_GHIM="";
        Tick vẽ theo `du_*` (buổi HIỆU LỰC = tag ∪ form) chứ không theo tag, đúng
        như chữ hiện ở field Buổi — hai chỗ cạnh nhau mà lệch nguồn thì không ai
        tin chỗ nào. Sau khi lưu, tick cũng vẽ lại theo số MÁY CHỦ trả về. */
-    +(me.role==="btl"?'<div class="fld"><label class="lb">'+tt("buoi_set")+'</label>'
+    +(me.role==="btl"?'<div class="fld"><label class="lab">'+tt("buoi_set")+'</label>'
       +'<div class="row2">'
       +'<label class="buoick"><input type="checkbox" id="buoiToa"'+(g.du_toa_dam?' checked':'')+'><span>'+esc(tt("toa"))+'</span></label>'
       +'<label class="buoick"><input type="checkbox" id="buoiGala"'+(g.du_gala?' checked':'')+'><span>'+esc(tt("gal"))+'</span></label>'
@@ -1133,11 +1490,11 @@ var PF_ANH=[],PF_GHIM="";
          thêm cửa mà không ai xin. Không giảm năng lực nào đang chạy — máy chủ
          giữ nguyên. */
       +(me.role==="btl"?'<div class="fld"><div class="lab">'+tt("hoten")+'</div><input class="f" id="eName" value="'+esc(g.full_name||"")+'"></div>':'')
-      +'<div class="fld"><div class="lab">SĐT</div><input class="f" id="ePhone" value="'+esc(g.phone||"")+'"'+(g.phone?"":" readonly")+'>'
+      +'<div class="fld"><div class="lab">'+tt("edt_sdt")+'</div><input class="f" id="ePhone" value="'+esc(g.phone||"")+'"'+(g.phone?"":" readonly")+'>'
       /* E08-D041 M7 — chưa mở khoá thì máy chủ trả phone:null ⇒ ô này RỖNG. Nếu
          cứ gửi nó đi thì bấm Lưu là XOÁ SĐT của khách, im lặng, hàng loạt. Nên
          khoá ô lại và bên dưới KHÔNG gửi trường phone khi chưa mở khoá. */
-      +(g.phone?'':'<button class="btn" id="sdtMo" style="margin-top:6px;width:auto;padding:6px 12px;font-size:.76rem">'+tt("sdt_mo")+'</button>')+'</div><div class="fld"><div class="lab">Đơn vị</div><input class="f" id="eOrg" value="'+esc(g.org||"")+'"></div><div class="fld"><div class="lab">Chức danh</div><input class="f" id="eTitle" value="'+esc(g.title||"")+'"></div><div class="fld"><div class="lab">Ghi chú nội bộ</div><input class="f" id="eNote" value="'+esc(g.note||"")+'"></div>'
+      +(g.phone?'':'<button class="btn" id="sdtMo" style="margin-top:6px;width:auto;padding:6px 12px;font-size:.76rem">'+tt("sdt_mo")+'</button>')+'</div><div class="fld"><div class="lab">'+tt("edt_donvi")+'</div><input class="f" id="eOrg" value="'+esc(g.org||"")+'"></div><div class="fld"><div class="lab">'+tt("edt_chucdanh")+'</div><input class="f" id="eTitle" value="'+esc(g.title||"")+'"></div><div class="fld"><div class="lab">'+tt("edt_ghichu")+'</div><input class="f" id="eNote" value="'+esc(g.note||"")+'"></div>'
       /* E08-D042 §3d — ô Bàn nhận CHỮ: prod có 41 thẻ «Không tham dự» + «Bàn nhân
          viên» ×3 + «Bàn ekip» ×1 (R1 đo 06/08). Ép type="number" là Ly không sửa
          nổi đúng 45 thẻ cần sửa nhất.
@@ -1177,7 +1534,7 @@ var PF_ANH=[],PF_GHIM="";
      b.addEventListener("click",async function(){
        /* Xoá không có undo trên màn ⇒ phải hỏi. (Khôi phục được từ nhật ký, nhưng
           đó là việc của R1 chứ không phải một cú bấm.) */
-       if(!confirm(tt("anh_xoa_hoi")))return;
+       if(!(await appConfirm(tt("anh_xoa_hoi"),{danger:true})))return;
        b.disabled=true;
        var r=await jsend("/crm/photos/"+b.getAttribute("data-xoaanh"),"DELETE");
        if(!r.ok){b.disabled=false;toast((r.body&&r.body.error)||tt("anh_xoa_fail"),"err");return;}
@@ -1185,7 +1542,7 @@ var PF_ANH=[],PF_GHIM="";
      });});
    Array.prototype.forEach.call(document.querySelectorAll("[data-undoci]"),function(undoBtn){
      undoBtn.addEventListener("click",async function(){
-       if(!confirm(tt("undo_ask")))return;
+       if(!(await appConfirm(tt("undo_ask"),{danger:true})))return;
        var sess=undoBtn.getAttribute("data-undoci")||"";
        undoBtn.disabled=true;var nhan=undoBtn.textContent;undoBtn.textContent=tt("undo_ing");
        try{
@@ -1197,7 +1554,7 @@ var PF_ANH=[],PF_GHIM="";
        }catch(e){undoBtn.disabled=false;undoBtn.textContent=nhan;toast(tt("undo_net"),"err");}
      });
    });
-   $("#iSave").addEventListener("click",async function(){var b=$("#iBody").value.trim();if(!b){gmsg("Nhập nội dung.","err");return;}var r=await jsend("/crm/guests/"+g.id+"/interactions","POST",{kind:$("#iKind").value,body:b});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);}else gmsg(r.body.error||"Lỗi.","err");});
+   $("#iSave").addEventListener("click",async function(){var b=$("#iBody").value.trim();if(!b){gmsg(tt("err_inter"),"err");return;}var btn=$("#iSave"),nhan=btn.textContent;btn.disabled=true;btn.textContent=tt("saving");var r=await jsend("/crm/guests/"+g.id+"/interactions","POST",{kind:$("#iKind").value,body:b});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);}else{btn.disabled=false;btn.textContent=nhan;gmsg(r.body.error||tt("err_generic"),"err");}});
       /* E08-D041 — nút mở khoá SĐT ngay trong hồ sơ. Máy chủ mới là chỗ che thật;
       đây chỉ là chỗ nhập mật khẩu rồi nạp lại qua tuyến thường. */
    var plBtn=$("#ePlSave");if(plBtn)plBtn.addEventListener("click",async function(){
@@ -1208,13 +1565,15 @@ var PF_ANH=[],PF_GHIM="";
      toast(tt("saved"),"ok");openGuest(g.id);loadAll();
    });
    var sdtBtn=$("#sdtMo");if(sdtBtn)sdtBtn.addEventListener("click",async function(){
-     var mk=prompt(tt("sdt_hoi"));if(mk===null||mk==="")return;
+     var mk=await appPrompt(tt("sdt_hoi"),{input:"password",placeholder:tt("sdt_hoi")});
+     if(mk===null||mk==="")return;
      sdtBtn.disabled=true;
      var r=await jsend("/crm/phone-unlock","POST",{password:mk});
      if(!r.ok){sdtBtn.disabled=false;toast((r.body&&r.body.error)||tt("sdt_sai"),"err");return;}
      toast(tt("sdt_ok"),"ok");openGuest(g.id);loadAll();
    });
    $("#eSave").addEventListener("click",async function(){
+     var eSaveBtn=$("#eSave"), eSaveNhan=eSaveBtn?eSaveBtn.textContent:"";
      /* M7 — chưa mở khoá thì KHÔNG gửi trường phone. Gửi chuỗi rỗng là xoá số
         thật trong CSDL; PATCH_WHITELIST có 'phone' nên nó ghi thẳng. */
      var than={org:$("#eOrg").value,title:$("#eTitle").value,note:$("#eNote").value};
@@ -1260,14 +1619,22 @@ var PF_ANH=[],PF_GHIM="";
             lỡ tay xoá ô Bàn, bấm Huỷ ở popup — ô Ghi chú vẫn còn chữ mới trên
             màn (form không vẽ lại) nên chị đóng hồ sơ, tin là đã lưu, mà không
             trường nào vào CSDL. Đó là báo-xanh-giả đúng nghĩa (D028 CỬA-2). */
-         if(moi===""&&!confirm(tt(cap[i][3]))){gmsg(tt("bg_huy"),"err");return;}
+         if(moi===""&&!(await appConfirm(tt(cap[i][3]),{danger:true}))){gmsg(tt("bg_huy"),"err");return;}
          than[cap[i][1]]=moi;
        }
      }
+     if(eSaveBtn){eSaveBtn.disabled=true;eSaveBtn.textContent=tt("saving");}
      var r=await jsend("/crm/guests/"+g.id,"PATCH",than);
      if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}
-     else gmsg((r.status===403?tt("bg_role"):null)||r.body.error||"Lỗi.","err");});
-   var delBtn=$("#delBtn");if(delBtn)delBtn.addEventListener("click",async function(){if(!confirm("Xoá khách "+g.full_name+"?"))return;var r=await jsend("/crm/guests/"+g.id,"DELETE");if(r.ok){$("#sheet").classList.remove("show");toast("Đã xoá","ok");loadAll();}else gmsg(r.body.error||"Lỗi.","err");});
+     else{if(eSaveBtn){eSaveBtn.disabled=false;eSaveBtn.textContent=eSaveNhan;}
+       gmsg((r.status===403?tt("bg_role"):null)||r.body.error||tt("err_generic"),"err");}});
+   var delBtn=$("#delBtn");if(delBtn)delBtn.addEventListener("click",async function(){
+     if(!(await appConfirm(tt("del_ask")+" "+g.full_name+"?",{danger:true})))return;
+     delBtn.disabled=true;
+     var r=await jsend("/crm/guests/"+g.id,"DELETE");
+     if(r.ok){$("#sheet").classList.remove("show");toast(tt("del_ok"),"ok");loadAll();}
+     else{delBtn.disabled=false;gmsg(r.body.error||tt("err_generic"),"err");}
+   });
    var aSel=$("#attSel1");if(aSel)aSel.addEventListener("change",function(){setAtt(g.id,this.value,this,g);});
    /* E08-D063 — lưu NGAY khi tick, không thêm nút «Lưu» riêng: hai ô này là
       trạng thái nhị phân, thêm một nút là thêm một chỗ để quên bấm rồi tưởng đã
@@ -1296,22 +1663,30 @@ var PF_ANH=[],PF_GHIM="";
      };
      bT.addEventListener("change",luuBuoi);bG.addEventListener("change",luuBuoi);
    }
-   $("#photoInput").addEventListener("change",async function(){var f=this.files&&this.files[0];if(!f)return;gmsg("Đang tải ảnh…","ok");var fd=new FormData();fd.append("photo",f);await addShrunk(fd,f);try{var r=await api("/crm/guests/"+g.id+"/photos",{method:"POST",body:fd});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else{var jj=await r.json().catch(function(){return {};});gmsg(jj.error||"Lỗi tải ảnh.","err");}}catch(e){gmsg("Lỗi tải ảnh.","err");}});
+   $("#photoInput").addEventListener("change",async function(){var f=this.files&&this.files[0];if(!f)return;gmsg(tt("photo_uploading"),"ok");var fd=new FormData();fd.append("photo",f);await addShrunk(fd,f);try{var r=await api("/crm/guests/"+g.id+"/photos",{method:"POST",body:fd});if(r.ok){toast(tt("saved"),"ok");openGuest(g.id);loadAll();}else{var jj=await r.json().catch(function(){return {};});gmsg(jj.error||tt("err_photo"),"err");}}catch(e){gmsg(tt("err_photo"),"err");}});
  }
  function gmsg(t,c){var m=$("#gMsg");if(m){m.textContent=t;m.className="msg"+(c?(" "+c):"");}}
  /* ---- btl: add / import / audit / settings ---- */
- function openAdd(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:12px">Thêm khách mới</h2><div class="fld"><input class="f" id="nName" placeholder="Họ tên *"></div><div class="fld"><input class="f" id="nPhone" placeholder="SĐT"></div><div class="fld"><input class="f" id="nOrg" placeholder="Đơn vị"></div><div class="fld"><input class="f" id="nTitle" placeholder="Chức danh"></div>'
+ function openAdd(){$("#sheet2Body").innerHTML='<div class="sec sheet-title">'+esc(tt("add_h"))+'</div><div class="fld"><input class="f" id="nName" placeholder="'+esc(tt("hoten"))+' *"></div><div class="fld"><input class="f" id="nPhone" placeholder="'+esc(tt("edt_sdt"))+'"></div><div class="fld"><input class="f" id="nOrg" placeholder="'+esc(tt("edt_donvi"))+'"></div><div class="fld"><input class="f" id="nTitle" placeholder="'+esc(tt("edt_chucdanh"))+'"></div>'
    /* E08-D042 §2.1 — tối 08/08 có khách phát sinh tại cửa: BTL thêm tay rồi phải
       gán bàn NGAY TẠI CHỖ để dẫn khách vào ngồi. Bắt mở Excel, xuất, điền, nạp
       lại trong khi khách đứng chờ là không dùng được. Tuyến POST đã requireRole
       ('btl') nên form này vốn chỉ BTL mở được. */
   +'<div class="row2"><div class="fld" style="flex:1"><input class="f" id="nBan" placeholder="'+esc(tt("ban"))+' — '+esc(tt("bg_ban_ph"))+'"></div><div class="fld" style="flex:1"><input class="f" id="nGhe" placeholder="'+esc(tt("ghe"))+'"></div></div>'
-  +'<button class="btn gold block" id="nSave">Tạo khách</button><div class="msg" id="nMsg"></div>';$("#nSave").addEventListener("click",async function(){var name=$("#nName").value.trim();if(!name){$("#nMsg").textContent="Nhập họ tên.";$("#nMsg").className="msg err";return;}var r=await jsend("/crm/guests","POST",{full_name:name,phone:$("#nPhone").value,org:$("#nOrg").value,title:$("#nTitle").value,table_no:$("#nBan").value,seat_no:$("#nGhe").value});if(r.ok){$("#sheet2").classList.remove("show");toast(tt("saved"),"ok");loadAll();openGuest(r.body.id);}else{$("#nMsg").textContent=r.body.error||"Lỗi.";$("#nMsg").className="msg err";}});$("#sheet2").classList.add("show");}
+  +'<button class="btn gold block" id="nSave">'+esc(tt("add_create"))+'</button><div class="msg" id="nMsg"></div>';
+  $("#nSave").addEventListener("click",async function(){
+    var name=$("#nName").value.trim();
+    if(!name){$("#nMsg").textContent=tt("add_need_name");$("#nMsg").className="msg err";return;}
+    var btn=$("#nSave"), nhan=btn.textContent; btn.disabled=true; btn.textContent=tt("saving");
+    var r=await jsend("/crm/guests","POST",{full_name:name,phone:$("#nPhone").value,org:$("#nOrg").value,title:$("#nTitle").value,table_no:$("#nBan").value,seat_no:$("#nGhe").value});
+    if(r.ok){$("#sheet2").classList.remove("show");toast(tt("saved"),"ok");loadAll();openGuest(r.body.id);}
+    else{btn.disabled=false;btn.textContent=nhan;$("#nMsg").textContent=r.body.error||tt("err_generic");$("#nMsg").className="msg err";}
+  });$("#sheet2").classList.add("show");}
 
  function openImportUpdate(){
    $("#sheet2Body").innerHTML=
-     '<h2 style="margin-bottom:6px">Nhập file CẬP NHẬT</h2>'
-    +'<p style="color:var(--muted);font-size:.8rem;line-height:1.5;margin-bottom:12px">'
+     '<div class="sec sheet-title">'+esc(tt("imp_upd_h"))+'</div>'
+    +'<p class="hint">'
     +'Dùng đúng file tải từ <b>«Xuất để CẬP NHẬT»</b>. Ô để trống = <b>không đổi</b>; muốn xoá thì gõ <b>(xoá)</b>.<br>'
     +'Bước 1 <b>kiểm thử</b> chỉ đếm, <b>không ghi gì</b>. Xem số xong mới hiện nút ghi.</p>'
     +'<input class="f" type="file" id="iuFile" accept=".csv,.xlsx">'
@@ -1380,9 +1755,11 @@ var PF_ANH=[],PF_GHIM="";
             tên cột thiếu vào chính câu hỏi — vẫn KHÔNG chặn, chỉ bắt đọc thêm
             một lần. Đây là lần cuối trước khi ghi. */
          var mat=(j.cotDoc||[]).filter(function(x){return !x.co;}).map(function(x){return x.ten;});
-         if(!confirm((mat.length?"⚠ Cột "+mat.join(", ")+" KHÔNG đọc được — mọi ô của cột đó sẽ bị bỏ qua.\n\n":"")
+         if(!(await appConfirm(
+           (mat.length?"⚠ Cột "+mat.join(", ")+" KHÔNG đọc được — mọi ô của cột đó sẽ bị bỏ qua.\n\n":"")
            +(j.doiTenCount?"⚠ File này ĐỔI HỌ TÊN của "+j.doiTenCount+" khách. Tên là thứ PG gõ để tra khách ở cửa.\n\n":"")
-           +"Ghi thật "+j.capNhat+" cập nhật và "+(j.taoMoiDuKien||0)+" khách mới vào hệ thống?"))return;
+           +"Ghi thật "+j.capNhat+" cập nhật và "+(j.taoMoiDuKien||0)+" khách mới vào hệ thống?",
+           {danger:true,okLabel:tt("dlg_ok_danger")})))return;
          this.disabled=true;this.textContent="Đang ghi…";
          var fd2=new FormData();fd2.append("file",file);
          /* Chỉ gửi cờ khi ô tick THẬT SỰ được chọn — không gửi mặc định, kẻo
@@ -1402,16 +1779,16 @@ var PF_ANH=[],PF_GHIM="";
      }catch(e){$("#iuMsg").textContent="Lỗi mạng.";$("#iuMsg").className="msg err";}
    });
  }
- function openImport(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:8px">Nhập CSV/Excel</h2><p style="color:var(--muted);font-size:.84rem">Cột: guest_ext_id, full_name, org, title, phone, email, assigned_email, tags. Upsert (chạy lại không nhân đôi).</p><input class="f" type="file" id="impFile" accept=".csv,.xlsx"><button class="btn gold block" id="impRun" style="margin-top:10px">Chạy import</button><div class="msg" id="impMsg"></div>'
+ function openImport(){$("#sheet2Body").innerHTML='<div class="sec sheet-title">'+esc(tt("imp_h"))+'</div><p class="hint">Cột: guest_ext_id, full_name, org, title, phone, email, assigned_email, tags. Upsert (chạy lại không nhân đôi).</p><input class="f" type="file" id="impFile" accept=".csv,.xlsx"><button class="btn gold block" id="impRun" style="margin-top:10px">Chạy import</button><div class="msg" id="impMsg"></div>'
     +'<div style="border-top:1px solid var(--line);margin:14px 0 10px"></div>'
-    +'<p style="color:var(--muted);font-size:.8rem;margin-bottom:8px">Có file tải từ «Xuất để CẬP NHẬT»? Nút trên <b>không</b> đọc được Bàn/Ghế/Trạng thái — dùng nút dưới.</p>'
+    +'<p class="hint">Có file tải từ «Xuất để CẬP NHẬT»? Nút trên <b>không</b> đọc được Bàn/Ghế/Trạng thái — dùng nút dưới.</p>'
     +'<button class="btn block" id="impUpd">⬆ Nhập file CẬP NHẬT (Bàn · Ghế · Trạng thái)</button>';var bu2=$("#impUpd");if(bu2)bu2.addEventListener("click",openImportUpdate);$("#impRun").addEventListener("click",async function(){var f=$("#impFile").files&&$("#impFile").files[0];if(!f){$("#impMsg").textContent="Chọn file.";$("#impMsg").className="msg err";return;}$("#impMsg").textContent="Đang import…";var fd=new FormData();fd.append("file",f);try{var r=await api("/crm/import",{method:"POST",body:fd});var jj=await r.json().catch(function(){return {};});if(r.ok){$("#impMsg").textContent="Xong: tạo "+jj.created+", cập nhật "+jj.updated+".";$("#impMsg").className="msg ok";toast(tt("saved"),"ok");loadAll();}else{$("#impMsg").textContent=jj.error||"Lỗi.";$("#impMsg").className="msg err";}}catch(e){$("#impMsg").textContent="Lỗi import.";$("#impMsg").className="msg err";}});$("#sheet2").classList.add("show");}
- async function openAudit(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:10px">Nhật ký (audit)</h2><div id="audArea" class="msg">Đang tải…</div><a class="btn block" href="/crm/audit/export.csv" style="margin-top:10px">⬇ Xuất CSV</a>';$("#sheet2").classList.add("show");try{var j=await jget("/crm/audit?limit=100");var rows=(j.rows||[]).map(function(x){return '<tr><td>'+esc(fmt(x.created_at))+'</td><td>'+esc(x.actor_email||"—")+'</td><td>'+esc(x.event_type)+'</td><td>'+esc(x.target_id||"")+'</td></tr>';}).join("");$("#audArea").outerHTML='<table class="aud"><tbody>'+(rows||'<tr><td>Chưa có.</td></tr>')+'</tbody></table>';}catch(e){}}
- function openCfg(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:12px">'+tt("cfg_h")+'</h2><div class="sec" style="margin-top:4px">'+tt("toa_full")+'</div><div class="fld"><div class="lab">'+tt("cfg_venue_toa")+'</div><input class="f" id="cVenueToa" value="'+esc(CFG.venueToa)+'"></div><div class="fld"><div class="lab">'+tt("cfg_toa")+'</div><input class="f" id="cToa" type="datetime-local" value="'+esc(CFG.toa)+'"></div><div class="sec">'+tt("gala_full")+'</div><div class="fld"><div class="lab">'+tt("cfg_venue_gala")+'</div><input class="f" id="cVenueGala" value="'+esc(CFG.venueGala)+'"></div><div class="fld"><div class="lab">'+tt("cfg_gala")+'</div><input class="f" id="cGala" type="datetime-local" value="'+esc(CFG.gala)+'"></div><button class="btn gold block" id="cSave" style="margin-top:6px">'+tt("save")+'</button><p style="color:var(--muted);font-size:.76rem;margin-top:10px">Lưu trên trình duyệt này. (Muốn đồng bộ mọi máy → cần Kha thêm bảng cấu hình backend.)</p>';$("#cSave").addEventListener("click",function(){saveCfg({venueToa:$("#cVenueToa").value.trim()||CFG_DEF.venueToa,venueGala:$("#cVenueGala").value.trim()||CFG_DEF.venueGala,toa:$("#cToa").value||CFG_DEF.toa,gala:$("#cGala").value||CFG_DEF.gala});$("#sheet2").classList.remove("show");renderDash();tickCd();toast(tt("cfg_saved"),"ok");});$("#sheet2").classList.add("show");}
- function openExport(){$("#sheet2Body").innerHTML='<h2 style="margin-bottom:6px">'+tt("exp_choose")+'</h2><p style="color:var(--muted);font-size:.82rem;margin-bottom:14px">'+ALL.length+' khách · SĐT đã ẩn</p><button class="btn gold block" id="doCsv">⬇ CSV (.csv)</button><button class="btn block" id="doXls" style="margin-top:9px">⬇ Excel (.xls)</button>'
+ async function openAudit(){$("#sheet2Body").innerHTML='<div class="sec sheet-title">'+esc(tt("aud_h"))+'</div><div id="audArea" class="msg">…</div><a class="btn block" href="/crm/audit/export.csv" style="margin-top:10px">⬇ Xuất CSV</a>';$("#sheet2").classList.add("show");try{var j=await jget("/crm/audit?limit=100");var rows=(j.rows||[]).map(function(x){return '<tr><td>'+esc(fmt(x.created_at))+'</td><td>'+esc(x.actor_email||"—")+'</td><td>'+esc(x.event_type)+'</td><td>'+esc(x.target_id||"")+'</td></tr>';}).join("");$("#audArea").outerHTML='<table class="aud"><tbody>'+(rows||'<tr><td>'+esc(tt("aud_empty"))+'</td></tr>')+'</tbody></table>';}catch(e){}}
+ function openCfg(){$("#sheet2Body").innerHTML='<div class="sec sheet-title">'+tt("cfg_h")+'</div><div class="sec" style="margin-top:4px">'+tt("toa_full")+'</div><div class="fld"><div class="lab">'+tt("cfg_venue_toa")+'</div><input class="f" id="cVenueToa" value="'+esc(CFG.venueToa)+'"></div><div class="fld"><div class="lab">'+tt("cfg_toa")+'</div><input class="f" id="cToa" type="datetime-local" value="'+esc(CFG.toa)+'"></div><div class="sec">'+tt("gala_full")+'</div><div class="fld"><div class="lab">'+tt("cfg_venue_gala")+'</div><input class="f" id="cVenueGala" value="'+esc(CFG.venueGala)+'"></div><div class="fld"><div class="lab">'+tt("cfg_gala")+'</div><input class="f" id="cGala" type="datetime-local" value="'+esc(CFG.gala)+'"></div><button class="btn gold block" id="cSave" style="margin-top:6px">'+tt("save")+'</button><p class="hint" style="margin-top:10px">Lưu trên trình duyệt này. (Muốn đồng bộ mọi máy → cần Kha thêm bảng cấu hình backend.)</p>';$("#cSave").addEventListener("click",function(){saveCfg({venueToa:$("#cVenueToa").value.trim()||CFG_DEF.venueToa,venueGala:$("#cVenueGala").value.trim()||CFG_DEF.venueGala,toa:$("#cToa").value||CFG_DEF.toa,gala:$("#cGala").value||CFG_DEF.gala});$("#sheet2").classList.remove("show");renderDash();tickCd();toast(tt("cfg_saved"),"ok");});$("#sheet2").classList.add("show");}
+ function openExport(){$("#sheet2Body").innerHTML='<div class="sec sheet-title">'+tt("exp_choose")+'</div><p class="hint">'+ALL.length+' khách · SĐT đã ẩn</p><button class="btn gold block" id="doCsv">⬇ CSV (.csv)</button><button class="btn block" id="doXls" style="margin-top:9px">⬇ Excel (.xls)</button>'
    +'<div style="border-top:1px solid var(--line);margin:14px 0 10px"></div>'
    +'<button class="btn block" id="doUpd">⬇ Xuất để CẬP NHẬT (nạp lại được)</button>'
-   +'<p style="color:var(--muted);font-size:.76rem;margin-top:7px;line-height:1.45">Có <b>Mã khách</b> (khoá — đừng sửa) · sửa được Đơn vị / Chức danh / <b>Bàn</b> / <b>Ghế</b> / Trạng thái, rồi nạp lại.<br>Ô để trống = <b>không đổi</b>. Muốn <b>xoá</b> một ô thì gõ <b>(xoá)</b> — đừng gõ <b>x</b>, chữ đó đã mang nghĩa «không dự».<br>Cột <b>Phụ trách</b> chỉ để xem, không ghi ngược.</p>';var bu=$("#doUpd");if(bu)bu.addEventListener("click",exportUpdateCSV);$("#doCsv").addEventListener("click",function(){exportCSV();$("#sheet2").classList.remove("show");});$("#doXls").addEventListener("click",function(){exportXls();$("#sheet2").classList.remove("show");});$("#sheet2").classList.add("show");}
+   +'<p class="hint" style="margin-top:7px">Có <b>Mã khách</b> (khoá — đừng sửa) · sửa được Đơn vị / Chức danh / <b>Bàn</b> / <b>Ghế</b> / Trạng thái, rồi nạp lại.<br>Ô để trống = <b>không đổi</b>. Muốn <b>xoá</b> một ô thì gõ <b>(xoá)</b> — đừng gõ <b>x</b>, chữ đó đã mang nghĩa «không dự».<br>Cột <b>Phụ trách</b> chỉ để xem, không ghi ngược.</p>';var bu=$("#doUpd");if(bu)bu.addEventListener("click",exportUpdateCSV);$("#doCsv").addEventListener("click",function(){exportCSV();$("#sheet2").classList.remove("show");});$("#doXls").addEventListener("click",function(){exportXls();$("#sheet2").classList.remove("show");});$("#sheet2").classList.add("show");}
  /* ---- xuất CSV / Excel (client-side, SĐT đã ẩn) ---- */
 
  /* ───────── E08-D032 · xuất Excel «để CẬP NHẬT» (vòng khứ hồi) ─────────

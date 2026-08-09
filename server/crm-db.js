@@ -145,6 +145,55 @@ ALTER TABLE crm_photos ADD COLUMN IF NOT EXISTS preview_size INTEGER;
 -- E08-D047 · bảng cũ (guest_id UNIQUE, không cột session) → theo buổi.
 -- Idempotent: chạy lại an toàn khi cột/index đã có.
 ALTER TABLE crm_check_ins ADD COLUMN IF NOT EXISTS session TEXT;
+
+/* ─────────── E08-D082 · KHO ẢNH SỰ KIỆN (bảng RIÊNG, không đụng crm_photos) ───────────
+   CHÚ Ý người sửa sau: khối này là template literal của JS, mở và đóng bằng dấu
+   huyền. Đừng dùng dấu huyền để trích tên cột trong chú thích — chuỗi sẽ đứt
+   giữa chừng và cả file hỏng cú pháp. (Đã dính đúng lỗi này khi viết vé D082.)
+
+   BẢNG MỚI chứ không nới crm_photos.guest_id thành nullable. Lý do không phải
+   khẩu vị: avatar khách ở CẢ BỐN màn đang chạy thật là «ảnh mới nhất của thẻ»
+   (idx_crm_photos_guest = guest_id, created_at DESC). Ảnh phóng sự thì CHƯA biết
+   của ai — đó đúng là bài toán D077 phải giải. Cho nó vào chung bảng nghĩa là
+   một tấm ảnh sân khấu chưa gán ai sẽ thành mặt của một khách nào đó trên mọi
+   danh sách, và không có đường lùi. Tách bảng thì hỏng cũng chỉ hỏng trong kho.
+
+   Cột guest_id KHÔNG có ở đây. Liên kết ảnh↔khách là việc của D077 và chỉ ghi
+   sau khi BTL bấm Xác nhận tay (CR-127) — sẽ nằm ở bảng khớp riêng, không phải
+   một cột trong bảng này.
+
+   sha256 là của FILE GỐC trên đĩa, tính ở trình duyệt trước khi thu nhỏ. Nhờ nó
+   mà chọn trùng thư mục hai lần không đẻ bản ghi thứ hai, và người dùng thấy
+   ngay «đã có rồi» thay vì ngồi chờ upload lại 3.000 tấm.
+   UNIQUE một phần (WHERE deleted_at IS NULL): gỡ một tấm rồi nạp lại được. */
+CREATE TABLE IF NOT EXISTS crm_event_photos (
+  id            BIGSERIAL PRIMARY KEY,
+  batch_id      TEXT NOT NULL,
+  source        TEXT NOT NULL DEFAULT 'thiet-bi'
+                CHECK (source IN ('thiet-bi','dropbox','onedrive','google-drive')),
+  sha256        TEXT NOT NULL,
+  orig_name     TEXT NOT NULL,
+  rel_path      TEXT,
+  taken_at      TIMESTAMPTZ,
+  object_key    TEXT NOT NULL,
+  content_type  TEXT,
+  size          INTEGER,
+  width         INTEGER,
+  height        INTEGER,
+  thumb_key     TEXT,
+  thumb_size    INTEGER,
+  preview_key   TEXT,
+  preview_size  INTEGER,
+  uploaded_by   TEXT NOT NULL,
+  deleted_at    TIMESTAMPTZ,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_crm_event_photos_sha
+  ON crm_event_photos (sha256) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_crm_event_photos_batch
+  ON crm_event_photos (batch_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_crm_event_photos_live
+  ON crm_event_photos (created_at DESC) WHERE deleted_at IS NULL;
 `;
 
 async function migrateCrm() {

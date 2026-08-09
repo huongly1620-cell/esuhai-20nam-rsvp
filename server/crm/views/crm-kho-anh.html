@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kho ảnh sự kiện · CRM</title>
+<style>
+:root{
+  --bg:#0b1a30; --panel:#12233d; --panel2:#0e1c31; --line:#1e3454;
+  --ink:#eef2f8; --mute:#9fb0c8; --gold:#C9A227; --green:#0F955A; --blue:#2E7FCC; --red:#C0392B;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.5}
+a{color:#8ec2ff}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid var(--line)}
+header h1{font-size:20px;margin:0;font-weight:700}
+.spacer{flex:1}
+.btn{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-size:15px;font-weight:600;cursor:pointer}
+.btn:hover:not(:disabled){border-color:#33598c}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.gold{background:var(--gold);color:#20180a;border-color:var(--gold)}
+.btn.green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.red{background:var(--red);color:#fff;border-color:var(--red)}
+.btn.sm{padding:6px 12px;font-size:13px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:16px}
+.hint{color:var(--mute);font-size:13.5px}
+.bad{background:#3a1414;border:1px solid #7a2626;color:#ffd9d9;border-radius:12px;padding:14px 16px;margin-top:16px}
+.good{background:#0f2c20;border:1px solid #1e6b46;color:#c9f2dd;border-radius:12px;padding:12px 16px;margin-top:16px}
+.warn{background:#332a10;border:1px solid #7a6220;color:#ffeec2;border-radius:12px;padding:12px 16px;margin-top:16px}
+.srcbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.drop{margin-top:14px;border:2px dashed var(--line);border-radius:14px;padding:26px;text-align:center;color:var(--mute)}
+.drop.on{border-color:var(--gold);color:var(--ink);background:#132844}
+.stat{display:flex;gap:22px;flex-wrap:wrap;margin-top:10px}
+.stat div b{display:block;font-size:22px;font-weight:800}
+.stat div span{color:var(--mute);font-size:12.5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px;margin-top:14px}
+.tile{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden;aspect-ratio:1;cursor:pointer}
+.tile img{width:100%;height:100%;object-fit:cover;display:block}
+.tile .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#43607f;font-size:11px;padding:6px;text-align:center;word-break:break-all}
+.tile .nm{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.85));font-size:10.5px;padding:14px 6px 4px;color:#dfe8f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .ck{position:absolute;top:6px;left:6px;width:22px;height:22px;border-radius:6px;background:rgba(6,16,30,.75);border:1px solid #4d6d95;display:flex;align-items:center;justify-content:center;font-size:14px;color:transparent}
+.tile.sel{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,162,39,.35) inset}
+.tile.sel .ck{background:var(--gold);border-color:var(--gold);color:#20180a}
+.tile .st{position:absolute;top:6px;right:6px;font-size:10px;padding:2px 6px;border-radius:999px;background:rgba(6,16,30,.85);border:1px solid var(--line)}
+.tile.done .st{background:var(--green);border-color:var(--green);color:#fff}
+.tile.dup .st{background:#2b4a6e;border-color:#2b4a6e;color:#dbe9ff}
+.tile.err{border-color:var(--red)}
+.tile.err .st{background:var(--red);border-color:var(--red);color:#fff}
+.bar{height:8px;background:#0a1729;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--gold);width:0}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:600}
+code{background:#0a1729;padding:1px 5px;border-radius:5px;font-size:12.5px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.log{max-height:190px;overflow:auto;background:#0a1729;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12.5px;color:var(--mute);margin-top:12px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>📸 Kho ảnh sự kiện</h1>
+  <span class="hint">E08-D082 · Pha 1</span>
+  <div class="spacer"></div>
+  <a class="btn sm" href="/crm">← Về CRM</a>
+</header>
+
+<!-- ── Chốt chặn EXIF. Trang KHÔNG cho đồng bộ tới khi phép dò đạt. ── -->
+<div id="exifBox" class="warn">⏳ Đang thử đường thu nhỏ trên ảnh mẫu có cờ xoay…</div>
+
+<div class="card">
+  <div class="srcbar">
+    <strong>Nguồn:</strong>
+    <button class="btn gold" id="btnFolder">📁 Chọn thư mục</button>
+    <button class="btn" id="btnFiles">🖼 Chọn từng ảnh</button>
+    <button class="btn" disabled title="Chưa cấu hình — Pha 1b">Dropbox</button>
+    <button class="btn" disabled title="Chưa cấu hình — Pha 1b">OneDrive</button>
+    <button class="btn" disabled title="Chưa cấu hình — Pha 1b">Google Drive</button>
+    <span class="hint">Ba nút cloud bật ở Pha 1b khi có credential.</span>
+  </div>
+  <div class="drop" id="drop">…hoặc kéo thả thư mục / ảnh vào đây</div>
+  <input type="file" id="fFolder" webkitdirectory directory multiple hidden>
+  <input type="file" id="fFiles" accept="image/*" multiple hidden>
+  <p class="hint" style="margin:12px 0 0">
+    Ảnh <b>đọc thẳng từ đĩa</b> để xem trước — chưa một byte nào lên mạng. Chỉ khi bấm
+    <b>Đồng bộ</b> mới thu nhỏ và đẩy lên kho.
+  </p>
+</div>
+
+<div class="card" id="pickCard" style="display:none">
+  <div class="stat">
+    <div><b id="nTotal">0</b><span>ảnh đọc được</span></div>
+    <div><b id="nSel">0</b><span>đang tick chọn</span></div>
+    <div><b id="nSkip">0</b><span>bỏ qua (HEIC/không đọc được)</span></div>
+    <div><b id="nDone">0</b><span>đã vào kho lượt này</span></div>
+  </div>
+  <div class="toolbar">
+    <button class="btn sm" id="selAll">Chọn hết</button>
+    <button class="btn sm" id="selNone">Bỏ chọn hết</button>
+    <div class="spacer"></div>
+    <button class="btn green" id="btnSync" disabled>⬆ Đồng bộ ảnh đã chọn</button>
+  </div>
+  <div class="bar"><i id="prog"></i></div>
+  <div class="grid" id="grid"></div>
+  <div class="log" id="log" style="display:none"></div>
+</div>
+
+<div class="card">
+  <div class="toolbar" style="margin:0">
+    <strong>Đã có trong kho</strong>
+    <button class="btn sm" id="btnReload">Tải lại</button>
+    <div class="spacer"></div>
+    <span class="hint" id="khoStat">…</span>
+  </div>
+  <div id="khoWrap"></div>
+</div>
+
+</div>
+
+<script src="/crm/kho-anh/exif6.fixture.js"></script>
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   E08-D082 Pha 1 · trang nạp kho ảnh sự kiện
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var $ = function (s) { return document.querySelector(s); };
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function fmtMB(n){ return (n/1048576).toFixed(1) + ' MB'; }
+function ghiLog(s){ var el = $('#log'); el.style.display='block'; el.textContent += s + '\n'; el.scrollTop = el.scrollHeight; }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   1 · GIẢI MÃ ẢNH — chỗ mìn M3/M4 nằm
+   ───────────────────────────────────────────────────────────────────────────
+   Máy ảnh chụp dọc lưu khung NGANG kèm cờ xoay EXIF. Áp sai cờ thì ảnh vào kho
+   nằm ngang, mặt người xoay 90° — và D077 sẽ nhận diện hỏng theo, hỏng ở vé sau
+   nên gần như không ai lần ngược về được chỗ này.
+
+   KHÔNG có đường lùi `<img>` + drawImage. Tuyệt đối cố ý: trên đường đó tham số
+   imageOrientation không tồn tại, nên một fallback "cho chắc" sẽ âm thầm sinh ra
+   đúng cái hỏng mà cả vé này đang đi phòng. Không giải mã được thì DỪNG TẤM và
+   nói rõ, đừng đoán.
+
+   ĐO ĐƯỢC 09/08 trên Chromium 1234 (headless), ảnh mẫu 64x32 + Orientation 6:
+     mặc định = 32x64 · from-image = 32x64 · none = 32x64
+   Tức `imageOrientation:'none'` KHÔNG trả về pixel thô như tên gọi — trình duyệt
+   đời này áp cờ ở cả ba lối. Hệ quả thẳng vào thiết kế: KHÔNG được dò năng lực
+   bằng cách so 'none' với 'from-image' (luôn bằng nhau ⇒ luôn báo "ổn", kể cả
+   trên trình duyệt hỏng). Phép dò phải dò KẾT QUẢ: cho ảnh mẫu chạy qua đúng
+   đường thu nhỏ thật rồi hỏi ảnh ra có dọc không.                              */
+function coCreateImageBitmap(){ return typeof createImageBitmap === 'function'; }
+
+async function giaiMaDungHuong(blob){
+  if (!coCreateImageBitmap()) throw new Error('Trình duyệt không có createImageBitmap — không thể áp cờ xoay EXIF an toàn.');
+  return await createImageBitmap(blob, { imageOrientation: 'from-image' });
+}
+
+/* Thu nhỏ về cạnh dài `max`. Trả cả kích thước để máy chủ ghi lại được — nhờ đó
+   AC-9 kiểm lại được từ dữ liệu, không phải từ trí nhớ ai đó. */
+async function thuNho(blob, max, q){
+  var bmp = await giaiMaDungHuong(blob);
+  try {
+    var s = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    var nw = Math.max(1, Math.round(bmp.width * s));
+    var nh = Math.max(1, Math.round(bmp.height * s));
+    var cv = document.createElement('canvas'); cv.width = nw; cv.height = nh;
+    var cx = cv.getContext('2d');
+    if (!cx) throw new Error('Không mở được canvas 2D.');
+    cx.drawImage(bmp, 0, 0, nw, nh);
+    var out = await new Promise(function(r){ cv.toBlob(r, 'image/jpeg', q); });
+    if (!out) throw new Error('Không mã hoá được JPEG.');
+    // Giải phóng ngay: 3.000 tấm mà giữ bitmap là hết RAM tab (M5/M8).
+    cv.width = cv.height = 0;
+    return { blob: out, w: nw, h: nh };
+  } finally { if (bmp.close) bmp.close(); }
+}
+
+/* ── Phép dò: chạy ảnh mẫu Orientation 6 qua ĐÚNG hàm thuNho ở trên ──
+   Sinh bởi tools/make-exif6-fixture.js — 64x32 trong pixel thật, cờ xoay 6.
+   Áp cờ đúng ⇒ ra 32x64 ⇒ width < height. Đây CHÍNH là AC-9, chạy mỗi lần mở
+   trang chứ không phải một lần rồi tin mãi.                                    */
+var EXIF_OK = false;
+async function doNangLucEXIF(){
+  var box = $('#exifBox');
+  try {
+    if (!window.EXIF6_FIXTURE) throw new Error('Thiếu ảnh mẫu — chạy `node tools/make-exif6-fixture.js`.');
+    var blob = await (await fetch(window.EXIF6_FIXTURE)).blob();
+    var raw = window.EXIF6_RAW;
+    var r = await thuNho(blob, 2048, 0.82);
+    if (r.w < r.h){
+      EXIF_OK = true;
+      box.className = 'good';
+      box.innerHTML = '✅ <b>Cờ xoay EXIF được áp đúng.</b> Ảnh mẫu ' + raw.w + '×' + raw.h
+        + ' (ngang trong pixel, cờ xoay 6) qua đường thu nhỏ thật ra <b>' + r.w + '×' + r.h
+        + '</b> — dọc. <span class="hint">AC-9 đạt.</span>';
+    } else {
+      box.className = 'bad';
+      box.innerHTML = '⛔ <b>Trình duyệt này KHÔNG áp cờ xoay EXIF.</b> Ảnh mẫu ' + raw.w + '×' + raw.h
+        + ' ra ' + r.w + '×' + r.h + ' — vẫn ngang. Nạp bằng trình duyệt này thì ảnh chụp dọc vào kho sẽ '
+        + 'nằm ngang và phần nhận diện khuôn mặt (D077) hỏng theo.<br><b>Đồng bộ đã bị khoá.</b> '
+        + 'Mở lại bằng Chrome/Edge bản mới, hoặc Safari 17 trở lên.';
+    }
+  } catch (e) {
+    box.className = 'bad';
+    box.innerHTML = '⛔ <b>Không chạy được phép dò cờ xoay:</b> ' + esc(e.message)
+      + '<br><b>Đồng bộ đã bị khoá</b> — không nạp ảnh khi chưa chắc hướng ảnh đúng.';
+  }
+  capNhatNutSync();
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   2 · SourceItem — LỚP NGUỒN (AC-1a)
+   ───────────────────────────────────────────────────────────────────────────
+   Mọi nguồn trả về đúng hình dạng này. Lưới và đường đẩy bên dưới KHÔNG được
+   chạm `File`, `FileList`, hay File System Access API — chỉ ăn SourceItem.
+   Nhờ vậy Pha 1b (Dropbox/OneDrive/Drive) là CẮM THÊM adapter, không viết lại:
+   ba nút đó sẽ trả về SourceItem có `getBlob` tải từ host cloud.
+
+     { id, name, relativePath, source, getBlob:()=>Promise<Blob>, size?, lastModified? }
+   ─────────────────────────────────────────────────────────────────────────── */
+
+var LA_ANH = /\.(jpe?g|png|webp|heic|heif|tiff?)$/i;
+var HEIC = /\.(heic|heif)$/i;
+
+function tuFile(file, relPath, seq){
+  return {
+    id: 'tb-' + seq + '-' + (file.size || 0) + '-' + (file.lastModified || 0),
+    name: file.name,
+    relativePath: relPath || file.webkitRelativePath || file.name,
+    source: 'thiet-bi',
+    size: file.size,
+    lastModified: file.lastModified,
+    // Đường DUY NHẤT phần dưới chạm tới dữ liệu. Pha 1b thay thân hàm này bằng
+    // một lượt tải từ cloud, phần dưới không đổi một dòng.
+    getBlob: function(){ return Promise.resolve(file); }
+  };
+}
+
+var ThietBiAdapter = {
+  ten: 'thiet-bi',
+  tuFileList: function(fileList){
+    var out = [], i = 0;
+    Array.prototype.forEach.call(fileList, function(f){
+      if (!LA_ANH.test(f.name)) return;             // M1 — lọc theo đuôi file
+      out.push(tuFile(f, f.webkitRelativePath, i++));
+    });
+    return out;
+  },
+  // Kéo-thả thư mục: duyệt đệ quy cây entry.
+  tuDataTransfer: async function(dt){
+    var items = Array.prototype.slice.call(dt.items || []);
+    var roots = items.map(function(it){ return it.webkitGetAsEntry && it.webkitGetAsEntry(); }).filter(Boolean);
+    if (!roots.length) return this.tuFileList(dt.files || []);
+    var out = [], seq = 0;
+    async function doc(entry, prefix){
+      if (entry.isFile){
+        var f = await new Promise(function(res, rej){ entry.file(res, rej); });
+        if (LA_ANH.test(f.name)) out.push(tuFile(f, prefix + f.name, seq++));
+        return;
+      }
+      var rd = entry.createReader();
+      while (true){
+        var lot = await new Promise(function(res, rej){ rd.readEntries(res, rej); });
+        if (!lot.length) break;
+        for (var i = 0; i < lot.length; i++) await doc(lot[i], prefix + entry.name + '/');
+      }
+    }
+    for (var i = 0; i < roots.length; i++) await doc(roots[i], '');
+    return out;
+  }
+};
+
+/* ───────────────────────────────────────────────────────────────────────────
+   3 · Lưới kiểm duyệt — CHỈ ăn SourceItem
+   ─────────────────────────────────────────────────────────────────────────── */
+
+var ITEMS = [];            // SourceItem[]
+var CHON = Object.create(null);
+var TRANG_THAI = Object.create(null);   // id -> 'cho'|'xong'|'trung'|'loi'|'bo'
+var BO_QUA = 0;
+
+/* Xem trước đọc thẳng từ đĩa bằng object URL. Chỉ tạo khi ô LỌT VÀO TẦM NHÌN và
+   thu hồi khi cuộn khỏi — 3.000 object URL sống cùng lúc là hết RAM tab (M5). */
+var SONG = [];
+var TRAN_URL = 180;
+function moThumb(img, item){
+  item.getBlob().then(function(b){
+    var u = URL.createObjectURL(b);
+    img.src = u;
+    SONG.push(u);
+    while (SONG.length > TRAN_URL) URL.revokeObjectURL(SONG.shift());
+  }).catch(function(){ /* ô giữ nguyên chỗ trống, không làm hỏng lưới */ });
+}
+var quanSat = new IntersectionObserver(function(es){
+  es.forEach(function(e){
+    if (!e.isIntersecting) return;
+    var el = e.target, id = el.getAttribute('data-id');
+    var it = ITEMS.filter(function(x){ return x.id === id; })[0];
+    if (!it || el.dataset.loaded) return;
+    el.dataset.loaded = '1';
+    var img = el.querySelector('img');
+    if (img) moThumb(img, it);
+  });
+}, { rootMargin: '300px' });
+
+function veLuoi(){
+  var g = $('#grid');
+  g.innerHTML = '';
+  ITEMS.forEach(function(it){
+    var st = TRANG_THAI[it.id] || 'cho';
+    var d = document.createElement('div');
+    d.className = 'tile' + (CHON[it.id] ? ' sel' : '')
+      + (st === 'xong' ? ' done' : '') + (st === 'trung' ? ' dup' : '') + (st === 'loi' ? ' err' : '');
+    d.setAttribute('data-id', it.id);
+    var nhan = st === 'xong' ? 'đã nạp' : st === 'trung' ? 'đã có' : st === 'loi' ? 'lỗi' : st === 'bo' ? 'bỏ qua' : '';
+    d.innerHTML = HEIC.test(it.name)
+      ? '<div class="ph">HEIC — bỏ qua<br>' + esc(it.name) + '</div>'
+      : '<img alt="">';
+    d.innerHTML += '<div class="ck">✓</div>'
+      + (nhan ? '<div class="st">' + nhan + '</div>' : '')
+      + '<div class="nm" title="' + esc(it.relativePath) + '">' + esc(it.name) + '</div>';
+    d.onclick = function(){
+      if (CHON[it.id]) delete CHON[it.id]; else CHON[it.id] = 1;
+      d.classList.toggle('sel'); demLai();
+    };
+    g.appendChild(d);
+    if (!HEIC.test(it.name)) quanSat.observe(d);
+  });
+  demLai();
+}
+function demLai(){
+  var n = Object.keys(CHON).length;
+  $('#nTotal').textContent = ITEMS.length;
+  $('#nSel').textContent = n;
+  $('#nSkip').textContent = BO_QUA;
+  capNhatNutSync();
+}
+function capNhatNutSync(){
+  var n = Object.keys(CHON).length;
+  var b = $('#btnSync');
+  if (!b) return;
+  b.disabled = !(EXIF_OK && n > 0 && !DANG_CHAY);
+  b.textContent = n ? ('⬆ Đồng bộ ' + n + ' ảnh đã chọn') : '⬆ Đồng bộ ảnh đã chọn';
+}
+
+function nhanItems(list){
+  // HEIC: canvas của Chrome không giải mã được. Báo TÊN rồi bỏ qua — Gate 1 đã
+  // chốt như vậy; im lặng nuốt là sau này không ai biết thiếu tấm nào.
+  BO_QUA = 0;
+  var giu = [];
+  list.forEach(function(it){
+    if (HEIC.test(it.name)){ BO_QUA++; TRANG_THAI[it.id] = 'bo'; ghiLog('bỏ qua (HEIC): ' + it.relativePath); return; }
+    giu.push(it);
+  });
+  ITEMS = giu;
+  CHON = Object.create(null);
+  giu.forEach(function(it){ CHON[it.id] = 1; });      // mặc định tick hết, người dùng bỏ bớt
+  $('#pickCard').style.display = '';
+  veLuoi();
+  ghiLog('đọc được ' + giu.length + ' ảnh' + (BO_QUA ? (' · bỏ qua ' + BO_QUA + ' HEIC') : ''));
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   4 · Đồng bộ
+   ─────────────────────────────────────────────────────────────────────────── */
+
+var DANG_CHAY = false;
+
+async function sha256(blob){
+  if (!(window.crypto && window.crypto.subtle))
+    throw new Error('Trình duyệt không mở crypto.subtle (cần HTTPS) — không tính được mã trùng lặp.');
+  var buf = await blob.arrayBuffer();
+  var h = await crypto.subtle.digest('SHA-256', buf);
+  return Array.prototype.map.call(new Uint8Array(h), function(b){
+    return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+async function hoiDaCo(shas){
+  var daCo = Object.create(null);
+  for (var i = 0; i < shas.length; i += 500){          // trần 500 của route /check
+    var lo = shas.slice(i, i + 500);
+    var r = await fetch('/crm/event-photos/check', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sha256: lo })
+    });
+    var j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'Hỏi trùng lặp thất bại.');
+    Object.keys(j.da_co).forEach(function(k){ daCo[k] = j.da_co[k]; });
+  }
+  return daCo;
+}
+
+async function daySchema(item, sha, batchId){
+  var goc = await item.getBlob();
+  var web = await thuNho(goc, 2048, 0.82);
+  var pv  = await thuNho(goc, 1024, 0.80);
+  var th  = await thuNho(goc, 256,  0.75);
+
+  var fd = new FormData();
+  fd.append('web', web.blob, 'w2048.jpg');
+  fd.append('preview', pv.blob, 't1024.jpg');
+  fd.append('thumb', th.blob, 't256.jpg');
+  fd.append('sha256', sha);
+  fd.append('orig_name', item.name);
+  fd.append('rel_path', item.relativePath || '');
+  fd.append('batch_id', batchId);
+  fd.append('source', item.source);
+  fd.append('width', String(web.w));
+  fd.append('height', String(web.h));
+  if (item.lastModified) fd.append('taken_at_ms', String(item.lastModified));
+
+  var r = await fetch('/crm/event-photos', { method: 'POST', body: fd });
+  var j = await r.json().catch(function(){ return { ok: false, error: 'máy chủ trả về không phải JSON' }; });
+  if (!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+
+async function dongBo(){
+  if (!EXIF_OK){ alert('Phép dò cờ xoay chưa đạt — không đồng bộ.'); return; }
+  var chon = ITEMS.filter(function(it){ return CHON[it.id]; });
+  if (!chon.length) return;
+
+  // Gate 1 · đếm rồi báo TRƯỚC khi nạp cả kho. Ba nghìn tấm là ~15 phút và
+  // ~1,8 GB — không phải thứ để bấm nhầm rồi mới đọc con số.
+  var tongMB = chon.reduce(function(a, it){ return a + (it.size || 0); }, 0);
+  if (!confirm('Sắp nạp ' + chon.length + ' ảnh (' + fmtMB(tongMB) + ' bản gốc trên đĩa).\n\n'
+      + 'Bản lưu vào kho là 2048px — KHÔNG phải bản gốc in khổ lớn.\n'
+      + 'Tiếp tục?')) return;
+
+  DANG_CHAY = true; capNhatNutSync();
+  var batchId = 'dot-' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)
+                + '-' + Math.random().toString(36).slice(2, 8);
+  ghiLog('── đợt ' + batchId + ' · ' + chon.length + ' ảnh ──');
+
+  var xong = 0, trung = 0, loi = 0, lamXong = 0;
+  function tien(){ $('#prog').style.width = Math.round(lamXong / chon.length * 100) + '%'; }
+
+  // Bước 1 — tính sha256 rồi hỏi cái nào đã có. Tránh đẩy lại cả nghìn tấm.
+  var shaCua = Object.create(null);
+  for (var i = 0; i < chon.length; i++){
+    try { shaCua[chon[i].id] = await sha256(await chon[i].getBlob()); }
+    catch (e){ TRANG_THAI[chon[i].id] = 'loi'; loi++; ghiLog('sha lỗi · ' + chon[i].name + ' · ' + e.message); }
+  }
+  var coSha = chon.filter(function(it){ return shaCua[it.id]; });
+  var daCo = {};
+  try { daCo = await hoiDaCo(coSha.map(function(it){ return shaCua[it.id]; })); }
+  catch (e){ ghiLog('không hỏi được trùng lặp (' + e.message + ') — vẫn đẩy, máy chủ tự chặn trùng'); }
+
+  // Bước 2 — đẩy, 3 luồng song song (M8: nhiều hơn thì tab tự bóp nghẹt mình).
+  var hangDoi = coSha.slice();
+  async function congNhan(){
+    while (hangDoi.length){
+      var it = hangDoi.shift();
+      var sha = shaCua[it.id];
+      try {
+        if (daCo[sha]){ TRANG_THAI[it.id] = 'trung'; trung++; }
+        else {
+          var j = await daySchema(it, sha, batchId);
+          TRANG_THAI[it.id] = j.trung_lap ? 'trung' : 'xong';
+          if (j.trung_lap) trung++; else xong++;
+        }
+      } catch (e){
+        TRANG_THAI[it.id] = 'loi'; loi++;
+        ghiLog('lỗi · ' + it.relativePath + ' · ' + e.message);
+      }
+      lamXong++; tien();
+      $('#nDone').textContent = xong;
+    }
+  }
+  await Promise.all([congNhan(), congNhan(), congNhan()]);
+
+  DANG_CHAY = false;
+  veLuoi();
+  ghiLog('xong: ' + xong + ' nạp mới · ' + trung + ' đã có sẵn · ' + loi + ' lỗi');
+  if (loi) ghiLog('CÁC TẤM LỖI VẪN CÒN TRÊN ĐĨA — chọn lại thư mục rồi đồng bộ lần nữa, tấm đã nạp sẽ tự nhận là "đã có".');
+  taiKho();
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   5 · Kho hiện có
+   ─────────────────────────────────────────────────────────────────────────── */
+async function taiKho(){
+  try {
+    var s = await (await fetch('/crm/event-photos/stats')).json();
+    if (s.ok){
+      var k = s.kho_su_kien;
+      $('#khoStat').textContent = k.con + ' ảnh · ' + k.so_dot + ' đợt · '
+        + fmtMB(Number(k.tong_byte)) + (Number(k.da_go) ? (' · ' + k.da_go + ' đã gỡ') : '')
+        + ' — (crm_photos khách: ' + s.crm_photos + ')';
+    }
+    var r = await (await fetch('/crm/event-photos?limit=24')).json();
+    var w = $('#khoWrap');
+    if (!r.ok || !r.items.length){ w.innerHTML = '<p class="hint">Kho chưa có ảnh sự kiện nào.</p>'; return; }
+    var h = '<div class="grid">';
+    r.items.forEach(function(x){
+      h += '<div class="tile"><img loading="lazy" src="' + x.thumb_url + '" alt="">'
+        + '<div class="nm" title="' + esc(x.rel_path || x.orig_name) + '">' + esc(x.orig_name) + '</div></div>';
+    });
+    h += '</div>';
+    h += '<p class="hint" style="margin-top:10px">Hiện 24 tấm mới nhất. Gỡ cả đợt: '
+       + '<code>DELETE /crm/event-photos/batch/&lt;mã đợt&gt;</code></p>';
+    w.innerHTML = h;
+  } catch (e){ $('#khoWrap').innerHTML = '<p class="hint">Không đọc được kho: ' + esc(e.message) + '</p>'; }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   6 · Nối dây
+   ─────────────────────────────────────────────────────────────────────────── */
+$('#btnFolder').onclick = function(){ $('#fFolder').click(); };
+$('#btnFiles').onclick  = function(){ $('#fFiles').click(); };
+$('#fFolder').onchange = function(e){ nhanItems(ThietBiAdapter.tuFileList(e.target.files)); };
+$('#fFiles').onchange  = function(e){ nhanItems(ThietBiAdapter.tuFileList(e.target.files)); };
+$('#selAll').onclick  = function(){ ITEMS.forEach(function(it){ CHON[it.id] = 1; }); veLuoi(); };
+$('#selNone').onclick = function(){ CHON = Object.create(null); veLuoi(); };
+$('#btnSync').onclick = dongBo;
+$('#btnReload').onclick = taiKho;
+
+var drop = $('#drop');
+['dragenter','dragover'].forEach(function(ev){
+  drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('on'); });
+});
+['dragleave','drop'].forEach(function(ev){
+  drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('on'); });
+});
+drop.addEventListener('drop', async function(e){
+  try { nhanItems(await ThietBiAdapter.tuDataTransfer(e.dataTransfer)); }
+  catch (err){ ghiLog('kéo thả lỗi: ' + err.message); }
+});
+
+doNangLucEXIF();
+taiKho();
+</script>
+</body>
+</html>

@@ -7,6 +7,7 @@ const importUpdate = require('./import-update');
 const guests = require('./guests');
 const stats = require('./stats');
 const photos = require('./photos');
+const eventPhotos = require('./event-photos');
 const importer = require('./import');
 
 // Which app shell to serve for the authed /crm entry.
@@ -65,6 +66,21 @@ function mount(app) {
   // Rollback lane: the classic shell, regardless of CRM_UI. Same auth gate.
   app.get('/crm/classic', (req, res) => serveShell(req, res, 'crm-app.html'));
 
+  /* E08-D082 · trang KHO ẢNH SỰ KIỆN — trang riêng, không phải nút chìm trong
+     /crm (CR-132). Đi qua đúng `serveShell` nên hưởng nguyên gác cổng `btl` và
+     lối đưa PG về cửa; ảnh phóng sự là dữ liệu của ban tổ chức, PG không mở. */
+  app.get('/crm/kho-anh', (req, res) => serveShell(req, res, 'crm-kho-anh.html'));
+
+  /* Ảnh mẫu cờ xoay EXIF cho phép dò AC-9. Thư mục `views/` KHÔNG nằm trong
+     express.static, nên phải có tuyến riêng — và tuyến này đi cùng gác cổng với
+     trang dùng nó, đừng để một file kiểm thử thành lối vào không khoá. */
+  app.get('/crm/kho-anh/exif6.fixture.js', (req, res) => {
+    const a = auth.currentActor(req);
+    if (!a || (a.role !== 'btl' && a.email !== auth.SMOKE_EMAIL)) return res.status(403).end();
+    res.type('application/javascript');
+    return res.sendFile(path.join(__dirname, 'views', 'exif6.fixture.js'));
+  });
+
   auth.mount(app);
   // E08-D041 — tuyến mở khoá SĐT. Đặt cạnh auth vì nó là gác cổng, không phải
   // dữ liệu khách.
@@ -72,6 +88,9 @@ function mount(app) {
   guests.mount(app, auth.requireCrmAuth, auth.requireRole, auth.requireDoorOrAuth);
   stats.mount(app, auth.requireCrmAuth);
   photos.mount(app, auth.requireCrmAuth, auth.requireRole, auth.requireDoorOrAuth);
+  // E08-D082 — kho ảnh sự kiện. KHÔNG nhận `requireDoorOrAuth`: mọi tuyến ở đây
+  // là `btl`, cửa không có việc gì ở kho ảnh phóng sự.
+  eventPhotos.mount(app, auth.requireCrmAuth, auth.requireRole);
   importer.mount(app, auth.requireCrmAuth, auth.requireRole);
   audit.mount(app, auth.requireCrmAuth, auth.requireRole);
   // E08-D032 — hai lệnh TÁCH BẠCH: /crm/import-update/dry-run và /commit.

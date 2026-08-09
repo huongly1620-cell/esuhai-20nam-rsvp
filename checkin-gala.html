@@ -303,7 +303,7 @@
 <input type="file" id="pick" accept="image/*">
 <script>
 var G=[];var SESSION="gala";var SESS="Gala"; /* E08-D020: SoT = /crm API, filter theo tag buổi */
-var T={"vn": {"ci": "CHECK-IN · Gala", "lich": "📅 Lịch trình", "sodo": "🗺 Sơ đồ", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Gala", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)","sdt_mo":"Xem số","sdt_hoi":"Nhập mật khẩu để xem số điện thoại:","sdt_ok":"Đã mở khoá số điện thoại (30 phút) ✓","sdt_sai":"Mật khẩu không đúng","sdt_net":"Mất mạng — chưa mở khoá được", "makhach": "Mã khách", "ci_fail":"Máy chủ từ chối — CHƯA điểm danh được, thử lại","ci_auth":"Phiên hết hạn — đăng nhập lại rồi điểm danh","ci_404":"Không tìm thấy khách này trên máy chủ","ci_net":"Mất mạng — CHƯA điểm danh được, thử lại","cambtn":"Chụp ảnh khách","pickbtn":"Thêm hình từ thiết bị","cam_up":"Đang tải ảnh…","cam_ok":"Đã lưu ảnh ✓","cam_fail":"Không lưu được ảnh","cam_net":"Lỗi mạng — ảnh chưa lưu. Điểm danh vẫn giữ.","cam_auth":"Phiên đã hết hạn — đăng nhập lại để gửi ảnh","cam_notimg":"File không phải ảnh","cam_heic":"Ảnh dạng HEIC không hiện được. Vào Cài đặt → Camera → Định dạng → chọn Tương thích nhất, rồi chụp lại.","cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in","undo_ask":"Huỷ check-in khách này?\n\nGiờ đến sẽ bị xoá. Check-in lại sẽ ghi giờ mới.","undo_ok":"Đã huỷ check-in ✓","undo_fail":"Máy chủ từ chối — CHƯA huỷ được","undo_net":"Mất mạng — CHƯA huỷ được","undo_role":"Chỉ ban tổ chức mới huỷ được check-in", "close": "Đóng","sch_h3":"Gala · 08.08.2026","sch_loc":"Tầng 3 · Sảnh POLLUX · GEM Center","sch_t1":"Đón tiếp & tham quan","sch_t1s":"Tầng 3 · Sảnh POLLUX","sch_t2":"Khai mạc & Lễ tri ân","sch_t3":"Tầm nhìn 20 năm","sch_t4":"Chụp ảnh lưu niệm","att_du":"Có tham dự","att_khong":"Không tham dự","att_cho":"Chưa xác nhận","quay_h":"Ghi nhận tại quầy","q_anh":"Ảnh khách","q_tang":"🎁 Quà khách tặng","q_tang_ph":"Quà khách tặng là gì? (giỏ hoa, tranh…)","q_camqua":"Chụp ảnh quà","q_dap":"🎀 Quà đáp lễ","q_dap_ph":"Loại quà đáp lễ (引き出物)…","q_dap_note":"⌛ Danh sách quà đáp lễ đang chờ chị Thúy Hà xác nhận","q_note":"📝 Ghi chú","q_note_ph":"Ghi chú thêm tại quầy…","q_save":"Lưu ghi nhận","q_saved":"Đã lưu ghi nhận ✓","q_empty":"Chưa có gì để lưu","q_fail":"Máy chủ từ chối — CHƯA lưu được","q_net":"Mất mạng — CHƯA lưu được","kho_h":"Ảnh đã chụp","q_hist":"Lịch sử tại quầy","q_ob":"OB Esuhai","q_dongdu":"Đông Du","gdtgd":"Gia đình TGĐ","b_noi":"Nội","b_ngoai":"Ngoại","b_tgd":"GĐ TGĐ","b_jp":"🎌 Nhật","rf_ok":"Đã cập nhật số ✓","rf_fail":"Không tải lại được — kiểm tra mạng","nv_khong_ci":"Nhân viên — không cần check-in","nv_dem":"· nhân viên {n} (không tính vào số khách)","upd":"Cập nhật {t}"}, "jp": {"ci": "受付 · ガラ", "lich": "📅 式次第", "sodo": "🗺 座席図", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "ガラ ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)","sdt_mo":"番号を表示","sdt_hoi":"電話番号を表示するにはパスワードを入力してください：","sdt_ok":"電話番号のロックを解除しました（30分）✓","sdt_sai":"パスワードが違います","sdt_net":"通信エラー — 解除できません", "makhach": "ゲストID", "ci_fail":"サーバーが拒否 — チェックインできません、再試行してください","ci_auth":"セッション切れ — 再ログインしてからチェックインしてください","ci_404":"このゲストがサーバーに見つかりません","ci_net":"通信エラー — チェックインできません、再試行してください","cambtn":"ゲストを撮影","pickbtn":"端末から写真を追加","cam_up":"写真をアップロード中…","cam_ok":"写真を保存しました ✓","cam_fail":"写真を保存できません","cam_net":"通信エラー — 写真は保存されていません。チェックインは維持されます。","cam_auth":"セッション切れ — 写真を送るには再ログインしてください","cam_notimg":"画像ファイルではありません","cam_heic":"HEIC形式の画像は表示できません。設定 → カメラ → フォーマット → 「互換性優先」を選択してから撮り直してください。","cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消","undo_ask":"チェックインを取り消しますか？\n\n受付時刻は削除されます。再受付すると新しい時刻になります。","undo_ok":"チェックインを取り消しました ✓","undo_fail":"サーバーが拒否 — 取り消せません","undo_net":"通信エラー — 取り消せません","undo_role":"取消は主催者のみ可能です", "close": "閉じる","sch_h3":"ガラ · 2026.08.08","sch_loc":"3階・POLLUXホール・GEMセンター","sch_t1":"受付・会場見学","sch_t1s":"3階・POLLUXホール","sch_t2":"開会・感謝式典","sch_t3":"20周年ビジョン","sch_t4":"記念撮影","att_du":"出席","att_khong":"欠席","att_cho":"未確認","quay_h":"受付での記録","q_anh":"ゲスト写真","q_tang":"🎁 ゲストからの贈り物","q_tang_ph":"贈り物の内容(花かご・絵画など)","q_camqua":"贈り物を撮影","q_dap":"🎀 引出物","q_dap_ph":"引出物の種類…","q_dap_note":"⌛ 引出物リストは確認待ちです","q_note":"📝 メモ","q_note_ph":"受付でのメモ…","q_save":"記録を保存","q_saved":"記録を保存しました ✓","q_empty":"保存する内容がありません","q_fail":"サーバーが拒否 — 保存できません","q_net":"通信エラー — 保存できません","kho_h":"撮影済みの写真","q_hist":"受付の記録","q_ob":"OB エスハイ","q_dongdu":"ドンズー","gdtgd":"社長ご家族","b_noi":"内","b_ngoai":"外","b_tgd":"社長ご家族","b_jp":"🎌 日本","rf_ok":"更新しました ✓","rf_fail":"更新できません — 通信をご確認ください","nv_khong_ci":"スタッフ — 受付不要","nv_dem":"· スタッフ {n}名（ゲスト数に含めず）","upd":"{t} 更新"}};var LANG=(function(){/* E08 09/08 — MỘT khoá ngôn ngữ CHUNG cho mọi trang.
+var T={"vn": {"ci": "CHECK-IN · Gala", "lich": "📅 Lịch trình", "sodo": "🗺 Sơ đồ", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "bs": "(bổ sung)", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Gala", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)","sdt_mo":"Xem số","sdt_hoi":"Nhập mật khẩu để xem số điện thoại:","sdt_ok":"Đã mở khoá số điện thoại (30 phút) ✓","sdt_sai":"Mật khẩu không đúng","sdt_net":"Mất mạng — chưa mở khoá được", "makhach": "Mã khách", "ci_fail":"Máy chủ từ chối — CHƯA điểm danh được, thử lại","ci_auth":"Phiên hết hạn — đăng nhập lại rồi điểm danh","ci_404":"Không tìm thấy khách này trên máy chủ","ci_net":"Mất mạng — CHƯA điểm danh được, thử lại","cambtn":"Chụp ảnh khách","pickbtn":"Thêm hình từ thiết bị","cam_up":"Đang tải ảnh…","cam_ok":"Đã lưu ảnh ✓","cam_fail":"Không lưu được ảnh","cam_net":"Lỗi mạng — ảnh chưa lưu. Điểm danh vẫn giữ.","cam_auth":"Phiên đã hết hạn — đăng nhập lại để gửi ảnh","cam_notimg":"File không phải ảnh","cam_heic":"Ảnh dạng HEIC không hiện được. Vào Cài đặt → Camera → Định dạng → chọn Tương thích nhất, rồi chụp lại.","cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in","undo_ask":"Huỷ check-in khách này?\n\nGiờ đến sẽ bị xoá. Check-in lại sẽ ghi giờ mới.","undo_ok":"Đã huỷ check-in ✓","undo_fail":"Máy chủ từ chối — CHƯA huỷ được","undo_net":"Mất mạng — CHƯA huỷ được","undo_role":"Chỉ ban tổ chức mới huỷ được check-in", "close": "Đóng","sch_h3":"Gala · 08.08.2026","sch_loc":"Tầng 3 · Sảnh POLLUX · GEM Center","sch_t1":"Đón tiếp & tham quan","sch_t1s":"Tầng 3 · Sảnh POLLUX","sch_t2":"Khai mạc & Lễ tri ân","sch_t3":"Tầm nhìn 20 năm","sch_t4":"Chụp ảnh lưu niệm","att_du":"Có tham dự","att_khong":"Không tham dự","att_cho":"Chưa xác nhận","quay_h":"Ghi nhận tại quầy","q_anh":"Ảnh khách","q_tang":"🎁 Quà khách tặng","q_tang_ph":"Quà khách tặng là gì? (giỏ hoa, tranh…)","q_camqua":"Chụp ảnh quà","q_dap":"🎀 Quà đáp lễ","q_dap_ph":"Loại quà đáp lễ (引き出物)…","q_dap_note":"⌛ Danh sách quà đáp lễ đang chờ chị Thúy Hà xác nhận","q_note":"📝 Ghi chú","q_note_ph":"Ghi chú thêm tại quầy…","q_save":"Lưu ghi nhận","q_saved":"Đã lưu ghi nhận ✓","q_empty":"Chưa có gì để lưu","q_fail":"Máy chủ từ chối — CHƯA lưu được","q_net":"Mất mạng — CHƯA lưu được","kho_h":"Ảnh đã chụp","q_hist":"Lịch sử tại quầy","q_ob":"OB Esuhai","q_dongdu":"Đông Du","gdtgd":"Gia đình TGĐ","b_noi":"Nội","b_ngoai":"Ngoại","b_tgd":"GĐ TGĐ","b_jp":"🎌 Nhật","rf_ok":"Đã cập nhật số ✓","rf_fail":"Không tải lại được — kiểm tra mạng","nv_khong_ci":"Nhân viên — không cần check-in","nv_dem":"· nhân viên {n} (không tính vào số khách)","upd":"Cập nhật {t}"}, "jp": {"ci": "受付 · ガラ", "lich": "📅 式次第", "sodo": "🗺 座席図", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "bs": "（後日追加）", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "ガラ ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)","sdt_mo":"番号を表示","sdt_hoi":"電話番号を表示するにはパスワードを入力してください：","sdt_ok":"電話番号のロックを解除しました（30分）✓","sdt_sai":"パスワードが違います","sdt_net":"通信エラー — 解除できません", "makhach": "ゲストID", "ci_fail":"サーバーが拒否 — チェックインできません、再試行してください","ci_auth":"セッション切れ — 再ログインしてからチェックインしてください","ci_404":"このゲストがサーバーに見つかりません","ci_net":"通信エラー — チェックインできません、再試行してください","cambtn":"ゲストを撮影","pickbtn":"端末から写真を追加","cam_up":"写真をアップロード中…","cam_ok":"写真を保存しました ✓","cam_fail":"写真を保存できません","cam_net":"通信エラー — 写真は保存されていません。チェックインは維持されます。","cam_auth":"セッション切れ — 写真を送るには再ログインしてください","cam_notimg":"画像ファイルではありません","cam_heic":"HEIC形式の画像は表示できません。設定 → カメラ → フォーマット → 「互換性優先」を選択してから撮り直してください。","cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消","undo_ask":"チェックインを取り消しますか？\n\n受付時刻は削除されます。再受付すると新しい時刻になります。","undo_ok":"チェックインを取り消しました ✓","undo_fail":"サーバーが拒否 — 取り消せません","undo_net":"通信エラー — 取り消せません","undo_role":"取消は主催者のみ可能です", "close": "閉じる","sch_h3":"ガラ · 2026.08.08","sch_loc":"3階・POLLUXホール・GEMセンター","sch_t1":"受付・会場見学","sch_t1s":"3階・POLLUXホール","sch_t2":"開会・感謝式典","sch_t3":"20周年ビジョン","sch_t4":"記念撮影","att_du":"出席","att_khong":"欠席","att_cho":"未確認","quay_h":"受付での記録","q_anh":"ゲスト写真","q_tang":"🎁 ゲストからの贈り物","q_tang_ph":"贈り物の内容(花かご・絵画など)","q_camqua":"贈り物を撮影","q_dap":"🎀 引出物","q_dap_ph":"引出物の種類…","q_dap_note":"⌛ 引出物リストは確認待ちです","q_note":"📝 メモ","q_note_ph":"受付でのメモ…","q_save":"記録を保存","q_saved":"記録を保存しました ✓","q_empty":"保存する内容がありません","q_fail":"サーバーが拒否 — 保存できません","q_net":"通信エラー — 保存できません","kho_h":"撮影済みの写真","q_hist":"受付の記録","q_ob":"OB エスハイ","q_dongdu":"ドンズー","gdtgd":"社長ご家族","b_noi":"内","b_ngoai":"外","b_tgd":"社長ご家族","b_jp":"🎌 日本","rf_ok":"更新しました ✓","rf_fail":"更新できません — 通信をご確認ください","nv_khong_ci":"スタッフ — 受付不要","nv_dem":"· スタッフ {n}名（ゲスト数に含めず）","upd":"{t} 更新"}};var LANG=(function(){/* E08 09/08 — MỘT khoá ngôn ngữ CHUNG cho mọi trang.
    Sponsor: "trang trước là ngôn ngữ gì thì qua trang khác cũng phải vậy, cho
    trôi mạch tư duy, không bị ngắt nhịp đi tìm nút chuyển ngôn ngữ".
    Trước đây hai cửa lưu `ci_lang` còn /crm lưu `crm_lang` ⇒ PG chọn 日本語 ở cửa,
@@ -407,6 +407,12 @@ function ini(n){var p=String(n||"").replace(/^(Bà|Ông|Cô|Chú|Anh|Chị|Em|Th
 function isKanji(n){return /[぀-ヿ㐀-䶿一-鿿]/.test(String(n||""));}
 function came(g){return g._came||"";}
 function fmt(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+/* E08-D085 việc D · nhãn cho BADGE trong danh sách. Cố ý KHÔNG sửa fmtCame():
+   hàm đó còn phục vụ hồ sơ khách, nơi phải luôn hiện giờ thật (đó là "log"
+   Sponsor muốn giữ). */
+function nhanDaDen(cm, ngaySK){
+  return lechNgaySuKien(cm, ngaySK) ? (" "+t("bs")) : ("<b>"+fmtCame(cm)+"</b>");
+}
 function fmtCame(c){return c&&c!=="1"?fmt(c):"✓";}
 var st={q:"",quick:"",f:"",ban:"",pt:""},curId=null;
 /* E08-D038 — nhân viên KHÔNG vào số báo cáo BTC (Sponsor chốt). Đọc từ tagraw
@@ -684,7 +690,11 @@ function sxDong(a,b){
      || cmpO(bgHien(a.ghe),bgHien(b.ghe))
      || cmpChu(String(a.name||""),String(b.name||""));
 }
-function renderList(){quickCounts();napBanSelect();var rows=G.filter(match).filter(function(g){return banKhop(g.banKey||g.table||g.seat,st.ban);}).filter(function(g){return ptKhop(g.handler,st.pt);});
+function renderList(){
+  /* Tính trên G — TOÀN BỘ roster của buổi này, KHÔNG phải rows đã lọc bên
+     dưới. Lọc rồi mới tính thì đáp án đổi mỗi lần gõ tìm kiếm. Mỗi cửa tính
+     riêng trên roster của mình, độc lập với /crm và với cửa kia. */
+  var NGAY_SK_CUA=suyNgaySuKien(G.map(function(x){return x._came;}));quickCounts();napBanSelect();var rows=G.filter(match).filter(function(g){return banKhop(g.banKey||g.table||g.seat,st.ban);}).filter(function(g){return ptKhop(g.handler,st.pt);});
  rows.sort(sxDong);
  $("#hint").textContent=(st.q||st.quick||st.f||st.ban||st.pt)?t("res",{n:rows.length}):t("total",{n:G.length});
  $("#list").innerHTML=rows.map(function(g){var cm=came(g);var bn=bgHien(g.table),gh=bgHien(g.ghe);
@@ -731,7 +741,7 @@ function renderList(){quickCounts();napBanSelect();var rows=G.filter(match).filt
         Phương án xuống dòng không chạm được nó (chỉ sửa nhánh «đã đến»), nên
         đây là thứ duy nhất đóng được AC-6b. «Chưa đến» vẫn đọc được: không có
         huy hiệu xanh nghĩa là chưa đến — đúng quy ước D033 dùng cho nhóm đông. */
-     +(cm?'<span class="ci-y">O '+t("btn_came")+'<b>'+fmtCame(cm)+'</b></span>':'')
+     +(cm?'<span class="ci-y">O '+t("btn_came")+nhanDaDen(cm,NGAY_SK_CUA)+'</span>':'')
    +'</div></div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
 
 /* E08-D028 AC-C — chụp ảnh khách tại cửa → kệ MinIO.
@@ -1189,6 +1199,46 @@ if (typeof ResizeObserver === "function") {
 } else {
   addEventListener("resize", dongBoChieuCaoHeader);
   addEventListener("orientationchange", dongBoChieuCaoHeader);
+}
+
+/* ── E08-D085 việc D · suy NGÀY SỰ KIỆN từ chính dữ liệu check-in ──────────
+   Vì sao không đọc từ cấu hình: ngày sự kiện hiện chỉ sống trong localStorage
+   của TỪNG trình duyệt (sheet "Cài đặt sự kiện"), nên hai người BTL sẽ thấy hai
+   kết quả khác nhau cho cùng một khách — đúng loại mâu thuẫn vé này sinh ra để
+   dẹp. Suy từ dữ liệu thì mọi màn hình tính ra cùng một đáp án từ cùng một tập.
+
+   CHẶN THEO HÌNH DẠNG CHUỖI, không chỉ isNaN. Hai cửa có fallback _came="1"
+   khi khách đã đến mà không có mốc giờ; mà new Date("1") KHÔNG phải Invalid
+   Date — nó ra 31/12/2000. Chỉ lọc bằng isNaN thì "1" được đếm như một ngày
+   thật, và nếu nhiều dòng dính fallback đó thì chính nó thành "đa số".
+
+   NỢ ĐÃ BIẾT: phép đa số chỉ đúng khi dữ liệu có ĐÚNG MỘT sự kiện. Khi CRM đa
+   sự kiện hạ cánh (project crm-multi-event), hàm này phải đổi sang lọc theo
+   event_id — nếu không, sự kiện đông hơn sẽ quyết định ngày và toàn bộ check-in
+   của sự kiện kia bị dán nhãn "bổ sung". Ghi ở đây để người sau không phải đoán
+   vì sao nó chọn đa số. */
+function suyNgaySuKien(dsISO){
+  var dem={};
+  (dsISO||[]).forEach(function(iso){
+    if(!iso) return;
+    if(!/^\d{4}-\d{2}-\d{2}/.test(String(iso))) return;
+    var d=new Date(iso);
+    if(isNaN(d.getTime())) return;
+    var k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    dem[k]=(dem[k]||0)+1;
+  });
+  var ngay=null, dinh=0;
+  Object.keys(dem).sort().forEach(function(k){ if(dem[k]>dinh){dinh=dem[k];ngay=k;} });
+  return ngay;
+}
+/* Trả true khi mốc giờ HỢP LỆ và LỆCH ngày sự kiện. Mốc không hợp lệ (rỗng,
+   "1", rác) trả false — giữ nguyên hành vi cũ, không dán nhãn mới lên nó. */
+function lechNgaySuKien(iso, ngaySK){
+  if(!ngaySK || !iso) return false;
+  if(!/^\d{4}-\d{2}-\d{2}/.test(String(iso))) return false;
+  var d=new Date(iso); if(isNaN(d.getTime())) return false;
+  var k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  return k!==ngaySK;
 }
 function setLang(l){
 LANG=l;localStorage.setItem("esuhai_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";

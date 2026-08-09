@@ -1566,7 +1566,7 @@ var PF_ANH=[],PF_GHIM="";
    var inter=(j.interactions||[]).map(function(x){return '<div class="inter"><div>'+esc(x.body)+'</div><div class="m">'+esc(x.kind)+' · '+esc(x.actor_email)+' · '+esc(fmt(x.created_at))+'</div></div>';}).join("");
    $("#sheetBody").innerHTML=
      '<div class="pf-av'+(vipOf(g)?' is-vip':'')+'">'+(pu?'<img src="'+esc(pu)+'" loading="lazy" onload="imgFit(this)" onerror="this.remove()">':esc(ini(g.full_name)))+'</div>'
-    +(vipOf(g)?'<div class="pf-vip-wrap"><span class="pf-vip">'+esc(vipOf(g))+'</span></div>':'')
+    +(vipLbl(g)?'<div class="pf-vip-wrap"><span class="pf-vip">'+esc(vipLbl(g))+'</span></div>':'')
     +'<div class="pf-nm">'+pairVJ(g.full_name,g.name_jp)+(g.from_rsvp?' <span class="tag rsvp">RSVP</span>':'')+'</div><div class="pf-rl">'+(pairVJ([g.org,g.title].filter(Boolean).join(" · "),[g.org_jp,g.title_jp].filter(Boolean).join(" · "))||"—")+'</div>'
     +'<div style="margin:8px 0"><span class="attb '+(attOf(j.guest)||"cho")+'">'+esc(attLbl(attOf(j.guest)))+'</span>'
      +(j.guest&&j.guest.att_override?' <span class="hint" style="font-size:.7rem">('+tt("att_manual")+')</span>':'')+'</div>'

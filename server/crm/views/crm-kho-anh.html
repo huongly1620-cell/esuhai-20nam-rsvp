@@ -523,7 +523,8 @@ var T = {
     dot_tatca:'Tất cả',
     kho_stat:'{n} ảnh · {d} đợt · {mb}',
     kho_stat_go:'{n} ảnh · {d} đợt · {mb} · {g} đã gỡ',
-    kho_err:'Không đọc được kho:',
+    kho_err:'Không đọc được kho ảnh. Mạng chớp thì bấm thử lại giúp em.',
+    kho_cam:'Tài khoản này không có quyền xem kho ảnh sự kiện.',
     kt_dang_chay:'⏳ Đang kiểm tra trình duyệt…',
     kt_hong_h:'Trình duyệt này làm ảnh bị xoay ngang.',
     kt_hong_b:'Nếu tải lên bằng đây, ảnh chụp dọc sẽ nằm ngang trong kho và không sửa lại được. <b>Nút Đồng bộ đã tạm khoá.</b> Chị mở lại trang này bằng Chrome hoặc Safari bản mới giúp em, rồi thử lại.',
@@ -562,7 +563,8 @@ var T = {
     dot_tatca:'すべて',
     kho_stat:'{n}枚 · {d}回 · {mb}',
     kho_stat_go:'{n}枚 · {d}回 · {mb} · {g}件削除済み',
-    kho_err:'保管庫を読めません：',
+    kho_err:'写真保管庫を読み込めません。通信が不安定な場合は再試行してください。',
+    kho_cam:'このアカウントにはイベント写真保管庫の閲覧権限がありません。',
     kt_dang_chay:'⏳ ブラウザを確認しています…',
     kt_hong_h:'このブラウザでは写真が横向きになってしまいます。',
     kt_hong_b:'このまま取り込むと、縦向きの写真が横向きのまま保管され、後から直せません。<b>同期ボタンは一時的にロックしました。</b>最新のChromeまたはSafariでこのページを開き直してから、もう一度お試しください。',
@@ -1529,8 +1531,12 @@ async function napTrangKho(dauLai){
   try {
     var qs = '?limit=' + KHO_TRANG + '&offset=' + KHO.length
            + (KHO_DOT ? '&batch=' + encodeURIComponent(KHO_DOT) : '');
-    var r = await (await fetch('/crm/event-photos' + qs)).json();
-    if (!r || !r.ok) throw new Error('list');
+    var res = await fetch('/crm/event-photos' + qs);
+    /* 403 là câu trả lời KHÁC hẳn mạng chớp: bấm thử lại bao nhiêu lần cũng thế.
+       Nói đúng chuyện đó và không mời bấm lại. */
+    if (res.status === 403){ var q = new Error(''); q.quyen = true; throw q; }
+    var r = await res.json();
+    if (!r || !r.ok) throw new Error('');
     var them = r.items || [];
     KHO = KHO.concat(them);
     /* "Hết" đo bằng CHÍNH số ảnh trang này trả về, không bằng so với stats: khi
@@ -1543,9 +1549,16 @@ async function napTrangKho(dauLai){
   } catch (e){
     KHO_HET = true;
     var c = $('#khoChan');
-    c.innerHTML = '<p class="bad" style="margin:0">' + tt('kho_err') + ' ' + esc(e.message) + '</p>';
-    themNutThuLai(c.querySelector('.bad'), function(){ KHO_HET = false; napTrangKho(false); });
-    KHO_DANG = false; veGhiChu(); return;
+    /* D090 · KHÔNG in e.message ra màn. Bản đầu ném Error('list') rồi đưa thẳng
+       thông điệp vào giao diện, nên trên prod nó hiện "Không đọc được kho: list"
+       — đúng loại chữ máy mà D086 đã dọn khỏi chính trang này một lần rồi. */
+    var camQuyen = !!(e && e.quyen);
+    c.innerHTML = '<p class="bad" style="margin:0">' + tt(camQuyen ? 'kho_cam' : 'kho_err') + '</p>';
+    if (!camQuyen) themNutThuLai(c.querySelector('.bad'), function(){ KHO_HET = false; napTrangKho(false); });
+    /* Hỏng thì ĐỪNG nói "đã hiện đủ 0 ảnh" ngay phía trên dòng báo lỗi: hai câu
+       chọi nhau, và câu tự tin hơn là câu sai. */
+    if ($('#khoNote')) $('#khoNote').textContent = '';
+    KHO_DANG = false; return;
   }
   KHO_DANG = false; veChan(); veGhiChu();
 }
@@ -1560,6 +1573,9 @@ async function taiKho(){
       veStat();
     }
   } catch (_){ /* stats hỏng thì thôi, không được vì thế mà không hiện ảnh nào */ }
+  /* Fail-safe khuôn D071: stats không về thì XOÁ chỗ đó đi, đừng để dấu ba chấm
+     đứng vĩnh viễn — người đọc sẽ tưởng nó còn đang tải. */
+  if (!KHO_STAT) $('#khoStat').textContent = '';
   return napTrangKho(true);
 }
 

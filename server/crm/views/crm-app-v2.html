@@ -7,7 +7,7 @@
 <title>CRM Đón tiếp · ESUHAI 20 năm</title>
 <!-- R0 (Hương Ly) · UX v3 trên /crm · GIỮ NGUYÊN API của Kha (auth/list/detail/check-in/photo/PATCH/import/audit). -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@500;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     /* ── DARK (mặc định) ── */
@@ -190,16 +190,30 @@
      vào viền. */
   .vip-chip{
     position:absolute;top:-9px;right:16px;z-index:3;
-    display:inline-flex;align-items:center;gap:4px;
-    padding:3px 10px;border-radius:6px;
-    font-size:.6rem;font-weight:800;letter-spacing:.06em;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:3px;
+    padding:2px 9px;border-radius:4px;      /* 6→4px: góc gắt, bớt chất "mềm" */
+    /* FONT CỨNG (09/08 chiều) — trước đây chip không đặt font-family nên mượn
+       "Be Vietnam Pro" của body: thân tròn, bụng rộng, đọc ra "mềm" chứ không ra
+       huy hiệu dập. Tệ hơn: link Google Fonts (dòng 10) chỉ nạp Be Vietnam Pro
+       tới weight 700 mà chip đặt 800 ⇒ trình duyệt GIẢ LẬP nét đậm (faux bold),
+       nhoè viền chứ không phải nét dầy thật. Oswald là grotesque hẹp, thân thẳng,
+       có bộ Việt đầy đủ trên Google Fonts (không rơi glyph khi nhãn có dấu, vd
+       "VIP2 - HÀNG 3"), và 700 là nét THẬT nên đanh hẳn. */
+    font-family:"Oswald","Arial Narrow",system-ui,sans-serif;
+    font-size:.52rem;                       /* .6→.52: nhỏ lại theo yêu cầu */
+    font-weight:700;                        /* nét THẬT của Oswald, không faux bold */
+    letter-spacing:.085em;                  /* hẹp + nhỏ thì phải nới, kẻo chữ bết */
+    white-space:nowrap;
     color:#2a1c02;
     background:linear-gradient(160deg,#fff7dd 0%,var(--gold) 42%,var(--gold-d) 100%);
     border:1px solid var(--gold-b);
     box-shadow:0 0 0 3px var(--card),0 3px 9px rgba(184,150,63,.42),
       inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 3px rgba(110,74,10,.28);
   }
-  .vip-chip::before{content:"★";font-size:.92em;line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+  /* ★ không có trong Oswald ⇒ trình duyệt tự lùi về font hệ thống. Ghim hẳn font
+     hệ thống + to hơn một nhịp (chữ đã nhỏ đi, sao giữ .92em sẽ teo theo). */
+  .vip-chip::before{content:"★";font-family:system-ui,"Apple Color Emoji",sans-serif;
+    font-size:1.02em;line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.5)}
   /* dải sáng hắt lên nửa trên chip — chất "bóng bẩy" xi mạ, không phải chữ phẳng */
   .vip-chip::after{
     content:"";position:absolute;left:2px;right:2px;top:1px;height:48%;

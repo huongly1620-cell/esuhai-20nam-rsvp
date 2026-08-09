@@ -97,6 +97,9 @@ a{color:inherit}
 .top5 .t5chip{border:1px solid rgba(216,184,118,.4);background:rgba(216,184,118,.08);color:var(--gold-b);
   border-radius:99px;padding:4px 9px;font-weight:800;cursor:pointer;font-size:.68rem}
 .top5 .t5chip:hover{background:rgba(216,184,118,.18)}
+.top5 .t5chip.on{background:rgba(216,184,118,.32);border-color:var(--gold);color:#fff;
+  box-shadow:0 0 0 1px rgba(216,184,118,.45)}
+.tbl.focus-ban{box-shadow:0 0 0 3px rgba(216,184,118,.55),0 0 18px 4px rgba(216,184,118,.28)}
 
 /* ---------- legend ---------- */
 .leg{display:flex;gap:8px 16px;flex-wrap:wrap;margin:8px 14px;padding:9px 14px;font-size:.68rem;
@@ -141,6 +144,7 @@ a{color:inherit}
 .tbl::after{content:"";position:absolute;inset:-6px;border-radius:inherit;
   border:1.5px solid var(--ring-color,var(--tierA-ring));opacity:.6;pointer-events:none}
 .tbl.perfect{border-color:rgba(255,255,255,.75)}
+.tbl.dim{opacity:.18;filter:grayscale(.35)}
 .tbl.perfect::after{border:2.5px solid var(--ok);opacity:1;
   box-shadow:0 0 0 4px rgba(67,224,141,.28),0 0 22px 6px rgba(67,224,141,.5);
   animation:perfectGlow 2.6s ease-in-out infinite}
@@ -174,12 +178,16 @@ a{color:inherit}
 .seat.no{background:var(--no);color:#fff}
 .seat.empty{background:rgba(255,255,255,.03);border:1.5px dashed rgba(255,255,255,.4);color:#8f886f;cursor:default;
   box-shadow:none}
+/* Chip «Chỉ bàn còn trống»: ghế trống được nhấn (vàng) để PG nhìn thấy chỗ còn xếp được —
+   trước đây chỉ mờ bàn đủ ghế, ghế đỏ trên bàn còn trống vẫn sáng → nhìn như filter hỏng. */
+.seat.empty.focus-free{opacity:1;border-color:var(--gold-b);background:rgba(216,184,118,.18);color:var(--gold-b);
+  box-shadow:0 0 0 2px rgba(216,184,118,.35)}
 .seat.nv{box-shadow:0 0 0 2px var(--nv),0 1px 3px rgba(0,0,0,.35)}
 .seat.dup{box-shadow:0 0 0 2px #ff8a3d,0 1px 3px rgba(0,0,0,.35)}
 .seat.overflow{box-shadow:0 0 0 2px #ff3d6a,0 1px 3px rgba(0,0,0,.35)}
 .seat.on{outline:2px solid #fff;z-index:3;transform:scale(1.18)}
 .seat:hover{transform:scale(1.15)}
-.seat.dim{opacity:.25}
+.seat.dim{opacity:.18}
 .seat.match{outline:2px solid var(--gold-b);z-index:3;transform:scale(1.25);
   box-shadow:0 0 0 4px rgba(216,184,118,.3),0 1px 3px rgba(0,0,0,.35)}
 .seat.flash{animation:flashpulse 1.7s ease-out}
@@ -212,8 +220,13 @@ a{color:inherit}
   box-shadow:-16px 0 40px rgba(0,0,0,.4)}
 .panel.show{transform:none}
 .panel .avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;position:relative;overflow:hidden;
-  font-family:"Playfair Display",serif;font-weight:700;font-size:1.2rem;color:#08111F;margin-bottom:10px}
+  font-family:"Playfair Display",serif;font-weight:700;font-size:1.2rem;color:#08111F;margin-bottom:10px;
+  transition:width .18s ease,height .18s ease}
 .panel .avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
+/* Chỉ khách CÓ ảnh thật mới phóng to — khung to mà bên trong là chữ cái đầu tên thì
+   không giúp nhận mặt, chỉ đẩy các dòng thông tin xuống. Ảnh lỗi ⇒ JS gỡ lại lớp này. */
+.panel .avatar.haspic{width:clamp(132px,38vw,164px);height:clamp(132px,38vw,164px);font-size:3rem;margin-bottom:14px;
+  box-shadow:0 0 0 3px rgba(216,184,118,.38),0 10px 26px rgba(0,0,0,.45)}
 .panel h2{font-family:"Playfair Display",Georgia,serif;font-size:1.2rem;margin:0 0 4px;font-weight:700}
 .panel .sub{color:var(--muted);font-size:.8rem;margin-bottom:14px}
 .panel .badge{display:inline-block;font-size:.66rem;font-weight:800;border-radius:99px;padding:3px 10px;margin-right:6px}
@@ -330,7 +343,7 @@ var PAD_TOP=46, PAD_BOTTOM=18; // breathing room so front-row labels clear the s
 var META=null, G=[], byKey={}, scale=1, pollBusy=false, sel=null;
 var prevArrived={}; // id -> bool, to detect fresh check-ins between polls
 var firstLoadDone=false;
-var onlyFree=false, qText="", kpiFilter=""; // kpiFilter: ""=all, "ok"|"no"|"trong" = only highlight that seat state
+var onlyFree=false, qText="", kpiFilter="", focusBan=""; // kpiFilter: ""=all, "ok"|"no"|"trong"; focusBan = số bàn từ chip Top trống (toggle)
 
 function $(s){return document.querySelector(s);}
 function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
@@ -464,6 +477,9 @@ function render(){
     var kpiTableMiss = kpiFilter==="ok" ? (tOk+tOkOv)===0 :
       kpiFilter==="no" ? (tNo+tNoOv)===0 :
       kpiFilter==="trong" ? tEmpty===0 : false;
+    // Chip «VIP24 · 6»: trước chỉ scroll+nháy nhãn (gần như không thấy) → giờ ẩn/mờ bàn khác
+    var banFocusMiss = !!focusBan && String(ban)!==String(focusBan);
+    var banFocusHit = !!focusBan && String(ban)===String(focusBan);
 
     // Table plate — every one of the 34 VIP tables is drawn as a PERFECT CIRCLE in the source
     // CAD (measured directly off pollux.png: the pink disc's own bounding box is square and
@@ -479,6 +495,11 @@ function render(){
     tbl.style.left=t.x+"px"; tbl.style.top=ty+"px";
     tbl.style.setProperty("--ring-color", t.vip==="yellow" ? "var(--tierB-ring)" : "var(--tierA-ring)");
     if(perfect) tbl.classList.add("perfect");
+    // onlyFree: bàn không còn ghế trống → mờ cả đĩa bàn (trước chỉ mờ nhãn/aura,
+    // đĩa vẫn sáng nên nhìn như filter không ăn).
+    var tableNoFree = onlyFree && tEmpty===0 && tCap>0;
+    if(tableNoFree || kpiTableMiss || banFocusMiss) tbl.classList.add("dim");
+    if(banFocusHit) tbl.classList.add("focus-ban");
     root.appendChild(tbl);
 
     // aura ring (macro heat) — conic gradient donut via mask
@@ -495,7 +516,7 @@ function render(){
     }
     aura.style.webkitMask="radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px))";
     aura.style.mask="radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px))";
-    aura.style.opacity= ((onlyFree && tEmpty===0 && tCap>0) || kpiTableMiss) ? .18 : .85;
+    aura.style.opacity= (tableNoFree || kpiTableMiss || banFocusMiss) ? .12 : .85;
     root.appendChild(aura);
 
     // label + free-seat pill (the core "wow": literal, honest count)
@@ -507,13 +528,10 @@ function render(){
     lab.innerHTML='<div class="tname">'+esc(t.label||("VIP"+ban))+'</div>'+
       '<div class="tfree" data-s="'+freeState+'">'+esc(freeTxt)+'</div>';
     if(hasSearch && !tableMatches) lab.classList.add("dim");
-    if(tableMatches) lab.classList.add("hl");
-    if(onlyFree && tEmpty===0 && tCap>0) lab.classList.add("dim");
-    // slicer: mờ nhãn của bàn không còn ghế nào khớp bộ lọc đang bấm
-    var kpiTableMiss = kpiFilter==="ok" ? (tOk+tOkOv)===0 :
-      kpiFilter==="no" ? (tNo+tNoOv)===0 :
-      kpiFilter==="trong" ? tEmpty===0 : false;
-    if(kpiTableMiss) lab.classList.add("dim");
+    if(tableMatches || banFocusHit) lab.classList.add("hl");
+    if(tableNoFree) lab.classList.add("dim");
+    // slicer KPI: mờ nhãn bàn không còn ghế khớp bộ lọc (đã tính kpiTableMiss phía trên)
+    if(kpiTableMiss || banFocusMiss) lab.classList.add("dim");
     lab.setAttribute("data-ban", ban);
     root.appendChild(lab);
 
@@ -539,7 +557,6 @@ function render(){
         x=t.x+Math.cos(oAng)*(seatRingR+22); y=ty+Math.sin(oAng)*(seatRingR+22);
       }
       var gs=byKey[seatKey(ban,s2)]||[];
-      var dimSeat = (onlyFree && tEmpty===0 && tCap>0);
 
       if(!gs.length){
         var el=document.createElement("button");
@@ -548,8 +565,10 @@ function render(){
         el.textContent=String(s2);
         el.title="Ghế trống · Bàn "+ban+" · Ghế "+s2+" · chưa xếp khách";
         if(hasSearch && !tableMatches) el.classList.add("dim");
-        if(dimSeat) el.classList.add("dim");
-        if(kpiFilter==="ok"||kpiFilter==="no") el.classList.add("dim"); // slicer: ghế trống không phải "đã đến" hay "chưa đến"
+        if(tableNoFree || banFocusMiss) el.classList.add("dim");
+        // onlyFree hoặc KPI Trống: ghế trống là thứ cần nhìn — nhấn vàng
+        if((onlyFree || kpiFilter==="trong") && tEmpty>0 && !tableNoFree && !banFocusMiss) el.classList.add("focus-free");
+        if(kpiFilter==="ok"||kpiFilter==="no") el.classList.add("dim"); // slicer: ghế trống không phải "đã đến"/"chưa đến"
         root.appendChild(el);
         continue;
       }
@@ -575,8 +594,11 @@ function render(){
         var qMatch = hasSearch && matchesSearch(g, ban);
         if(hasSearch && !tableMatches && !qMatch) el.classList.add("dim");
         if(qMatch) el.classList.add("match");
-        if(dimSeat) el.classList.add("dim");
-        // slicer: "Đã đến"/"Chưa đến" chỉ nổi bật đúng nhóm bấm chọn; "Trống" thì ghế có khách luôn mờ
+        if(tableNoFree || banFocusMiss) el.classList.add("dim");
+        // onlyFree: mờ ghế ĐÃ XẾP (đỏ/xanh) kể cả trên bàn còn trống — chỉ để ghế xám nổi.
+        // Trước đây ghế đỏ vẫn sáng → PG tưởng filter hỏng khi chưa ai check-in.
+        if(onlyFree) el.classList.add("dim");
+        // slicer KPI: "Đã đến"/"Chưa đến" chỉ nổi đúng nhóm; "Trống" thì ghế có khách luôn mờ
         if(kpiFilter==="trong" || (kpiFilter==="ok" && !ok) || (kpiFilter==="no" && ok)) el.classList.add("dim");
         if(sel && sel.ban===String(ban) && sel.ghe===String(s2) && String(sel.id)===String(g.id)) el.classList.add("on");
         nextArrived[g.id]=ok;
@@ -601,8 +623,13 @@ function render(){
   t5.innerHTML='<b>Còn trống nhiều nhất:</b>'+(freeList.length?"":'<span style="color:var(--muted2)">không bàn nào</span>');
   freeList.slice(0,6).forEach(function(f){
     var c=document.createElement("button");
-    c.type="button"; c.className="t5chip"; c.textContent=(f.label||("Bàn "+f.ban))+" · "+f.free;
+    c.type="button";
+    c.className="t5chip"+(focusBan && String(f.ban)===String(focusBan)?" on":"");
+    c.textContent=(f.label||("Bàn "+f.ban))+" · "+f.free;
     c.setAttribute("data-ban", f.ban);
+    c.title=focusBan && String(f.ban)===String(focusBan)
+      ? "Đang lọc bàn này — bấm lại để hiện tất cả"
+      : "Chỉ hiện bàn này trên sơ đồ";
     t5.appendChild(c);
   });
 
@@ -625,9 +652,21 @@ function openPanel(g, ban, ghe){
   // Ảnh hồ sơ (cùng nguồn `/crm/photos/:id/thumb|preview` mà cửa check-in đã dùng) —
   // ảnh mất/chưa chụp thì tự rơi về chữ cái đầu tên (onerror gỡ <img>, chữ cái đã
   // nằm sẵn phía dưới nên không có khoảng trống trắng nào lộ ra).
-  av.innerHTML = photoUrl
-    ? '<img src="'+esc(photoUrl)+'" loading="lazy" decoding="async" onerror="this.remove()">'+esc(ini)
-    : esc(ini);
+  av.classList.toggle("haspic", !!photoUrl);
+  av.textContent = ini;
+  if(photoUrl){
+    var im=document.createElement("img");
+    im.loading="lazy"; im.decoding="async";
+    // Gắn onerror bằng JS chứ KHÔNG viết onerror="..." trong chuỗi HTML: cả script này nằm
+    // trong IIFE nên handler dạng chữ chạy ở scope global sẽ không thấy hàm ("is not defined",
+    // đã đo được bằng ảnh 404) ⇒ ảnh hỏng sẽ kẹt lại làm ô trống to đùng.
+    im.onerror=function(){
+      if(im.parentNode!==av) return; // panel đã chuyển sang khách khác — đừng thu nhỏ nhầm
+      im.remove(); av.classList.remove("haspic");
+    };
+    im.src=photoUrl;
+    av.appendChild(im);
+  }
   av.style.background=ok?"var(--ok)":"var(--gold-b)"; av.style.color="#141414";
   $("#pName").textContent=g.full_name||"—";
   $("#pSub").textContent=[g.org,g.title].filter(Boolean).join(" · ")||"—";
@@ -656,11 +695,15 @@ function closePanel(){
 }
 
 function focusTable(ban){
-  var lab=$("#seats").querySelector('.tbl-lab[data-ban="'+CSS.escape(String(ban))+'"]');
+  // Không dùng scrollIntoView: #seats đang scale() nên browser hay cuộn lệch / không thấy gì.
+  var lab=$("#seats").querySelector('.tbl-lab[data-ban="'+String(ban).replace(/"/g,"")+'"]');
   if(!lab) return;
-  lab.scrollIntoView({behavior:"smooth", block:"center", inline:"center"});
-  lab.classList.add("hl");
-  setTimeout(function(){ lab.classList.remove("hl"); },2200);
+  var wrap=$("#wrap");
+  var lr=lab.getBoundingClientRect();
+  var wr=wrap.getBoundingClientRect();
+  var left=wrap.scrollLeft+(lr.left+lr.width/2)-(wr.left+wr.width/2);
+  var top=wrap.scrollTop+(lr.top+lr.height/2)-(wr.top+wr.height/2);
+  wrap.scrollTo({left:Math.max(0,left), top:Math.max(0,top), behavior:"smooth"});
 }
 
 function applyZoom(){
@@ -737,7 +780,16 @@ $("#kpiRow").addEventListener("click", function(e){
 });
 $("#top5").addEventListener("click", function(e){
   var c=e.target.closest(".t5chip"); if(!c) return;
-  focusTable(c.getAttribute("data-ban"));
+  var ban=c.getAttribute("data-ban");
+  // Toggle slicer: bấm VIP24 → chỉ còn bàn đó; bấm lại → bỏ lọc
+  focusBan = (focusBan && String(focusBan)===String(ban)) ? "" : String(ban);
+  render();
+  if(focusBan){
+    requestAnimationFrame(function(){ focusTable(focusBan); });
+    toast("Chỉ bàn "+(c.textContent.split("·")[0]||focusBan).trim()+" — bấm lại chip để hiện tất cả");
+  } else {
+    toast("Đã hiện lại tất cả bàn");
+  }
 });
 $("#fabTop").addEventListener("click", function(){ $("#wrap").scrollTo({top:0,left:0,behavior:"smooth"}); window.scrollTo({top:0,behavior:"smooth"}); });
 

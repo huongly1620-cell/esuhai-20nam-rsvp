@@ -112,7 +112,25 @@
   .bar-h{font-size:.68rem;text-transform:uppercase;letter-spacing:.11em;color:var(--gold);margin-bottom:11px;font-weight:700}
   .bar-row{margin-bottom:12px}.bar-row:last-child{margin-bottom:0}.bar-row .t{display:flex;justify-content:space-between;align-items:baseline;font-size:.84rem;margin-bottom:5px}.bar-row .t .nm{display:flex;gap:7px;align-items:center}.sw{width:9px;height:9px;border-radius:2px}.bar-track{height:10px;border-radius:6px;background:rgba(140,140,140,.16);overflow:hidden}.bar-fill{height:100%;border-radius:6px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
   .bar-row .t b{font-size:1.02rem;font-family:"Playfair Display",serif}
+  /* E08-D084 · nút vào KHO ẢNH ở hero. CỐ Ý không theo khuôn `.venue-edit`
+     (viền đứt, nền trong, chữ mảnh): cái đó là nút sửa cấu hình, liếc qua không
+     thấy cũng không sao. Nút này là lối vào một tính năng chính vừa được kéo ra
+     khỏi menu ⋯ — nếu vẫn mờ như ghost thì coi như chưa kéo ra. Nền vàng đặc,
+     chữ đậm trên nền tối, bắt mắt ngay lần lướt đầu. */
+  .kho-btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+    background:linear-gradient(180deg,var(--gold-b),var(--gold-d));color:#2a1e05;
+    border:0;border-radius:12px;padding:13px 14px;font:inherit;font-size:.92rem;font-weight:800;
+    letter-spacing:.01em;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.22);transition:.15s}
+  .kho-btn:hover{filter:brightness(1.05)}
+  .kho-btn:active{transform:scale(.985)}
+  .kho-btn:focus-visible{outline:2px solid var(--gold-b);outline-offset:3px}
+
   .chk-card{border-top:1px dashed var(--line);padding-top:14px}
+  /* E08-D084 · vị trí mới (dưới `#list`, ngoài `.ov-in`) nên phải tự dựng lại lề
+     và nền — nếu không nó dính sát thẻ khách cuối cùng, trông như một mẩu rơi vãi
+     chứ không phải một khối riêng. */
+  #chkCard{margin:16px 0 8px;padding:14px 15px;background:var(--card);
+    border:1px solid var(--line);border-top:1px solid var(--line);border-radius:var(--r)}
   .chk-toggle{display:flex;align-items:center;gap:9px;cursor:pointer}.chk-toggle .bar-h{margin:0;flex:1}.chk-toggle .chev{color:var(--gold);transition:transform .22s}.chk-open .chk-toggle .chev{transform:rotate(90deg)}.chk-toggle .pg{color:var(--gold-b);font-weight:800;font-size:.8rem}
   .chk-body{display:none;margin-top:11px}.chk-open .chk-body{display:block}
   .chk-list{display:grid;grid-template-columns:1fr;gap:2px}@media(min-width:560px){.chk-list{grid-template-columns:1fr 1fr;gap:2px 14px}}
@@ -527,10 +545,13 @@
             <div class="sep"></div>
             <div class="cap" data-i="cap_sys">Hệ thống</div>
             <button id="cfgBtn" style="display:none" data-i="cfg">⚙ Cài đặt sự kiện</button>
-            <!-- E08-D082 · lối sang KHO ẢNH SỰ KIỆN. Nằm trong menu chứ không ở
-                 thanh `cknav`: cknav hiện với MỌI role đã đăng nhập, mà kho ảnh
-                 là `btl` — để ở đó là PG thấy một link chỉ dẫn tới màn 403. -->
-            <button id="khoAnhBtn" style="display:none" data-i="kho_anh">📸 Kho ảnh sự kiện</button>
+            <!-- E08-D084 · nút KHO ẢNH SỰ KIỆN đã dời khỏi menu này ra hero (xem
+                 trong `.ov-in`). Lý do đặt trong menu hồi D082 — "cknav hiện với
+                 mọi role, để nút ở đó là PG thấy màn 403" — không còn áp dụng ở
+                 hero: `/crm` và `/crm/kho-anh` đi qua CÙNG một `serveShell()`
+                 (crm/index.js:46), nên ai nhìn thấy hero thì đã qua đúng gác cổng
+                 ấy rồi. Điều kiện `role==='btl'` vẫn giữ nguyên vì tài khoản
+                 SMOKE_EMAIL vào được `/crm` mà KHÔNG phải `btl`. -->
             <button id="auditBtn" style="display:none" data-i="audit">☰ Nhật ký</button>
             <button id="logoutBtn" data-i="logout">⏻ Đăng xuất</button>
           </div>
@@ -555,6 +576,11 @@
         <span class="chev">▾</span>
       </div>
       <div class="ov-wrap"><div class="ov-body"><div class="ov-in">
+        <!-- E08-D084 · phần tử ĐẦU TIÊN trong hero. Trước đây nằm trong menu ⋯ nên
+             muốn vào kho ảnh phải biết trước là có nó ở đó — tính năng chính mà
+             giấu sau ba chấm thì coi như không có. Cùng id/handler/khoá i18n như
+             cũ, chỉ đổi chỗ đứng. -->
+        <button class="kho-btn" id="khoAnhBtn" style="display:none" data-i="kho_anh">📸 Kho ảnh sự kiện</button>
         <div class="cd2">
           <div class="cdbox toa"><div class="tag2" data-i="toa_full">TỌA ĐÀM CHUYÊN ĐỀ</div><div class="cd-big num" id="cdToa">—</div><div class="hh" id="hhToa">—</div><div class="cdv"><span class="pin">📍</span><span id="venueToaTxt">—</span></div></div>
           <div class="cdbox gala"><div class="tag2" data-i="gala_full">GALA TRI ÂN</div><div class="cd-big num" id="cdGala">—</div><div class="hh" id="hhGala">—</div><div class="cdv"><span class="pin">📍</span><span id="venueGalaTxt">—</span></div></div>
@@ -565,13 +591,9 @@
           <div id="kpiBody"></div>
         </div>
         <div><div class="bar-h" data-i="buoi_h">Buổi tham dự (theo số khách)</div><div id="buoi"></div></div>
-        <div class="chk-card chk-open" id="chkCard">
-          <div class="chk-toggle" id="chkToggle"><span class="chev">▸</span><div class="bar-h" data-i="prep_h">Việc cần chuẩn bị</div><span class="pg num" id="chkpg"></span></div>
-          <div class="chk-body">
-            <div class="chk-list" id="chklist"></div>
-            <div class="addtask"><input id="taskInput" placeholder="Thêm việc cần làm…" data-iph="ph_task"><button id="taskAdd">＋</button></div>
-          </div>
-        </div>
+        <!-- E08-D084 · "Việc cần chuẩn bị" đã chuyển xuống DƯỚI danh sách khách.
+             Nó từng là phần tử cuối của hero, tức chiếm chỗ ngay trên màn đầu cho
+             một việc không ưu tiên. Nội dung và toàn bộ logic giữ nguyên. -->
       </div></div></div>
     </section>
 
@@ -595,6 +617,16 @@
     </div>
     <div class="statline" id="statline"></div>
     <div class="list" id="list"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+    <!-- E08-D084 · vị trí mới của "Việc cần chuẩn bị": ngay dưới danh sách khách.
+         Khối này vừa rời `.ov-in` nên mất `padding:16px 15px` của cha cũ — CSS bù
+         lại ở `#chkCard` (không sửa `.chk-card` chung, để không đụng chỗ nào khác). -->
+    <div class="chk-card chk-open" id="chkCard">
+      <div class="chk-toggle" id="chkToggle"><span class="chev">▸</span><div class="bar-h" data-i="prep_h">Việc cần chuẩn bị</div><span class="pg num" id="chkpg"></span></div>
+      <div class="chk-body">
+        <div class="chk-list" id="chklist"></div>
+        <div class="addtask"><input id="taskInput" placeholder="Thêm việc cần làm…" data-iph="ph_task"><button id="taskAdd">＋</button></div>
+      </div>
+    </div>
   </div>
 
   <button class="to-top" id="toTop" title="Lên đầu">↑</button>

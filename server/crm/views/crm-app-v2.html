@@ -183,10 +183,15 @@
   .g.is-vip:hover{border-color:var(--gold-b);box-shadow:0 0 0 1px rgba(224,189,119,.22),0 10px 24px rgba(184,150,63,.26)}
   .g.is-vip .av{border-color:var(--gold);box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),0 0 0 2px rgba(224,189,119,.3),0 2px 6px rgba(184,150,63,.3)}
   .g.is-vip .n1{color:var(--text)}
-  /* VIP + đã đến: giữ viền vàng VIP, thêm wash xanh nhẹ bên phải */
+  /* VIP + đã đến: giữ viền vàng VIP, thêm wash xanh nhẹ bên phải.
+     D089 rà lại · wash 7% là toàn bộ khác biệt giữa VIP đã đến và VIP chưa đến —
+     viền và bóng y hệt nhau. Khách thường thì đổi hẳn màu viền, nên nhìn lướt là
+     thấy. Cửa cũng dính đúng chỗ này. Thêm quầng xanh ngoài viền vàng: vàng nói
+     hạng, xanh nói trạng thái, và cả hai đều đọc được từ xa. */
   .g.is-vip.done{
     border-color:var(--gold);
-    background:linear-gradient(105deg,var(--gold-soft) 0%,rgba(69,224,142,.07) 70%,transparent);
+    background:linear-gradient(105deg,var(--gold-soft) 0%,rgba(69,224,142,.09) 70%,transparent);
+    box-shadow:0 0 0 2px rgba(69,224,142,.42),0 4px 12px rgba(184,150,63,.18);
   }
   :root[data-theme=light] .g.is-vip{
     border:1.5px solid #b8922e;
@@ -200,7 +205,8 @@
   :root[data-theme=light] .g.is-vip .av{border-color:#b8922e;box-shadow:inset 0 0 0 2px rgba(255,255,255,.5),0 0 0 2px rgba(184,146,46,.35),0 2px 6px rgba(169,127,46,.24)}
   :root[data-theme=light] .g.is-vip.done{
     border-color:#b8922e;
-    background:linear-gradient(105deg,rgba(217,178,74,.2) 0%,rgba(18,161,95,.07) 72%,#faf6ec);
+    background:linear-gradient(105deg,rgba(217,178,74,.2) 0%,rgba(18,161,95,.09) 72%,#faf6ec);
+    box-shadow:0 0 0 2px rgba(18,161,95,.34),0 4px 12px rgba(169,127,46,.14);
   }
   /* VIP — chip GẮN TRÊN VIỀN, góc trên-phải thẻ (không còn nằm trong hàng badge
      lẫn với NV/Bàn/Đã đến). Ý đồ: một huy hiệu ĐÍNH vào cạnh thẻ như huy hiệu

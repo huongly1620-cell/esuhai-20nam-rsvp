@@ -190,8 +190,15 @@
     viền xanh — nghĩa là khách VIP vừa check-in xong thì mất luôn dấu hiệu VIP,
     đúng lúc BTL cần nhận ra họ nhất. Việc đã đến đã có tag xanh bên phải nói rồi;
     hạng khách là thuộc tính CỐ ĐỊNH, không nên bị trạng thái nuốt mất. */
+ /* Nhưng bản đầu trả "đã đến" về một vòng xanh 16% nằm DƯỚI vòng vàng, và
+    .gc.is-vip còn đè mất nền xanh của .done ⇒ thẻ VIP đã đến gần như y hệt thẻ
+    VIP chưa đến. Ở cửa, việc số một là phân biệt đã đến / chưa đến; khách thường
+    phân biệt bằng MÀU VIỀN, còn VIP thì viền đã dành cho vàng. Nên tín hiệu "đã
+    đến" của VIP phải nằm ở chỗ khác mà vẫn đủ mạnh: quầng xanh bên ngoài viền
+    vàng + nền ngả xanh. Vàng nói hạng, xanh nói trạng thái, không cái nào nuốt cái nào. */
  .gc.is-vip.done{border-color:var(--gold);
-   box-shadow:0 0 0 1px rgba(216,184,118,.14),0 0 0 2px rgba(67,224,141,.16),0 4px 14px rgba(184,150,63,.2)}
+   background:linear-gradient(105deg,rgba(216,184,118,.13) 0%,rgba(67,224,141,.085) 60%);
+   box-shadow:0 0 0 1px rgba(216,184,118,.14),0 0 0 3px rgba(67,224,141,.5),0 4px 16px rgba(184,150,63,.2)}
  .vip-chip{
    position:absolute;top:-9px;left:14px;z-index:3;   /* D089 · Sponsor: chip về BÊN TRÁI thẻ */
    display:inline-flex;align-items:center;gap:3px;

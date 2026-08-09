@@ -88,6 +88,9 @@
   /* .good/.bad/.warn — TÊN LỚP CỐ ĐỊNH: doNangLucEXIF() (vùng cấm chạm) gán thẳng
      box.className = 'good'|'bad'. Đổi tên lớp ở đây là làm hỏng hàng rào EXIF. */
   .good,.bad,.warn{border-radius:12px;padding:13px 15px;margin-top:14px;font-size:var(--fs-body);line-height:1.55}
+  /* D086 · đạt thì ô biến mất hẳn, không chừa lề. Đạt là trạng thái bình thường,
+     mà trạng thái bình thường thì không nên chiếm chỗ trên màn. */
+  .hidden-box{display:none}
   .good{background:rgba(31,176,115,.1);border:1px solid var(--green);color:var(--text)}
   .bad{background:rgba(236,81,64,.1);border:1px solid var(--red);color:var(--text)}
   .warn{background:rgba(242,183,78,.1);border:1px solid var(--amber);color:var(--text)}
@@ -315,7 +318,6 @@
 
 <header>
   <h1 data-i="h_title">📸 Kho ảnh sự kiện</h1>
-  <span class="sub" data-i="h_sub">E08-D082 · Pha 1</span>
   <div class="spacer"></div>
   <!-- AC-11 · định danh phiên. Fail-safe: lỗi/401 ẩn hẳn khối này (khuôn D071). -->
   <div class="me" id="meBox"><b id="meRole">—</b><span id="meMail"></span></div>
@@ -324,17 +326,18 @@
   <a class="btn sm" href="/crm" data-i="back">← Về CRM</a>
 </header>
 
-<!-- Chốt chặn EXIF. Trang KHÔNG cho đồng bộ tới khi phép dò đạt. -->
-<div id="exifBox" class="warn" data-i="exif_wait">⏳ Đang thử đường thu nhỏ trên ảnh mẫu có cờ xoay…</div>
+<!-- Chốt chặn hướng ảnh. Trang KHÔNG cho đồng bộ tới khi phép kiểm đạt.
+     Đạt thì ô này ẩn hẳn — xem veHopKiemTra(). -->
+<div id="exifBox" class="warn" data-i="kt_dang_chay">⏳ Đang kiểm tra trình duyệt…</div>
 
 <div class="card">
   <div class="srcbar">
     <strong class="srclbl" data-i="src_lbl">Nguồn:</strong>
     <button class="btn gold" id="btnFolder" type="button" data-i="btn_folder">📁 Chọn thư mục</button>
     <button class="btn" id="btnFiles" type="button" data-i="btn_files">🖼 Chọn từng ảnh</button>
-    <button class="btn cloud" type="button" disabled>Dropbox <span class="soon" data-i="soon">Sắp có · Pha 1b</span></button>
-    <button class="btn cloud" type="button" disabled>OneDrive <span class="soon" data-i="soon">Sắp có · Pha 1b</span></button>
-    <button class="btn cloud" type="button" disabled>Google Drive <span class="soon" data-i="soon">Sắp có · Pha 1b</span></button>
+    <button class="btn cloud" type="button" disabled>Dropbox <span class="soon" data-i="soon">Sắp có</span></button>
+    <button class="btn cloud" type="button" disabled>OneDrive <span class="soon" data-i="soon">Sắp có</span></button>
+    <button class="btn cloud" type="button" disabled>Google Drive <span class="soon" data-i="soon">Sắp có</span></button>
   </div>
   <div class="drop" id="drop" data-i="drop">…hoặc kéo thả thư mục / ảnh vào đây</div>
   <input type="file" id="fFolder" webkitdirectory directory multiple hidden>
@@ -358,7 +361,7 @@
     <div class="spacer"></div>
     <button class="btn green" id="btnSync" type="button" disabled data-i="sync">⬆ Đồng bộ ảnh đã chọn</button>
   </div>
-  <!-- AC-9 · nút xám phải nói vì sao xám -->
+  <!-- nút xám phải nói vì sao xám -->
   <p class="why" id="whySync" aria-live="polite"></p>
   <div class="barwrap">
     <div class="bar"><i id="prog"></i></div>
@@ -444,68 +447,62 @@ function ghiLog(s){ var el = $('#log'); el.style.display='block'; el.textContent
 var LANG = localStorage.getItem('kho_lang') || 'vn';
 var T = {
   vn:{
-    h_title:'📸 Kho ảnh sự kiện', h_sub:'E08-D082 · Pha 1', back:'← Về CRM',
+    h_title:'📸 Kho ảnh sự kiện', back:'← Về CRM',
     src_lbl:'Nguồn:', btn_folder:'📁 Chọn thư mục', btn_files:'🖼 Chọn từng ảnh',
-    soon:'Sắp có · Pha 1b', drop:'…hoặc kéo thả thư mục / ảnh vào đây',
+    soon:'Sắp có', drop:'…hoặc kéo thả thư mục / ảnh vào đây',
     privacy:'Ảnh <b>đọc thẳng từ đĩa</b> để xem trước — chưa một byte nào lên mạng. Chỉ khi bấm <b>Đồng bộ</b> mới thu nhỏ và đẩy lên kho.',
     st_total:'ảnh đọc được', st_sel:'đang tick chọn', st_skip:'bỏ qua (HEIC)', st_done:'đã vào kho lượt này',
     sel_all:'Chọn hết', sel_none:'Bỏ chọn hết', sync:'⬆ Đồng bộ ảnh đã chọn', sync_n:'⬆ Đồng bộ {n} ảnh đã chọn',
-    why_exif:'Đang khoá: phép dò cờ xoay chưa đạt — không nạp ảnh khi chưa chắc hướng ảnh đúng.',
+    why_exif:'Đang khoá: trình duyệt này làm ảnh bị xoay ngang — xem thông báo ở đầu trang.',
     why_none:'Đang khoá: chưa tick chọn ảnh nào.',
     why_run:'Đang chạy — chờ đợt hiện tại xong đã.',
     kho_h:'Đã có trong kho', reload:'Tải lại', retry:'↻ Thử lại',
     kho_empty:'Kho chưa có ảnh sự kiện nào.',
-    kho_note:'Hiện 24 tấm mới nhất. Gỡ cả đợt: <code>DELETE /crm/event-photos/batch/&lt;mã đợt&gt;</code>',
+    kho_note:'Đang hiện 24 tấm mới nhất.',
     kho_err:'Không đọc được kho:',
-    exif_wait:'⏳ Đang thử đường thu nhỏ trên ảnh mẫu có cờ xoay…',
-    exif_ok_h:'Cờ xoay EXIF được áp đúng.',
-    exif_ok_b:'Ảnh mẫu {a} (ngang trong pixel, cờ xoay 6) qua đường thu nhỏ thật ra <b>{b}</b> — dọc.',
-    exif_ac9:'AC-9 đạt.',
-    exif_bad_h:'Trình duyệt này KHÔNG áp cờ xoay EXIF.',
-    exif_bad_b:'Ảnh mẫu {a} ra {b} — vẫn ngang. Nạp bằng trình duyệt này thì ảnh chụp dọc vào kho sẽ nằm ngang và phần nhận diện khuôn mặt (D077) hỏng theo.<br><b>Đồng bộ đã bị khoá.</b> Mở lại bằng Chrome/Edge bản mới, hoặc Safari 17 trở lên.',
+    kt_dang_chay:'⏳ Đang kiểm tra trình duyệt…',
+    kt_hong_h:'Trình duyệt này làm ảnh bị xoay ngang.',
+    kt_hong_b:'Nếu tải lên bằng đây, ảnh chụp dọc sẽ nằm ngang trong kho và không sửa lại được. <b>Nút Đồng bộ đã tạm khoá.</b> Chị mở lại trang này bằng Chrome hoặc Safari bản mới giúp em, rồi thử lại.',
     dlg_cancel:'Huỷ', dlg_ok:'Đồng ý', dlg_close:'Đóng',
     ask_sync:'Sắp nạp {n} ảnh ({mb} bản gốc trên đĩa).\n\nBản lưu vào kho là 2048px — KHÔNG phải bản gốc in khổ lớn.\n\nTiếp tục?',
     ask_sync_ok:'Nạp ảnh',
-    no_exif:'Phép dò cờ xoay chưa đạt — không đồng bộ.',
+    no_exif:'Trình duyệt này làm ảnh bị xoay ngang nên chưa tải lên được.',
     sr_run:'Đang đẩy {d}/{t} ảnh.', sr_done:'Xong: {x} nạp mới, {c} đã có sẵn, {e} lỗi.',
     t_done:'Đã nạp {x} ảnh ✓', t_err:'{e} ảnh lỗi — xem nhật ký bên dưới',
     st_new:'đã nạp', st_dup:'đã có', st_bad:'lỗi', st_pass:'bỏ qua', heic:'HEIC — bỏ qua',
     sel_mode:'Chế độ chọn — chạm để tick, không cần giữ nữa.', sel_done:'Xong',
     zoom:'Xem ảnh lớn', lb_close:'Đóng', lb_prev:'Ảnh trước', lb_next:'Ảnh sau', lb_of:'{i}/{n}',
     coach:'<b>Bấm vào ảnh</b> để xem lớn. <b>Bấm ô vuông góc trái</b> để tick chọn. Muốn chọn cả mảng thì <b>giữ chuột kéo ngang qua nhiều ảnh</b> — kéo qua ô đang tick sẽ bỏ tick cả vùng. Trên điện thoại: <b>nhấn giữ một ảnh</b> để vào chế độ chọn.',
-    coach_ok:'Đã hiểu', tip_dup:'Ảnh này đã có trong kho — trùng mã sha256 với một tấm đã nạp trước đó, nên lượt này bỏ qua.', tip_err:'Không nạp được: {e}'
+    coach_ok:'Đã hiểu', tip_dup:'Ảnh này đã có trong kho — trùng với một tấm đã nạp trước, nên lượt này bỏ qua.', tip_err:'Không nạp được: {e}'
   },
   jp:{
-    h_title:'📸 イベント写真庫', h_sub:'E08-D082 · フェーズ1', back:'← CRMへ戻る',
+    h_title:'📸 イベント写真庫', back:'← CRMへ戻る',
     src_lbl:'取込元:', btn_folder:'📁 フォルダを選ぶ', btn_files:'🖼 写真を個別に選ぶ',
-    soon:'近日 · フェーズ1b', drop:'…またはフォルダ/画像をここにドラッグ',
+    soon:'近日', drop:'…またはフォルダ/画像をここにドラッグ',
     privacy:'プレビューは<b>ディスクから直接</b>読み込みます — この時点で通信は発生しません。<b>同期</b>を押して初めて縮小してアップロードします。',
     st_total:'読み込めた枚数', st_sel:'選択中', st_skip:'スキップ (HEIC)', st_done:'今回アップロード済',
     sel_all:'すべて選択', sel_none:'選択を解除', sync:'⬆ 選択した写真を同期', sync_n:'⬆ {n}枚を同期',
-    why_exif:'ロック中：回転フラグの判定に失敗 — 向きが確実でないまま取り込みません。',
+    why_exif:'ロック中：このブラウザでは写真が横向きになります — ページ上部のお知らせをご覧ください。',
     why_none:'ロック中：写真が1枚も選択されていません。',
     why_run:'実行中 — 現在のバッチの完了をお待ちください。',
     kho_h:'保管済みの写真', reload:'再読み込み', retry:'↻ 再試行',
     kho_empty:'イベント写真はまだありません。',
-    kho_note:'最新24枚を表示。バッチ削除： <code>DELETE /crm/event-photos/batch/&lt;バッチID&gt;</code>',
+    kho_note:'最新24枚を表示しています。',
     kho_err:'保管庫を読めません：',
-    exif_wait:'⏳ 回転フラグ付きサンプルで縮小処理を検証中…',
-    exif_ok_h:'EXIF回転フラグは正しく適用されています。',
-    exif_ok_b:'サンプル {a}（画素上は横・回転フラグ6）が実際の縮小処理で <b>{b}</b> — 縦になりました。',
-    exif_ac9:'AC-9 合格。',
-    exif_bad_h:'このブラウザはEXIF回転フラグを適用しません。',
-    exif_bad_b:'サンプル {a} が {b} のまま横向きです。このブラウザで取り込むと縦写真が横向きで保管され、顔認識（D077）も連鎖して失敗します。<br><b>同期はロックされました。</b>最新のChrome/Edge、またはSafari 17以降でお開きください。',
+    kt_dang_chay:'⏳ ブラウザを確認しています…',
+    kt_hong_h:'このブラウザでは写真が横向きになってしまいます。',
+    kt_hong_b:'このまま取り込むと、縦向きの写真が横向きのまま保管され、後から直せません。<b>同期ボタンは一時的にロックしました。</b>最新のChromeまたはSafariでこのページを開き直してから、もう一度お試しください。',
     dlg_cancel:'キャンセル', dlg_ok:'OK', dlg_close:'閉じる',
     ask_sync:'{n}枚（ディスク上の原本 {mb}）を取り込みます。\n\n保管されるのは2048pxです — 大判印刷用の原本ではありません。\n\n続行しますか？',
     ask_sync_ok:'取り込む',
-    no_exif:'回転フラグの判定が未合格のため同期できません。',
+    no_exif:'このブラウザでは写真が横向きになるため、取り込みできません。',
     sr_run:'{t}枚中 {d}枚を送信中。', sr_done:'完了：新規 {x}枚、既存 {c}枚、失敗 {e}枚。',
     t_done:'{x}枚を取り込みました ✓', t_err:'{e}枚が失敗 — 下のログをご確認ください',
     st_new:'取込済', st_dup:'既存', st_bad:'失敗', st_pass:'除外', heic:'HEIC — 除外',
     sel_mode:'選択モード — 長押し不要、タップで選べます。', sel_done:'完了',
     zoom:'拡大表示', lb_close:'閉じる', lb_prev:'前の写真', lb_next:'次の写真', lb_of:'{i}/{n}',
     coach:'<b>写真をタップ</b>すると拡大表示。<b>左上の四角</b>で選択します。まとめて選ぶには<b>マウスで横にドラッグ</b> — 選択済みの上をなぞると範囲ごと解除されます。スマートフォンでは<b>長押し</b>で選択モードへ。',
-    coach_ok:'閉じる', tip_dup:'この写真は既に保管済みです（sha256が一致）。今回はスキップしました。', tip_err:'取り込み失敗: {e}'
+    coach_ok:'閉じる', tip_dup:'この写真は既に保管済みです（同じ写真が取り込み済み）。今回はスキップしました。', tip_err:'取り込み失敗: {e}'
   }
 };
 function tt(k){ return (T[LANG] && T[LANG][k]) || T.vn[k] || k; }
@@ -522,7 +519,7 @@ function setLang(l){
   $('#lbX').setAttribute('aria-label', tt('lb_close'));
   $('#lbPrev').setAttribute('aria-label', tt('lb_prev'));
   $('#lbNext').setAttribute('aria-label', tt('lb_next'));
-  trangTriExifBox();          // hộp EXIF do hàm vùng cấm vẽ — dựng lại theo ngôn ngữ
+  if (KQ_KIEM) veHopKiemTra(KQ_KIEM);   // vẽ lại theo ngôn ngữ TỪ SỐ LIỆU, không bới DOM
   capNhatNutSync();
   if (ITEMS.length) veLuoi();
   taiKho();
@@ -638,60 +635,50 @@ async function thuNho(blob, max, q){
   } finally { if (bmp.close) bmp.close(); }
 }
 
-/* ── Phép dò: chạy ảnh mẫu Orientation 6 qua ĐÚNG hàm thuNho ở trên ──
-   Sinh bởi tools/make-exif6-fixture.js — 64x32 trong pixel thật, cờ xoay 6.
-   Áp cờ đúng ⇒ ra 32x64 ⇒ width < height. Đây CHÍNH là AC-9, chạy mỗi lần mở
-   trang chứ không phải một lần rồi tin mãi.                                    */
-var EXIF_OK = false;
-async function doNangLucEXIF(){
-  var box = $('#exifBox');
-  try {
-    if (!window.EXIF6_FIXTURE) throw new Error('Thiếu ảnh mẫu — chạy `node tools/make-exif6-fixture.js`.');
-    var blob = await (await fetch(window.EXIF6_FIXTURE)).blob();
-    var raw = window.EXIF6_RAW;
-    var r = await thuNho(blob, 2048, 0.82);
-    if (r.w < r.h){
-      EXIF_OK = true;
-      box.className = 'good';
-      box.innerHTML = '✅ <b>Cờ xoay EXIF được áp đúng.</b> Ảnh mẫu ' + raw.w + '×' + raw.h
-        + ' (ngang trong pixel, cờ xoay 6) qua đường thu nhỏ thật ra <b>' + r.w + '×' + r.h
-        + '</b> — dọc. <span class="hint">AC-9 đạt.</span>';
-    } else {
-      box.className = 'bad';
-      box.innerHTML = '⛔ <b>Trình duyệt này KHÔNG áp cờ xoay EXIF.</b> Ảnh mẫu ' + raw.w + '×' + raw.h
-        + ' ra ' + r.w + '×' + r.h + ' — vẫn ngang. Nạp bằng trình duyệt này thì ảnh chụp dọc vào kho sẽ '
-        + 'nằm ngang và phần nhận diện khuôn mặt (D077) hỏng theo.<br><b>Đồng bộ đã bị khoá.</b> '
-        + 'Mở lại bằng Chrome/Edge bản mới, hoặc Safari 17 trở lên.';
-    }
-  } catch (e) {
-    box.className = 'bad';
-    box.innerHTML = '⛔ <b>Không chạy được phép dò cờ xoay:</b> ' + esc(e.message)
-      + '<br><b>Đồng bộ đã bị khoá</b> — không nạp ảnh khi chưa chắc hướng ảnh đúng.';
-  }
-  capNhatNutSync();
-}
-/* ── hết vùng cấm chạm số 1 ── */
+/* ── Phép kiểm hướng ảnh · CHỈ ĐO, KHÔNG VẼ ───────────────────────────────────
+   Chạy ảnh mẫu (sinh bởi tools/make-exif6-fixture.js — 64x32 trong pixel, cờ xoay
+   6) qua ĐÚNG hàm thuNho() thật. Áp cờ đúng ⇒ ra 32x64 ⇒ cao hơn rộng.
 
-/* D083 · LỚP TRÌNH BÀY cho hộp EXIF.
-   Vì sao phải làm vòng vèo thế này thay vì sửa thẳng doNangLucEXIF(): hàm đó nằm
-   trong danh mục cấm chạm của phiếu (hàng rào AC-9 đã Gate 2 PASS), mà nó lại
-   nhúng sẵn chữ tiếng Việt. Nên phần trình bày được dựng LẠI ở đây từ tt(), lấy
-   hai cặp số đo ra từ chính DOM mà hàm kia vừa vẽ. Không lấy được số thì giữ
-   nguyên văn bản gốc — xấu hơn nhưng không bao giờ mất thông tin.
-   Đây là một đánh đổi có chủ ý, đã ghi vào báo cáo Gate 2 để PM tổng phán. */
-function trangTriExifBox(){
-  var box = $('#exifBox'); if (!box) return;
-  var cls = box.className;
-  if (cls !== 'good' && cls !== 'bad') return;               // còn đang chờ
-  var so = (box.textContent.match(/\d+×\d+/g) || []);
-  if (cls === 'good' && so.length >= 2){
-    box.innerHTML = '✅ <b>' + tt('exif_ok_h') + '</b> '
-      + fmt('exif_ok_b', { a: so[0], b: so[1] })
-      + ' <span class="hint">' + tt('exif_ac9') + '</span>';
-  } else if (cls === 'bad' && so.length >= 2){
-    box.innerHTML = '⛔ <b>' + tt('exif_bad_h') + '</b> ' + fmt('exif_bad_b', { a: so[0], b: so[1] });
+   D086 · TÁCH ĐO KHỎI VẼ. Bản D083 gộp cả hai vào một hàm rồi đóng băng cả cụm,
+   nên khi cần dịch sang tiếng Nhật thì lớp ngoài phải BỚI NGƯỢC hai cặp số đo ra
+   khỏi DOM bằng regex — tức đọc lại đầu ra của chính mình. Hàng rào ấy quây quanh
+   một khối văn bản chứ không quây quanh hành vi cần giữ. Nay hàm này trả về số
+   liệu và KHÔNG chạm DOM; phần vẽ nằm riêng bên dưới; đường regex bỏ hẳn.
+
+   Thứ phải giữ nguyên là HÀNH VI: EXIF_OK chỉ bật khi thật sự đạt, và nút Đồng bộ
+   khoá đúng như trước.                                                          */
+var EXIF_OK = false;
+var KQ_KIEM = null;   // kết quả lần kiểm gần nhất — để đổi ngôn ngữ vẽ lại được
+async function kiemHuongAnh(){
+  try {
+    if (!window.EXIF6_FIXTURE) return { dat:false, loi:'thieu-mau' };
+    var blob = await (await fetch(window.EXIF6_FIXTURE)).blob();
+    var raw = window.EXIF6_RAW || {};
+    var r = await thuNho(blob, 2048, 0.82);
+    return { dat: r.w < r.h, rongMau: raw.w, caoMau: raw.h, rongSau: r.w, caoSau: r.h, loi: null };
+  } catch (e) {
+    return { dat:false, loi: e && e.message ? e.message : 'khong-chay-duoc' };
   }
-  if (cls === 'bad') themNutThuLai(box, chayDoEXIF);          // AC-8
+}
+async function doNangLucEXIF(){
+  var kq = await kiemHuongAnh();
+  KQ_KIEM = kq;
+  EXIF_OK = !!kq.dat;
+  veHopKiemTra(kq);
+  capNhatNutSync();
+  return kq;
+}
+
+/* ── Phần VẼ · nói tiếng người, không nói mã nội bộ ──
+   Đạt thì IM LẶNG: ẩn hẳn ô, không chiếm chỗ. Người dùng không cần biết có một
+   phép kiểm vừa chạy — họ chỉ cần biết khi nào KHÔNG làm việc được và phải làm gì.
+   Hỏng thì nói đúng hai điều: hệ quả với công việc của họ, và bước tiếp theo. */
+function veHopKiemTra(kq){
+  var box = $('#exifBox'); if (!box) return;
+  if (kq && kq.dat){ box.className = 'hidden-box'; box.innerHTML = ''; return; }
+  box.className = 'bad';
+  box.innerHTML = '⛔ <b>' + tt('kt_hong_h') + '</b> ' + tt('kt_hong_b');
+  themNutThuLai(box, chayDoEXIF);
 }
 /* AC-8 · nút Thử lại. Lỗi tạm (mạng chớp, fixture chưa nạp) không đáng bắt người
    dùng tải lại cả trang rồi chọn lại thư mục từ đầu. */
@@ -706,8 +693,8 @@ function themNutThuLai(box, fn){
 }
 function chayDoEXIF(){
   var box = $('#exifBox');
-  box.className = 'warn'; box.textContent = tt('exif_wait');
-  return doNangLucEXIF().then(trangTriExifBox);
+  box.className = 'warn'; box.textContent = tt('kt_dang_chay');
+  return doNangLucEXIF();
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -1273,9 +1260,11 @@ async function taiKho(){
     var s = await (await fetch('/crm/event-photos/stats')).json();
     if (s.ok){
       var k = s.kho_su_kien;
+      /* D086 · bỏ '(crm_photos khách: N)' — đó là tên BẢNG dữ liệu, và số đó nói
+         về ảnh chân dung khách, không liên quan gì tới kho ảnh sự kiện đang xem.
+         Với người dùng thì nó vừa khó hiểu vừa gây tưởng là số của kho này. */
       $('#khoStat').textContent = k.con + ' ảnh · ' + k.so_dot + ' đợt · '
-        + fmtMB(Number(k.tong_byte)) + (Number(k.da_go) ? (' · ' + k.da_go + ' đã gỡ') : '')
-        + ' — (crm_photos khách: ' + s.crm_photos + ')';
+        + fmtMB(Number(k.tong_byte)) + (Number(k.da_go) ? (' · ' + k.da_go + ' đã gỡ') : '');
     }
     var r = await (await fetch('/crm/event-photos?limit=24')).json();
     var w = $('#khoWrap');

@@ -110,9 +110,19 @@
  /* E08-D030 AC-11b: hạng VIP rời khỏi thân hồ sơ, lên GÓC ẢNH — chỗ trống đó
     dành cho khung Bàn + Ghế, thứ Ly cần đọc nhanh nhất ở cửa. */
  .pf-av{position:relative}
- .av-vip{position:absolute;left:-6px;top:-8px;z-index:2;font-size:.64rem;font-weight:800;letter-spacing:.03em;
-   border-radius:8px;padding:3px 8px;color:#2a1e05;background:linear-gradient(180deg,#f0d999,#cfa758);
-   box-shadow:0 2px 8px rgba(0,0,0,.5)}
+ /* E08-D089 · hạng VIP trong hồ sơ, cùng ngôn ngữ hình với chip ở danh sách:
+    vàng, bo nhỏ, có ★, chỉ to hơn một nhịp vì đây là cự ly gần. Bản cũ bo 8px
+    và không có sao — mở hồ sơ ra là thấy một thứ khác hẳn thứ vừa bấm vào. */
+ .av-vip{display:inline-flex;align-items:center;gap:5px;
+   font-family:"Arial Narrow",system-ui,sans-serif;   /* CỐ Ý không webfont */
+   font-size:.72rem;font-weight:700;letter-spacing:.1em;white-space:nowrap;
+   border-radius:5px;padding:5px 14px;color:#2a1c02;
+   background:linear-gradient(160deg,#fff7dd 0%,var(--gold) 42%,#b8922e 100%);
+   border:1px solid var(--gold-b);box-shadow:0 3px 12px rgba(184,150,63,.45)}
+ .av-vip::before{content:"★";font-family:system-ui,"Apple Color Emoji",sans-serif;font-size:1.05em;line-height:1;
+   text-shadow:0 1px 0 rgba(255,255,255,.5)}
+ /* Ảnh hồ sơ của khách VIP: viền vàng + quầng, để nhận ra từ xa. */
+ .pf-av.is-vip{box-shadow:0 0 0 3px var(--gold),0 0 0 6px rgba(216,184,118,.18),0 14px 34px rgba(184,150,63,.34)}
  /* AC-F7 (mock Ly): hồ sơ có pill HẠNG riêng dưới cụm BÀN/GHẾ. */
  .hangp{display:inline-block;margin:2px auto 12px;border:1px solid var(--line2);border-radius:11px;padding:5px 14px;background:rgba(5,13,24,.5)}
  .hangp .k{display:block;font-size:.52rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted2)}
@@ -176,9 +186,21 @@
    background:linear-gradient(105deg,rgba(216,184,118,.14) 0%,var(--card) 55%);
    box-shadow:0 0 0 1px rgba(216,184,118,.12),0 4px 14px rgba(184,150,63,.18);
  }
- .gc.is-vip.done{border-color:rgba(67,224,141,.55)}
+ /* D089 · VIP đã đến VẪN giữ viền vàng. Bản D088 cho `.done` đè lên và trả về
+    viền xanh — nghĩa là khách VIP vừa check-in xong thì mất luôn dấu hiệu VIP,
+    đúng lúc BTL cần nhận ra họ nhất. Việc đã đến đã có tag xanh bên phải nói rồi;
+    hạng khách là thuộc tính CỐ ĐỊNH, không nên bị trạng thái nuốt mất. */
+ /* Nhưng bản đầu trả "đã đến" về một vòng xanh 16% nằm DƯỚI vòng vàng, và
+    .gc.is-vip còn đè mất nền xanh của .done ⇒ thẻ VIP đã đến gần như y hệt thẻ
+    VIP chưa đến. Ở cửa, việc số một là phân biệt đã đến / chưa đến; khách thường
+    phân biệt bằng MÀU VIỀN, còn VIP thì viền đã dành cho vàng. Nên tín hiệu "đã
+    đến" của VIP phải nằm ở chỗ khác mà vẫn đủ mạnh: quầng xanh bên ngoài viền
+    vàng + nền ngả xanh. Vàng nói hạng, xanh nói trạng thái, không cái nào nuốt cái nào. */
+ .gc.is-vip.done{border-color:var(--gold);
+   background:linear-gradient(105deg,rgba(216,184,118,.13) 0%,rgba(67,224,141,.085) 60%);
+   box-shadow:0 0 0 1px rgba(216,184,118,.14),0 0 0 3px rgba(67,224,141,.5),0 4px 16px rgba(184,150,63,.2)}
  .vip-chip{
-   position:absolute;top:-9px;right:16px;z-index:3;
+   position:absolute;top:-9px;left:14px;z-index:3;   /* D089 · Sponsor: chip về BÊN TRÁI thẻ */
    display:inline-flex;align-items:center;gap:3px;
    padding:2px 9px;border-radius:4px;
    font-family:"Arial Narrow",system-ui,sans-serif;   /* CỐ Ý không Oswald */
@@ -256,7 +278,14 @@
  .pf-back{border:0;background:rgba(255,255,255,.08);color:var(--cream);width:38px;height:38px;border-radius:50%;font-size:1.1rem;cursor:pointer}
  .pf-b{padding:22px 18px 46px;max-width:520px;margin:0 auto;text-align:center}
  .pf-av{width:190px;height:190px;border-radius:18px;margin:0 auto;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,var(--ph1),var(--ph2));border:2px solid var(--acc);color:var(--gold-b);font-family:Georgia,"Times New Roman","Iowan Old Style",serif;font-size:3.4rem;box-shadow:0 12px 34px rgba(0,0,0,.4)}.pf-av img{width:100%;height:100%;object-fit:cover}
+ /* D089 · nới lề trên: chip hạng đính dưới ảnh chỉ cách tên 3px, chật.
+    Ảnh không VIP thì không có chip nên 14px là đủ — dùng biến để chỗ nào
+    có chip mới nới, khỏi đẩy mọi hồ sơ xuống. */
  .pf-nm{font-family:Georgia,"Times New Roman","Iowan Old Style",serif;font-size:1.7rem;color:#fff;margin-top:14px;line-height:1.2}
+ /* Bọc ngoài khung ảnh: khung ảnh phải overflow:hidden để xén ảnh vào góc bo,
+    nên bất cứ thứ gì treo ra ngoài mà đặt bên trong đều bị cắt. */
+ .av-vip-wrap{text-align:center;margin-top:-14px;position:relative;z-index:3}
+ .av-vip-wrap + .pf-nm{margin-top:12px}
  .pf-rl{color:var(--muted);font-size:.92rem;margin-top:4px}.pf-rl b{color:var(--cream)}
  .th{margin:16px auto;display:inline-flex;gap:22px;border:1.5px solid var(--acc);border-radius:16px;background:var(--acc-dim);padding:12px 26px}
  .th .c .k{font-size:.58rem;text-transform:uppercase;letter-spacing:.16em;color:var(--muted)}.th .c .v{font-family:Georgia,"Times New Roman","Iowan Old Style",serif;font-size:2.4rem;color:var(--acc);line-height:1}
@@ -1193,7 +1222,7 @@ function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came
    :(laNhanVien(g)?'<div class="cidone" style="border-color:var(--line2);background:transparent"><div class="t" style="color:var(--muted)">'+t("nv_khong_ci")+'</div></div>'
      :'<button class="cib" data-ci="'+esc(g.id)+'">&#9711;&nbsp; '+t("cibtn")+'</button>');
  ciBox+=khoHtml(g)+quayHtml(g);
- $("#pfBody").innerHTML='<div class="pf-av">'+av(g,1)+(hangOf(g)?'<span class="av-vip">'+esc(hangOf(g))+'</span>':'')+'</div><div class="pf-nm">'+pairVJ(g.name,g.name_jp)+'</div><div class="pf-rl"><b>'+(pairVJ(g.title,g.title_jp)||"—")+'</b>'+((g.org||g.org_jp)?'<br>'+pairVJ(g.org,g.org_jp):'')+'</div>'
+ $("#pfBody").innerHTML='<div class="pf-av'+(hangOf(g)?' is-vip':'')+'">'+av(g,1)+'</div>'+(hangOf(g)?'<div class="av-vip-wrap"><span class="av-vip">'+esc(hangOf(g))+'</span></div>':'')+'<div class="pf-nm">'+pairVJ(g.name,g.name_jp)+'</div><div class="pf-rl"><b>'+(pairVJ(g.title,g.title_jp)||"—")+'</b>'+((g.org||g.org_jp)?'<br>'+pairVJ(g.org,g.org_jp):'')+'</div>'
   +thBox(g)
   +badges(g,1)
   +'<div class="facts">'+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(buoiLbl(g))+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(dietLbl(g.diet))+'</div></div></div>'

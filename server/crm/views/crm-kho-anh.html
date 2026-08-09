@@ -139,8 +139,20 @@
   /* ── AC-20 · ảnh hiện dần + ô chờ có shimmer ──
      Ảnh đọc từ đĩa nên tới rất nhanh, nhưng "rất nhanh" vẫn là một cú nhảy khựng
      khi 200 ô cùng đổi. Fade 320ms biến cú nhảy thành chuyển động. */
-  .tile img{opacity:0;transition:opacity .32s var(--ease)}
-  .tile img.on{opacity:1}
+  /* E08-D086 việc A · MẶC ĐỊNH LÀ HIỆN. Bản cũ để mọi .tile img ở opacity:0 rồi
+     chờ ai đó gắn class `on`; đường vẽ danh sách kho không gắn nên ảnh vô hình
+     vĩnh viễn — và vô hình thì trông hệt như hỏng, nên người dùng báo "không
+     thấy mặt" chứ không báo "thiếu class". Sửa bằng cách gắn thêm `on` cho chỗ
+     thiếu thì chỉ chữa một ca: đường vẽ thứ ba sẽ dính lại y nguyên. Nên đảo:
+     hiện là mặc định, còn hiệu ứng mờ-dần là thứ phải XIN bằng `.tile.fade`. */
+  .tile img{opacity:1}
+  .tile.fade img{opacity:0;transition:opacity .32s var(--ease)}
+  .tile.fade img.on{opacity:1}
+  /* AC-A5 · ảnh tải hỏng không được là ô trắng câm — hiện viền đứt + dấu hiệu. */
+  .tile.anh-hong{border-style:dashed;border-color:var(--red)}
+  .tile.anh-hong img{opacity:0}
+  .tile.anh-hong::after{content:"⚠";position:absolute;inset:0;display:grid;place-items:center;
+    font-size:20px;color:var(--red-b)}
   .tile.loading::before{content:"";position:absolute;inset:0;
     background:linear-gradient(100deg,transparent 20%,var(--hover) 45%,transparent 70%);
     background-size:220% 100%;animation:shim 1.25s linear infinite}
@@ -291,7 +303,7 @@
     *,*::before,*::after{
       animation-duration:.001ms !important;animation-iteration-count:1 !important;
       transition-duration:.001ms !important;scroll-behavior:auto !important}
-    .tile img{opacity:1}
+    .tile img,.tile.fade img{opacity:1}
     .tile.loading::before{animation:none;background:var(--hover)}
     .tile:active,.zoom:active,.btn:active:not(:disabled){transform:none}
     .tile[aria-checked=true] .ck{animation:none}
@@ -828,9 +840,10 @@ function veLuoi(){
       + (laHeic ? '' : '<button class="zoom" type="button" aria-label="' + esc(tt('zoom')) + '">⤢</button>');
     if (!laHeic){
       d.classList.add('loading');                       // AC-20 · shimmer trong lúc chờ
+      d.classList.add('fade');                          // D086 · xin hiệu ứng mờ-dần
       var im = d.querySelector('img');
       im.addEventListener('load', function(){ d.classList.remove('loading'); im.classList.add('on'); });
-      im.addEventListener('error', function(){ d.classList.remove('loading'); });
+      im.addEventListener('error', function(){ d.classList.remove('loading'); d.classList.add('anh-hong'); });
       /* AC-16 · nút phóng to có đường bàn phím riêng và KHÔNG lan cú bấm lên ô —
          nếu lan thì mỗi lần xem ảnh lại vô tình tick/bỏ tick tấm đó. */
       d.querySelector('.zoom').addEventListener('click', function(e){
@@ -1270,7 +1283,10 @@ async function taiKho(){
     var h = '<div class="grid">';
     r.items.forEach(function(x){
       // AC-6 · alt = tên file gốc, không để rỗng.
-      h += '<div class="tile"><img loading="lazy" src="' + x.thumb_url + '" alt="' + esc(x.orig_name) + '">'
+      /* D086 · KHÔNG gắn class fade ở đây: ảnh kho tới qua mạng, mờ-dần chỉ làm
+         chậm thêm. Mặc định giờ là hiện nên không cần gắn gì để nó xuất hiện —
+         đó chính là điểm của việc đảo mặc định. onerror đánh dấu ô hỏng. */
+      h += '<div class="tile"><img loading="lazy" onerror="this.closest(&quot;.tile&quot;).classList.add(&quot;anh-hong&quot;)" src="' + x.thumb_url + '" alt="' + esc(x.orig_name) + '">'
         + '<div class="nm" title="' + esc(x.rel_path || x.orig_name) + '">' + esc(x.orig_name) + '</div></div>';
     });
     h += '</div>';

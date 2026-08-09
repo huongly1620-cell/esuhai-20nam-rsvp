@@ -7,10 +7,17 @@
   --bg1:#0a2018;--bg2:#0a2a20;--bg3:#07140E;--sr1:rgba(10,32,24,.96);--sr2:rgba(10,32,24,.6);--ph1:#12503a;--ph2:#0b2a1e;
   --acc:#0F955A;--acc-dim:rgba(15,149,90,.12);--acc-glow:rgba(15,149,90,.3);}
  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
- body{margin:0;font-family:"Be Vietnam Pro","Segoe UI",system-ui,Arial,sans-serif;color:var(--cream);line-height:1.45;overflow-x:hidden;
+ /* Trang này KHÔNG nạp webfont nào (không có <link> Google Fonts) — chỉ dùng
+    font có sẵn của máy. Trước đây stack mở đầu bằng "Be Vietnam Pro" và
+    "Playfair Display" nhưng không đâu tải chúng, nên hai tên đó chưa bao giờ
+    khớp: CSS mô tả một thứ, máy chạy một thứ khác. Gỡ phần chết, GIỮ NGUYÊN
+    thứ tự phần còn lại ⇒ hiển thị không đổi một pixel (Windows vẫn Segoe UI,
+    macOS/iOS vẫn rơi về system-ui). Muốn dùng webfont thật thì thêm <link>,
+    và cân nhắc: cửa chạy trên wifi hội trường, mỗi request là một rủi ro. */
+ body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(--cream);line-height:1.45;overflow-x:hidden;
   background:radial-gradient(800px 460px at 88% -8%,var(--acc-glow),transparent 60%),linear-gradient(170deg,var(--bg1),var(--bg2) 55%,var(--bg3)) fixed}
  body.jp{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo","Noto Sans JP",sans-serif;letter-spacing:.02em}
- h1,h2,h3{font-family:"Playfair Display","Cambria",Georgia,serif;font-weight:600;margin:0}
+ h1,h2,h3{font-family:"Cambria",Georgia,serif;font-weight:600;margin:0}
  body.jp h2,body.jp .cn,body.jp .th .v,body.jp .v.big{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif}
  .num{font-variant-numeric:tabular-nums}
  .top{position:sticky;top:0;z-index:30;backdrop-filter:blur(12px);background:linear-gradient(180deg,rgba(8,17,31,.95),rgba(8,17,31,.7));border-bottom:2px solid var(--acc);padding-top:env(safe-area-inset-top)}

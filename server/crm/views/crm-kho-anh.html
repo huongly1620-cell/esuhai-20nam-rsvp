@@ -118,6 +118,8 @@
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:9px;margin-top:13px}
   .tile{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:11px;overflow:hidden;aspect-ratio:1;cursor:pointer;transition:.15s}
   .tile:hover{border-color:var(--line2)}
+  /* D090 · ô kho là nút nên phải thấy được khi đi bằng bàn phím. */
+  .tile[data-kho-id]:focus-visible{outline:2px solid var(--gold, #d8b876);outline-offset:2px}
   .tile img{width:100%;height:100%;object-fit:cover;display:block}
   .tile .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted2);
     font-size:var(--fs-micro);padding:6px;text-align:center;word-break:break-all}
@@ -472,6 +474,7 @@ var T = {
     st_new:'đã nạp', st_dup:'đã có', st_bad:'lỗi', st_pass:'bỏ qua', heic:'HEIC — bỏ qua',
     sel_mode:'Chế độ chọn — chạm để tick, không cần giữ nữa.', sel_done:'Xong',
     zoom:'Xem ảnh lớn', lb_close:'Đóng', lb_prev:'Ảnh trước', lb_next:'Ảnh sau', lb_of:'{i}/{n}',
+    dot_la:'đợt {d}',
     coach:'<b>Bấm vào ảnh</b> để xem lớn. <b>Bấm ô vuông góc trái</b> để tick chọn. Muốn chọn cả mảng thì <b>giữ chuột kéo ngang qua nhiều ảnh</b> — kéo qua ô đang tick sẽ bỏ tick cả vùng. Trên điện thoại: <b>nhấn giữ một ảnh</b> để vào chế độ chọn.',
     coach_ok:'Đã hiểu', tip_dup:'Ảnh này đã có trong kho — trùng với một tấm đã nạp trước, nên lượt này bỏ qua.', tip_err:'Không nạp được: {e}'
   },
@@ -501,6 +504,7 @@ var T = {
     st_new:'取込済', st_dup:'既存', st_bad:'失敗', st_pass:'除外', heic:'HEIC — 除外',
     sel_mode:'選択モード — 長押し不要、タップで選べます。', sel_done:'完了',
     zoom:'拡大表示', lb_close:'閉じる', lb_prev:'前の写真', lb_next:'次の写真', lb_of:'{i}/{n}',
+    dot_la:'{d} の回',
     coach:'<b>写真をタップ</b>すると拡大表示。<b>左上の四角</b>で選択します。まとめて選ぶには<b>マウスで横にドラッグ</b> — 選択済みの上をなぞると範囲ごと解除されます。スマートフォンでは<b>長押し</b>で選択モードへ。',
     coach_ok:'閉じる', tip_dup:'この写真は既に保管済みです（同じ写真が取り込み済み）。今回はスキップしました。', tip_err:'取り込み失敗: {e}'
   }
@@ -930,6 +934,8 @@ function nuotClickCuaO(el){
   el.addEventListener('click', chan, true);
 }
 var LB_IDX = -1, LB_URL_TAM = null, LB_TRA_FOCUS = null;
+var LB_DS = [];            // danh sách ĐANG xem, đã chuẩn hoá — xem nguồnDia/nguonKho
+var KHO = [];              // ảnh kho đã tải về, đúng thứ tự đang hiển thị
 var LY_DO = Object.create(null);   // id → vì sao tấm này hỏng (cho tooltip AC-19)
 
 /* Một nguồn sự thật là CHON; hàm này là chỗ DUY NHẤT phát biểu nó ra giao diện,
@@ -975,21 +981,60 @@ function bayFLIP(o, img){
     img.style.transform = 'none';
   });
 }
+/* D090 · Lightbox cũ đọc thẳng anhXemDuoc(), nghĩa là nó chỉ biết ảnh trên ĐĨA:
+   nó hỏi getBlob() rồi dựng object URL. Ảnh trong kho tới từ MinIO qua một URL
+   đã có sẵn, không có blob nào để hỏi — nên không tồn tại đường nào cho nó lọt
+   vào. Đó là lý do bấm một ô trong kho không có gì xảy ra.
+   Thay vì rải if/else "đĩa hay kho" khắp các hàm, mỗi nguồn tự trả về CÙNG một
+   hình dạng {id, ten, chuThich, o(), url()} và lightbox chỉ biết hình dạng đó. */
+function nguonDia(){
+  return anhXemDuoc().map(function(it){
+    return {
+      id: it.id, ten: it.name, chuThich: it.relativePath,
+      o: function(){ return oCuaItem(it.id); },
+      url: function(){
+        /* Cấm 7 của D083 vẫn giữ: KHÔNG thêm request — dùng lại đúng blob mà ô
+           đang hiển thị; chỉ khi ô chưa kịp tải mới gọi getBlob(). */
+        var o = oCuaItem(it.id), sanCo = o && o.querySelector('img') && o.querySelector('img').src;
+        if (sanCo) return Promise.resolve(sanCo);
+        return it.getBlob().then(function(b){
+          if (LB_URL_TAM) URL.revokeObjectURL(LB_URL_TAM);
+          LB_URL_TAM = URL.createObjectURL(b); return LB_URL_TAM;
+        });
+      }
+    };
+  });
+}
+function oKho(id){
+  return Array.prototype.filter.call(document.querySelectorAll('#khoWrap .tile'), function(el){
+    return el.getAttribute('data-kho-id') === String(id); })[0];
+}
+/* batch_id là dot-YYYYMMDDHHMMSS-xxxxxx. Thứ người xem nhớ về một đợt là LÚC nạp
+   nó, không phải chuỗi băm phía sau. Không khớp khuôn thì trả nguyên, đừng đoán. */
+function nhanDot(b){
+  var m = /^dot-(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.exec(String(b || ''));
+  return m ? (m[4] + ':' + m[5] + '  ' + m[3] + '/' + m[2] + '/' + m[1]) : String(b || '');
+}
+function nguonKho(){
+  return KHO.map(function(x){
+    return {
+      id: 'kho:' + x.id, ten: x.orig_name,
+      chuThich: x.orig_name + '  ·  ' + fmt('dot_la', { d: nhanDot(x.batch_id) }),
+      o: function(){ return oKho(x.id); },
+      url: function(){ return Promise.resolve(x.preview_url); }
+    };
+  });
+}
+
 function veLightbox(i, oNguon){
-  var ds = anhXemDuoc(); if (!ds.length) return;
+  var ds = LB_DS; if (!ds.length) return;
   LB_IDX = (i + ds.length) % ds.length;
   var it = ds[LB_IDX];
   var lb = $('#lb'), img = $('#lbImg');
-  img.alt = it.name;
-  $('#lbCap').textContent = it.relativePath + '  ·  ' + fmt('lb_of', { i: LB_IDX + 1, n: ds.length });
-  var o = oNguon || oCuaItem(it.id);
-  var sanCo = o && o.querySelector('img') && o.querySelector('img').src;
-  var lay = sanCo ? Promise.resolve(sanCo)
-                  : it.getBlob().then(function(b){
-                      if (LB_URL_TAM) URL.revokeObjectURL(LB_URL_TAM);
-                      LB_URL_TAM = URL.createObjectURL(b); return LB_URL_TAM;
-                    });
-  lay.then(function(u){
+  img.alt = it.ten;
+  $('#lbCap').textContent = it.chuThich + '  ·  ' + fmt('lb_of', { i: LB_IDX + 1, n: ds.length });
+  var o = oNguon || it.o();
+  it.url().then(function(u){
     img.style.transition = 'none'; img.style.transform = 'none';
     img.onload = function(){ bayFLIP(o, img); };
     img.src = u;
@@ -997,16 +1042,18 @@ function veLightbox(i, oNguon){
     $('#lbX').focus();
   }).catch(function(){ /* ảnh hỏng: không mở, không làm gì thêm */ });
 }
-function moLightbox(id){
-  var ds = anhXemDuoc();
+function moLightboxTu(ds, id, oNguon){
   var i = -1;
   for (var k = 0; k < ds.length; k++) if (ds[k].id === id){ i = k; break; }
   if (i < 0) return;
+  LB_DS = ds;
   /* AC-16 · trả focus về ĐÚNG Ô đã mở, không phải nút phóng bên trong nó:
      người dùng bàn phím đóng lightbox xong phải đứng lại đúng chỗ vừa rời đi. */
-  LB_TRA_FOCUS = oCuaItem(id) || document.activeElement;
-  veLightbox(i, oCuaItem(id));
+  LB_TRA_FOCUS = oNguon || document.activeElement;
+  veLightbox(i, oNguon);
 }
+function moLightbox(id){ moLightboxTu(nguonDia(), id, oCuaItem(id)); }
+function moLightboxKho(id){ moLightboxTu(nguonKho(), 'kho:' + String(id), oKho(id)); }
 function dongLightbox(){
   var lb = $('#lb');
   lb.classList.remove('show'); lb.hidden = true;
@@ -1267,6 +1314,7 @@ async function taiKho(){
         + fmtMB(Number(k.tong_byte)) + (Number(k.da_go) ? (' · ' + k.da_go + ' đã gỡ') : '');
     }
     var r = await (await fetch('/crm/event-photos?limit=24')).json();
+    KHO = (r.items || []).slice();
     var w = $('#khoWrap');
     if (!r.ok || !r.items.length){ w.innerHTML = '<p class="hint">' + tt('kho_empty') + '</p>'; return; }
     var h = '<div class="grid">';
@@ -1275,7 +1323,11 @@ async function taiKho(){
       /* D086 · KHÔNG gắn class fade ở đây: ảnh kho tới qua mạng, mờ-dần chỉ làm
          chậm thêm. Mặc định giờ là hiện nên không cần gắn gì để nó xuất hiện —
          đó chính là điểm của việc đảo mặc định. onerror đánh dấu ô hỏng. */
-      h += '<div class="tile"><img loading="lazy" onerror="this.closest(&quot;.tile&quot;).classList.add(&quot;anh-hong&quot;)" src="' + x.thumb_url + '" alt="' + esc(x.orig_name) + '">'
+      /* D090 · ô kho nay là NÚT: bấm chuột, Enter hay Space đều mở xem lớn.
+         role+tabindex chứ không bọc <button>, vì <button> quanh <img> làm hỏng
+         lưới và kéo theo cả style nút mặc định. */
+      h += '<div class="tile" data-kho-id="' + esc(x.id) + '" tabindex="0" role="button" aria-label="'
+        + esc(x.orig_name) + '"><img loading="lazy" onerror="this.closest(&quot;.tile&quot;).classList.add(&quot;anh-hong&quot;)" src="' + x.thumb_url + '" alt="' + esc(x.orig_name) + '">'
         + '<div class="nm" title="' + esc(x.rel_path || x.orig_name) + '">' + esc(x.orig_name) + '</div></div>';
     });
     h += '</div>';
@@ -1327,6 +1379,37 @@ $('#lbX').onclick = dongLightbox;
 $('#lbPrev').onclick = function(){ veLightbox(LB_IDX - 1, null); };
 $('#lbNext').onclick = function(){ veLightbox(LB_IDX + 1, null); };
 $('#lb').addEventListener('click', function(e){ if (e.target === this) dongLightbox(); });
+/* D090 · ô kho mở lightbox. Uỷ quyền trên #khoWrap vì nội dung bên trong bị
+   innerHTML thay mới mỗi lần tải — gắn thẳng lên từng ô sẽ mất sau lần vẽ sau. */
+$('#khoWrap').addEventListener('click', function(e){
+  var t = e.target.closest && e.target.closest('.tile[data-kho-id]');
+  if (t) moLightboxKho(t.getAttribute('data-kho-id'));
+});
+$('#khoWrap').addEventListener('keydown', function(e){
+  if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+  var t = e.target.closest && e.target.closest('.tile[data-kho-id]');
+  if (!t) return;
+  e.preventDefault();                       // Space không được cuộn trang
+  moLightboxKho(t.getAttribute('data-kho-id'));
+});
+/* Vuốt đổi ảnh. Gắn trên CHÍNH khung lightbox, nên lúc nó đóng thì cuộn trang
+   không bị đụng tới dòng nào. */
+(function(){
+  var x0 = null, y0 = null;
+  $('#lb').addEventListener('touchstart', function(e){
+    if (e.touches.length !== 1){ x0 = null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, { passive: true });
+  $('#lb').addEventListener('touchend', function(e){
+    if (x0 == null || LB_IDX < 0) return;
+    var t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
+    x0 = null;
+    /* Ngưỡng 48px VÀ ngang phải gấp đôi dọc: vuốt chéo hay tay run không được
+       tính thành đổi ảnh. */
+    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    veLightbox(LB_IDX + (dx < 0 ? 1 : -1), null);
+  }, { passive: true });
+})();
 document.addEventListener('keydown', function(e){
   if (LB_IDX < 0) return;
   if (e.key === 'Escape'){ e.preventDefault(); dongLightbox(); }

@@ -120,6 +120,51 @@
   .tile:hover{border-color:var(--line2)}
   /* D090 · ô kho là nút nên phải thấy được khi đi bằng bàn phím. */
   .tile[data-kho-id]:focus-visible{outline:2px solid var(--gold, #d8b876);outline-offset:2px}
+  /* D090 · Lưới kho KHÔNG ép ô vuông như lưới tick. Hai lưới làm hai việc khác
+     nhau: lưới tick để quét mắt và tick nên ô đều nhau mới nhanh; lưới kho để
+     NGẮM, nên ảnh dọc phải cao và ảnh ngang phải rộng.
+     Bản đầu xếp bằng CSS columns. Gọn, nhưng hỏng hai chỗ mà kho ảnh không chịu
+     được: chữ đổ theo CỘT nên ảnh mới thứ hai nằm DƯỚI ảnh mới nhất chứ không
+     bên cạnh — sai với một kho xếp theo thời gian; và mỗi lần tải thêm thì cả
+     lưới xếp lại, ảnh đang xem nhảy sang cột khác.
+     Nay là grid theo HÀNG với nhịp hàng nhỏ: mỗi ô chiếm bao nhiêu nhịp là tính
+     từ tỉ lệ ảnh. Thứ tự đọc đúng, và thêm ảnh vào cuối không đụng ảnh đã xếp. */
+  /* Khe dọc KHÔNG dùng row-gap: một ô trải nhiều nhịp hàng sẽ nuốt luôn các khe
+     nó bắc qua, nên khe sẽ to nhỏ theo chiều cao ảnh. Thay vào đó số nhịp tính
+     CẢ khe, rồi ô tự lùi lại đúng phần khe đó. */
+  .grid-kho{--khe:8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));
+    grid-auto-rows:4px;column-gap:var(--khe);row-gap:0;margin-top:13px}
+  .grid-kho .tile{aspect-ratio:auto;margin:0;grid-row-end:span 40;height:calc(100% - var(--khe))}
+  .grid-kho .tile img{width:100%;height:100%;object-fit:cover;display:block}
+  /* Tên file trên MỌI ô là ngôn ngữ của trình quản lý tệp, không phải của một
+     album ảnh: ở mật độ này nó chiếm gần nửa ô và che đúng phần ảnh đáng nhìn.
+     Tên KHÔNG mất đi đâu — vẫn ở caption khi mở lớn, ở title khi rê chuột, và ở
+     aria-label cho trình đọc màn hình. Lưới tick giữ nguyên tên hiện thường
+     trực: ở đó người ta đang quyết định đẩy tệp nào lên, tên là thông tin chính. */
+  .grid-kho .tile .nm{opacity:0;transition:opacity .16s}
+  .grid-kho .tile:hover .nm,.grid-kho .tile:focus-visible .nm{opacity:1}
+  @media (prefers-reduced-motion:reduce){ .grid-kho .tile .nm{transition:none} }
+  /* Hàng chip lọc đợt */
+  .dot-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+  .dot-chip{border:1px solid var(--line);background:var(--panel2);color:var(--text);
+    border-radius:999px;padding:6px 12px;font-size:var(--fs-small);cursor:pointer;transition:.15s}
+  .dot-chip:hover{border-color:var(--line2)}
+  .dot-chip.on{background:var(--gold,#d8b876);border-color:var(--gold,#d8b876);color:#2a1c02;font-weight:700}
+  .dot-chip:focus-visible{outline:2px solid var(--gold,#d8b876);outline-offset:2px}
+  /* Chân khối: nút Tải thêm + mốc cho cuộn-tự-tải */
+  .kho-chan{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;min-height:34px}
+  /* Dải thumb trong viewer — cho biết đang ở đâu trong tập, và nhảy thẳng tới ảnh */
+  .lb-strip{position:fixed;left:0;right:0;bottom:calc(6px + env(safe-area-inset-bottom,0px));
+    display:none;gap:6px;overflow-x:auto;padding:8px 10px;scrollbar-width:none;
+    background:linear-gradient(transparent,rgba(0,0,0,.6))}
+  .lb-strip::-webkit-scrollbar{display:none}
+  .lb.co-strip .lb-strip{display:flex}
+  .lb.co-strip .lb-cap{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+  .lb-th{flex:0 0 auto;width:52px;height:52px;border-radius:8px;overflow:hidden;padding:0;
+    border:1px solid rgba(255,255,255,.18);background:none;cursor:pointer;opacity:.5;transition:.16s}
+  .lb-th img{width:100%;height:100%;object-fit:cover;display:block}
+  .lb-th.on{opacity:1;border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.38)}
+  .lb-th:focus-visible{outline:2px solid #fff;outline-offset:2px}
   .tile img{width:100%;height:100%;object-fit:cover;display:block}
   .tile .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted2);
     font-size:var(--fs-micro);padding:6px;text-align:center;word-break:break-all}
@@ -217,8 +262,14 @@
   body.chonmode .tile .ck{opacity:1}
 
   /* ── AC-16 · lightbox ── */
-  .lb{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
-    background:rgba(3,8,16,.9);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding:24px}
+  /* D090 · Chừa chỗ cho phần khung: nút Đóng ở trên, caption và dải phim ở dưới.
+     Trước đây ảnh chỉ bị chặn bởi max-height:100% nên ở màn thấp (360×640) một
+     tấm ẢNH DỌC cao hết khung: nó chui xuống dưới caption 55px và bị nút Đóng
+     đè lên đỉnh. Dải phim của D090 làm chỗ đó chật thêm, nên phải trả lại. */
+  .lb{position:fixed;inset:0;padding:calc(64px + env(safe-area-inset-top,0px)) 12px
+      calc(52px + env(safe-area-inset-bottom,0px));z-index:100;display:none;align-items:center;justify-content:center;
+    background:rgba(3,8,16,.9);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  .lb.co-strip{padding-bottom:calc(124px + env(safe-area-inset-bottom,0px))}
   .lb.show{display:flex}
   .lb img{max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 24px 70px rgba(0,0,0,.6);
     transform-origin:top left;will-change:transform}
@@ -262,6 +313,7 @@
     .stat{gap:14px}
     .stat div b{font-size:1.15rem}
     .grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+    .grid-kho{--khe:6px;grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}
     .barnum{min-width:0}
   }
 
@@ -423,6 +475,7 @@
   <button class="lb-nav lb-prev" id="lbPrev" type="button" aria-label="Ảnh trước">‹</button>
   <button class="lb-nav lb-next" id="lbNext" type="button" aria-label="Ảnh sau">›</button>
   <div class="lb-cap" id="lbCap"></div>
+  <div class="lb-strip" id="lbStrip"></div>
 </div>
 
 <script src="/crm/kho-anh/exif6.fixture.js"></script>
@@ -460,7 +513,16 @@ var T = {
     why_run:'Đang chạy — chờ đợt hiện tại xong đã.',
     kho_h:'Đã có trong kho', reload:'Tải lại', retry:'↻ Thử lại',
     kho_empty:'Kho chưa có ảnh sự kiện nào.',
-    kho_note:'Đang hiện 24 tấm mới nhất.',
+    kho_dot_empty:'Đợt này không còn ảnh nào.',
+    kho_note:'Đang hiện {d}/{t} ảnh.',
+    kho_note_het:'Đã hiện đủ {t} ảnh.',
+    kho_note_dot:'Đang hiện {d} ảnh của đợt này.',
+    kho_note_dot_het:'Đợt này có {d} ảnh.',
+    kho_them:'Tải thêm',
+    kho_dang_tai:'Đang tải…',
+    dot_tatca:'Tất cả',
+    kho_stat:'{n} ảnh · {d} đợt · {mb}',
+    kho_stat_go:'{n} ảnh · {d} đợt · {mb} · {g} đã gỡ',
     kho_err:'Không đọc được kho:',
     kt_dang_chay:'⏳ Đang kiểm tra trình duyệt…',
     kt_hong_h:'Trình duyệt này làm ảnh bị xoay ngang.',
@@ -490,7 +552,16 @@ var T = {
     why_run:'実行中 — 現在のバッチの完了をお待ちください。',
     kho_h:'保管済みの写真', reload:'再読み込み', retry:'↻ 再試行',
     kho_empty:'イベント写真はまだありません。',
-    kho_note:'最新24枚を表示しています。',
+    kho_dot_empty:'この回の写真はありません。',
+    kho_note:'{t}枚中{d}枚を表示中。',
+    kho_note_het:'全{t}枚を表示しました。',
+    kho_note_dot:'この回の写真を{d}枚表示中。',
+    kho_note_dot_het:'この回は{d}枚です。',
+    kho_them:'もっと読み込む',
+    kho_dang_tai:'読み込み中…',
+    dot_tatca:'すべて',
+    kho_stat:'{n}枚 · {d}回 · {mb}',
+    kho_stat_go:'{n}枚 · {d}回 · {mb} · {g}件削除済み',
     kho_err:'保管庫を読めません：',
     kt_dang_chay:'⏳ ブラウザを確認しています…',
     kt_hong_h:'このブラウザでは写真が横向きになってしまいます。',
@@ -526,7 +597,11 @@ function setLang(l){
   if (KQ_KIEM) veHopKiemTra(KQ_KIEM);   // vẽ lại theo ngôn ngữ TỪ SỐ LIỆU, không bới DOM
   capNhatNutSync();
   if (ITEMS.length) veLuoi();
-  taiKho();
+  /* D090 · KHÔNG gọi lại taiKho() ở đây. Đổi ngôn ngữ mà đi tải lại kho thì mọi
+     trang người ta đã cuộn ra bị vứt và phải cuộn lại từ đầu. Vẽ lại từ số liệu
+     đã nhớ — đúng nguyên tắc D086 đã chốt cho ô kiểm EXIF. */
+  if ($('#khoGrid')){ veStat(); veDot(); veChan(); veGhiChu(); }
+  else taiKho();
 }
 
 /* ── theme sáng/tối (khuôn #themeBtn của crm-app-v2) ── */
@@ -992,6 +1067,7 @@ function nguonDia(){
     return {
       id: it.id, ten: it.name, chuThich: it.relativePath,
       o: function(){ return oCuaItem(it.id); },
+      thumb: function(){ var o = oCuaItem(it.id), im = o && o.querySelector('img'); return im ? im.src : ''; },
       url: function(){
         /* Cấm 7 của D083 vẫn giữ: KHÔNG thêm request — dùng lại đúng blob mà ô
            đang hiển thị; chỉ khi ô chưa kịp tải mới gọi getBlob(). */
@@ -1021,6 +1097,7 @@ function nguonKho(){
       id: 'kho:' + x.id, ten: x.orig_name,
       chuThich: x.orig_name + '  ·  ' + fmt('dot_la', { d: nhanDot(x.batch_id) }),
       o: function(){ return oKho(x.id); },
+      thumb: function(){ return x.thumb_url; },
       url: function(){ return Promise.resolve(x.preview_url); }
     };
   });
@@ -1033,6 +1110,7 @@ function veLightbox(i, oNguon){
   var lb = $('#lb'), img = $('#lbImg');
   img.alt = it.ten;
   $('#lbCap').textContent = it.chuThich + '  ·  ' + fmt('lb_of', { i: LB_IDX + 1, n: ds.length });
+  veStrip();
   var o = oNguon || it.o();
   it.url().then(function(u){
     img.style.transition = 'none'; img.style.transform = 'none';
@@ -1052,12 +1130,36 @@ function moLightboxTu(ds, id, oNguon){
   LB_TRA_FOCUS = oNguon || document.activeElement;
   veLightbox(i, oNguon);
 }
+/* D090 · dải thumb dưới viewer: nói đang ở đâu trong tập, và nhảy thẳng tới một
+   ảnh bất kỳ. Chỉ dựng lại HTML khi TẬP đổi — đổi ảnh trong cùng tập mà vẽ lại
+   cả dải thì mọi thumb bị tải lại và dải nháy một cái mỗi lần bấm mũi tên. */
+function veStrip(){
+  var st = $('#lbStrip'), lb = $('#lb');
+  if (!st) return;
+  if (LB_DS.length < 2){ st.innerHTML = ''; st.removeAttribute('data-khoa'); lb.classList.remove('co-strip'); return; }
+  var khoa = LB_DS.length + '|' + LB_DS[0].id;
+  if (st.getAttribute('data-khoa') !== khoa){
+    st.innerHTML = LB_DS.map(function(it, k){
+      var u = it.thumb ? it.thumb() : '';
+      return '<button type="button" class="lb-th" data-i="' + k + '" tabindex="-1" aria-label="'
+        + esc(it.ten) + '">' + (u ? '<img src="' + esc(u) + '" alt="' + esc(it.ten) + '">' : '') + '</button>';
+    }).join('');
+    st.setAttribute('data-khoa', khoa);
+  }
+  lb.classList.add('co-strip');
+  var bs = st.querySelectorAll('.lb-th');
+  for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', i === LB_IDX);
+  if (bs[LB_IDX]) bs[LB_IDX].scrollIntoView(
+    { inline: 'center', block: 'nearest', behavior: GIAM_DONG ? 'auto' : 'smooth' });
+}
 function moLightbox(id){ moLightboxTu(nguonDia(), id, oCuaItem(id)); }
 function moLightboxKho(id){ moLightboxTu(nguonKho(), 'kho:' + String(id), oKho(id)); }
 function dongLightbox(){
   var lb = $('#lb');
   lb.classList.remove('show'); lb.hidden = true;
   $('#lbImg').removeAttribute('src');
+  $('#lbStrip').innerHTML = ''; $('#lbStrip').removeAttribute('data-khoa');
+  lb.classList.remove('co-strip');
   if (LB_URL_TAM){ URL.revokeObjectURL(LB_URL_TAM); LB_URL_TAM = null; }
   LB_IDX = -1;
   if (LB_TRA_FOCUS && LB_TRA_FOCUS.focus) try { LB_TRA_FOCUS.focus(); } catch(_){}
@@ -1302,43 +1404,163 @@ async function dongBo(){
 /* ───────────────────────────────────────────────────────────────────────────
    5 · Kho hiện có
    ─────────────────────────────────────────────────────────────────────────── */
+var KHO_TONG = 0;        // tổng ảnh trong kho, theo stats
+var KHO_STAT = null;     // số liệu stats đã nhớ, để vẽ lại khi đổi ngôn ngữ
+var KHO_DOT = '';        // đợt đang lọc; '' = tất cả
+var KHO_HET = false;     // đã tải tới hết chưa
+var KHO_DANG = false;    // đang tải một trang
+var KHO_TRANG = 60;      // mỗi lần lấy bao nhiêu (trần API là 200)
+var KHO_QUAN = null;     // IntersectionObserver cho cuộn-tự-tải
+
+/* D090 · Khung dựng MỘT LẦN. Bản cũ mỗi lần tải lại ghi đè innerHTML cả khối —
+   với phân trang thì làm thế là vứt rồi tải lại toàn bộ ảnh đang hiện: nháy màn
+   và tốn mạng đúng bằng số lần bấm Tải thêm. */
+function khungKho(){
+  var w = $('#khoWrap');
+  if (w.querySelector('#khoGrid')) return;
+  w.innerHTML = '<div class="dot-row" id="khoDot"></div>'
+              + '<div class="grid-kho" id="khoGrid"></div>'
+              + '<p class="hint" id="khoNote" style="margin-top:10px"></p>'
+              + '<div class="kho-chan" id="khoChan"></div>';
+}
+function oKhoHTML(x){
+  /* Tỉ lệ đặt sẵn từ width/height để chỗ được giữ TRƯỚC khi ảnh về — masonry mà
+     không giữ chỗ thì mỗi ảnh tải xong lại đẩy cả cột nhảy một nhịp. */
+  var w = Number(x.width), h = Number(x.height);
+  var ar = (w > 0 && h > 0) ? (w + ' / ' + h) : '4 / 3';
+  return '<div class="tile" data-kho-id="' + esc(x.id) + '" tabindex="0" role="button" aria-label="'
+    + esc(x.orig_name) + '"><img loading="lazy" style="aspect-ratio:' + ar + '"'
+    + ' onerror="this.closest(&quot;.tile&quot;).classList.add(&quot;anh-hong&quot;)"'
+    + ' src="' + esc(x.thumb_url) + '" alt="' + esc(x.orig_name) + '">'
+    + '<div class="nm" title="' + esc(x.rel_path || x.orig_name) + '">' + esc(x.orig_name) + '</div></div>';
+}
+var KHO_NHIP = 4;    // grid-auto-rows, khớp CSS
+/* Chiều cao mỗi ô = bề rộng cột × tỉ lệ ảnh, quy ra số nhịp hàng. Tính từ
+   width/height của API nên không phải chờ ảnh tải xong — lưới đứng yên ngay từ
+   lúc vẽ, không nhảy dần theo từng tấm về. */
+function xepKho(){
+  var g = $('#khoGrid'); if (!g) return;
+  var ts = g.querySelectorAll('.tile'); if (!ts.length) return;
+  var w = ts[0].getBoundingClientRect().width; if (!w) return;
+  /* Khe đọc TỪ CSS, không chép lại thành hằng số trong JS: hai khổ màn dùng hai
+     giá trị khác nhau, chép tay là đúng một lần rồi lệch mãi. */
+  var khe = parseFloat(getComputedStyle(g).getPropertyValue('--khe')) || 8;
+  for (var i = 0; i < ts.length; i++){
+    var im = ts[i].querySelector('img');
+    var ar = im && im.style.aspectRatio ? im.style.aspectRatio.split('/') : null;
+    var tren = ar ? (Number(ar[0]) / Number(ar[1])) : (4 / 3);
+    if (!(tren > 0)) tren = 4 / 3;
+    ts[i].style.gridRowEnd = 'span ' + Math.max(1, Math.round((w / tren + khe) / KHO_NHIP));
+  }
+}
+var KHO_RO = null;
+function theoDoiKho(){
+  var g = $('#khoGrid');
+  if (!g || KHO_RO || !window.ResizeObserver) return;
+  /* Đổi bề rộng (xoay máy, đổi khổ) thì số cột đổi ⇒ chiều cao ô đổi theo.
+     Nghe ResizeObserver thay vì đoán lúc nào nên đo lại — bài học D085. */
+  KHO_RO = new ResizeObserver(function(){ xepKho(); });
+  KHO_RO.observe(g);
+}
+function veStat(){
+  if (!KHO_STAT) return;
+  var k = KHO_STAT;
+  $('#khoStat').textContent = Number(k.da_go)
+    ? fmt('kho_stat_go', { n: k.con, d: k.so_dot, mb: fmtMB(Number(k.tong_byte)), g: k.da_go })
+    : fmt('kho_stat',    { n: k.con, d: k.so_dot, mb: fmtMB(Number(k.tong_byte)) });
+}
+function veGhiChu(){
+  var n = $('#khoNote'); if (!n) return;
+  if (KHO_DOT) n.textContent = KHO_HET ? fmt('kho_note_dot_het', { d: KHO.length })
+                                       : fmt('kho_note_dot',     { d: KHO.length });
+  else         n.textContent = KHO_HET ? fmt('kho_note_het', { t: KHO.length })
+                                       : fmt('kho_note',     { d: KHO.length, t: KHO_TONG || KHO.length });
+}
+function veDot(){
+  var d = $('#khoDot'); if (!d) return;
+  /* Danh sách đợt suy từ ảnh ĐÃ tải — chưa có API liệt kê đợt. Nghĩa là nó dài
+     dần theo số trang đã tải. Đó là hạn chế thật, đã ghi vào báo cáo, không giả
+     vờ rằng đây là danh sách đầy đủ. */
+  var co = Object.create(null), ds = [];
+  KHO.forEach(function(x){ if (x.batch_id && !co[x.batch_id]){ co[x.batch_id] = 1; ds.push(x.batch_id); } });
+  if (KHO_DOT && !co[KHO_DOT]){ ds.unshift(KHO_DOT); co[KHO_DOT] = 1; }
+  if (ds.length < 2 && !KHO_DOT){ d.innerHTML = ''; return; }
+  var h = '<button type="button" class="dot-chip' + (KHO_DOT ? '' : ' on') + '" data-dot="">'
+        + esc(tt('dot_tatca')) + '</button>';
+  ds.forEach(function(b){
+    h += '<button type="button" class="dot-chip' + (KHO_DOT === b ? ' on' : '') + '" data-dot="'
+      + esc(b) + '">' + esc(nhanDot(b)) + '</button>';
+  });
+  d.innerHTML = h;
+}
+function veChan(){
+  var c = $('#khoChan'); if (!c) return;
+  if (KHO_HET){
+    c.innerHTML = '';
+    if (KHO_QUAN){ KHO_QUAN.disconnect(); KHO_QUAN = null; }
+    return;
+  }
+  c.innerHTML = '<button class="btn sm" id="khoThem" type="button"></button>';
+  var b = $('#khoThem');
+  b.textContent = KHO_DANG ? tt('kho_dang_tai') : tt('kho_them');
+  b.disabled = KHO_DANG;
+  b.onclick = function(){ napTrangKho(false); };
+  quanSatChan();
+}
+function quanSatChan(){
+  /* Cuộn gần tới đáy thì tự tải. Nút Tải thêm VẪN giữ: người dùng bàn phím
+     không sinh ra giao cắt nào, và một danh sách tự dừng mà không nói gì là
+     cách chắc chắn để người ta tưởng mình đã xem hết. */
+  var c = $('#khoChan');
+  if (!c || KHO_HET || !window.IntersectionObserver) return;
+  if (KHO_QUAN) KHO_QUAN.disconnect();
+  KHO_QUAN = new IntersectionObserver(function(es){
+    for (var i = 0; i < es.length; i++) if (es[i].isIntersecting){ napTrangKho(false); return; }
+  }, { rootMargin: '400px 0px' });
+  KHO_QUAN.observe(c);
+}
+async function napTrangKho(dauLai){
+  if (KHO_DANG) return;
+  if (!dauLai && KHO_HET) return;
+  KHO_DANG = true;
+  khungKho();
+  if (dauLai){ KHO = []; KHO_HET = false; $('#khoGrid').innerHTML = ''; }
+  veChan();
+  try {
+    var qs = '?limit=' + KHO_TRANG + '&offset=' + KHO.length
+           + (KHO_DOT ? '&batch=' + encodeURIComponent(KHO_DOT) : '');
+    var r = await (await fetch('/crm/event-photos' + qs)).json();
+    if (!r || !r.ok) throw new Error('list');
+    var them = r.items || [];
+    KHO = KHO.concat(them);
+    /* "Hết" đo bằng CHÍNH số ảnh trang này trả về, không bằng so với stats: khi
+       lọc theo đợt thì tổng của riêng đợt đó không có ở bất cứ đâu. */
+    KHO_HET = them.length < KHO_TRANG;
+    if (!KHO.length) $('#khoGrid').innerHTML = '<p class="hint">' + tt(KHO_DOT ? 'kho_dot_empty' : 'kho_empty') + '</p>';
+    else if (them.length) $('#khoGrid').insertAdjacentHTML('beforeend', them.map(oKhoHTML).join(''));
+    xepKho(); theoDoiKho();
+    veDot();
+  } catch (e){
+    KHO_HET = true;
+    var c = $('#khoChan');
+    c.innerHTML = '<p class="bad" style="margin:0">' + tt('kho_err') + ' ' + esc(e.message) + '</p>';
+    themNutThuLai(c.querySelector('.bad'), function(){ KHO_HET = false; napTrangKho(false); });
+    KHO_DANG = false; veGhiChu(); return;
+  }
+  KHO_DANG = false; veChan(); veGhiChu();
+}
 async function taiKho(){
   try {
     var s = await (await fetch('/crm/event-photos/stats')).json();
-    if (s.ok){
-      var k = s.kho_su_kien;
+    if (s && s.ok){
       /* D086 · bỏ '(crm_photos khách: N)' — đó là tên BẢNG dữ liệu, và số đó nói
-         về ảnh chân dung khách, không liên quan gì tới kho ảnh sự kiện đang xem.
-         Với người dùng thì nó vừa khó hiểu vừa gây tưởng là số của kho này. */
-      $('#khoStat').textContent = k.con + ' ảnh · ' + k.so_dot + ' đợt · '
-        + fmtMB(Number(k.tong_byte)) + (Number(k.da_go) ? (' · ' + k.da_go + ' đã gỡ') : '');
+         về ảnh chân dung khách, không liên quan gì tới kho ảnh sự kiện đang xem. */
+      KHO_STAT = s.kho_su_kien;
+      KHO_TONG = Number(KHO_STAT.con) || 0;
+      veStat();
     }
-    var r = await (await fetch('/crm/event-photos?limit=24')).json();
-    KHO = (r.items || []).slice();
-    var w = $('#khoWrap');
-    if (!r.ok || !r.items.length){ w.innerHTML = '<p class="hint">' + tt('kho_empty') + '</p>'; return; }
-    var h = '<div class="grid">';
-    r.items.forEach(function(x){
-      // AC-6 · alt = tên file gốc, không để rỗng.
-      /* D086 · KHÔNG gắn class fade ở đây: ảnh kho tới qua mạng, mờ-dần chỉ làm
-         chậm thêm. Mặc định giờ là hiện nên không cần gắn gì để nó xuất hiện —
-         đó chính là điểm của việc đảo mặc định. onerror đánh dấu ô hỏng. */
-      /* D090 · ô kho nay là NÚT: bấm chuột, Enter hay Space đều mở xem lớn.
-         role+tabindex chứ không bọc <button>, vì <button> quanh <img> làm hỏng
-         lưới và kéo theo cả style nút mặc định. */
-      h += '<div class="tile" data-kho-id="' + esc(x.id) + '" tabindex="0" role="button" aria-label="'
-        + esc(x.orig_name) + '"><img loading="lazy" onerror="this.closest(&quot;.tile&quot;).classList.add(&quot;anh-hong&quot;)" src="' + x.thumb_url + '" alt="' + esc(x.orig_name) + '">'
-        + '<div class="nm" title="' + esc(x.rel_path || x.orig_name) + '">' + esc(x.orig_name) + '</div></div>';
-    });
-    h += '</div>';
-    h += '<p class="hint" style="margin-top:10px">' + tt('kho_note') + '</p>';
-    w.innerHTML = h;
-  } catch (e){
-    // AC-8 · nhánh lỗi thứ hai: mạng chớp thì cho bấm lại, đừng bắt tải lại trang.
-    var w2 = $('#khoWrap');
-    w2.innerHTML = '<p class="bad" style="margin-top:0">' + tt('kho_err') + ' ' + esc(e.message) + '</p>';
-    themNutThuLai(w2.querySelector('.bad'), taiKho);
-  }
+  } catch (_){ /* stats hỏng thì thôi, không được vì thế mà không hiện ảnh nào */ }
+  return napTrangKho(true);
 }
 
 /* AC-11 · định danh phiên. Fail-safe: 401/lỗi/mất mạng đều ẨN khối, không hiện
@@ -1382,8 +1604,14 @@ $('#lb').addEventListener('click', function(e){ if (e.target === this) dongLight
 /* D090 · ô kho mở lightbox. Uỷ quyền trên #khoWrap vì nội dung bên trong bị
    innerHTML thay mới mỗi lần tải — gắn thẳng lên từng ô sẽ mất sau lần vẽ sau. */
 $('#khoWrap').addEventListener('click', function(e){
+  var chip = e.target.closest && e.target.closest('.dot-chip');
+  if (chip){ KHO_DOT = chip.getAttribute('data-dot') || ''; napTrangKho(true); return; }
   var t = e.target.closest && e.target.closest('.tile[data-kho-id]');
   if (t) moLightboxKho(t.getAttribute('data-kho-id'));
+});
+$('#lbStrip').addEventListener('click', function(e){
+  var b = e.target.closest && e.target.closest('.lb-th');
+  if (b) veLightbox(Number(b.getAttribute('data-i')), null);
 });
 $('#khoWrap').addEventListener('keydown', function(e){
   if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;

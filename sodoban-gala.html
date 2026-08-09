@@ -259,12 +259,13 @@ a{color:inherit}
 <body>
 <header class="top">
   <div class="brand"><span class="dot"></span></div>
-  <div class="ttl">Sơ đồ bàn · Gala<small>Pollux Ballroom</small></div>
-  <a class="btn" href="/checkin-gala.html">← Cửa Gala</a>
+  <div class="ttl"><span data-i="ttl">Sơ đồ bàn · Gala</span><small>Pollux Ballroom</small></div>
+  <a class="btn" href="/checkin-gala.html" data-i="back">← Cửa Gala</a>
   <a class="btn only-btl" href="/crm" id="navCrm" style="display:none">CRM</a>
-  <button class="btn acc" type="button" id="rf">↻ Làm mới</button>
+  <button class="btn acc" type="button" id="rf" data-i="rf">↻ Làm mới</button>
+  <button class="btn" type="button" id="langBtn">🌐 日本語</button>
   <div class="zoom">
-    <label for="z">Zoom</label>
+    <label for="z" data-i="zoom">Zoom</label>
     <input id="z" type="range" min="45" max="220" value="100">
   </div>
   <div class="spacer"></div>
@@ -273,18 +274,18 @@ a{color:inherit}
 
 <div class="kpi-wrap">
   <div class="kpi-row" id="kpiRow">
-    <button type="button" class="kpi tong" data-f="" title="Bấm để bỏ lọc"><b id="kTong">0</b><span>Tổng số ghế</span></button>
-    <button type="button" class="kpi ok" data-f="ok" title="Bấm để chỉ nổi bật khách đã đến"><b id="kOk">0</b><span>Đã đến</span></button>
-    <button type="button" class="kpi no" data-f="no" title="Bấm để chỉ nổi bật khách chưa đến"><b id="kNo">0</b><span>Chưa đến</span></button>
-    <button type="button" class="kpi trong" data-f="trong" title="Bấm để chỉ nổi bật ghế trống"><b id="kTrong">0</b><span>Trống</span></button>
+    <button type="button" class="kpi tong" data-f="" data-ilb="k_tong_t" title="Bấm để bỏ lọc"><b id="kTong">0</b><span data-i="k_tong">Tổng số ghế</span></button>
+    <button type="button" class="kpi ok" data-f="ok" data-ilb="k_ok_t" title="Bấm để chỉ nổi bật khách đã đến"><b id="kOk">0</b><span data-i="k_den">Đã đến</span></button>
+    <button type="button" class="kpi no" data-f="no" data-ilb="k_no_t" title="Bấm để chỉ nổi bật khách chưa đến"><b id="kNo">0</b><span data-i="k_chua">Chưa đến</span></button>
+    <button type="button" class="kpi trong" data-f="trong" data-ilb="k_trong_t" title="Bấm để chỉ nổi bật ghế trống"><b id="kTrong">0</b><span data-i="k_trong">Trống</span></button>
   </div>
   <div class="bar"><i class="b-ok" id="barOk"></i><i class="b-no" id="barNo"></i><i class="b-tr" id="barTr"></i></div>
   <div class="tools">
     <div class="search">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-      <input id="q" type="search" placeholder="Tìm bàn hoặc tên khách…" autocomplete="off">
+      <input id="q" type="search" data-iph="q_ph" placeholder="Tìm bàn hoặc tên khách…" autocomplete="off">
     </div>
-    <button class="chip" id="fOnlyFree" type="button">Chỉ bàn còn trống</button>
+    <button class="chip" id="fOnlyFree" type="button" data-i="only_free">Chỉ bàn còn trống</button>
     <div class="top5" id="top5"><b>Còn trống nhiều nhất:</b></div>
   </div>
 </div>
@@ -292,17 +293,17 @@ a{color:inherit}
 <div class="banner warn" id="banOff">⚠ Mất kết nối mạng — sơ đồ có thể chưa mới nhất, đang tự thử lại…</div>
 
 <div class="leg">
-  <span><i class="ok"></i>Đã check-in Gala</span>
-  <span><i class="no"></i>Chưa đến</span>
-  <span><i class="empty"></i>Ghế trống (chưa xếp khách)</span>
-  <span><i class="ok nv"></i>Nhân viên (viền vàng)</span>
-  <span>🟢 Viền bàn sáng xanh = <b style="color:#8ef0bb">đủ khách hoàn hảo</b> (hết ghế trống, tất cả đã check-in)</span>
-  <span class="note">"Trống" ≠ "Chưa đến": Trống là ghế chưa có ai được xếp; Chưa đến là khách đã có tên nhưng chưa tới cửa.</span>
+  <span><i class="ok"></i><span data-i="lg_ci">Đã check-in Gala</span></span>
+  <span><i class="no"></i><span data-i="lg_chua">Chưa đến</span></span>
+  <span><i class="empty"></i><span data-i="lg_trong">Ghế trống (chưa xếp khách)</span></span>
+  <span><i class="ok nv"></i><span data-i="lg_nv">Nhân viên (viền vàng)</span></span>
+  <span><span data-i="lg_p1">🟢 Viền bàn sáng xanh =</span> <b style="color:#8ef0bb" data-i="lg_p2">đủ khách hoàn hảo</b> <span data-i="lg_p3">(hết ghế trống, tất cả đã check-in)</span></span>
+  <span class="note" data-i="note_diff">«Trống» ≠ «Chưa đến»: Trống là ghế chưa có ai được xếp; Chưa đến là khách đã có tên nhưng chưa tới cửa.</span>
 </div>
-<div class="hint" id="hint">Đang tải sơ đồ…</div>
+<div class="hint" id="hint" data-i="loading">Đang tải sơ đồ…</div>
 
 <div class="wrap" id="wrap">
-  <div class="stagebar"><span>🎤 Phía sân khấu</span></div>
+  <div class="stagebar"><span data-i="stage">🎤 Phía sân khấu</span></div>
   <div class="stage" id="stage">
     <div class="floor" id="floor"></div>
     <div class="seats" id="seats"></div>
@@ -313,29 +314,101 @@ a{color:inherit}
 
 <div class="scrim" id="scrim"></div>
 <aside class="panel" id="panel">
-  <button class="btn close" type="button" id="pClose">Đóng</button>
+  <button class="btn close" type="button" id="pClose" data-i="close">Đóng</button>
   <div style="margin-top:40px">
     <div class="avatar" id="pAv" style="background:var(--gold-b)">—</div>
     <h2 id="pName">—</h2>
     <div class="sub" id="pSub"></div>
     <div style="margin-bottom:10px" id="pBadges"></div>
-    <div class="row"><span class="k">Bàn / Ghế</span><span class="v" id="pBan"></span></div>
+    <div class="row"><span class="k" data-i="p_banghe">Bàn / Ghế</span><span class="v" id="pBan"></span></div>
     <div class="row"><span class="k">Check-in Gala</span><span class="v" id="pCi"></span></div>
-    <div class="row"><span class="k">Nhân viên</span><span class="v" id="pNv"></span></div>
-    <div class="row"><span class="k">Mã thẻ</span><span class="v" id="pId"></span></div>
+    <div class="row"><span class="k" data-i="p_nv">Nhân viên</span><span class="v" id="pNv"></span></div>
+    <div class="row"><span class="k" data-i="p_id">Mã thẻ</span><span class="v" id="pId"></span></div>
     <div class="dupwarn" id="pDup" style="display:none"></div>
     <p class="actions">
-      <a class="btn acc" id="pDoor" href="#">Mở ở cửa Gala</a>
-      <a class="btn only-btl" id="pCrm" href="/crm" target="_blank" rel="noopener" style="display:none">Mở CRM</a>
+      <a class="btn acc" id="pDoor" href="#" data-i="p_door">Mở ở cửa Gala</a>
+      <a class="btn only-btl" id="pCrm" href="/crm" target="_blank" rel="noopener" style="display:none" data-i="p_crm">Mở CRM</a>
     </p>
   </div>
 </aside>
 
 <div class="fab">
-  <button class="btn acc" id="fabTop" type="button" title="Về đầu trang">↑ Đầu trang</button>
+  <button class="btn acc" id="fabTop" type="button" data-ilb="fab_t" data-i="fab" title="Về đầu trang">↑ Đầu trang</button>
 </div>
 
 <script>
+/* ─── E08 09/08 · SONG NGỮ CHO SƠ ĐỒ BÀN ───────────────────────────────────
+   Sponsor: ngôn ngữ phải THEO CHÂN người dùng qua mọi trang. Trang này trước
+   đây KHÔNG có một chữ Nhật nào và cũng không có nút đổi ngôn ngữ — trong khi
+   hai cửa lại có nút to "🗺 座席図" dẫn thẳng sang. PG Nhật bấm vào là rơi vào
+   ngõ cụt tiếng Việt, không đường quay lại tiếng của mình.
+   Dùng CHUNG khoá `esuhai_lang` với hai cửa và /crm (có di trú khoá cũ). */
+var LANG=(function(){try{var v=localStorage.getItem("esuhai_lang");if(v)return v;
+  var o=localStorage.getItem("ci_lang")||localStorage.getItem("crm_lang");
+  if(o){localStorage.setItem("esuhai_lang",o);return o;}}catch(e){}return "vn";})();
+var TSD={
+ vn:{ttl:"Sơ đồ bàn · Gala",pgttl:"Sơ đồ bàn · Gala Pollux",back:"← Cửa Gala",rf:"↻ Làm mới",zoom:"Zoom",
+   k_tong:"Tổng số ghế",k_den:"Đã đến",k_chua:"Chưa đến",k_trong:"Trống",
+   k_tong_t:"Bấm để bỏ lọc",k_trong_t:"Bấm để chỉ nổi bật ghế trống",
+   k_ok_t:"Bấm để chỉ nổi bật khách đã đến",k_no_t:"Bấm để chỉ nổi bật khách chưa đến",
+   only_free:"Chỉ bàn còn trống",top5:"Còn trống nhiều nhất:",no_table:"không bàn nào",
+   lg_ci:"Đã check-in Gala",lg_chua:"Chưa đến",lg_trong:"Ghế trống (chưa xếp khách)",lg_nv:"Nhân viên (viền vàng)",
+   lg_p1:"🟢 Viền bàn sáng xanh =",lg_p2:"đủ khách hoàn hảo",lg_p3:"(hết ghế trống, tất cả đã check-in)",
+   note_diff:"«Trống» ≠ «Chưa đến»: Trống là ghế chưa có ai được xếp; Chưa đến là khách đã có tên nhưng chưa tới cửa.",
+   q_ph:"Tìm bàn hoặc tên khách…",loading:"Đang tải sơ đồ…",loading2:"Đang tải sơ đồ Pollux…",stage:"🎤 Phía sân khấu",close:"Đóng",
+   p_banghe:"Bàn / Ghế",p_nv:"Nhân viên",p_id:"Mã thẻ",p_door:"Mở ở cửa Gala",p_crm:"Mở CRM",
+   fab:"↑ Đầu trang",fab_t:"Về đầu trang",
+   f_nodata:"Chưa có DL",f_trong:"Trống",f_perfect:"✓ Đủ khách",f_full:"Đủ ghế",
+   s_free:"Ghế trống · Bàn",s_ghe:"· Ghế",s_unassigned:"· chưa xếp khách",
+   s_ban:"· Bàn",s_ghe2:"Ghế",s_den:"· Đã đến",s_chua:"· Chưa đến",s_dup:"· ⚠ trùng ghế ×",
+   w_ban:"Bàn",chip_on:"Đang lọc bàn này — bấm lại để hiện tất cả",chip_off:"Chỉ hiện bàn này trên sơ đồ",
+   h1:"Tổng số khách đã xếp bàn: ",h2:" khách Gala trong CSDL",h3:" · sức chứa 34 bàn VIP: ",h4:" ghế",
+   h5:" · Bàn CRM 1–34 = VIP1–34 trên Pollux",
+   just_ci:" vừa check-in Gala",guest_w:"Khách",b_den:"Đã đến",b_chua:"Chưa đến",nv_w:"Nhân viên",no_w:"Không",
+   dup1:"⚠ Ghế này đang có ",dup2:" thẻ khách trùng nhau trong CRM — cần soát lại dữ liệu bàn/ghế",
+   upd:"Cập nhật ",rf_ok:"↻ Đã làm mới sơ đồ",rf_err:"Lỗi tải — vẫn hiện dữ liệu cũ",
+   offline:"⚠ Mất kết nối mạng — đang chờ mạng để tự làm mới…",only1:"Chỉ bàn ",only2:" — bấm lại chip để hiện tất cả",show_all:"Đã hiện lại tất cả bàn"},
+ jp:{ttl:"座席図 · ガラ",pgttl:"座席図 · ガラ Pollux",back:"← ガラ受付",rf:"↻ 更新",zoom:"拡大",
+   k_tong:"総座席数",k_den:"ご来場",k_chua:"未来場",k_trong:"空席",
+   k_tong_t:"押すと絞り込み解除",k_trong_t:"押すと空席だけを強調",
+   k_ok_t:"押すとご来場の方だけを強調",k_no_t:"押すと未来場の方だけを強調",
+   only_free:"空席のあるテーブルのみ",top5:"空席が多い順:",no_table:"該当なし",
+   lg_ci:"ガラ受付済み",lg_chua:"未来場",lg_trong:"空席(未配席)",lg_nv:"スタッフ(金枠)",
+   lg_p1:"🟢 緑に光る枠 =",lg_p2:"満席完了",lg_p3:"(空席なし・全員受付済み)",
+   note_diff:"「空席」と「未来場」は別です:空席＝まだ誰も配席されていない席。未来場＝お名前はあるが、まだご到着でない方。",
+   q_ph:"テーブル名・お名前で検索…",loading:"座席図を読み込み中…",loading2:"Pollux 座席図を読み込み中…",stage:"🎤 ステージ側",close:"閉じる",
+   p_banghe:"テーブル / お席",p_nv:"スタッフ",p_id:"ゲストID",p_door:"ガラ受付で開く",p_crm:"CRMを開く",
+   fab:"↑ 先頭へ",fab_t:"先頭へ戻る",
+   f_nodata:"データなし",f_trong:"空席",f_perfect:"✓ 満席",f_full:"満席",
+   s_free:"空席 · テーブル",s_ghe:"· お席",s_unassigned:"· 未配席",
+   s_ban:"· テーブル",s_ghe2:"お席",s_den:"· ご来場",s_chua:"· 未来場",s_dup:"· ⚠ 座席重複 ×",
+   w_ban:"テーブル",chip_on:"このテーブルで絞り込み中 — もう一度押すと全表示",chip_off:"このテーブルだけ表示",
+   h1:"配席済みゲスト: ",h2:" 名(DB上のガラ出席者)",h3:" · VIP34卓の収容: ",h4:" 席",
+   h5:" · CRMのテーブル1–34 = Pollux の VIP1–34",
+   just_ci:" 様 ガラ受付完了",guest_w:"ゲスト",b_den:"ご来場",b_chua:"未来場",nv_w:"スタッフ",no_w:"なし",
+   dup1:"⚠ この席には ",dup2:" 件の重複したゲスト登録があります — テーブル/座席データの確認が必要です",
+   upd:"更新 ",rf_ok:"↻ 座席図を更新しました",rf_err:"読み込みエラー — 以前のデータを表示中",
+   offline:"⚠ ネットワーク未接続 — 接続を待って自動更新します…",only1:"テーブル ",only2:" のみ表示中 — もう一度押すと全表示",show_all:"全テーブルを再表示しました"}};
+/* TÊN `tsd` chứ không phải `t`: trong render() có `var t=tables[ban]` che mất
+   hàm dịch ⇒ mọi lời gọi t("...") bên trong vòng lặp đó ném "t is not a
+   function", và lỗi đó CHẶN CẢ loadAll() nên sơ đồ đứng ở "Đang tải…".
+   Bắt được nhờ chạy thật trong trình duyệt, không phải nhờ đọc code. */
+function tsd(k){return (TSD[LANG]&&TSD[LANG][k])||TSD.vn[k]||k;}
+/* setLang phải VẼ LẠI: hầu hết chữ trên trang này do render() sinh ra tại chỗ,
+   không phải HTML tĩnh — chỉ dịch [data-i] thôi là nửa trang vẫn tiếng cũ. */
+function setLang(l){LANG=l;try{localStorage.setItem("esuhai_lang",l);}catch(e){}
+ document.body.classList.toggle("jp",l==="jp");
+ document.documentElement.lang=(l==="jp")?"ja":"vi";
+ document.title=tsd("pgttl");
+ document.querySelectorAll("[data-i]").forEach(function(el){var v=tsd(el.getAttribute("data-i"));if(v)el.textContent=v;});
+ document.querySelectorAll("[data-iph]").forEach(function(el){el.placeholder=tsd(el.getAttribute("data-iph"));});
+ document.querySelectorAll("[data-ilb]").forEach(function(el){var v=tsd(el.getAttribute("data-ilb"));el.setAttribute("title",v);el.setAttribute("aria-label",v);});
+ var lb=document.getElementById("langBtn");if(lb)lb.textContent=(l==="jp"?"🌐 Tiếng Việt":"🌐 日本語");
+ /* render() nằm TRONG IIFE phía dưới nên ngoài này không với tới. IIFE tự treo
+    hàm vẽ lên window khi sẵn sàng. KHÔNG nuốt lỗi bằng try/catch trống nữa: hỏng
+    mà im lặng thì nửa trang đứng ở tiếng cũ và không ai biết vì sao. */
+ if(typeof window.__sodoRender==="function")window.__sodoRender();
+}
 (function(){
 "use strict";
 var POLL_MS=25000;
@@ -424,6 +497,7 @@ function matchesSearch(g, ban){
   return hay.indexOf(qText)>-1;
 }
 
+window.__sodoRender=function(){return render();};
 function render(){
   var root=$("#seats"); root.innerHTML="";
   var tables=(META&&META.tables)||{};
@@ -524,7 +598,7 @@ function render(){
     lab.className="tbl-lab";
     lab.style.left=t.x+"px"; lab.style.top=ty+"px";
     var freeState = tCap<1 ? "none" : (tEmpty>0 ? "has" : (perfect ? "perfect" : "full"));
-    var freeTxt = tCap<1 ? "Chưa có DL" : (tEmpty>0 ? ("Trống "+tEmpty) : (perfect ? "✓ Đủ khách" : "Đủ ghế"));
+    var freeTxt = tCap<1 ? tsd("f_nodata") : (tEmpty>0 ? (tsd("f_trong")+" "+tEmpty) : (perfect ? tsd("f_perfect") : tsd("f_full")));
     lab.innerHTML='<div class="tname">'+esc(t.label||("VIP"+ban))+'</div>'+
       '<div class="tfree" data-s="'+freeState+'">'+esc(freeTxt)+'</div>';
     if(hasSearch && !tableMatches) lab.classList.add("dim");
@@ -563,7 +637,7 @@ function render(){
         el.type="button"; el.className="seat empty"+(isOverflow?" overflow":"");
         el.style.left=x+"px"; el.style.top=y+"px";
         el.textContent=String(s2);
-        el.title="Ghế trống · Bàn "+ban+" · Ghế "+s2+" · chưa xếp khách";
+        el.title=tsd("s_free")+" "+ban+" "+tsd("s_ghe")+" "+s2+" "+tsd("s_unassigned");
         if(hasSearch && !tableMatches) el.classList.add("dim");
         if(tableNoFree || banFocusMiss) el.classList.add("dim");
         // onlyFree hoặc KPI Trống: ghế trống là thứ cần nhìn — nhấn vàng
@@ -590,7 +664,7 @@ function render(){
         el.setAttribute("data-id", String(g.id));
         if(nv){ el.classList.add("nv"); nNv++; }
         if(gs.length>1) el.classList.add("dup");
-        el.title=(g.full_name||"")+" · Bàn "+ban+" Ghế "+s2+(nv?" · NV":"")+(ok?" · Đã đến":" · Chưa đến")+(gs.length>1?" · ⚠ trùng ghế ×"+gs.length:"")+(isOverflow?" · ⚠ ghế "+s2+" vượt sức chứa thật của bàn ("+cap+" ghế) — cần soát lại table_no/seat_no":"");
+        el.title=(g.full_name||"")+" "+tsd("s_ban")+" "+ban+" "+tsd("s_ghe2")+" "+s2+(nv?" · NV":"")+(ok?" "+tsd("s_den"):" "+tsd("s_chua"))+(gs.length>1?" "+tsd("s_dup")+gs.length:"")+(isOverflow?" · ⚠ ghế "+s2+" vượt sức chứa thật của bàn ("+cap+" ghế) — cần soát lại table_no/seat_no":"");
         var qMatch = hasSearch && matchesSearch(g, ban);
         if(hasSearch && !tableMatches && !qMatch) el.classList.add("dim");
         if(qMatch) el.classList.add("match");
@@ -620,26 +694,26 @@ function render(){
 
   freeList.sort(function(a,b){ return b.free-a.free; });
   var t5=$("#top5");
-  t5.innerHTML='<b>Còn trống nhiều nhất:</b>'+(freeList.length?"":'<span style="color:var(--muted2)">không bàn nào</span>');
+  t5.innerHTML='<b>'+esc(tsd("top5"))+'</b>'+(freeList.length?"":'<span style="color:var(--muted2)">'+esc(tsd("no_table"))+'</span>');
   freeList.slice(0,6).forEach(function(f){
     var c=document.createElement("button");
     c.type="button";
     c.className="t5chip"+(focusBan && String(f.ban)===String(focusBan)?" on":"");
-    c.textContent=(f.label||("Bàn "+f.ban))+" · "+f.free;
+    c.textContent=(f.label||(tsd("w_ban")+" "+f.ban))+" · "+f.free;
     c.setAttribute("data-ban", f.ban);
     c.title=focusBan && String(f.ban)===String(focusBan)
-      ? "Đang lọc bàn này — bấm lại để hiện tất cả"
+      ? tsd("chip_on")
       : "Chỉ hiện bàn này trên sơ đồ";
     t5.appendChild(c);
   });
 
-  $("#hint").textContent="Tổng số khách đã xếp bàn: "+nSeat+" / "+G.length+" khách Gala trong CSDL"+
-    (nCap? (" · sức chứa 34 bàn VIP: "+nCap+" ghế") : "")+" · Bàn CRM 1–34 = VIP1–34 trên Pollux";
+  $("#hint").textContent=tsd("h1")+nSeat+" / "+G.length+tsd("h2")+
+    (nCap? (tsd("h3")+nCap+tsd("h4")) : "")+tsd("h5");
 
   prevArrived=nextArrived;
   firstLoadDone=true;
   if(newlyArrived.length===1){
-    toast("✓ "+(newlyArrived[0].full_name||"Khách")+" vừa check-in Gala");
+    toast("✓ "+(newlyArrived[0].full_name||tsd("guest_w"))+tsd("just_ci"));
   } else if(newlyArrived.length>1){
     toast("✓ "+newlyArrived.length+" khách vừa check-in Gala");
   }
@@ -670,16 +744,16 @@ function openPanel(g, ban, ghe){
   av.style.background=ok?"var(--ok)":"var(--gold-b)"; av.style.color="#141414";
   $("#pName").textContent=g.full_name||"—";
   $("#pSub").textContent=[g.org,g.title].filter(Boolean).join(" · ")||"—";
-  var badges='<span class="badge '+(ok?"ok":"no")+'">'+(ok?"Đã đến":"Chưa đến")+'</span>';
+  var badges='<span class="badge '+(ok?"ok":"no")+'">'+(ok?tsd("b_den"):tsd("b_chua"))+'</span>';
   if(nv) badges+='<span class="badge nv">Nhân viên</span>';
   $("#pBadges").innerHTML=badges;
-  $("#pBan").textContent="Bàn "+ban+" · Ghế "+ghe;
+  $("#pBan").textContent=tsd("w_ban")+" "+ban+" · "+tsd("s_ghe2")+" "+ghe;
   $("#pCi").textContent=ok?"Đã đến":"Chưa đến";
   $("#pNv").textContent=nv?"Có":"Không";
   $("#pId").textContent="#"+g.id;
   var dupCount=(byKey[seatKey(ban,ghe)]||[]).length;
   var dw=$("#pDup");
-  if(dupCount>1){ dw.style.display="block"; dw.textContent="⚠ Ghế này đang có "+dupCount+" thẻ khách trùng nhau trong CRM — cần soát lại dữ liệu bàn/ghế."; }
+  if(dupCount>1){ dw.style.display="block"; dw.textContent=tsd("dup1")+dupCount+tsd("dup2")+"."; }
   else { dw.style.display="none"; }
   $("#pDoor").href="/checkin-gala.html";
   $("#pCrm").href="/crm";
@@ -730,7 +804,7 @@ async function loadAll(manual){
   pollBusy=true;
   try{
     if(!META){
-      $("#hint").innerHTML='<div class="skel"><div class="ring"></div>Đang tải sơ đồ Pollux…</div>';
+      $("#hint").innerHTML='<div class="skel"><div class="ring"></div  data-i="loading2">Đang tải sơ đồ Pollux…</div>';
       var mj=await fetch("/sodoban/tables.json",{credentials:"same-origin"});
       META=await mj.json();
     }
@@ -738,13 +812,13 @@ async function loadAll(manual){
     indexGuests(j.rows||[]);
     applyZoom();
     render();
-    $("#upd").textContent="Cập nhật "+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    $("#upd").textContent=tsd("upd")+new Date().toLocaleTimeString(LANG==="jp"?"ja-JP":"vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
     $("#banOff").className="banner warn";
-    if(manual) toast("↻ Đã làm mới sơ đồ");
+    if(manual) toast(tsd("rf_ok"));
   }catch(e){
     if(firstLoadDone){
       $("#banOff").className="banner warn show";
-      $("#upd").textContent="Lỗi tải — vẫn hiện dữ liệu cũ";
+      $("#upd").textContent=tsd("rf_err");
     } else {
       $("#hint").innerHTML='<span class="err">Không tải được sơ đồ / dữ liệu. Đăng nhập CRM hoặc cửa rồi thử lại. ('+esc(e.message)+')</span>';
     }
@@ -786,9 +860,9 @@ $("#top5").addEventListener("click", function(e){
   render();
   if(focusBan){
     requestAnimationFrame(function(){ focusTable(focusBan); });
-    toast("Chỉ bàn "+(c.textContent.split("·")[0]||focusBan).trim()+" — bấm lại chip để hiện tất cả");
+    toast(tsd("only1")+(c.textContent.split("·")[0]||focusBan).trim()+tsd("only2"));
   } else {
-    toast("Đã hiện lại tất cả bàn");
+    toast(tsd("show_all"));
   }
 });
 $("#fabTop").addEventListener("click", function(){ $("#wrap").scrollTo({top:0,left:0,behavior:"smooth"}); window.scrollTo({top:0,behavior:"smooth"}); });
@@ -828,8 +902,15 @@ $("#fabTop").addEventListener("click", function(){ $("#wrap").scrollTo({top:0,le
   wrap.addEventListener("touchend", function(e){ if(e.touches.length<2) pinchStartDist=null; });
 })();
 
-window.addEventListener("offline", function(){ $("#banOff").className="banner err show"; $("#banOff").textContent="⚠ Mất kết nối mạng — đang chờ mạng để tự làm mới…"; });
+window.addEventListener("offline", function(){ $("#banOff").className="banner err show"; $("#banOff").textContent=tsd("offline"); });
 window.addEventListener("online", function(){ $("#banOff").className="banner"; loadAll(); });
+
+/* Nút ngôn ngữ + ÁP NGAY lựa chọn đã lưu. Không gọi setLang lúc tải thì người
+   vừa chọn 日本語 ở cửa sang đây vẫn thấy tiếng Việt — đúng thứ vé này sinh ra
+   để dẹp. */
+var _lb=document.getElementById("langBtn");
+if(_lb)_lb.addEventListener("click",function(){setLang(LANG==="jp"?"vn":"jp");});
+setLang(LANG);
 
 loadAll();
 refreshRoleUI();

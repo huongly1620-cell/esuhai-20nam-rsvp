@@ -266,7 +266,11 @@ a{color:inherit}
   <button class="btn" type="button" id="langBtn">🌐 日本語</button>
   <div class="zoom">
     <label for="z" data-i="zoom">Zoom</label>
-    <input id="z" type="range" min="45" max="220" value="100">
+    <!-- E08-D085 việc B · mở trang ở mức nhỏ nhất của chính thang này (45), thay
+         vì 100. Sơ đồ Gala rộng hơn màn điện thoại nhiều, mở ở 100% là rơi thẳng
+         vào giữa bản đồ và phải kéo mò mới biết mình đang ở đâu. `min` giữ nguyên
+         45 — đây là đổi giá trị KHỞI ĐẦU, không đổi thang. -->
+    <input id="z" type="range" min="45" max="220" value="45">
   </div>
   <div class="spacer"></div>
   <div class="upd"><span class="ok-ic">●</span><span id="upd">—</span></div>
@@ -413,7 +417,12 @@ function setLang(l){LANG=l;try{localStorage.setItem("esuhai_lang",l);}catch(e){}
 "use strict";
 var POLL_MS=25000;
 var PAD_TOP=46, PAD_BOTTOM=18; // breathing room so front-row labels clear the sticky stage banner
-var META=null, G=[], byKey={}, scale=1, pollBusy=false, sel=null;
+/* E08-D085 việc B · `scale` khởi tạo TỪ chính thanh trượt, không viết lại con số.
+   Hai chỗ cùng khai một giá trị là hai chỗ có thể lệch nhau — sửa `value` trong
+   HTML mà quên chỗ này thì bản đồ vẽ một cỡ còn thanh trượt chỉ một cỡ khác. */
+var META=null, G=[], byKey={}, pollBusy=false, sel=null;
+var scale=(function(){ var z=document.getElementById("z");
+  return (parseInt(z&&z.value,10)||100)/100; })();
 var prevArrived={}; // id -> bool, to detect fresh check-ins between polls
 var firstLoadDone=false;
 var onlyFree=false, qText="", kpiFilter="", focusBan=""; // kpiFilter: ""=all, "ok"|"no"|"trong"; focusBan = số bàn từ chip Top trống (toggle)

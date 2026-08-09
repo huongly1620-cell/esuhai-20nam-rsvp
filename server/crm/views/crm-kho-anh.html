@@ -22,6 +22,7 @@
     --shadow:0 10px 32px rgba(0,0,0,.36);--r:16px;--ok-glow:rgba(69,224,142,.28);
     --fs-micro:.62rem;--fs-small:.72rem;--fs-body:.88rem;--fs-label:.78rem;
     --fs-title:1.05rem;--fs-display:1.55rem;
+    --ease:cubic-bezier(.16,1,.3,1);
   }
   :root[data-theme=light]{
     /* ── LIGHT (ivory) ── khớp 1:1 với crm-app-v2.html:25-34 */
@@ -108,7 +109,7 @@
   .why{margin-top:8px;font-size:var(--fs-small);color:var(--amber);min-height:1.2em}
   .barwrap{display:flex;align-items:center;gap:10px;margin-top:10px}
   .bar{flex:1 1 auto;height:8px;background:var(--inp);border:1px solid var(--line);border-radius:999px;overflow:hidden}
-  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold-b));width:0;transition:width .2s}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold-b));width:0;transition:width .28s var(--ease)}
   .barnum{font-size:var(--fs-small);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;min-width:96px;text-align:right}
 
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:9px;margin-top:13px}
@@ -120,10 +121,14 @@
   .tile .nm{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.85));
     font-size:var(--fs-micro);padding:14px 6px 4px;color:#e9eef7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   :root[data-theme=light] .tile .nm{background:linear-gradient(transparent,rgba(40,30,10,.8))}
-  .tile .ck{position:absolute;top:6px;left:6px;width:22px;height:22px;border-radius:7px;background:var(--panel2);
-    border:1px solid var(--line2);display:grid;place-items:center;font-size:13px;color:transparent}
-  .tile[aria-checked=true]{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-soft) inset}
-  .tile[aria-checked=true] .ck{background:var(--gold);border-color:var(--gold);color:#2a1e05}
+  /* Ô tick là VÙNG BẤM RIÊNG: bấm vào ảnh mở xem lớn, bấm vào ô này mới tick.
+     Vùng chạm nới rộng bằng padding trong suốt chứ không phóng to hình vuông. */
+  .tile .ck{position:absolute;top:0;left:0;width:40px;height:40px;display:grid;place-items:center;
+    cursor:pointer;background:none;border:0;padding:0;z-index:2}
+  .tile .ck::before{content:"✓";width:22px;height:22px;border-radius:7px;background:var(--panel2);
+    border:1px solid var(--line2);display:grid;place-items:center;font-size:13px;color:transparent;transition:.12s}
+  .tile.sel,.tile[aria-checked=true]{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-soft) inset}
+  .tile.sel .ck::before,.tile[aria-checked=true] .ck::before{background:var(--gold);border-color:var(--gold);color:#2a1e05}
   .tile .st{position:absolute;top:6px;right:6px;font-size:var(--fs-micro);padding:2px 7px;border-radius:999px;
     background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
   .tile.done .st{background:var(--green);border-color:var(--green);color:#04241a;font-weight:700}
@@ -134,7 +139,7 @@
   /* ── AC-20 · ảnh hiện dần + ô chờ có shimmer ──
      Ảnh đọc từ đĩa nên tới rất nhanh, nhưng "rất nhanh" vẫn là một cú nhảy khựng
      khi 200 ô cùng đổi. Fade 320ms biến cú nhảy thành chuyển động. */
-  .tile img{opacity:0;transition:opacity .32s ease}
+  .tile img{opacity:0;transition:opacity .32s var(--ease)}
   .tile img.on{opacity:1}
   .tile.loading::before{content:"";position:absolute;inset:0;
     background:linear-gradient(100deg,transparent 20%,var(--hover) 45%,transparent 70%);
@@ -142,7 +147,10 @@
   @keyframes shim{0%{background-position:120% 0}100%{background-position:-120% 0}}
   /* Tick nảy nhẹ khi vừa được chọn — phản hồi tức thì cho thao tác chính của trang. */
   @keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
-  .tile[aria-checked=true] .ck{animation:pop .22s cubic-bezier(.2,.8,.2,1)}
+  /* Spec AC-20 chỉ đích danh `.tile.sel` — nên trạng thái chọn mang CẢ hai dấu:
+     `.sel` cho phần nhìn, `aria-checked` cho trình đọc màn hình. Một nguồn sự
+     thật (CHON), hai cách phát biểu, gán cùng chỗ nên không lệch nhau được. */
+  .tile.sel .ck::before,.tile[aria-checked=true] .ck::before{animation:pop .18s cubic-bezier(.16,1,.3,1)}
   /* AC-22 · "lún" khi bấm. */
   .tile:active{transform:scale(.975)}
   /* Nút phóng to: ô ảnh là checkbox (AC-5), nên xem ảnh phải có nút RIÊNG —
@@ -153,6 +161,30 @@
   .tile:hover .zoom,.zoom:focus-visible{opacity:1}
   .zoom:active{transform:scale(.9)}
   @media (hover:none){ .zoom{opacity:.92} }   /* chạm không có hover → luôn hiện */
+
+  /* ── AC-19 · HAI nơi kính mờ có tên, đúng như spec đòi ──
+     (1) card dạy cách kéo-chọn, hiện lần đầu rồi nhớ là đã đọc;
+     (2) tooltip nổi giải thích vì sao một ô bị lỗi / bị coi là trùng.
+     Cả hai đều có nhánh nền ĐẶC khi trình duyệt không hỗ trợ — chữ nổi trên nền
+     trong suốt là không đọc được, tệ hơn hẳn so với không có hiệu ứng. */
+  .coach{display:none;align-items:flex-start;gap:11px;margin-top:13px;padding:13px 15px;border-radius:13px;
+    border:1px solid var(--line2);background:var(--panel2);box-shadow:var(--shadow)}
+  .coach.on{display:flex}
+  .coach .ic{font-size:19px;line-height:1.2}
+  .coach p{margin:0;font-size:var(--fs-small);color:var(--muted);line-height:1.55}
+  .coach b{color:var(--text)}
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .coach{background:var(--gold-soft);-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2)}
+  }
+  .tip{position:fixed;z-index:70;max-width:260px;padding:9px 12px;border-radius:10px;pointer-events:none;
+    border:1px solid var(--line2);background:var(--panel2);color:var(--text);font-size:var(--fs-small);
+    line-height:1.5;box-shadow:var(--shadow);opacity:0;transform:translateY(4px);
+    transition:opacity .16s var(--ease),transform .16s var(--ease)}
+  .tip.on{opacity:1;transform:translateY(0)}
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .tip{background:rgba(7,16,27,.62);-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2)}
+  }
+  :root[data-theme=light] .tip{background:rgba(255,255,255,.82)}
 
   /* ── AC-17 · khung kéo chọn (rubber band) ── */
   .rubber{position:fixed;z-index:40;border:1px solid var(--gold);background:var(--gold-soft);
@@ -330,6 +362,12 @@
     <div class="spacer"></div>
     <button class="btn sm" id="selDone" type="button" data-i="sel_done">Xong</button>
   </div>
+  <!-- AC-19 (1/2) · card kính mờ dạy cách kéo-chọn. Hiện lần đầu, nhớ là đã đọc. -->
+  <div class="coach" id="coach">
+    <span class="ic" aria-hidden="true">💡</span>
+    <p data-i="coach"></p>
+    <button class="btn sm" id="coachX" type="button" data-i="coach_ok">Đã hiểu</button>
+  </div>
   <div class="grid" id="grid"></div>
   <div class="log" id="log" style="display:none"></div>
 </div>
@@ -357,6 +395,8 @@
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="rubber" id="rubber" aria-hidden="true"></div>
+<!-- AC-19 (2/2) · tooltip kính mờ nói VÌ SAO một ô bị lỗi hoặc bị coi là trùng -->
+<div class="tip" id="tip" role="tooltip" aria-hidden="true"></div>
 <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Xem ảnh" hidden>
   <!-- AC-6 · alt KHÔNG được rỗng kể cả lúc lightbox đang đóng: phép đo của AC-6 là
        querySelectorAll('img[alt=""]') trên TOÀN trang. Khi mở, alt được thay bằng
@@ -419,7 +459,9 @@ var T = {
     t_done:'Đã nạp {x} ảnh ✓', t_err:'{e} ảnh lỗi — xem nhật ký bên dưới',
     st_new:'đã nạp', st_dup:'đã có', st_bad:'lỗi', st_pass:'bỏ qua', heic:'HEIC — bỏ qua',
     sel_mode:'Chế độ chọn — chạm để tick, không cần giữ nữa.', sel_done:'Xong',
-    zoom:'Xem ảnh lớn', lb_close:'Đóng', lb_prev:'Ảnh trước', lb_next:'Ảnh sau', lb_of:'{i}/{n}'
+    zoom:'Xem ảnh lớn', lb_close:'Đóng', lb_prev:'Ảnh trước', lb_next:'Ảnh sau', lb_of:'{i}/{n}',
+    coach:'<b>Bấm vào ảnh</b> để xem lớn. <b>Bấm ô vuông góc trái</b> để tick chọn. Muốn chọn cả mảng thì <b>giữ chuột kéo ngang qua nhiều ảnh</b> — kéo qua ô đang tick sẽ bỏ tick cả vùng. Trên điện thoại: <b>nhấn giữ một ảnh</b> để vào chế độ chọn.',
+    coach_ok:'Đã hiểu', tip_dup:'Ảnh này đã có trong kho — trùng mã sha256 với một tấm đã nạp trước đó, nên lượt này bỏ qua.', tip_err:'Không nạp được: {e}'
   },
   jp:{
     h_title:'📸 イベント写真庫', h_sub:'E08-D082 · フェーズ1', back:'← CRMへ戻る',
@@ -449,7 +491,9 @@ var T = {
     t_done:'{x}枚を取り込みました ✓', t_err:'{e}枚が失敗 — 下のログをご確認ください',
     st_new:'取込済', st_dup:'既存', st_bad:'失敗', st_pass:'除外', heic:'HEIC — 除外',
     sel_mode:'選択モード — 長押し不要、タップで選べます。', sel_done:'完了',
-    zoom:'拡大表示', lb_close:'閉じる', lb_prev:'前の写真', lb_next:'次の写真', lb_of:'{i}/{n}'
+    zoom:'拡大表示', lb_close:'閉じる', lb_prev:'前の写真', lb_next:'次の写真', lb_of:'{i}/{n}',
+    coach:'<b>写真をタップ</b>すると拡大表示。<b>左上の四角</b>で選択します。まとめて選ぶには<b>マウスで横にドラッグ</b> — 選択済みの上をなぞると範囲ごと解除されます。スマートフォンでは<b>長押し</b>で選択モードへ。',
+    coach_ok:'閉じる', tip_dup:'この写真は既に保管済みです（sha256が一致）。今回はスキップしました。', tip_err:'取り込み失敗: {e}'
   }
 };
 function tt(k){ return (T[LANG] && T[LANG][k]) || T.vn[k] || k; }
@@ -764,8 +808,8 @@ function veLuoi(){
        aria-checked cho trình đọc màn hình biết đây là ô tick, không phải ảnh. */
     d.setAttribute('role', 'checkbox');
     d.setAttribute('tabindex', '0');
-    d.setAttribute('aria-checked', CHON[it.id] ? 'true' : 'false');
     d.setAttribute('aria-label', it.relativePath || it.name);
+    veTick(d, it.id);
     var nhan = st === 'xong' ? tt('st_new') : st === 'trung' ? tt('st_dup')
              : st === 'loi' ? tt('st_bad') : st === 'bo' ? tt('st_pass') : '';
     /* AC-6 · alt = tên file. Ảnh ở đây LÀ nội dung, không phải trang trí — alt
@@ -774,7 +818,11 @@ function veLuoi(){
     d.innerHTML = laHeic
       ? '<div class="ph">' + tt('heic') + '<br>' + esc(it.name) + '</div>'
       : '<img alt="' + esc(it.name) + '">';
-    d.innerHTML += '<div class="ck" aria-hidden="true">✓</div>'
+    /* `.ck` để `aria-hidden` và không nhận Tab: ô đã là `role=checkbox` thao tác
+       được bằng Space/Enter (AC-5). Thêm một nút nữa vào cây trợ năng chỉ khiến
+       trình đọc màn hình đọc hai lần cùng một việc. Đây thuần tuý là vùng bấm
+       cho chuột/ngón tay. */
+    d.innerHTML += '<span class="ck" aria-hidden="true"></span>'
       + (nhan ? '<div class="st">' + esc(nhan) + '</div>' : '')
       + '<div class="nm" title="' + esc(it.relativePath) + '">' + esc(it.name) + '</div>'
       + (laHeic ? '' : '<button class="zoom" type="button" aria-label="' + esc(tt('zoom')) + '">⤢</button>');
@@ -791,13 +839,32 @@ function veLuoi(){
     }
     function bat(){
       if (CHON[it.id]) delete CHON[it.id]; else CHON[it.id] = 1;
-      d.setAttribute('aria-checked', CHON[it.id] ? 'true' : 'false');
+      veTick(d, it.id);
       demLai();
     }
+    /* AC-16 · trọng tâm cú bấm ĐỔI so với bản D082: bấm vào ẢNH = xem lớn, bấm ô
+       vuông góc trái = tick. Trước đây bấm đâu cũng tick, nên không có đường nào
+       xem ảnh cho ra hồn — mà xem được mặt người mới là việc BTL cần làm trước
+       khi quyết giữ hay bỏ một tấm.
+       Ngoại lệ có chủ đích:
+        · đang ở chế độ chọn (AC-18, cảm ứng) → chạm là tick, đúng khuôn Photos;
+        · ảnh HEIC không giải mã được → không có gì để phóng, giữ nguyên tick. */
     d.addEventListener('click', function(e){
-      if (BO_QUA_CLICK){ BO_QUA_CLICK = false; return; }   // vừa kéo/nhấn giữ xong
-      bat();
+      if (vuaKeo) return;                                // vừa thả chuột sau một lượt kéo
+      if (e.target.closest('.zoom')) return;               // nút phóng tự lo
+      if (e.target.closest('.ck')) { bat(); return; }
+      if (document.body.classList.contains('chonmode') || laHeic){ bat(); return; }
+      moLightbox(it.id);
     });
+    /* AC-19 (2/2) · ô hỏng hoặc ô trùng phải nói được VÌ SAO. Badge "lỗi"/"đã có"
+       một mình thì người dùng đoán, mà đoán sai thì họ đi nạp lại cả thư mục. */
+    if (st === 'loi' || st === 'trung'){
+      var noi = st === 'trung' ? tt('tip_dup') : fmt('tip_err', { e: LY_DO[it.id] || '—' });
+      d.addEventListener('mouseenter', function(){ moTip(d, noi); });
+      d.addEventListener('mouseleave', dongTip);
+      d.addEventListener('focus', function(){ moTip(d, noi); });
+      d.addEventListener('blur', dongTip);
+    }
     d.addEventListener('keydown', function(e){
       if (e.key === ' ' || e.key === 'Enter' || e.key === 'Spacebar'){ e.preventDefault(); bat(); }
     });
@@ -842,8 +909,47 @@ if (window.matchMedia) try {
   window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', function(e){ GIAM_DONG = e.matches; });
 } catch(_){}
 
-var BO_QUA_CLICK = false;    // nuốt đúng một cú click sau khi kéo / nhấn giữ
+/* Nuốt cú click do chính thao tác vừa rồi sinh ra — nhưng CHỈ cú đó.
+   Hai lần sai trước khi ra được cách này, ghi lại để đừng ai đi lại:
+    · Lá cờ dính mãi tới lần click kế tiếp ⇒ sau khi kéo xong, cú bấm hợp lệ TIẾP
+      THEO (dù cách vài giây) bị nuốt oan, người dùng tưởng nút hỏng.
+    · Bộ chặn treo 350ms cũng vậy: kéo rubber-band thường KẾT THÚC TRÊN Ô KHÁC ô
+      bắt đầu, mà trình duyệt chỉ sinh click khi mousedown/mouseup chung một phần
+      tử — nên đa số lần kéo không có click nào để nuốt, bộ chặn ngồi chờ rồi ăn
+      nhầm cú bấm sau đó.
+   Cách đúng cho chuột: cờ sống đúng MỘT vòng lặp sự kiện. Click do mouseup sinh
+   ra được xếp hàng ngay sau mouseup, tức chạy TRƯỚC setTimeout(0) — bắt trúng nó
+   và chỉ nó. Chạm thì khác (click tới trễ sau touchend), nên dùng bộ chặn riêng
+   gắn vào ĐÚNG ô đó, không phải toàn trang. */
+var vuaKeo = false;
+function nuotClickSauKeo(){ vuaKeo = true; setTimeout(function(){ vuaKeo = false; }, 0); }
+function nuotClickCuaO(el){
+  var xong = function(){ el.removeEventListener('click', chan, true); clearTimeout(h); };
+  var chan = function(e){ e.stopPropagation(); e.preventDefault(); xong(); };
+  var h = setTimeout(xong, 500);
+  el.addEventListener('click', chan, true);
+}
 var LB_IDX = -1, LB_URL_TAM = null, LB_TRA_FOCUS = null;
+var LY_DO = Object.create(null);   // id → vì sao tấm này hỏng (cho tooltip AC-19)
+
+/* Một nguồn sự thật là CHON; hàm này là chỗ DUY NHẤT phát biểu nó ra giao diện,
+   cả phần nhìn (`.sel` — spec AC-20 gọi đích danh) lẫn phần trợ năng
+   (`aria-checked`). Gán ở một chỗ thì hai dấu không thể lệch nhau. */
+function veTick(el, id){
+  var co = !!CHON[id];
+  el.classList.toggle('sel', co);
+  el.setAttribute('aria-checked', co ? 'true' : 'false');
+}
+
+/* Tooltip kính mờ — bám theo ô, tự lật lên trên khi sát mép dưới màn hình. */
+function moTip(o, chu){
+  var t = $('#tip'); t.textContent = chu; t.classList.add('on'); t.setAttribute('aria-hidden', 'false');
+  var a = o.getBoundingClientRect(), b = t.getBoundingClientRect();
+  var x = Math.min(Math.max(8, a.left + a.width / 2 - b.width / 2), window.innerWidth - b.width - 8);
+  var y = (a.bottom + b.height + 12 > window.innerHeight) ? (a.top - b.height - 8) : (a.bottom + 8);
+  t.style.left = x + 'px'; t.style.top = Math.max(8, y) + 'px';
+}
+function dongTip(){ var t = $('#tip'); t.classList.remove('on'); t.setAttribute('aria-hidden', 'true'); }
 
 function oCuaItem(id){
   return Array.prototype.filter.call(document.querySelectorAll('.tile'), function(el){
@@ -865,7 +971,7 @@ function bayFLIP(o, img){
   img.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale('
     + (a.width / b.width) + ',' + (a.height / b.height) + ')';
   requestAnimationFrame(function(){
-    img.style.transition = 'transform .34s cubic-bezier(.2,.8,.2,1)';
+    img.style.transition = 'transform .34s cubic-bezier(.16,1,.3,1)';
     img.style.transform = 'none';
   });
 }
@@ -896,7 +1002,9 @@ function moLightbox(id){
   var i = -1;
   for (var k = 0; k < ds.length; k++) if (ds[k].id === id){ i = k; break; }
   if (i < 0) return;
-  LB_TRA_FOCUS = document.activeElement;
+  /* AC-16 · trả focus về ĐÚNG Ô đã mở, không phải nút phóng bên trong nó:
+     người dùng bàn phím đóng lightbox xong phải đứng lại đúng chỗ vừa rời đi. */
+  LB_TRA_FOCUS = oCuaItem(id) || document.activeElement;
   veLightbox(i, oCuaItem(id));
 }
 function dongLightbox(){
@@ -911,43 +1019,65 @@ function dongLightbox(){
 /* AC-17 · kéo chuột quét chọn nhiều ô (khuôn Finder/Photos).
    Bắt đầu kéo CHỈ khi nhấn xuống khoảng trống của lưới — nhấn lên một ô vẫn là
    tick ô đó như cũ. Giữ Shift/⌘ để cộng dồn thay vì thay thế. */
-var keo = null, keoRAF = 0;
+var keo = null, keoRAF = 0, keoMoiNhat = null;
 function hinhKeo(e){
   return { l: Math.min(keo.x, e.clientX), t: Math.min(keo.y, e.clientY),
            r: Math.max(keo.x, e.clientX), b: Math.max(keo.y, e.clientY) };
 }
+/* Vùng quét đặt lại trạng thái theo CHIỀU đã chốt lúc bắt đầu kéo, còn ngoài vùng
+   thì trả về đúng như trước khi kéo — nên kéo qua rồi kéo lui là hoàn tác được,
+   không để lại vệt tick lem nhem. */
 function apKeo(e){
   var q = hinhKeo(e), rb = $('#rubber');
   rb.classList.add('on');
   rb.style.left = q.l + 'px'; rb.style.top = q.t + 'px';
   rb.style.width = (q.r - q.l) + 'px'; rb.style.height = (q.b - q.t) + 'px';
-  if (!keo.them) CHON = Object.create(null);
-  else { CHON = Object.create(null); for (var k in keo.goc) CHON[k] = 1; }
   Array.prototype.forEach.call(document.querySelectorAll('.tile'), function(el){
+    var id = el.getAttribute('data-id');
     var a = el.getBoundingClientRect();
     var cham = !(a.right < q.l || a.left > q.r || a.bottom < q.t || a.top > q.b);
-    if (cham) CHON[el.getAttribute('data-id')] = 1;
-    el.setAttribute('aria-checked', CHON[el.getAttribute('data-id')] ? 'true' : 'false');
+    if (cham){ if (keo.bat) CHON[id] = 1; else delete CHON[id]; }
+    else { if (keo.goc[id]) CHON[id] = 1; else delete CHON[id]; }
+    veTick(el, id);
   });
   demLai();
 }
 $('#grid').addEventListener('mousedown', function(e){
   if (e.button !== 0) return;
-  if (e.target.closest && e.target.closest('.tile')) return;   // bấm lên ô = tick, không phải kéo
+  if (e.target.closest && (e.target.closest('.ck') || e.target.closest('.zoom'))) return;
+  var oDau = e.target.closest ? e.target.closest('.tile') : null;
   var goc = Object.create(null); for (var k in CHON) goc[k] = 1;
-  keo = { x: e.clientX, y: e.clientY, them: e.shiftKey || e.metaKey || e.ctrlKey, goc: goc, di: false };
-  document.body.classList.add('dangkeo');
-  e.preventDefault();
+  /* AC-17 · CHIỀU lấy từ trạng thái ô đầu tiên chạm phải, đúng khuôn Finder/Photos:
+     bắt đầu trên ô đang tick ⇒ kéo qua là BỎ tick cả vùng; bắt đầu trên ô chưa
+     tick (hoặc trên nền trống) ⇒ kéo qua là TICK cả vùng. "Luôn tick" nghe thì
+     đơn giản nhưng bỏ mất nửa công dụng: bỏ chọn hàng loạt cũng cần thiết ngang
+     chọn hàng loạt. */
+  var idDau = oDau ? oDau.getAttribute('data-id') : null;
+  keo = { x: e.clientX, y: e.clientY, goc: goc, oDau: idDau,
+          bat: idDau ? !CHON[idDau] : true, di: false, nguong: false };
+  /* KHÔNG preventDefault khi bắt đầu trên một ô: nếu người dùng chỉ bấm chứ không
+     kéo thì cú click phải đi tiếp bình thường (mở xem ảnh / tick). */
+  if (!oDau) e.preventDefault();
 });
 document.addEventListener('mousemove', function(e){
   if (!keo) return;
+  if (!keo.nguong){
+    // Ngưỡng 5px tách "bấm" khỏi "kéo" — tay ai cũng rung vài pixel khi bấm.
+    if (Math.abs(e.clientX - keo.x) + Math.abs(e.clientY - keo.y) < 5) return;
+    keo.nguong = true; document.body.classList.add('dangkeo'); dongTip();
+  }
   keo.di = true;
+  /* Bóp nhịp bằng rAF phải nhớ SỰ KIỆN MỚI NHẤT. Bản đầu giữ lại `e` của lúc đặt
+     lịch, nên khi chuột dừng lại thì vị trí cuối cùng không bao giờ được áp —
+     kéo qua 6 ô mà chỉ chọn được 1. Lỗi này không thấy khi đọc code, chỉ hiện khi
+     kéo thật rồi đếm ô. */
+  keoMoiNhat = e;
   if (keoRAF) return;
-  keoRAF = requestAnimationFrame(function(){ keoRAF = 0; if (keo) apKeo(e); });
+  keoRAF = requestAnimationFrame(function(){ keoRAF = 0; if (keo && keoMoiNhat) apKeo(keoMoiNhat); });
 });
 document.addEventListener('mouseup', function(){
   if (!keo) return;
-  if (keo.di) BO_QUA_CLICK = true;
+  if (keo.nguong) nuotClickSauKeo();     // nuốt đúng cú click kết thúc thao tác kéo
   keo = null;
   document.body.classList.remove('dangkeo');
   $('#rubber').classList.remove('on');
@@ -962,8 +1092,8 @@ function ganNhanGiu(el, it){
     t = setTimeout(function(){
       t = null;
       document.body.classList.add('chonmode');
-      if (!CHON[it.id]){ CHON[it.id] = 1; el.setAttribute('aria-checked', 'true'); demLai(); }
-      BO_QUA_CLICK = true;                       // nuốt cú click sinh ra sau touchend
+      if (!CHON[it.id]){ CHON[it.id] = 1; veTick(el, it.id); demLai(); }
+      nuotClickCuaO(el);                         // nuốt cú click sinh ra sau touchend, chỉ ở ô này
       if (navigator.vibrate && !GIAM_DONG) try { navigator.vibrate(12); } catch(_){}
     }, 400);
   }, { passive: true });
@@ -985,6 +1115,9 @@ function nhanItems(list){
   CHON = Object.create(null);
   giu.forEach(function(it){ CHON[it.id] = 1; });      // mặc định tick hết, người dùng bỏ bớt
   $('#pickCard').style.display = '';
+  /* AC-19 (1/2) · chỉ hiện lần đầu. Người đã đọc rồi mà lần nào mở cũng bị dạy
+     lại thì card hướng dẫn trở thành thứ để bấm tắt, không phải để đọc. */
+  if (!localStorage.getItem('kho_coach_xong')) $('#coach').classList.add('on');
   veLuoi();
   ghiLog('đọc được ' + giu.length + ' ảnh' + (BO_QUA ? (' · bỏ qua ' + BO_QUA + ' HEIC') : ''));
 }
@@ -1076,7 +1209,7 @@ async function dongBo(){
   var shaCua = Object.create(null);
   for (var i = 0; i < chon.length; i++){
     try { shaCua[chon[i].id] = await sha256(await chon[i].getBlob()); }
-    catch (e){ TRANG_THAI[chon[i].id] = 'loi'; loi++; ghiLog('sha lỗi · ' + chon[i].name + ' · ' + e.message); }
+    catch (e){ TRANG_THAI[chon[i].id] = 'loi'; loi++; LY_DO[chon[i].id] = e.message; ghiLog('sha lỗi · ' + chon[i].name + ' · ' + e.message); }
   }
   var coSha = chon.filter(function(it){ return shaCua[it.id]; });
   var daCo = {};
@@ -1097,7 +1230,7 @@ async function dongBo(){
           if (j.trung_lap) trung++; else xong++;
         }
       } catch (e){
-        TRANG_THAI[it.id] = 'loi'; loi++;
+        TRANG_THAI[it.id] = 'loi'; loi++; LY_DO[it.id] = e.message;
         ghiLog('lỗi · ' + it.relativePath + ' · ' + e.message);
       }
       lamXong++; tien();
@@ -1178,6 +1311,13 @@ $('#btnSync').onclick = dongBo;
 $('#btnReload').onclick = taiKho;
 $('#langBtn').onclick = function(){ setLang(LANG === 'jp' ? 'vn' : 'jp'); };
 $('#selDone').onclick = function(){ document.body.classList.remove('chonmode'); };
+$('#coachX').onclick = function(){ localStorage.setItem('kho_coach_xong','1'); $('#coach').classList.remove('on'); };
+/* AC-18 · thoát chế độ chọn bằng cách chạm ra ngoài lưới, ngoài nút Xong. */
+document.addEventListener('click', function(e){
+  if (!document.body.classList.contains('chonmode')) return;
+  if (e.target.closest('#grid') || e.target.closest('#selBar') || e.target.closest('#actBar')) return;
+  document.body.classList.remove('chonmode');
+});
 $('#lbX').onclick = dongLightbox;
 $('#lbPrev').onclick = function(){ veLightbox(LB_IDX - 1, null); };
 $('#lbNext').onclick = function(){ veLightbox(LB_IDX + 1, null); };

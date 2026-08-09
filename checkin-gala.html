@@ -120,8 +120,7 @@
  /* E08-D089 · hạng VIP trong hồ sơ, cùng ngôn ngữ hình với chip ở danh sách:
     vàng, bo nhỏ, có ★, chỉ to hơn một nhịp vì đây là cự ly gần. Bản cũ bo 8px
     và không có sao — mở hồ sơ ra là thấy một thứ khác hẳn thứ vừa bấm vào. */
- .av-vip{position:absolute;left:50%;transform:translateX(-50%);bottom:-13px;top:auto;z-index:3;
-   display:inline-flex;align-items:center;gap:5px;
+ .av-vip{display:inline-flex;align-items:center;gap:5px;
    font-family:"Arial Narrow",system-ui,sans-serif;   /* CỐ Ý không webfont */
    font-size:.72rem;font-weight:700;letter-spacing:.1em;white-space:nowrap;
    border-radius:5px;padding:5px 14px;color:#2a1c02;
@@ -279,7 +278,14 @@
  .pf-back{border:0;background:rgba(255,255,255,.08);color:var(--cream);width:38px;height:38px;border-radius:50%;font-size:1.1rem;cursor:pointer}
  .pf-b{padding:22px 18px 46px;max-width:520px;margin:0 auto;text-align:center}
  .pf-av{width:190px;height:190px;border-radius:18px;margin:0 auto;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,var(--ph1),var(--ph2));border:2px solid var(--acc);color:var(--gold-b);font-family:Georgia,"Times New Roman","Iowan Old Style",serif;font-size:3.4rem;box-shadow:0 12px 34px rgba(0,0,0,.4)}.pf-av img{width:100%;height:100%;object-fit:cover}
+ /* D089 · nới lề trên: chip hạng đính dưới ảnh chỉ cách tên 3px, chật.
+    Ảnh không VIP thì không có chip nên 14px là đủ — dùng biến để chỗ nào
+    có chip mới nới, khỏi đẩy mọi hồ sơ xuống. */
  .pf-nm{font-family:Georgia,"Times New Roman","Iowan Old Style",serif;font-size:1.7rem;color:#fff;margin-top:14px;line-height:1.2}
+ /* Bọc ngoài khung ảnh: khung ảnh phải overflow:hidden để xén ảnh vào góc bo,
+    nên bất cứ thứ gì treo ra ngoài mà đặt bên trong đều bị cắt. */
+ .av-vip-wrap{text-align:center;margin-top:-14px;position:relative;z-index:3}
+ .av-vip-wrap + .pf-nm{margin-top:12px}
  .pf-rl{color:var(--muted);font-size:.92rem;margin-top:4px}.pf-rl b{color:var(--cream)}
  .th{margin:16px auto;display:inline-flex;gap:22px;border:1.5px solid var(--acc);border-radius:16px;background:var(--acc-dim);padding:12px 26px}
  .th .c .k{font-size:.58rem;text-transform:uppercase;letter-spacing:.16em;color:var(--muted)}.th .c .v{font-family:Georgia,"Times New Roman","Iowan Old Style",serif;font-size:2.4rem;color:var(--acc);line-height:1}
@@ -1207,7 +1213,7 @@ function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came
    :(laNhanVien(g)?'<div class="cidone" style="border-color:var(--line2);background:transparent"><div class="t" style="color:var(--muted)">'+t("nv_khong_ci")+'</div></div>'
      :'<button class="cib" data-ci="'+esc(g.id)+'">&#9711;&nbsp; '+t("cibtn")+'</button>');
  ciBox+=khoHtml(g)+quayHtml(g);
- $("#pfBody").innerHTML='<div class="pf-av'+(hangOf(g)?' is-vip':'')+'">'+av(g,1)+(hangOf(g)?'<span class="av-vip">'+esc(hangOf(g))+'</span>':'')+'</div><div class="pf-nm">'+pairVJ(g.name,g.name_jp)+'</div><div class="pf-rl"><b>'+(pairVJ(g.title,g.title_jp)||"—")+'</b>'+((g.org||g.org_jp)?'<br>'+pairVJ(g.org,g.org_jp):'')+'</div>'
+ $("#pfBody").innerHTML='<div class="pf-av'+(hangOf(g)?' is-vip':'')+'">'+av(g,1)+'</div>'+(hangOf(g)?'<div class="av-vip-wrap"><span class="av-vip">'+esc(hangOf(g))+'</span></div>':'')+'<div class="pf-nm">'+pairVJ(g.name,g.name_jp)+'</div><div class="pf-rl"><b>'+(pairVJ(g.title,g.title_jp)||"—")+'</b>'+((g.org||g.org_jp)?'<br>'+pairVJ(g.org,g.org_jp):'')+'</div>'
   +thBox(g)
   +badges(g,1)
   +'<div class="facts">'+'<div class="ft"><div class="k">'+t("buoi")+'</div><div class="v">'+esc(buoiLbl(g))+'</div></div><div class="ft '+dcls+'"><div class="k">'+t("amthuc")+'</div><div class="v">'+esc(dietLbl(g.diet))+'</div></div></div>'

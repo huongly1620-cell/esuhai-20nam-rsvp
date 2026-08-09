@@ -1574,7 +1574,9 @@ var PF_ANH=[],PF_GHIM="";
    +(isDup(g)?'<div class="dupwarn">⚠ '+tt("dup_warn")+'</div>':'')+'<div class="th"><div><div class="k">'+tt("ban")+'</div><div class="v num">'+esc(bgHien(g.table_no)||"—")+'</div></div>'
      +(bgHien(j.guest&&j.guest.seat_no)?'<div><div class="k">'+tt("ghe")+'</div><div class="v num">'+esc(j.guest.seat_no)+'</div></div>':'')
      +'</div>'
-    +'<div class="facts"><div class="ft"><div class="k">'+tt("buoi")+'</div><div class="v">'+esc(buoiOf(g))+'</div></div>'+(vipLbl(g)?'<div class="ft"><div class="k">'+tt("hang")+'</div><div class="v">'+esc(vipLbl(g))+'</div></div>':'')+(gt?'<div class="ft"><div class="k">'+tt("gioitinh")+'</div><div class="v">'+esc(gt)+'</div></div>':'')+'</div>'
+    +'<div class="facts"><div class="ft"><div class="k">'+tt("buoi")+'</div><div class="v">'+esc(buoiOf(g))+'</div></div>'/* D089 · ô HẠNG bỏ khỏi bảng: chip lớn dưới ảnh đã nói rồi. Nói hai lần
+       trong cùng một màn không làm nó nổi bật hơn, chỉ làm mắt phải xác nhận lại. */
+    +''+(gt?'<div class="ft"><div class="k">'+tt("gioitinh")+'</div><div class="v">'+esc(gt)+'</div></div>':'')+'</div>'
     /* E08-D063 — control Buổi, CHỈ btl, đặt ngay dưới field Buổi vừa vẽ ở trên.
        Tick vẽ theo `du_*` (buổi HIỆU LỰC = tag ∪ form) chứ không theo tag, đúng
        như chữ hiện ở field Buổi — hai chỗ cạnh nhau mà lệch nguồn thì không ai

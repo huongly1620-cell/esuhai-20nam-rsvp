@@ -81,6 +81,17 @@ function mount(app) {
     return res.sendFile(path.join(__dirname, 'views', 'exif6.fixture.js'));
   });
 
+  /* E08-D091 · Google Drive Picker config. Trả Client ID / API key / project
+     number để frontend bật nút Google Drive. Thiếu ≥1 biến → 204 (nút giữ
+     disabled, AC-2). Không trả client secret — flow thuần browser (GIS token). */
+  app.get('/crm/kho-anh/picker-config', auth.requireCrmAuth, auth.requireRole('btl'), (req, res) => {
+    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+    const apiKey   = process.env.GOOGLE_PICKER_API_KEY;
+    const appId    = process.env.GOOGLE_CLOUD_PROJECT_NUMBER;
+    if (!clientId || !apiKey || !appId) return res.status(204).end();
+    res.json({ clientId, apiKey, appId });
+  });
+
   auth.mount(app);
   // E08-D041 — tuyến mở khoá SĐT. Đặt cạnh auth vì nó là gác cổng, không phải
   // dữ liệu khách.

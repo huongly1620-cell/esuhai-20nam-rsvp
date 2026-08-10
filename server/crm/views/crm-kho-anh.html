@@ -141,6 +141,13 @@
      Tên KHÔNG mất đi đâu — vẫn ở caption khi mở lớn, ở title khi rê chuột, và ở
      aria-label cho trình đọc màn hình. Lưới tick giữ nguyên tên hiện thường
      trực: ở đó người ta đang quyết định đẩy tệp nào lên, tên là thông tin chính. */
+  .tile .go{position:absolute;top:6px;right:6px;display:flex;gap:5px;opacity:0;transition:opacity .16s;z-index:4}
+  .tile:hover .go,.tile:focus-within .go{opacity:1}
+  @media (hover:none){ .tile .go{opacity:.92} }
+  .tile .go button{border:1px solid var(--line2);background:rgba(4,11,20,.82);color:var(--text);
+    border-radius:8px;padding:4px 8px;font:inherit;font-size:var(--fs-micro);cursor:pointer}
+  .tile .go button.cung{border-color:rgba(224,90,90,.55);color:#ffb3b3}
+  .tile .go button:hover{border-color:var(--gold)}
   .grid-kho .tile .nm{opacity:0;transition:opacity .16s}
   .grid-kho .tile:hover .nm,.grid-kho .tile:focus-visible .nm{opacity:1}
   @media (prefers-reduced-motion:reduce){ .grid-kho .tile .nm{transition:none} }
@@ -610,6 +617,15 @@ var T = {
     pg_info:'Trang {t}/{tt} · ảnh {a}–{b} trong {n}',
     pg_tick:'Đã tick {n} ảnh (tính cả trang khác)',
     dot_la:'đợt {d}',
+    go_mem:'Ẩn khỏi kho',
+    go_mem_dai:'Ẩn khỏi kho — dữ liệu chưa xoá hẳn, khôi phục được',
+    go_cung:'Xoá hẳn',
+    go_cung_dai:'Xoá hẳn — không khôi phục',
+    hoi_mem:'Ẩn «{f}» khỏi kho?\n\nẢnh biến mất khỏi danh sách và khỏi mọi gợi ý nhận diện, nhưng tệp vẫn còn trên kho — khôi phục được.',
+    hoi_cung:'XOÁ HẲN «{f}»?\n\nTệp trên kho và mọi dữ liệu khuôn mặt sinh ra từ tấm này sẽ mất VĨNH VIỄN. Không khôi phục được, kể cả bằng sao lưu.\n\nDùng cho yêu cầu gỡ dữ liệu của khách.',
+    hoi_cung_ok:'Xoá vĩnh viễn',
+    da_an:'Đã ẩn khỏi kho — khôi phục được.',
+    da_xoa:'Đã xoá hẳn {f}.',
     coach:'<b>Bấm vào ảnh</b> để xem lớn. <b>Bấm ô vuông góc trái</b> để tick chọn. Muốn chọn cả mảng thì <b>giữ chuột kéo ngang qua nhiều ảnh</b> — kéo qua ô đang tick sẽ bỏ tick cả vùng. Trên điện thoại: <b>nhấn giữ một ảnh</b> để vào chế độ chọn.',
     coach_ok:'Đã hiểu', tip_dup:'Ảnh này đã có trong kho — trùng với một tấm đã nạp trước, nên lượt này bỏ qua.', tip_err:'Không nạp được: {e}',
     btn_drive:'☁ Google Drive',
@@ -680,6 +696,15 @@ var T = {
     pg_info:'{tt}ページ中{t}ページ目 · 全{n}枚中 {a}–{b}枚',
     pg_tick:'{n}枚選択中（他ページ分を含む）',
     dot_la:'{d} の回',
+    go_mem:'保管庫から隠す',
+    go_mem_dai:'保管庫から隠す — 完全削除ではなく、復元できます',
+    go_cung:'完全に削除',
+    go_cung_dai:'完全に削除 — 復元できません',
+    hoi_mem:'「{f}」を保管庫から隠しますか？\n\n一覧と顔認識の候補から消えますが、ファイルは残るため復元できます。',
+    hoi_cung:'「{f}」を完全に削除しますか？\n\nファイルと、この写真から生成された顔データはすべて永久に失われます。バックアップからも復元できません。\n\nゲストからのデータ削除請求に使用してください。',
+    hoi_cung_ok:'完全に削除する',
+    da_an:'保管庫から隠しました — 復元できます。',
+    da_xoa:'{f} を完全に削除しました。',
     coach:'<b>写真をタップ</b>すると拡大表示。<b>左上の四角</b>で選択します。まとめて選ぶには<b>マウスで横にドラッグ</b> — 選択済みの上をなぞると範囲ごと解除されます。スマートフォンでは<b>長押し</b>で選択モードへ。',
     coach_ok:'閉じる', tip_dup:'この写真は既に保管済みです（同じ写真が取り込み済み）。今回はスキップしました。', tip_err:'取り込み失敗: {e}',
     btn_drive:'☁ Google Drive',
@@ -2030,6 +2055,15 @@ function oKhoHTML(x){
     + esc(x.orig_name) + '"><img loading="lazy" style="aspect-ratio:' + ar + '"'
     + ' onerror="this.closest(&quot;.tile&quot;).classList.add(&quot;anh-hong&quot;)"'
     + ' src="' + esc(x.thumb_url) + '" alt="' + esc(x.orig_name) + '">'
+    /* Hai đường tách hẳn nhau và NÓI ĐÚNG TÊN mình. Một nút "Gỡ" trần để người
+       dùng tự đoán là mềm hay cứng chính là thứ FR-11b cấm — hai hành vi này
+       khác nhau ở chỗ có lấy lại được hay không, tức là khác nhau hoàn toàn. */
+    + '<div class="go">'
+    +   '<button type="button" data-go-mem="' + esc(x.id) + '" title="' + esc(tt('go_mem_dai')) + '">'
+    +   esc(tt('go_mem')) + '</button>'
+    +   '<button type="button" class="cung" data-go-cung="' + esc(x.id) + '" title="' + esc(tt('go_cung_dai')) + '">'
+    +   esc(tt('go_cung')) + '</button>'
+    + '</div>'
     + '<div class="nm" title="' + esc(x.rel_path || x.orig_name) + '">' + esc(x.orig_name) + '</div></div>';
 }
 var KHO_NHIP = 4;    // grid-auto-rows, khớp CSS
@@ -2224,7 +2258,32 @@ $('#lbNext').onclick = function(){ veLightbox(LB_IDX + 1, null); };
 $('#lb').addEventListener('click', function(e){ if (e.target === this) dongLightbox(); });
 /* D090 · ô kho mở lightbox. Uỷ quyền trên #khoWrap vì nội dung bên trong bị
    innerHTML thay mới mỗi lần tải — gắn thẳng lên từng ô sẽ mất sau lần vẽ sau. */
-$('#khoWrap').addEventListener('click', function(e){
+$('#khoWrap').addEventListener('click', async function(e){
+  var nMem = e.target.closest && e.target.closest('[data-go-mem]');
+  var nCung = e.target.closest && e.target.closest('[data-go-cung]');
+  if (nMem || nCung){
+    e.stopPropagation();                       // đừng mở xem lớn khi người ta bấm nút gỡ
+    var id = (nMem || nCung).getAttribute(nMem ? 'data-go-mem' : 'data-go-cung');
+    var it = KHO.filter(function(x){ return String(x.id) === String(id); })[0] || {};
+    var ten = it.orig_name || id;
+    if (nMem){
+      if (!await appConfirm(fmt('hoi_mem', { f: ten }), { okLabel: tt('go_mem') })) return;
+      var r1 = await fetch('/crm/event-photos/' + id, { method: 'DELETE' });
+      if (!r1.ok) return toast(tt('kho_err'), 'err');
+      toast(tt('da_an'), 'ok');
+    } else {
+      /* Xoá cứng hỏi bằng chính chữ mô tả hậu quả, và nút đồng ý mang tên hành
+         động — không phải "OK". Người bấm phải đọc thấy "vĩnh viễn" trên nút. */
+      if (!await appConfirm(fmt('hoi_cung', { f: ten }), { okLabel: tt('hoi_cung_ok') })) return;
+      var r2 = await fetch('/crm/event-photos/' + id + '/vinh-vien', { method: 'DELETE' });
+      if (!r2.ok) return toast(tt('kho_err'), 'err');
+      toast(fmt('da_xoa', { f: ten }), 'ok');
+    }
+    KHO = KHO.filter(function(x){ return String(x.id) !== String(id); });
+    var o = oKho(id); if (o) o.remove();
+    veGhiChu(); taiKho();
+    return;
+  }
   var chip = e.target.closest && e.target.closest('.dot-chip');
   if (chip){ KHO_DOT = chip.getAttribute('data-dot') || ''; napTrangKho(true); return; }
   var t = e.target.closest && e.target.closest('.tile[data-kho-id]');

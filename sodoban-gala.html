@@ -10,6 +10,11 @@
 :root{
   --cream:#f5efe1;--muted:#b9b096;--muted2:#8f886f;--line:rgba(216,184,118,.28);
   --gold:#d8b876;--gold-b:#f4e2b0;
+  /* E08-D101d · ba biến lấy NGUYÊN từ /crm (crm-app-v2.html :root, chủ đề tối) để viền
+     thẻ ở đây và ở CRM là cùng một màu thật, không phải "trông giống". */
+  --crm-gold:#e0bd77;--crm-gold-soft:rgba(224,189,119,.14);
+  --crm-card:rgba(255,255,255,.032);--crm-line:rgba(224,189,119,.16);--crm-line2:rgba(224,189,119,.32);
+  --crm-hover:rgba(255,255,255,.07);
   --bg1:#0b1a30;--bg2:#0b2330;--bg3:#08111F;--acc:#2E7FCC;
   --ok:#43e08d;--no:#e2503a;--empty:rgba(255,255,255,.16);--nv:#f0d999;
   --panel-bg:linear-gradient(180deg,#0e2238,#08111F);
@@ -259,7 +264,7 @@ a{color:inherit}
    bàn này có bao nhiêu VIP · còn mấy chỗ · khách đến/chưa. Quốc tịch và nhân viên
    xuống dòng chip phía dưới — cần thì có, nhưng không tranh chỗ của ba số trên. */
 .panel .thero{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:2px 0 9px}
-.panel .thero .h{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+.panel .thero .h{background:var(--crm-card);border:1px solid var(--crm-line);
   border-radius:11px;padding:9px 6px 8px;text-align:center;min-width:0}
 .panel .thero .h b{display:block;font-size:1.55rem;font-weight:800;line-height:1;
   font-variant-numeric:tabular-nums}
@@ -268,7 +273,7 @@ a{color:inherit}
 .panel .thero .h > span{display:block;font-size:.55rem;font-weight:800;letter-spacing:.04em;
   text-transform:uppercase;color:var(--muted);margin-top:4px;line-height:1.3}
 .panel .thero .h b span{display:inline;font-size:inherit;text-transform:none;letter-spacing:0}
-.panel .thero .h.vip{border-color:rgba(216,184,118,.5);background:rgba(216,184,118,.11)}
+.panel .thero .h.vip{border-color:rgba(224,189,119,.5);background:var(--crm-gold-soft)}
 .panel .thero .h.vip b{color:var(--gold-b)}
 .panel .thero .h.vip b small{font-size:.5em;font-weight:800;color:var(--muted2);margin-left:2px}
 .panel .thero .h.came b{font-size:1.3rem}
@@ -277,7 +282,7 @@ a{color:inherit}
 .panel .thero .h.came .s{color:var(--muted2);font-weight:600;margin:0 1px}
 .panel .tmeta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px}
 .panel .tmeta i{font-style:normal;font-size:.66rem;font-weight:700;color:var(--muted);
-  border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);
+  border:1px solid var(--crm-line);background:var(--crm-card);
   border-radius:99px;padding:4px 9px;white-space:nowrap}
 .panel .tmeta i b{color:var(--cream);font-variant-numeric:tabular-nums}
 .panel .tmeta i.nv b{color:var(--nv)}
@@ -287,11 +292,20 @@ a{color:inherit}
   text-transform:uppercase;color:var(--muted)}
 .panel .tnote{margin-top:6px;font-size:.7rem;color:var(--muted2);font-style:italic}
 .panel .tlist{display:block}
-.panel .trow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;font:inherit;
-  color:inherit;background:transparent;border:0;border-bottom:1px dashed var(--line);
-  padding:8px 2px;cursor:pointer;border-radius:6px}
-.panel .trow:hover{background:rgba(255,255,255,.06)}
-.panel .trow:active{transform:scale(.995)}
+/* E08-D101d · dòng danh sách theo đúng khuôn thẻ `.g` của /crm: viền mảnh chạy HẾT
+   vòng thẻ, góc bo, nền card, bóng nhẹ. Bản trước là gạch chân nét đứt cộng một thanh
+   vàng dán ở cạnh trái cho VIP — thanh đó thô vì nó là một nét đặc 2px không thuộc
+   ngôn ngữ nào của CRM. Ở CRM, hạng nói bằng CẢ ĐƯỜNG VIỀN cộng một wash chéo rất
+   nhạt, nên nó nổi mà không đập vào mắt. Số đo lấy từ `.g`, chỉ thu padding và bán
+   kính lại cho vừa panel hẹp 360px (CRM là cột nội dung chính, đây là panel bên). */
+.panel .trow{display:flex;align-items:center;gap:9px;width:100%;text-align:left;font:inherit;
+  color:inherit;background:var(--crm-card);border:1px solid var(--crm-line);border-radius:12px;
+  padding:8px 10px;margin-bottom:6px;cursor:pointer;
+  box-shadow:0 1px 2px rgba(0,0,0,.14);
+  transition:transform .16s cubic-bezier(.2,.8,.2,1),border-color .16s,background .16s,box-shadow .16s}
+.panel .trow:hover{border-color:var(--crm-line2);background:var(--crm-hover);
+  transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.22)}
+.panel .trow:active{transform:scale(.988)}
 .panel .trow .sn{flex:0 0 auto;min-width:26px;text-align:center;font-size:.66rem;font-weight:800;
   border-radius:7px;padding:3px 5px;background:rgba(255,255,255,.07);color:var(--cream);
   font-variant-numeric:tabular-nums}
@@ -305,21 +319,41 @@ a{color:inherit}
   overflow:hidden;display:grid;place-items:center;background:rgba(255,255,255,.10);
   color:var(--cream);font-family:"Playfair Display",serif;font-weight:700;font-size:.7rem}
 .panel .trow .rav img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.panel .trow.is-nv .rav{border-radius:7px;box-shadow:0 0 0 2px rgba(240,217,153,.55)}
-.panel .trow.is-vip{background:linear-gradient(90deg,rgba(216,184,118,.10),transparent 70%);
-  box-shadow:inset 2px 0 0 var(--gold)}
-.panel .trow.is-vip .rav{box-shadow:0 0 0 2px var(--gold)}
+/* nhân viên: HÌNH nói vai (vuông), viền để trung tính như mọi khung ảnh khác. Vòng
+   vàng nhạt cũ bị bỏ: ở CRM chỉ VIP mới được viền vàng, để vàng luôn có một nghĩa. */
+.panel .trow.is-nv .rav{border-radius:7px}
+.panel .trow.is-vip{border:1.5px solid var(--crm-gold);
+  background:linear-gradient(105deg,var(--crm-gold-soft) 0%,var(--crm-card) 55%);
+  box-shadow:0 0 0 1px rgba(224,189,119,.12),0 4px 14px rgba(184,150,63,.18)}
+.panel .trow.is-vip:hover{border-color:var(--gold-b);
+  box-shadow:0 0 0 1px rgba(224,189,119,.22),0 10px 24px rgba(184,150,63,.26)}
+/* đã đến: viền xanh nhạt + wash — `.g.done` của CRM. VIP đã đến thì GIỮ viền vàng
+   (hạng) và thêm quầng xanh (trạng thái), đúng ghi chú D089 bên CRM. */
+.panel .trow.is-ok{border-color:rgba(69,224,142,.3);
+  background:linear-gradient(90deg,rgba(69,224,142,.08),transparent 62%)}
+.panel .trow.is-vip.is-ok{border-color:var(--crm-gold);
+  background:linear-gradient(105deg,var(--crm-gold-soft) 0%,rgba(69,224,142,.09) 70%,transparent);
+  box-shadow:0 0 0 2px rgba(69,224,142,.42),0 4px 12px rgba(184,150,63,.18)}
+/* khung ảnh: MỌI khách có viền mảnh + bóng trong nhẹ (khuôn `.av` của CRM), VIP chồng
+   thêm sắc vàng đậm hơn — cùng một ngôn ngữ, khác cấp độ. */
+.panel .trow .rav{border:1px solid var(--crm-line2);
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.22)}
+.panel .trow.is-vip .rav{border-color:var(--crm-gold);
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),0 0 0 2px rgba(224,189,119,.3),0 2px 6px rgba(184,150,63,.3)}
 .panel .trow .nm{flex:1 1 auto;min-width:0;font-size:.79rem;font-weight:700}
 /* `> span` / `> i` — dòng tên và dòng đơn vị là con TRỰC TIẾP. Viết trơn thì selector
    ăn luôn mấy dấu ●VIP/■NV/日/? nằm trong span tên, biến chúng thành dải nền chiếm
    hết chiều ngang xếp dọc, thay vì nhãn nhỏ nằm cạnh tên. */
 .panel .trow .nm > span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.panel .trow .mk{display:inline;font-style:normal;font-size:.62rem;font-weight:800;border-radius:5px;
-  padding:1px 4px;margin-left:5px;vertical-align:1px}
-.panel .trow .mk.vip{background:rgba(216,184,118,.24);color:var(--gold-b)}
-.panel .trow .mk.nv{background:rgba(240,217,153,.18);color:var(--nv)}
-.panel .trow .mk.jp{background:rgba(46,127,204,.26);color:#cfe6ff}
-.panel .trow .mk.unk{background:rgba(255,138,61,.22);color:#ffcba3}
+/* viên nhãn theo khuôn chip `.role` của CRM: nền rất nhạt + viền mảnh, thay vì nền
+   đặc. Nền đặc trên nhãn nhỏ là thứ làm cả dòng trông "dán chồng" chứ không phải
+   một hệ. */
+.panel .trow .mk{display:inline;font-style:normal;font-size:.62rem;font-weight:800;border-radius:20px;
+  padding:1px 6px;margin-left:5px;vertical-align:1px;border:1px solid transparent}
+.panel .trow .mk.vip{background:var(--crm-gold-soft);border-color:var(--crm-line2);color:var(--gold-b)}
+.panel .trow .mk.nv{background:var(--crm-card);border-color:var(--crm-line);color:var(--nv)}
+.panel .trow .mk.jp{background:rgba(46,127,204,.16);border-color:rgba(46,127,204,.45);color:#cfe6ff}
+.panel .trow .mk.unk{background:rgba(255,138,61,.12);border-color:rgba(255,138,61,.45);color:#ffcba3}
 .panel .trow .nm > i{display:block;font-style:normal;font-weight:400;font-size:.68rem;color:var(--muted2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .panel .trow .bd{flex:0 0 auto;font-size:.6rem;font-weight:800;border-radius:99px;padding:2px 7px;white-space:nowrap}
@@ -945,7 +979,8 @@ function bindRowAvatars(root){
 }
 
 function seatRow(r, ban){
-  return '<button type="button" class="trow'+(r.vip?" is-vip":"")+(r.nv?" is-nv":"")+'" data-id="'+esc(r.g.id)+'"'+
+  return '<button type="button" class="trow'+(r.vip?" is-vip":"")+(r.nv?" is-nv":"")+
+      (r.ok?" is-ok":"")+'" data-id="'+esc(r.g.id)+'"'+
       ' data-ban="'+esc(ban)+'" data-ghe="'+r.ghe+'">'+
     '<span class="sn'+(r.ov?" ov":"")+'">'+r.ghe+'</span>'+
     rowAvatar(r.g)+

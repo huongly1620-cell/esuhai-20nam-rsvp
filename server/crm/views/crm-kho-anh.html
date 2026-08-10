@@ -253,6 +253,12 @@
     border-radius:4px;pointer-events:none;display:none}
   .rubber.on{display:block}
   #grid{position:relative}
+  .resume{margin-top:12px;padding:13px 14px;border:1px solid var(--line2);border-radius:12px;
+    background:var(--panel2)}
+  .resume-h{font-weight:700;margin-bottom:6px}
+  .resume-so{font-size:var(--fs-small);line-height:1.7}
+  .resume-so b{font-size:1.05rem}
+  .resume-nut{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
   .btn.danger{border-color:rgba(224,90,90,.5);color:#ffb3b3}
   .btn.danger:hover:not(:disabled){border-color:#e05a5a;background:rgba(224,90,90,.12)}
   .pager{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px;flex-wrap:wrap}
@@ -429,6 +435,18 @@
          được là một lời hứa suông, còn nút biến mất thì không ai đi tìm. -->
     <button class="btn sm danger" id="btnStop" type="button" data-i="stop" hidden>Dừng</button>
   </div>
+  <!-- D098 · Sau khi Dừng, câu "còn N ảnh" nằm ở toast và srStatus — cả hai đều
+       trôi mất: toast tự tắt, srStatus bị lượt vẽ sau ghi đè. Khối này ĐỨNG YÊN
+       cho tới khi người dùng quyết định, vì đó là lúc họ cần con số nhất. -->
+  <div class="resume" id="resumeBar" hidden>
+    <div class="resume-h" id="resumeH"></div>
+    <div class="resume-so" id="resumeSo"></div>
+    <p class="hint" id="resumeCt"></p>
+    <div class="resume-nut">
+      <button class="btn" id="btnTiepTuc" type="button"></button>
+      <button class="btn sm" id="btnBoDot" type="button"></button>
+    </div>
+  </div>
   <!-- AC-7 · tóm tắt NGẮN cho trình đọc màn hình. Log dài bên dưới cố ý KHÔNG aria-live:
        đọc nguyên văn vài trăm dòng log là tra tấn, không phải trợ năng. -->
   <p class="hint" id="srStatus" role="status" aria-live="polite"></p>
@@ -558,6 +576,11 @@ var T = {
     sr_prep:'Đang chuẩn bị {d}/{t} ảnh · lô {l}/{n}.',
     log_dot:'── đợt nạp mới · {n} ảnh · {l} lô ──',
     stop:'Dừng', stop_wait:'Đang dừng…',
+    rs_h:'Đợt nạp đang dở',
+    rs_so:'{x} ảnh đã vào kho · {c} đã có sẵn · {e} lỗi · <b>còn {r} ảnh</b>',
+    rs_ct:'Còn lại = số đã tick trừ số đã vào kho và số đã có sẵn. Ảnh lỗi nằm trong phần còn lại và sẽ được thử lại.',
+    rs_tiep:'Tiếp tục nạp {r} ảnh còn lại',
+    rs_bo:'Bỏ đợt dở',
     sr_stopped:'Đã dừng. Đã xử lý {d}/{t} ảnh · còn {r} ảnh chưa nạp.',
     t_stopped:'Đã dừng · {d}/{t} ảnh đã xử lý, còn {r}.',
     log_stop:'người dùng bấm Dừng — đã xử lý {d}/{t}, còn {r} ảnh chưa nạp. Ảnh đã vào kho vẫn giữ; đồng bộ lại thì chúng tự nhận là "đã có".',
@@ -619,6 +642,11 @@ var T = {
     sr_prep:'{t}枚中 {d}枚を準備中 · バッチ {l}/{n}。',
     log_dot:'── 新しい取り込み · {n}枚 · {l}バッチ ──',
     stop:'停止', stop_wait:'停止しています…',
+    rs_h:'取り込みが途中です',
+    rs_so:'{x}枚を保管 · {c}枚は既存 · {e}枚が失敗 · <b>残り{r}枚</b>',
+    rs_ct:'残り = 選択枚数 − (保管済み + 既存)。失敗した写真は残りに含まれ、再試行されます。',
+    rs_tiep:'残り{r}枚を続けて取り込む',
+    rs_bo:'途中の取り込みを破棄',
     sr_stopped:'停止しました。{t}枚中 {d}枚を処理 · 残り{r}枚。',
     t_stopped:'停止 · {t}枚中 {d}枚を処理、残り{r}枚。',
     log_stop:'停止が押されました — {t}枚中 {d}枚を処理、残り{r}枚。取り込み済みの写真はそのまま残り、次回は「既存」として扱われます。',
@@ -668,6 +696,7 @@ function setLang(l){
      đã nhớ — đúng nguyên tắc D086 đã chốt cho ô kiểm EXIF. */
   if ($('#khoGrid')){ veStat(); veDot(); veChan(); veGhiChu(); }
   else taiKho();
+  veResume();
 }
 
 /* ── theme sáng/tối (khuôn #themeBtn của crm-app-v2) ── */
@@ -1618,10 +1647,44 @@ var CUA_BLOB = 20;
    nó chưa lên. Dừng SẠCH nghĩa là không bắt đầu thêm việc mới, chứ không phải
    cắt ngang việc đang làm. */
 var HUY = false;
-async function dongBo(){
+/* D098 · Đợt đang dở của lượt bấm này: giữ mã đợt để lần Tiếp tục vẫn nằm chung
+   một đợt trong bộ lọc kho, thay vì tách ra thành hai đợt cho cùng một việc. */
+var DOT_DO = null;
+function conLaiCuaDot(){
+  return ITEMS.filter(function(it){
+    if (!CHON[it.id]) return false;
+    var st = TRANG_THAI[it.id];
+    /* Ảnh LỖI tính là còn lại: nút Tiếp tục có thử lại chúng, nên con số phải
+       khớp việc nút làm. Spec ghi công thức trừ cả 'loi' nhưng lại cho Tiếp tục
+       gồm 'loi' — hai điều đó không thể cùng đúng, và cái phải nhường là con số,
+       không phải hành vi. */
+    return st !== 'xong' && st !== 'trung' && st !== 'bo';
+  }).length;
+}
+function veResume(){
+  var bar = $('#resumeBar'); if (!bar) return;
+  if (!DOT_DO){ bar.hidden = true; return; }
+  var r = conLaiCuaDot();
+  if (!r){ bar.hidden = true; DOT_DO = null; return; }
+  bar.hidden = false;
+  $('#resumeH').textContent = tt('rs_h');
+  $('#resumeSo').innerHTML = fmt('rs_so', { x: DOT_DO.xong, c: DOT_DO.trung, e: DOT_DO.loi, r: r });
+  $('#resumeCt').textContent = tt('rs_ct');
+  $('#btnTiepTuc').textContent = fmt('rs_tiep', { r: r });
+  $('#btnBoDot').textContent = tt('rs_bo');
+}
+async function dongBo(tiepTuc){
   if (!EXIF_OK){ await appAlert(tt('no_exif')); return; }
-  var chon = ITEMS.filter(function(it){ return CHON[it.id]; });
-  if (!chon.length) return;
+  /* Tiếp tục chỉ lấy phần CHƯA xong: tấm đã vào kho hoặc đã có sẵn thì không
+     đọc lại, không đẩy lại. Đó là điểm của nút này — nếu nó chạy lại cả danh
+     sách thì nó chỉ là nút Đồng bộ đặt tên khác. */
+  var chon = ITEMS.filter(function(it){
+    if (!CHON[it.id]) return false;
+    if (!tiepTuc) return true;
+    var st = TRANG_THAI[it.id];
+    return st !== 'xong' && st !== 'trung' && st !== 'bo';
+  });
+  if (!chon.length){ DOT_DO = null; veResume(); return; }
 
   // Gate 1 · đếm rồi báo TRƯỚC khi nạp cả kho. Ba nghìn tấm là ~15 phút và
   // ~1,8 GB — không phải thứ để bấm nhầm rồi mới đọc con số.
@@ -1631,12 +1694,19 @@ async function dongBo(){
   var dongY = await appConfirm(loiNhac, { okLabel: tt('ask_sync_ok') });
   if (!dongY) return;
 
-  DANG_CHAY = true; HUY = false; capNhatNutSync();
+  DANG_CHAY = true; HUY = false;
+  $('#resumeBar').hidden = true;                 // đang chạy thì không mời bấm Tiếp tục
+  capNhatNutSync();
   /* MỘT mã đợt cho CẢ lần bấm: cắt lô là chuyện bên trong, còn với người xem kho
      thì đây vẫn là một đợt lọc. Sinh mã theo lô sẽ băm một lần nạp thành nhiều
      đợt trong bộ lọc, và không ai gỡ lại được theo cái họ đã làm. */
-  var batchId = 'dot-' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)
-                + '-' + Math.random().toString(36).slice(2, 8);
+  /* Tiếp tục nằm chung MỘT đợt với lượt trước: người ta bấm Dừng rồi bấm Tiếp
+     tục là đang làm tiếp một việc, không phải mở việc mới. Tách mã đợt sẽ băm
+     một lần nạp thành hai dòng trong bộ lọc kho. */
+  var batchId = (tiepTuc && DOT_DO && DOT_DO.batchId)
+    ? DOT_DO.batchId
+    : ('dot-' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)
+       + '-' + Math.random().toString(36).slice(2, 8));
   var soLo = Math.ceil(chon.length / NAP_DONG_BO);
   /* Mã đợt thô không giúp được người đọc: giao diện không có việc gì làm với nó,
      và bộ lọc kho đã hiện đợt theo GIỜ NẠP. Để nó trên màn chỉ là chữ máy. Vẫn
@@ -1775,6 +1845,12 @@ async function dongBo(){
   var daDung = HUY;
   DANG_CHAY = false; HUY = false;
   veLuoi();
+  /* Cộng dồn qua các lượt Tiếp tục: ba con số này nói về CẢ đợt, không phải về
+     riêng lượt bấm vừa rồi. */
+  var truoc = (tiepTuc && DOT_DO) ? DOT_DO : { xong: 0, trung: 0, loi: 0 };
+  DOT_DO = { batchId: batchId, xong: truoc.xong + xong,
+             trung: truoc.trung + trung, loi: truoc.loi + loi };
+  veResume();
   if (daDung){
     /* Nói hai con số người ta cần: đã xong bao nhiêu, còn lại bao nhiêu. "Đã
        dừng" một mình để họ tự đoán mình mất gì. */
@@ -2000,6 +2076,8 @@ $('#fFiles').onchange  = function(e){ nhanItems(ThietBiAdapter.tuFileList(e.targ
 $('#selAll').onclick  = function(){ ITEMS.forEach(function(it){ CHON[it.id] = 1; }); veLuoi(); };
 $('#selNone').onclick = function(){ CHON = Object.create(null); veLuoi(); };
 $('#btnStop').onclick = function(){ HUY = true; capNhatNutSync(); };
+$('#btnTiepTuc').onclick = function(){ dongBo(true); };
+$('#btnBoDot').onclick = function(){ DOT_DO = null; veResume(); };
 $('#pgPrev').onclick = function(){ doiTrang(-1); };
 $('#pgNext').onclick = function(){ doiTrang(1); };
 $('#btnSync').onclick = dongBo;

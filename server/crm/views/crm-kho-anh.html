@@ -581,6 +581,10 @@ var T = {
     rs_ct:'Còn lại = số đã tick trừ số đã vào kho và số đã có sẵn. Ảnh lỗi nằm trong phần còn lại và sẽ được thử lại.',
     rs_tiep:'Tiếp tục nạp {r} ảnh còn lại',
     rs_bo:'Bỏ đợt dở',
+    rs_f5_h:'Còn một đợt nạp dở từ lần trước',
+    rs_f5:'{x} ảnh đã vào kho · {c} đã có sẵn · <b>còn khoảng {r} ảnh</b>',
+    rs_f5_ct:'Trang vừa tải lại nên danh sách ảnh không còn. Chọn lại đúng thư mục cũ rồi bấm Đồng bộ — những tấm đã vào kho sẽ được nhận ra và bỏ qua, không tải lại từ Drive.',
+    rs_nhan:'Nhận lại {n} ảnh đã nạp từ lần trước — sẽ bỏ qua, không tải lại.',
     sr_stopped:'Đã dừng. Đã xử lý {d}/{t} ảnh · còn {r} ảnh chưa nạp.',
     t_stopped:'Đã dừng · {d}/{t} ảnh đã xử lý, còn {r}.',
     log_stop:'người dùng bấm Dừng — đã xử lý {d}/{t}, còn {r} ảnh chưa nạp. Ảnh đã vào kho vẫn giữ; đồng bộ lại thì chúng tự nhận là "đã có".',
@@ -647,6 +651,10 @@ var T = {
     rs_ct:'残り = 選択枚数 − (保管済み + 既存)。失敗した写真は残りに含まれ、再試行されます。',
     rs_tiep:'残り{r}枚を続けて取り込む',
     rs_bo:'途中の取り込みを破棄',
+    rs_f5_h:'前回の取り込みが途中のままです',
+    rs_f5:'{x}枚を保管 · {c}枚は既存 · <b>残り約{r}枚</b>',
+    rs_f5_ct:'ページを再読み込みしたため写真の一覧が失われました。同じフォルダをもう一度選んで取り込みを押してください。保管済みの写真は認識され、再ダウンロードされません。',
+    rs_nhan:'前回取り込んだ{n}枚を認識しました — 再取得せずスキップします。',
     sr_stopped:'停止しました。{t}枚中 {d}枚を処理 · 残り{r}枚。',
     t_stopped:'停止 · {t}枚中 {d}枚を処理、残り{r}枚。',
     log_stop:'停止が押されました — {t}枚中 {d}枚を処理、残り{r}枚。取り込み済みの写真はそのまま残り、次回は「既存」として扱われます。',
@@ -1559,6 +1567,10 @@ function nhanItems(list){
   CHON = Object.create(null);
   NAP_TR = 0;                                        // bộ ảnh mới thì đứng lại từ trang 1
   giu.forEach(function(it){ CHON[it.id] = 1; });      // mặc định tick hết, người dùng bỏ bớt
+  /* Chọn lại đúng thư mục cũ ⇒ nhận ra tấm đã nạp từ sổ và bỏ qua chúng. Đây là
+     chỗ Pha B trả lại tiền: không đọc lại byte của phần đã vào kho. */
+  var daNhan = apSoVaoItems();
+  if (daNhan){ ghiLog(fmt('rs_nhan', { n: daNhan })); toast(fmt('rs_nhan', { n: daNhan }), 'ok'); }
   $('#pickCard').style.display = '';
   /* AC-19 (1/2) · chỉ hiện lần đầu. Người đã đọc rồi mà lần nào mở cũng bị dạy
      lại thì card hướng dẫn trở thành thứ để bấm tắt, không phải để đọc. */
@@ -1650,6 +1662,68 @@ var HUY = false;
 /* D098 · Đợt đang dở của lượt bấm này: giữ mã đợt để lần Tiếp tục vẫn nằm chung
    một đợt trong bộ lọc kho, thay vì tách ra thành hai đợt cho cùng một việc. */
 var DOT_DO = null;
+/* D098 Pha B · Sổ việc — CHỈ siêu dữ liệu.
+   Sau F5 thì ITEMS rỗng: không còn SourceItem nào để đọc byte. Nên sổ không thể
+   là thứ "chạy tiếp ngay", nó là thứ giúp NHẬN LẠI việc khi nguồn được gắn lại:
+   chọn lại đúng thư mục, các tấm đã vào kho được nhận ra và bỏ qua, không đọc
+   lại từ Drive.
+   Cấm tuyệt đối trong sổ: blob, và token OAuth. Blob thì không lưu nổi; token
+   thì lưu được mà không được lưu — nó là chìa khoá vào Drive của người ta. */
+var SO_KHOA = 'kho_so_viec_v1';
+function khoaSo(it){
+  /* Khoá phải sống qua F5. Với Drive, id tệp là ổn định thật sự. Với thiết bị
+     thì không có id nào cả — 'tb-<seq>-…' đổi theo thứ tự đọc thư mục, nên dùng
+     đường dẫn + cỡ + thời điểm sửa, đủ để nhận lại đúng tấm. */
+  if (it.source === 'google-drive') return 'gd:' + String(it.id).replace(/^gd-/, '');
+  return 'tb:' + (it.relativePath || it.name) + ':' + (it.size || 0) + ':' + (it.lastModified || 0);
+}
+function docSo(){
+  try {
+    var j = JSON.parse(localStorage.getItem(SO_KHOA) || 'null');
+    if (!j || j.v !== 1 || !j.muc) return null;
+    return j;
+  } catch (_){ return null; }
+}
+function xoaSo(){ try { localStorage.removeItem(SO_KHOA); } catch (_){} }
+var _soHen = null;
+function ghiSo(){
+  /* Gộp nhịp: đổi trạng thái xảy ra sau mỗi tấm, mà ghi localStorage là đồng bộ
+     và chặn luồng chính. Dồn lại rồi ghi một lần. */
+  if (_soHen) return;
+  _soHen = setTimeout(function(){
+    _soHen = null;
+    if (!DOT_DO){ xoaSo(); return; }
+    var muc = Object.create(null), nguon = '';
+    ITEMS.forEach(function(it){
+      if (!CHON[it.id]) return;
+      var st = TRANG_THAI[it.id];
+      if (st === 'xong' || st === 'trung'){ muc[khoaSo(it)] = st; }
+      if (!nguon) nguon = it.source || '';
+    });
+    try {
+      localStorage.setItem(SO_KHOA, JSON.stringify({
+        v: 1, batchId: DOT_DO.batchId, nguon: nguon,
+        tong: Object.keys(CHON).length, luc: new Date().toISOString(),
+        xong: DOT_DO.xong, trung: DOT_DO.trung, loi: DOT_DO.loi,
+        muc: muc
+      }));
+    } catch (_){ /* hết chỗ lưu: sổ là tiện ích, không được làm hỏng đợt đang chạy */ }
+  }, 400);
+}
+/* Gắn sổ vào ITEMS vừa nạp: tấm nào sổ ghi là xong/đã có thì đánh dấu ngay, để
+   Tiếp tục bỏ qua chúng mà KHÔNG đọc byte lần nào. */
+function apSoVaoItems(){
+  var so = docSo(); if (!so) return 0;
+  var n = 0;
+  ITEMS.forEach(function(it){
+    var st = so.muc[khoaSo(it)];
+    if (st === 'xong' || st === 'trung'){ TRANG_THAI[it.id] = st; n++; }
+  });
+  if (n){
+    DOT_DO = { batchId: so.batchId, xong: so.xong || 0, trung: so.trung || 0, loi: so.loi || 0 };
+  }
+  return n;
+}
 function conLaiCuaDot(){
   return ITEMS.filter(function(it){
     if (!CHON[it.id]) return false;
@@ -1663,6 +1737,24 @@ function conLaiCuaDot(){
 }
 function veResume(){
   var bar = $('#resumeBar'); if (!bar) return;
+  /* Sau F5 chưa chọn lại nguồn: sổ còn nhưng ITEMS rỗng. Vẫn phải hiện, vì đây
+     đúng là lúc người ta cần biết còn dở — nhưng nút Tiếp tục thì KHÔNG, vì
+     không có gì để tiếp: bấm được mà không làm gì mới là thứ đáng bực. */
+  if (!ITEMS.length){
+    var so = docSo();
+    if (!so || !so.tong){ bar.hidden = true; return; }
+    var daXong = Object.keys(so.muc || {}).length;
+    bar.hidden = false;
+    $('#resumeH').textContent = tt('rs_f5_h');
+    $('#resumeSo').innerHTML = fmt('rs_f5', { x: so.xong || 0, c: so.trung || 0,
+                                              r: Math.max(0, (so.tong || 0) - daXong) });
+    $('#resumeCt').textContent = tt('rs_f5_ct');
+    $('#btnTiepTuc').hidden = true;
+    $('#btnBoDot').hidden = false;
+    $('#btnBoDot').textContent = tt('rs_bo');
+    return;
+  }
+  $('#btnTiepTuc').hidden = false;
   if (!DOT_DO){ bar.hidden = true; return; }
   var r = conLaiCuaDot();
   if (!r){ bar.hidden = true; DOT_DO = null; return; }
@@ -1816,6 +1908,7 @@ async function dongBo(tiepTuc){
           delete goi.giuBlob[it.id];
           dangDay--;
           lamXong++; donVi += 1; veTien(soLoHienTai);
+          ghiSo();                                    // gộp nhịp bên trong ghiSo
           $('#nDone').textContent = xong;
         }
       }
@@ -1850,6 +1943,8 @@ async function dongBo(tiepTuc){
   var truoc = (tiepTuc && DOT_DO) ? DOT_DO : { xong: 0, trung: 0, loi: 0 };
   DOT_DO = { batchId: batchId, xong: truoc.xong + xong,
              trung: truoc.trung + trung, loi: truoc.loi + loi };
+  if (!conLaiCuaDot()) { DOT_DO = null; xoaSo(); }    // hết việc thì đóng sổ
+  else ghiSo();
   veResume();
   if (daDung){
     /* Nói hai con số người ta cần: đã xong bao nhiêu, còn lại bao nhiêu. "Đã
@@ -2077,7 +2172,7 @@ $('#selAll').onclick  = function(){ ITEMS.forEach(function(it){ CHON[it.id] = 1;
 $('#selNone').onclick = function(){ CHON = Object.create(null); veLuoi(); };
 $('#btnStop').onclick = function(){ HUY = true; capNhatNutSync(); };
 $('#btnTiepTuc').onclick = function(){ dongBo(true); };
-$('#btnBoDot').onclick = function(){ DOT_DO = null; veResume(); };
+$('#btnBoDot').onclick = function(){ DOT_DO = null; xoaSo(); veResume(); };
 $('#pgPrev').onclick = function(){ doiTrang(-1); };
 $('#pgNext').onclick = function(){ doiTrang(1); };
 $('#btnSync').onclick = dongBo;
@@ -2156,6 +2251,7 @@ drop.addEventListener('drop', async function(e){
 
 apDungTheme(localStorage.getItem('crm_theme') === 'light' ? 'light' : '');
 setLang(LANG);
+veResume();                                          // D098 Pha B · sổ dở từ lần trước
 napMe();
 chayDoEXIF();
 

@@ -60,6 +60,11 @@
   .ta-ds div{padding:8px 11px;cursor:pointer;font-size:.85rem}
   .ta-ds div:hover{background:var(--panel)}
   .an{display:none}
+  /* Chế độ khoanh: con trỏ đổi để người dùng biết cú kéo tới sẽ vẽ khung chứ
+     không phải cuộn trang — không có dấu hiệu này thì cú kéo đầu tiên luôn hỏng. */
+  .anhto.khoanh{cursor:crosshair;touch-action:none}
+  .anhto.khoanh img{user-select:none;-webkit-user-drag:none}
+  .khung.moi{border-color:var(--ok);border-style:dashed}
 </style>
 </head>
 <body>
@@ -136,6 +141,10 @@ var T = {
     xac_nhan:'Xác nhận', tu_choi:'Từ chối', bo_qua:'Bỏ qua',
     gan_tay:'Gán khách…', gan_ph:'Gõ tên / đơn vị (≥2 ký tự)',
     lam_mau:'Dùng mặt này làm ảnh mẫu',
+    khoanh:'✏️ Khoanh mặt làm ảnh mẫu', khoanh_thoi:'Thôi khoanh',
+    khoanh_huong:'Kéo một khung quanh khuôn mặt, rồi chọn khách trong ô bên dưới.',
+    khoanh_nho:'Khung quá nhỏ — kéo rộng hơn quanh khuôn mặt.',
+    khoanh_chon:'Khung đã vẽ. Chọn khách để lưu làm ảnh mẫu:',
     mau_xong:'Đã ghi khung. Lượt chạy batch tới sẽ tính đặc trưng rồi tìm thêm ảnh của khách này.',
     khong_mau:'chưa có ảnh mẫu', co_mau:'có mẫu',
     khong_khop:'Không có khách nào khớp. Ô này chỉ chọn từ danh sách mời, không tạo khách mới.',
@@ -152,6 +161,10 @@ var T = {
     xac_nhan:'確認', tu_choi:'却下', bo_qua:'スキップ',
     gan_tay:'ゲストを指定…', gan_ph:'氏名／所属（2文字以上）',
     lam_mau:'この顔を参照写真にする',
+    khoanh:'✏️ 顔を囲んで参照写真にする', khoanh_thoi:'囲むのをやめる',
+    khoanh_huong:'顔のまわりをドラッグして囲み、下の欄でゲストを選んでください。',
+    khoanh_nho:'範囲が小さすぎます — 顔を囲むように広げてください。',
+    khoanh_chon:'範囲を保存しました。参照写真にするゲストを選んでください：',
     mau_xong:'範囲を保存しました。次回のバッチで特徴量を計算し、他の写真を探します。',
     khong_mau:'参照写真なし', co_mau:'参照あり',
     khong_khop:'該当するゲストがいません。ここでは招待者一覧からのみ選べます。',
@@ -256,10 +269,70 @@ async function veHangDoi(gid){
       + goi
       + '<div class="goi"><span class="hint">'+esc(tt('gan_tay'))+'</span>'
       +   '<div class="ta" style="flex:1;min-width:220px"><input type="text" class="ganO" placeholder="'
-      +   esc(tt('gan_ph'))+'"><div class="ta-ds an"></div></div></div>'
+      +   esc(tt('gan_ph'))+'"><div class="ta-ds an"></div></div>'
+      +   '<button class="btn sm" data-khoanh="1">'+esc(tt('khoanh'))+'</button></div>'
+      + '<p class="hint khoanhHuong an" style="margin:4px 0 0"></p>'
       + '</div>';
   }).join('');
 }
+
+/* FR-10 · khoanh mặt trên ảnh sự kiện → ảnh mẫu.
+   Toạ độ đổi về ẢNH GỐC ngay lúc thả chuột: CSDL lưu theo ảnh gốc, còn trình
+   duyệt đang hiện bản đã co. Đổi ở đây một lần, thay vì để mỗi chỗ đọc lại tự
+   quy đổi — mỗi lần quy đổi là một lần có thể quên. */
+var KHUNG_MOI = null;
+function toaDoGoc(el, ev, the){
+  var r = el.getBoundingClientRect();
+  var t = (ev.touches && ev.touches[0]) || (ev.changedTouches && ev.changedTouches[0]) || ev;
+  return { x: (t.clientX - r.left) / r.width  * Number(the.getAttribute('data-w')),
+           y: (t.clientY - r.top)  / r.height * Number(the.getAttribute('data-h')) };
+}
+function batDauKhoanh(el, ev, the){
+  if (!el.classList.contains('khoanh')) return;
+  ev.preventDefault();
+  var d = toaDoGoc(el, ev, the);
+  KHUNG_MOI = { el: el, the: the, x0: d.x, y0: d.y, x1: d.x, y1: d.y };
+  var cu = el.querySelector('.khung.moi'); if (cu) cu.remove();
+  var i = document.createElement('i'); i.className = 'khung moi'; el.appendChild(i);
+}
+function keoKhoanh(ev){
+  if (!KHUNG_MOI) return;
+  ev.preventDefault();
+  var d = toaDoGoc(KHUNG_MOI.el, ev, KHUNG_MOI.the);
+  KHUNG_MOI.x1 = d.x; KHUNG_MOI.y1 = d.y;
+  var W = Number(KHUNG_MOI.the.getAttribute('data-w')), H = Number(KHUNG_MOI.the.getAttribute('data-h'));
+  var k = KHUNG_MOI.el.querySelector('.khung.moi'); if (!k) return;
+  k.style.left   = (Math.min(KHUNG_MOI.x0, KHUNG_MOI.x1) / W * 100) + '%';
+  k.style.top    = (Math.min(KHUNG_MOI.y0, KHUNG_MOI.y1) / H * 100) + '%';
+  k.style.width  = (Math.abs(KHUNG_MOI.x1 - KHUNG_MOI.x0) / W * 100) + '%';
+  k.style.height = (Math.abs(KHUNG_MOI.y1 - KHUNG_MOI.y0) / H * 100) + '%';
+}
+function thaKhoanh(){
+  if (!KHUNG_MOI) return;
+  var k = KHUNG_MOI, the = k.the;
+  var w = Math.abs(k.x1 - k.x0), h = Math.abs(k.y1 - k.y0);
+  var huong = the.querySelector('.khoanhHuong');
+  /* Khung bé quá thì mặt cắt ra không đủ để nhúng — chặn ngay, đừng để tới lượt
+     batch mới im lặng bỏ qua. */
+  if (w < 24 || h < 24){
+    the.querySelector('.khung.moi') && the.querySelector('.khung.moi').remove();
+    huong.textContent = tt('khoanh_nho'); KHUNG_MOI = null; return;
+  }
+  the.dataset.box = JSON.stringify({ x: Math.min(k.x0,k.x1), y: Math.min(k.y0,k.y1), w: w, h: h });
+  huong.textContent = tt('khoanh_chon');
+  the.querySelector('.ganO').focus();
+  KHUNG_MOI = null;
+}
+document.addEventListener('mousedown', function(e){
+  var el = e.target.closest && e.target.closest('.anhto.khoanh');
+  if (el) batDauKhoanh(el, e, el.closest('.card')); });
+document.addEventListener('mousemove', keoKhoanh);
+document.addEventListener('mouseup', thaKhoanh);
+document.addEventListener('touchstart', function(e){
+  var el = e.target.closest && e.target.closest('.anhto.khoanh');
+  if (el) batDauKhoanh(el, e, el.closest('.card')); }, { passive: false });
+document.addEventListener('touchmove', keoKhoanh, { passive: false });
+document.addEventListener('touchend', thaKhoanh);
 
 /* Typeahead FR-4b — dùng ĐÚNG /crm/guests?q= sẵn có, không đẻ API mới, và chỉ
    chọn từ danh sách mời: gõ tên lạ không tạo khách mới ở đây. */
@@ -287,14 +360,41 @@ document.addEventListener('click', async function(e){
   var tr = e.target.closest && e.target.closest('tr.kh');
   if (tr){ moAlbum(tr.getAttribute('data-id')); return; }
 
+  var nk = e.target.closest && e.target.closest('button[data-khoanh]');
+  if (nk){
+    var theK = nk.closest('.card'), anh = theK.querySelector('.anhto');
+    var bat = !anh.classList.contains('khoanh');
+    anh.classList.toggle('khoanh', bat);
+    nk.textContent = bat ? tt('khoanh_thoi') : tt('khoanh');
+    var hg = theK.querySelector('.khoanhHuong');
+    hg.classList.toggle('an', !bat);
+    if (bat) hg.textContent = tt('khoanh_huong'); else { delete theK.dataset.box;
+      var kk = anh.querySelector('.khung.moi'); if (kk) kk.remove(); }
+    return;
+  }
+
   var g = e.target.closest && e.target.closest('.ta-ds div[data-gid]');
   if (g){
     var the = g.closest('.card');
-    await jpost('/crm/face-match/assign', { event_photo_id: Number(the.getAttribute('data-anh')),
-      guest_id: Number(g.getAttribute('data-gid')) });
+    /* Cùng một ô typeahead phục vụ hai việc: đang khoanh thì lưu ẢNH MẪU (FR-10),
+       không khoanh thì GÁN ảnh vào album (FR-4b). Spec đòi dùng chung ô này. */
+    if (the.dataset.box){
+      var kq = await jpost('/crm/face-match/sample', {
+        event_photo_id: Number(the.getAttribute('data-anh')),
+        guest_id: Number(g.getAttribute('data-gid')), box: JSON.parse(the.dataset.box) });
+      the.querySelector('.khoanhHuong').textContent = tt('mau_xong');
+      delete the.dataset.box;
+      var k2 = the.querySelector('.khung.moi'); if (k2) k2.remove();
+      the.querySelector('.anhto').classList.remove('khoanh');
+      the.querySelector('button[data-khoanh]').textContent = tt('khoanh');
+    } else {
+      await jpost('/crm/face-match/assign', { event_photo_id: Number(the.getAttribute('data-anh')),
+        guest_id: Number(g.getAttribute('data-gid')) });
+      await veHangDoi();
+    }
     g.closest('.ta-ds').classList.add('an');
     the.querySelector('.ganO').value = '';
-    await napKhach(); await veHangDoi(); return;
+    await napKhach(); return;
   }
 
   var b = e.target.closest && e.target.closest('button[data-do]');

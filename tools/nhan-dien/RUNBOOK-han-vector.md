@@ -60,12 +60,14 @@ Gắn với **vòng đời dữ liệu**, không gắn với đồng hồ:
 
 | Việc | Người | Nhịp |
 |---|---|---|
-| Đối chiếu số quá hạn còn sót = 0 | **PM tổng** (hoặc người trực CRM hôm đó) | sau mỗi lần deploy, và **thứ Hai hàng tuần** |
+| Đối chiếu số quá hạn còn sót = 0 | **Hoàng Kha** | sau mỗi lần deploy, và **thứ Hai hàng tuần** |
 | Cách kiểm | `POST /crm/face-match/quet-han` → đọc `con_lai` phải bằng **0** | |
 | Nếu `con_lai` > 0 | máy chủ có thể vừa khởi động lại liên tục (nhịp chưa tới) hoặc bảng lỗi — xem log `[face-match] quét hạn lỗi` | |
+| Hai câu SQL ở mục trên phải ra **0** | **Hoàng Kha** | **một lần** ngay sau chuyến LIVE đầu — vì `NOT VALID` không quét quá khứ |
 
-Ô "người" ở trên **phải có tên thật** khi vé lên LIVE; để trống là quay lại đúng
-chỗ QC đã bắt: một cơ chế không có chủ ngữ.
+Ô "người" ở trên có tên thật vì một ô trống là quay lại đúng chỗ QC đã bắt: một
+cơ chế không có chủ ngữ. Khi người này bàn giao, **thay tên khác vào**, không xoá
+trắng — không ai kiểm thì cơ chế coi như không có, dù mã vẫn chạy hàng giờ.
 
 ## Đổi con số 7 ngày
 

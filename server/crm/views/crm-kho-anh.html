@@ -1656,83 +1656,114 @@ async function dongBo(){
     $('#prog').style.width = pc + '%';
     return pc;
   }
-  function tienChuanBi(d, t, l){
-    veThanh();
-    $('#progNum').textContent = fmt('pg_prep', { d: d, t: t, l: l, n: soLo });
-    $('#srStatus').textContent = fmt('sr_prep', { d: d, t: t, l: l, n: soLo });
-  }
-  function tienDay(l){
+  /* D097 · Hai pha nay CHỒNG nhau, nên hai hàm cùng ghi vào một ô chữ sẽ giành
+     nhau và dòng chữ nhấp nháy qua lại giữa "Chuẩn bị…" và "x/y · %". Một hàm vẽ
+     duy nhất, đọc trạng thái chung: đang đẩy thì con số đẩy được ưu tiên vì đó
+     mới là thứ nói khi nào xong; chỉ khi chưa đẩy gì (cửa sổ đầu) mới hiện dòng
+     chuẩn bị. Cả hai sự thật vẫn còn, chỉ là không tranh chỗ. */
+  var dangDay = 0;                       // số tấm đang bay ở pha đẩy
+  var daChuanBi = 0, tongChuanBi = 0;    // tiến độ pha chuẩn bị, tính trên cả lô
+  function veTien(l){
     var pc = veThanh();
-    $('#progNum').textContent = fmt('pg_push',
-      { d: lamXong, t: chon.length, pc: pc, l: l, n: soLo });
-    $('#srStatus').textContent = fmt('sr_run', { d: lamXong, t: chon.length });
+    if (dangDay > 0 || lamXong > 0){
+      $('#progNum').textContent = fmt('pg_push',
+        { d: lamXong, t: chon.length, pc: pc, l: l, n: soLo });
+      $('#srStatus').textContent = fmt('sr_run', { d: lamXong, t: chon.length });
+    } else {
+      $('#progNum').textContent = fmt('pg_prep', { d: daChuanBi, t: tongChuanBi, l: l, n: soLo });
+      $('#srStatus').textContent = fmt('sr_prep', { d: daChuanBi, t: tongChuanBi, l: l, n: soLo });
+    }
   }
-  tienChuanBi(0, Math.min(NAP_DONG_BO, chon.length), 1);
+  tongChuanBi = Math.min(NAP_DONG_BO, chon.length);
+  veTien(1);
 
   for (var iLo = 0; iLo < soLo; iLo++){
     var lo = chon.slice(iLo * NAP_DONG_BO, (iLo + 1) * NAP_DONG_BO);
     var soLoHienTai = iLo + 1;
 
-    /* Lô chia tiếp thành CỬA SỔ: đọc blob → băm → hỏi trùng → đẩy NGAY khi blob
-       còn trong tay → buông. Bản D095 băm cả lô rồi mới đẩy, nên blob đọc ở pha
-       băm bị vứt và daySchema phải đọc lại — với Drive là tải bản gốc hai lượt.
-       Cửa sổ nhỏ giữ được cả hai điều: đọc một lần, mà đỉnh RAM vẫn chặn. */
-    var daChuanBi = 0;
-    for (var iCua = 0; iCua < lo.length && !HUY; iCua += CUA_BLOB){
-      var cua = lo.slice(iCua, iCua + CUA_BLOB);
-      var shaCua = Object.create(null);
-      var giuBlob = Object.create(null);          // id -> blob gốc, chỉ sống trong cửa sổ này
+    /* D097 · Lô chia thành CỬA SỔ, và các cửa sổ chạy theo ĐƯỜNG ỐNG.
+       D096 đã bỏ được việc đọc blob hai lần, nhưng trong một cửa sổ vẫn đọc tuần
+       tự từng tấm rồi mới đẩy — nên hai kênh mạng thay nhau ngồi không: đo trên
+       hồ sơ giả Drive, kênh đẩy rỗi 59% và kênh tải rỗi 40%.
+       Nay: đọc ba luồng song song trong một cửa sổ, và chuẩn bị cửa sổ SAU chạy
+       cùng lúc với đẩy cửa sổ TRƯỚC. Trần RAM thành hai cửa sổ thay vì một —
+       đó là cái giá, và nó có trần rõ chứ không trôi theo kích thước kho. */
+    var cuaList = [];
+    for (var iCua = 0; iCua < lo.length; iCua += CUA_BLOB) cuaList.push(lo.slice(iCua, iCua + CUA_BLOB));
+    daChuanBi = 0; tongChuanBi = lo.length;
 
-      for (var i = 0; i < cua.length && !HUY; i++){
-        try {
-          var b = await cua[i].getBlob();
-          shaCua[cua[i].id] = await sha256(b);
-          giuBlob[cua[i].id] = b;
-          donVi += 1;
-        } catch (e){
-          TRANG_THAI[cua[i].id] = 'loi'; loi++; lamXong++; LY_DO[cua[i].id] = e.message;
-          donVi += 2;                                   // tấm này đã kết thúc
-          ghiLog(fmt('log_doc_hong', { f: cua[i].name, e: e.message }));
+    async function chuanBiCua(cua){
+      var shaCua = Object.create(null), giuBlob = Object.create(null);
+      var hang = cua.slice();
+      async function docMot(){
+        while (hang.length && !HUY){
+          var it = hang.shift();
+          try {
+            var b = await it.getBlob();
+            shaCua[it.id] = await sha256(b);
+            giuBlob[it.id] = b;
+            donVi += 1;
+          } catch (e){
+            TRANG_THAI[it.id] = 'loi'; loi++; lamXong++; LY_DO[it.id] = e.message;
+            donVi += 2;                                   // tấm này đã kết thúc
+            ghiLog(fmt('log_doc_hong', { f: it.name, e: e.message }));
+          }
+          daChuanBi++;
+          veTien(soLoHienTai);
         }
-        daChuanBi++;
-        tienChuanBi(daChuanBi, lo.length, soLoHienTai);
       }
-
+      /* Ba luồng đọc — cùng bậc với ba luồng đẩy (M8). */
+      await Promise.all([docMot(), docMot(), docMot()]);
       var coSha = cua.filter(function(it){ return shaCua[it.id]; });
       var daCo = {};
       try { daCo = await hoiDaCo(coSha.map(function(it){ return shaCua[it.id]; })); }
       catch (e){ ghiLog('không hỏi được trùng lặp (' + e.message + ') — vẫn đẩy, máy chủ tự chặn trùng'); }
-
-      // Đẩy cửa sổ — 3 luồng song song (M8: nhiều hơn thì tab tự bóp nghẹt mình).
-      var hangDoi = coSha.slice();
-      var lamViec = (function(nhan, sha_, daCo_, giu_){
-        return async function congNhan(){
-          /* Đọc cờ ở ĐẦU mỗi vòng: tấm đang bay vẫn đi hết, tấm kế tiếp thì không
-             bắt đầu. Nhiều nhất là ba tấm chạy nốt — đúng số luồng. */
-          while (hangDoi.length && !HUY){
-            var it = hangDoi.shift();
-            var sha = sha_[it.id];
-            try {
-              if (daCo_[sha]){ TRANG_THAI[it.id] = 'trung'; trung++; }
-              else {
-                var j = await daySchema(it, sha, batchId, giu_[it.id]);
-                TRANG_THAI[it.id] = j.trung_lap ? 'trung' : 'xong';
-                if (j.trung_lap) trung++; else xong++;
-              }
-            } catch (e){
-              TRANG_THAI[it.id] = 'loi'; loi++; LY_DO[it.id] = e.message;
-              ghiLog('lỗi · ' + it.relativePath + ' · ' + e.message);
-            }
-            /* Buông blob ngay khi tấm này xong, không đợi hết cửa sổ. */
-            delete giu_[it.id];
-            lamXong++; donVi += 1; tienDay(nhan);
-            $('#nDone').textContent = xong;
-          }
-        };
-      })(soLoHienTai, shaCua, daCo, giuBlob);
-      await Promise.all([lamViec(), lamViec(), lamViec()]);
-      giuBlob = null;                              // cửa sổ đóng, blob hết tham chiếu
+      return { coSha: coSha, shaCua: shaCua, giuBlob: giuBlob, daCo: daCo };
     }
+
+    async function dayCua(goi){
+      if (!goi) return;
+      var hangDoi = goi.coSha.slice();
+      async function congNhan(){
+        /* Đọc cờ ở ĐẦU mỗi vòng: tấm đang bay vẫn đi hết, tấm kế tiếp thì không
+           bắt đầu. Nhiều nhất là ba tấm chạy nốt — đúng số luồng. */
+        while (hangDoi.length && !HUY){
+          var it = hangDoi.shift();
+          var sha = goi.shaCua[it.id];
+          dangDay++;
+          try {
+            if (goi.daCo[sha]){ TRANG_THAI[it.id] = 'trung'; trung++; }
+            else {
+              var j = await daySchema(it, sha, batchId, goi.giuBlob[it.id]);
+              TRANG_THAI[it.id] = j.trung_lap ? 'trung' : 'xong';
+              if (j.trung_lap) trung++; else xong++;
+            }
+          } catch (e){
+            TRANG_THAI[it.id] = 'loi'; loi++; LY_DO[it.id] = e.message;
+            ghiLog('lỗi · ' + it.relativePath + ' · ' + e.message);
+          }
+          /* Buông blob ngay khi tấm này xong, không đợi hết cửa sổ. */
+          delete goi.giuBlob[it.id];
+          dangDay--;
+          lamXong++; donVi += 1; veTien(soLoHienTai);
+          $('#nDone').textContent = xong;
+        }
+      }
+      await Promise.all([congNhan(), congNhan(), congNhan()]);
+      goi.giuBlob = Object.create(null);     // cửa sổ đóng, blob hết tham chiếu
+    }
+
+    var sanSang = cuaList.length ? await chuanBiCua(cuaList[0]) : null;
+    for (var k = 0; k < cuaList.length && !HUY; k++){
+      /* Bắt đầu chuẩn bị cửa sổ SAU trước khi đứng chờ cửa sổ này đẩy xong. */
+      var keTiep = (k + 1 < cuaList.length && !HUY) ? chuanBiCua(cuaList[k + 1]) : null;
+      await dayCua(sanSang);
+      /* Kể cả khi vừa bấm Dừng vẫn phải chờ lời hứa kia xong rồi mới thoát —
+         bỏ nó lơ lửng thì blob của nó sống tiếp ngoài mọi kiểm soát. */
+      sanSang = keTiep ? await keTiep : null;
+      if (HUY) break;
+    }
+    if (sanSang) sanSang.giuBlob = Object.create(null);
 
     /* Nhường vòng lặp sự kiện giữa hai lô: cho trình duyệt vẽ lại và cho người
        dùng cuộn/bấm được, thay vì giữ luồng chính suốt từ lô đầu tới lô cuối.

@@ -370,7 +370,7 @@ a{color:inherit}
     <div class="sub" id="pSub"></div>
     <div style="margin-bottom:10px" id="pBadges"></div>
     <div class="row"><span class="k" data-i="p_banghe">Bàn / Ghế</span><span class="v" id="pBan"></span></div>
-    <div class="row"><span class="k">Check-in Gala</span><span class="v" id="pCi"></span></div>
+    <div class="row"><span class="k" data-i="p_ci">Check-in Gala</span><span class="v" id="pCi"></span></div>
     <div class="row"><span class="k" data-i="p_nv">Nhân viên</span><span class="v" id="pNv"></span></div>
     <div class="row"><span class="k" data-i="p_id">Mã thẻ</span><span class="v" id="pId"></span></div>
     <div class="dupwarn" id="pDup" style="display:none"></div>
@@ -388,6 +388,7 @@ a{color:inherit}
     <div class="tstate" id="ptState" data-s="none">—</div>
     <div class="tstats" id="ptStats"></div>
     <div id="ptCap"></div>
+    <div class="actions" id="ptActs"></div>
     <div id="ptList"></div>
   </div>
 </aside>
@@ -426,7 +427,9 @@ var TSD={
    h5:" · Bàn CRM 1–34 = VIP1–34 trên Pollux",
    just_ci:" vừa check-in Gala",guest_w:"Khách",b_den:"Đã đến",b_chua:"Chưa đến",nv_w:"Nhân viên",no_w:"Không",
    dup1:"⚠ Ghế này đang có ",dup2:" thẻ khách trùng nhau trong CRM — cần soát lại dữ liệu bàn/ghế",
-   tp_sub:"Chi tiết bàn · Gala",tp_tip:"Bấm để xem chi tiết bàn",tp_guest:"Khách mời",tp_tot:"Tổng xếp",
+   p_ci:"Check-in Gala",co_w:"Có",just_ci_n:" khách vừa check-in Gala",
+   tp_show_all:"Hiện lại tất cả bàn",tp_ovseat:"⚠ Ghế này vượt sức chứa thật của bàn",
+   tp_sub:"Chi tiết bàn · Gala",tp_tip:"Bấm để xem chi tiết bàn",tp_guest:"Khách mời",tp_unit:"người",
    tp_cap:"Sức chứa (ghế thật)",tp_free:"Ghế trống",tp_seated:"Đã xếp",
    tp_st_free:"Còn trống",tp_st_full:"Đầy ghế · còn chưa đến",tp_st_ok:"Đủ",tp_st_nodata:"Chưa có dữ liệu ghế",
    tp_lsec_g:"Danh sách khách mời",tp_lsec_nv:"Danh sách nhân viên",
@@ -454,7 +457,9 @@ var TSD={
    h5:" · CRMのテーブル1–34 = Pollux の VIP1–34",
    just_ci:" 様 ガラ受付完了",guest_w:"ゲスト",b_den:"ご来場",b_chua:"未来場",nv_w:"スタッフ",no_w:"なし",
    dup1:"⚠ この席には ",dup2:" 件の重複したゲスト登録があります — テーブル/座席データの確認が必要です",
-   tp_sub:"テーブル詳細 · ガラ",tp_tip:"押すとテーブル詳細",tp_guest:"招待ゲスト",tp_tot:"配席合計",
+   p_ci:"ガラ受付",co_w:"あり",just_ci_n:" 名 ガラ受付完了",
+   tp_show_all:"全テーブルを再表示",tp_ovseat:"⚠ この席は実際の収容数を超えています",
+   tp_sub:"テーブル詳細 · ガラ",tp_tip:"押すとテーブル詳細",tp_guest:"招待ゲスト",tp_unit:"名",
    tp_cap:"収容（実席数）",tp_free:"空席",tp_seated:"配席済み",
    tp_st_free:"空席",tp_st_full:"満席 · 未来場あり",tp_st_ok:"満席完了",tp_st_nodata:"座席データなし",
    tp_lsec_g:"招待ゲスト一覧",tp_lsec_nv:"スタッフ一覧",
@@ -615,7 +620,7 @@ function matchesSearch(g, ban){
 
 // setLang gọi hàm này: vẽ lại sơ đồ VÀ panel bàn đang mở (chuỗi trong panel bàn do JS
 // sinh, không phải [data-i], nên không vẽ lại là panel đứng ở tiếng cũ).
-window.__sodoRender=function(){ render(); refreshTablePanel(); };
+window.__sodoRender=function(){ render(); refreshTablePanel(); refreshGuestPanelText(); };
 function render(){
   var root=$("#seats"); root.innerHTML="";
   var tables=(META&&META.tables)||{};
@@ -771,7 +776,7 @@ function render(){
         el.setAttribute("data-id", String(g.id));
         if(nv){ el.classList.add("nv"); nNv++; }
         if(gs.length>1) el.classList.add("dup");
-        el.title=(g.full_name||"")+" "+tsd("s_ban")+" "+ban+" "+tsd("s_ghe2")+" "+s2+(nv?" · NV":"")+(ok?" "+tsd("s_den"):" "+tsd("s_chua"))+(gs.length>1?" "+tsd("s_dup")+gs.length:"")+(isOverflow?" · ⚠ ghế "+s2+" vượt sức chứa thật của bàn ("+cap+" ghế) — cần soát lại table_no/seat_no":"");
+        el.title=(g.full_name||"")+" "+tsd("s_ban")+" "+ban+" "+tsd("s_ghe2")+" "+s2+(nv?" · NV":"")+(ok?" "+tsd("s_den"):" "+tsd("s_chua"))+(gs.length>1?" "+tsd("s_dup")+gs.length:"")+(isOverflow?" · "+tsd("tp_ovseat")+" ("+cap+")":"");
         var qMatch = hasSearch && matchesSearch(g, ban);
         if(hasSearch && !tableMatches && !qMatch) el.classList.add("dim");
         if(qMatch) el.classList.add("match");
@@ -810,7 +815,7 @@ function render(){
     c.setAttribute("data-ban", f.ban);
     c.title=focusBan && String(f.ban)===String(focusBan)
       ? tsd("chip_on")
-      : "Chỉ hiện bàn này trên sơ đồ";
+      : tsd("chip_off");
     t5.appendChild(c);
   });
 
@@ -822,7 +827,7 @@ function render(){
   if(newlyArrived.length===1){
     toast("✓ "+(newlyArrived[0].full_name||tsd("guest_w"))+tsd("just_ci"));
   } else if(newlyArrived.length>1){
-    toast("✓ "+newlyArrived.length+" khách vừa check-in Gala");
+    toast("✓ "+newlyArrived.length+tsd("just_ci_n"));
   }
 }
 
@@ -839,7 +844,7 @@ function tableLabel(ban){
 
 function statBox(title, tot, ok, no){
   return '<div class="tbox"><h3>'+esc(title)+'</h3>'+
-    '<div class="big">'+tot+'<small>'+esc(tsd("tp_tot"))+'</small></div>'+
+    '<div class="big">'+tot+'<small>'+esc(tsd("tp_unit"))+'</small></div>'+
     '<div class="sm"><b class="g-ok">'+ok+'</b> '+esc(tsd("b_den"))+
     ' · <b class="g-no">'+no+'</b> '+esc(tsd("b_chua"))+'</div></div>';
 }
@@ -886,6 +891,12 @@ function renderTablePanel(ban){
     '<div class="row"><span class="k">'+esc(tsd("tp_seated"))+'</span><span class="v">'+seated+'</span></div>'+
     (st.ovTot?'<div class="dupwarn" style="display:block">'+esc(tsd("tp_ov1")+st.ovTot+tsd("tp_ov2"))+'</div>':'');
 
+  // Cùng một slicer với chip «Còn trống nhiều nhất» — không thêm cơ chế lọc thứ hai,
+  // chỉ thêm một đường vào nó từ trong panel. Nhãn nút đổi theo trạng thái đang lọc.
+  var onNow = !!focusBan && String(focusBan)===String(ban);
+  $("#ptActs").innerHTML='<button type="button" class="btn'+(onNow?" acc":"")+'" id="ptOnly">'+
+    esc(onNow?tsd("tp_show_all"):tsd("chip_off"))+'</button>';
+
   // Khách mời trước, nhân viên sau; trong mỗi nhóm giữ thứ tự ghế tăng dần của st.rows.
   var gu=st.rows.filter(function(r){return !r.nv;});
   var nv=st.rows.filter(function(r){return r.nv;});
@@ -922,6 +933,26 @@ function refreshTablePanel(){
   if(panelMode==="table" && selTable) renderTablePanel(selTable);
 }
 
+// Mấy dòng phụ thuộc ngôn ngữ của panel khách, tách riêng để đổi ngôn ngữ lúc panel
+// đang mở là vẽ lại được — KHÔNG chạy lại openPanel, vì thế sẽ gán lại img.src và làm
+// ảnh hồ sơ nháy/tải lại. Ảnh và tên không phụ thuộc ngôn ngữ nên để nguyên.
+function refreshGuestPanelText(){
+  if(panelMode!=="guest" || !sel) return;
+  var g=G.filter(function(x){return String(x.id)===String(sel.id);})[0];
+  if(!g) return;
+  var ok=cameGala(g), nv=isNv(g);
+  var badges='<span class="badge '+(ok?"ok":"no")+'">'+esc(ok?tsd("b_den"):tsd("b_chua"))+'</span>';
+  if(nv) badges+='<span class="badge nv">'+esc(tsd("nv_w"))+'</span>';
+  $("#pBadges").innerHTML=badges;
+  $("#pBan").textContent=tsd("w_ban")+" "+sel.ban+" · "+tsd("s_ghe2")+" "+sel.ghe;
+  $("#pCi").textContent=ok?tsd("b_den"):tsd("b_chua");
+  $("#pNv").textContent=nv?tsd("co_w"):tsd("no_w");
+  var dupCount=(byKey[seatKey(sel.ban,sel.ghe)]||[]).length;
+  var dw=$("#pDup");
+  if(dupCount>1){ dw.style.display="block"; dw.textContent=tsd("dup1")+dupCount+tsd("dup2")+"."; }
+  else { dw.style.display="none"; }
+}
+
 function openPanel(g, ban, ghe){
   setPanelMode("guest");
   selTable="";
@@ -949,17 +980,8 @@ function openPanel(g, ban, ghe){
   av.style.background=ok?"var(--ok)":"var(--gold-b)"; av.style.color="#141414";
   $("#pName").textContent=g.full_name||"—";
   $("#pSub").textContent=[g.org,g.title].filter(Boolean).join(" · ")||"—";
-  var badges='<span class="badge '+(ok?"ok":"no")+'">'+(ok?tsd("b_den"):tsd("b_chua"))+'</span>';
-  if(nv) badges+='<span class="badge nv">Nhân viên</span>';
-  $("#pBadges").innerHTML=badges;
-  $("#pBan").textContent=tsd("w_ban")+" "+ban+" · "+tsd("s_ghe2")+" "+ghe;
-  $("#pCi").textContent=ok?"Đã đến":"Chưa đến";
-  $("#pNv").textContent=nv?"Có":"Không";
   $("#pId").textContent="#"+g.id;
-  var dupCount=(byKey[seatKey(ban,ghe)]||[]).length;
-  var dw=$("#pDup");
-  if(dupCount>1){ dw.style.display="block"; dw.textContent=tsd("dup1")+dupCount+tsd("dup2")+"."; }
-  else { dw.style.display="none"; }
+  refreshGuestPanelText();
   $("#pDoor").href="/checkin-gala.html";
   $("#pCrm").href="/crm";
   $("#panel").classList.add("show");
@@ -1071,6 +1093,26 @@ $("#ptList").addEventListener("click", function(e){
 });
 $("#pClose").addEventListener("click", closePanel);
 $("#scrim").addEventListener("click", closePanel);
+// Esc: panel phủ gần hết màn hẹp và scrim che cả thanh trên, nên khi mở panel thì bàn
+// phím gần như không còn đường ra nào ngoài việc đi tìm nút Đóng bằng chuột.
+document.addEventListener("keydown", function(e){
+  if(e.key!=="Escape") return;
+  if($("#panel").classList.contains("show")) closePanel();
+});
+// Nút trong panel bàn → chính slicer focusBan của chip Top trống (cùng toast, cùng chữ)
+$("#ptActs").addEventListener("click", function(e){
+  if(!e.target.closest("#ptOnly") || !selTable) return;
+  var ban=selTable;
+  focusBan = (focusBan && String(focusBan)===String(ban)) ? "" : String(ban);
+  render();
+  renderTablePanel(ban); // nhãn nút đổi theo trạng thái mới
+  if(focusBan){
+    requestAnimationFrame(function(){ focusTable(focusBan); });
+    toast(tsd("only1")+tableLabel(ban)+tsd("only2"));
+  } else {
+    toast(tsd("show_all"));
+  }
+});
 $("#rf").addEventListener("click", function(){ loadAll(true); });
 $("#z").addEventListener("input", function(){ applyZoom(); });
 $("#q").addEventListener("input", function(e){ qText=String(e.target.value||"").trim().toLowerCase(); render(); });
@@ -1094,6 +1136,9 @@ $("#top5").addEventListener("click", function(e){
   // Toggle slicer: bấm VIP24 → chỉ còn bàn đó; bấm lại → bỏ lọc
   focusBan = (focusBan && String(focusBan)===String(ban)) ? "" : String(ban);
   render();
+  // Nhãn nút trong panel bàn đọc `focusBan`, nên chip đổi trạng thái mà không vẽ lại
+  // panel thì nút đứng ở chữ cũ — vẫn "Hiện lại tất cả bàn" trong khi đã bỏ lọc rồi.
+  refreshTablePanel();
   if(focusBan){
     requestAnimationFrame(function(){ focusTable(focusBan); });
     toast(tsd("only1")+(c.textContent.split("·")[0]||focusBan).trim()+tsd("only2"));

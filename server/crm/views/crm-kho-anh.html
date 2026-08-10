@@ -179,12 +179,21 @@
     border:1px solid var(--line2);display:grid;place-items:center;font-size:13px;color:transparent;transition:.12s}
   .tile.sel,.tile[aria-checked=true]{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-soft) inset}
   .tile.sel .ck::before,.tile[aria-checked=true] .ck::before{background:var(--gold);border-color:var(--gold);color:#2a1e05}
-  .tile .st{position:absolute;top:6px;right:6px;font-size:var(--fs-micro);padding:2px 7px;border-radius:999px;
-    background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
-  .tile.done .st{background:var(--green);border-color:var(--green);color:#04241a;font-weight:700}
-  .tile.dup .st{background:var(--blue);border-color:var(--blue);color:#04101f;font-weight:700}
+  /* E08-D099 · dấu trạng thái là DẤU, không phải biển chữ.
+     Bản cũ là pill chữ 「đã nạp」/「đã có」 nền đặc, font-weight 700: ở 360px nó
+     ăn gần một phần tư bề ngang ô và nằm đúng chỗ có mặt người — trong khi việc
+     BTL đang làm với lưới này là soi mặt để quyết giữ hay bỏ. Chữ không mất đi,
+     nó chuyển vào title/aria-label: chuột và trình đọc màn hình vẫn lấy được,
+     còn mắt thì hết bị chắn. */
+  .tile .st{position:absolute;top:6px;right:6px;width:18px;height:18px;padding:0;border:0;
+    border-radius:50%;display:grid;place-items:center;opacity:.82;
+    background:rgba(6,14,24,.42);color:var(--muted);backdrop-filter:blur(2px)}
+  .tile .st svg{width:12px;height:12px;display:block}
+  :root[data-theme=light] .tile .st{background:rgba(255,255,255,.72)}
+  .tile.done .st{color:var(--green-b)}
+  .tile.dup .st{color:var(--blue-b)}
   .tile.err{border-color:var(--red)}
-  .tile.err .st{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
+  .tile.err .st{color:var(--red-b)}
 
   /* ── AC-20 · ảnh hiện dần + ô chờ có shimmer ──
      Ảnh đọc từ đĩa nên tới rất nhanh, nhưng "rất nhanh" vẫn là một cú nhảy khựng
@@ -1163,6 +1172,29 @@ function doiTrang(d){
   if (g) window.scrollTo({ top: g.getBoundingClientRect().top + window.scrollY - 12,
                            behavior: GIAM_DONG ? 'auto' : 'smooth' });
 }
+/* E08-D099 · bốn dấu, bốn dáng khác nhau — không chỉ khác màu. Ô chỉ rộng
+   18px nên màu một mình là chỗ dựa mỏng: người mù màu, màn hình chói ngoài
+   sảnh, hay ảnh nền sáng trắng đều xoá sạch phần "xanh hay lam". Dáng thì còn:
+   ✓ đã nạp · hai ô chồng = đã có · tam giác = lỗi · vòng gạch = bỏ qua. */
+var DAU_ST = {
+  xong:  '<path d="M20 6 9 17l-5-5"/>',
+  trung: '<rect x="9" y="9" width="11" height="11" rx="2"/>'
+       + '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  loi:   '<path d="m10.3 3.9-8.5 14.2A2 2 0 0 0 3.5 21h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0"/>'
+       + '<path d="M12 9.5v4"/><path d="M12 17.2h.01"/>',
+  bo:    '<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>'
+};
+function dauTrangThai(st, nhan){
+  var hinh = DAU_ST[st];
+  if (!hinh || !nhan) return '';
+  /* role=img + aria-label: không có role thì aria-label trên một <div> trống bị
+     nhiều trình đọc màn hình bỏ qua, và khi đó trạng thái biến mất hoàn toàn
+     với người không nhìn thấy icon. title là đường của con chuột. */
+  return '<div class="st" role="img" title="' + esc(nhan) + '" aria-label="' + esc(nhan) + '">'
+    + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"'
+    + ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'
+    + hinh + '</svg></div>';
+}
 function veLuoi(){
   var g = $('#grid');
   g.innerHTML = '';
@@ -1193,7 +1225,7 @@ function veLuoi(){
        trình đọc màn hình đọc hai lần cùng một việc. Đây thuần tuý là vùng bấm
        cho chuột/ngón tay. */
     d.innerHTML += '<span class="ck" aria-hidden="true"></span>'
-      + (nhan ? '<div class="st">' + esc(nhan) + '</div>' : '')
+      + dauTrangThai(st, nhan)
       + '<div class="nm" title="' + esc(it.relativePath) + '">' + esc(it.name) + '</div>'
       + (laHeic ? '' : '<button class="zoom" type="button" aria-label="' + esc(tt('zoom')) + '">⤢</button>');
     if (!laHeic){

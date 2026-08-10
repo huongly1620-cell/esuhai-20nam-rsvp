@@ -762,22 +762,35 @@ async function giaiMaDungHuong(blob){
 
 /* Thu nhỏ về cạnh dài `max`. Trả cả kích thước để máy chủ ghi lại được — nhờ đó
    AC-9 kiểm lại được từ dữ liệu, không phải từ trí nhớ ai đó. */
-async function thuNho(blob, max, q){
+/* D096 · Giải mã MỘT lần rồi vẽ tất cả các cỡ từ cùng một bitmap.
+   thuNho() cũ tự giải mã mỗi lần được gọi, mà daySchema gọi nó ba lần cho ba cỡ
+   — nên mỗi tấm bị giải mã ba lượt. Đo trên ảnh 4000×3000: 59ms xuống 28ms.
+   thuNho() giữ nguyên cho đường kiểm EXIF (nơi chỉ cần một cỡ) và cho bất kỳ
+   chỗ nào gọi lẻ — nó nay chỉ là lớp mỏng gọi hàm này. */
+async function thuNhoNhieuCo(blob, cos){
   var bmp = await giaiMaDungHuong(blob);
   try {
-    var s = Math.min(1, max / Math.max(bmp.width, bmp.height));
-    var nw = Math.max(1, Math.round(bmp.width * s));
-    var nh = Math.max(1, Math.round(bmp.height * s));
-    var cv = document.createElement('canvas'); cv.width = nw; cv.height = nh;
-    var cx = cv.getContext('2d');
-    if (!cx) throw new Error('Không mở được canvas 2D.');
-    cx.drawImage(bmp, 0, 0, nw, nh);
-    var out = await new Promise(function(r){ cv.toBlob(r, 'image/jpeg', q); });
-    if (!out) throw new Error('Không mã hoá được JPEG.');
-    // Giải phóng ngay: 3.000 tấm mà giữ bitmap là hết RAM tab (M5/M8).
-    cv.width = cv.height = 0;
-    return { blob: out, w: nw, h: nh };
+    var ra = [];
+    for (var i = 0; i < cos.length; i++){
+      var max = cos[i].max, q = cos[i].q;
+      var sc = Math.min(1, max / Math.max(bmp.width, bmp.height));
+      var nw = Math.max(1, Math.round(bmp.width * sc));
+      var nh = Math.max(1, Math.round(bmp.height * sc));
+      var cv = document.createElement('canvas'); cv.width = nw; cv.height = nh;
+      var cx = cv.getContext('2d');
+      if (!cx) throw new Error('Không mở được canvas 2D.');
+      cx.drawImage(bmp, 0, 0, nw, nh);
+      var out = await new Promise(function(r){ cv.toBlob(r, 'image/jpeg', q); });
+      if (!out) throw new Error('Không mã hoá được JPEG.');
+      // Giải phóng ngay: 3.000 tấm mà giữ canvas là hết RAM tab (M5/M8).
+      cv.width = cv.height = 0;
+      ra.push({ blob: out, w: nw, h: nh });
+    }
+    return ra;
   } finally { if (bmp.close) bmp.close(); }
+}
+async function thuNho(blob, max, q){
+  return (await thuNhoNhieuCo(blob, [{ max: max, q: q }]))[0];
 }
 
 /* ── Phép kiểm hướng ảnh · CHỈ ĐO, KHÔNG VẼ ───────────────────────────────────
@@ -1556,11 +1569,16 @@ async function hoiDaCo(shas){
   return daCo;
 }
 
-async function daySchema(item, sha, batchId){
-  var goc = await item.getBlob();
-  var web = await thuNho(goc, 2048, 0.82);
-  var pv  = await thuNho(goc, 1024, 0.80);
-  var th  = await thuNho(goc, 256,  0.75);
+/* D096 · Nhận blob đã có sẵn. Trước đây hàm này tự gọi getBlob() lần nữa, mà
+   pha băm vừa đọc xong tấm đó rồi vứt đi — với Drive thì đó là tải nguyên bản
+   gốc hai lượt cho mỗi tấm. Vẫn tự đọc nếu không ai đưa, để đường gọi khác
+   không đổi. */
+async function daySchema(item, sha, batchId, blobSan){
+  var goc = blobSan || await item.getBlob();
+  var co  = await thuNhoNhieuCo(goc, [{ max: 2048, q: 0.82 },
+                                      { max: 1024, q: 0.80 },
+                                      { max: 256,  q: 0.75 }]);
+  var web = co[0], pv = co[1], th = co[2];
 
   var fd = new FormData();
   fd.append('web', web.blob, 'w2048.jpg');
@@ -1590,6 +1608,10 @@ async function daySchema(item, sha, batchId){
    Vẫn 3 luồng đẩy trong một lô (M8); giữa các lô thì tuần tự, để đỉnh RAM và số
    kết nối Drive song song không cộng dồn theo kích thước kho. */
 var NAP_DONG_BO = 200;
+/* D096 · Trần số blob GỐC được giữ cùng lúc. Cả lô 200 tấm mà giữ hết thì đỉnh
+   RAM là 200 × ~4MB ≈ 800MB — đúng thứ việc cắt lô sinh ra để tránh. Cửa sổ 20
+   giữ ≈80MB, đủ để tấm nào cũng chỉ phải đọc MỘT lần từ băm tới lúc đẩy xong. */
+var CUA_BLOB = 20;
 /* D095 · Dừng là cờ, không phải abort. Ba request đang bay được để đi hết: huỷ
    giữa chừng một FormData nghĩa là ảnh đó có thể đã nằm trong kho mà máy này
    không biết — lần sau nạp lại sẽ ra bản trùng, hoặc tệ hơn là người dùng tưởng
@@ -1651,51 +1673,66 @@ async function dongBo(){
     var lo = chon.slice(iLo * NAP_DONG_BO, (iLo + 1) * NAP_DONG_BO);
     var soLoHienTai = iLo + 1;
 
-    // Pha 1 của lô — băm từng tấm, báo sau MỖI tấm.
-    var shaCua = Object.create(null);
-    for (var i = 0; i < lo.length && !HUY; i++){
-      try {
-        shaCua[lo[i].id] = await sha256(await lo[i].getBlob());
-        donVi += 1;
-      } catch (e){
-        TRANG_THAI[lo[i].id] = 'loi'; loi++; lamXong++; LY_DO[lo[i].id] = e.message;
-        donVi += 2;                                   // tấm này đã kết thúc
-        ghiLog(fmt('log_doc_hong', { f: lo[i].name, e: e.message }));
-      }
-      tienChuanBi(i + 1, lo.length, soLoHienTai);
-    }
+    /* Lô chia tiếp thành CỬA SỔ: đọc blob → băm → hỏi trùng → đẩy NGAY khi blob
+       còn trong tay → buông. Bản D095 băm cả lô rồi mới đẩy, nên blob đọc ở pha
+       băm bị vứt và daySchema phải đọc lại — với Drive là tải bản gốc hai lượt.
+       Cửa sổ nhỏ giữ được cả hai điều: đọc một lần, mà đỉnh RAM vẫn chặn. */
+    var daChuanBi = 0;
+    for (var iCua = 0; iCua < lo.length && !HUY; iCua += CUA_BLOB){
+      var cua = lo.slice(iCua, iCua + CUA_BLOB);
+      var shaCua = Object.create(null);
+      var giuBlob = Object.create(null);          // id -> blob gốc, chỉ sống trong cửa sổ này
 
-    var coSha = lo.filter(function(it){ return shaCua[it.id]; });
-    var daCo = {};
-    try { daCo = await hoiDaCo(coSha.map(function(it){ return shaCua[it.id]; })); }
-    catch (e){ ghiLog('không hỏi được trùng lặp (' + e.message + ') — vẫn đẩy, máy chủ tự chặn trùng'); }
-
-    // Pha 2 của lô — đẩy, 3 luồng song song (M8: nhiều hơn thì tab tự bóp nghẹt mình).
-    var hangDoi = coSha.slice();
-    var lamViec = (function(nhan){
-      return async function congNhan(){
-        /* Đọc cờ ở ĐẦU mỗi vòng: tấm đang bay vẫn đi hết, tấm kế tiếp thì không
-           bắt đầu. Nhiều nhất là ba tấm chạy nốt — đúng số luồng. */
-        while (hangDoi.length && !HUY){
-          var it = hangDoi.shift();
-          var sha = shaCua[it.id];
-          try {
-            if (daCo[sha]){ TRANG_THAI[it.id] = 'trung'; trung++; }
-            else {
-              var j = await daySchema(it, sha, batchId);
-              TRANG_THAI[it.id] = j.trung_lap ? 'trung' : 'xong';
-              if (j.trung_lap) trung++; else xong++;
-            }
-          } catch (e){
-            TRANG_THAI[it.id] = 'loi'; loi++; LY_DO[it.id] = e.message;
-            ghiLog('lỗi · ' + it.relativePath + ' · ' + e.message);
-          }
-          lamXong++; donVi += 1; tienDay(nhan);
-          $('#nDone').textContent = xong;
+      for (var i = 0; i < cua.length && !HUY; i++){
+        try {
+          var b = await cua[i].getBlob();
+          shaCua[cua[i].id] = await sha256(b);
+          giuBlob[cua[i].id] = b;
+          donVi += 1;
+        } catch (e){
+          TRANG_THAI[cua[i].id] = 'loi'; loi++; lamXong++; LY_DO[cua[i].id] = e.message;
+          donVi += 2;                                   // tấm này đã kết thúc
+          ghiLog(fmt('log_doc_hong', { f: cua[i].name, e: e.message }));
         }
-      };
-    })(soLoHienTai);
-    await Promise.all([lamViec(), lamViec(), lamViec()]);
+        daChuanBi++;
+        tienChuanBi(daChuanBi, lo.length, soLoHienTai);
+      }
+
+      var coSha = cua.filter(function(it){ return shaCua[it.id]; });
+      var daCo = {};
+      try { daCo = await hoiDaCo(coSha.map(function(it){ return shaCua[it.id]; })); }
+      catch (e){ ghiLog('không hỏi được trùng lặp (' + e.message + ') — vẫn đẩy, máy chủ tự chặn trùng'); }
+
+      // Đẩy cửa sổ — 3 luồng song song (M8: nhiều hơn thì tab tự bóp nghẹt mình).
+      var hangDoi = coSha.slice();
+      var lamViec = (function(nhan, sha_, daCo_, giu_){
+        return async function congNhan(){
+          /* Đọc cờ ở ĐẦU mỗi vòng: tấm đang bay vẫn đi hết, tấm kế tiếp thì không
+             bắt đầu. Nhiều nhất là ba tấm chạy nốt — đúng số luồng. */
+          while (hangDoi.length && !HUY){
+            var it = hangDoi.shift();
+            var sha = sha_[it.id];
+            try {
+              if (daCo_[sha]){ TRANG_THAI[it.id] = 'trung'; trung++; }
+              else {
+                var j = await daySchema(it, sha, batchId, giu_[it.id]);
+                TRANG_THAI[it.id] = j.trung_lap ? 'trung' : 'xong';
+                if (j.trung_lap) trung++; else xong++;
+              }
+            } catch (e){
+              TRANG_THAI[it.id] = 'loi'; loi++; LY_DO[it.id] = e.message;
+              ghiLog('lỗi · ' + it.relativePath + ' · ' + e.message);
+            }
+            /* Buông blob ngay khi tấm này xong, không đợi hết cửa sổ. */
+            delete giu_[it.id];
+            lamXong++; donVi += 1; tienDay(nhan);
+            $('#nDone').textContent = xong;
+          }
+        };
+      })(soLoHienTai, shaCua, daCo, giuBlob);
+      await Promise.all([lamViec(), lamViec(), lamViec()]);
+      giuBlob = null;                              // cửa sổ đóng, blob hết tham chiếu
+    }
 
     /* Nhường vòng lặp sự kiện giữa hai lô: cho trình duyệt vẽ lại và cho người
        dùng cuộn/bấm được, thay vì giữ luồng chính suốt từ lô đầu tới lô cuối.

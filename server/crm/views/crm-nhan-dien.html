@@ -132,6 +132,9 @@
     <div class="card" id="theAnh">
       <div class="anhto" id="anhTo"></div>
       <p class="hint khoanhHuong an" style="margin:8px 0 0"></p>
+      <!-- Chỗ báo kết quả của trang xem. Tách khỏi `#xemTom` (dòng đếm) vì mỗi lần
+           vẽ lại đều ghi đè `#xemTom`, mà lời báo phải sống qua đúng lượt vẽ ấy. -->
+      <p class="hint" id="baoXem" style="margin:6px 0 0"></p>
 
       <div id="dsGoi"></div>
 
@@ -194,6 +197,7 @@ var T = {
     xac_nhan:'Đúng người này', tu_choi:'Không phải', bo_qua:'Để sau',
     gan_tay:'Gắn tên khách vào ảnh này', gan_ph:'Gõ tên / đơn vị (≥2 ký tự)',
     da_trong:'Ảnh này đã có tên khách đó rồi.',
+    da_gan_xong:'Đã gắn tên vào ảnh này. Ảnh đã vào album của khách.',
     khoanh:'✏️ Khoanh mặt làm ảnh mẫu', khoanh_thoi:'Thôi khoanh',
     khoanh_huong:'Kéo một khung quanh khuôn mặt, rồi chọn khách trong ô bên dưới.',
     khoanh_nho:'Khung quá nhỏ — kéo rộng hơn quanh khuôn mặt.',
@@ -224,6 +228,7 @@ var T = {
     xac_nhan:'この人で正しい', tu_choi:'別人です', bo_qua:'あとで',
     gan_tay:'この写真にゲスト名を登録', gan_ph:'氏名／所属（2文字以上）',
     da_trong:'この写真にはすでにそのゲストが登録されています。',
+    da_gan_xong:'この写真にゲスト名を登録しました。ゲストのアルバムに追加されています。',
     khoanh:'✏️ 顔を囲んで参照写真にする', khoanh_thoi:'囲むのをやめる',
     khoanh_huong:'顔のまわりをドラッグして囲み、下の欄でゲストを選んでください。',
     khoanh_nho:'範囲が小さすぎます — 顔を囲むように広げてください。',
@@ -267,6 +272,28 @@ async function jpost(u,b,m){ var r = await fetch(u,{ method: m||'POST',
   headers:{'content-type':'application/json'}, body: b?JSON.stringify(b):undefined });
   if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
 
+/* N1 (Gate 2 vòng 1) · ĐÓNG chế độ khoanh — trạng thái DOM lẫn trạng thái JS.
+   Vì sao phải gom vào một hàm và gọi ở HAI chỗ: khung đang vẽ nằm bên trong
+   `#anhTo`, mà `#anhTo` bị dựng lại nguyên khối mỗi lần moAnh() chạy. Khung biến
+   mất khỏi màn hình, nhưng `dataset.box` thì không — và ô typeahead phân nhánh
+   dựa trên đúng `dataset.box` ấy. Còn sót nó thì cú chọn tên kế tiếp không GẮN
+   TÊN mà lại GHI MỘT ẢNH MẪU, với khung của tấm trước, dưới tên người đang đăng
+   nhập. Album không tăng, người dùng tưởng đã gắn, còn khớp khách thì bị đầu độc
+   bằng một khuôn mặt không phải của ai cả.
+   Rộng hơn phiếu một nhịp: phiếu đòi reset khi RỜI trang xem, nhưng cùng một tấm
+   cũng rò — vẽ khung xong bấm "Đúng người này" là `#anhTo` dựng lại ngay. Nên
+   trạng thái khoanh đi theo vòng đời của `#anhTo`, không theo vòng đời màn hình. */
+function dongKhoanh(){
+  KHUNG_MOI = null;
+  var the = $('#theAnh'), anh = $('#anhTo');
+  delete the.dataset.box;
+  anh.classList.remove('khoanh');
+  var k = anh.querySelector('.khung.moi'); if (k) k.remove();
+  $('#nutKhoanh').textContent = tt('khoanh');
+  var hg = the.querySelector('.khoanhHuong');
+  hg.classList.add('an'); hg.textContent = '';
+}
+
 function hienMan(id){
   ['manAnh','manXem','manKhach','manAlbum'].forEach(function(m){
     document.getElementById(m).classList.toggle('an', m !== id); });
@@ -277,7 +304,8 @@ function hienMan(id){
   if (id !== 'manXem'){
     $('#anhTo').innerHTML = ''; $('#dsGoi').innerHTML = '';
     $('#xemTom').textContent = ''; $('#ganO').value = '';
-    $('#theAnh').querySelector('.khoanhHuong').classList.add('an');
+    $('#baoXem').textContent = '';
+    dongKhoanh();
   }
   $('#tabAnh').setAttribute('aria-pressed', String(id === 'manAnh' || id === 'manXem'));
   $('#tabKhach').setAttribute('aria-pressed', String(id === 'manKhach' || id === 'manAlbum'));
@@ -328,6 +356,10 @@ async function moAnh(id, tuDau){
   ANH_DANG = id;
   if (tuDau) TU_DAU = tuDau;
   hienMan('manXem');
+  /* Đổi ảnh (hoặc vẽ lại chính tấm này) = `#anhTo` bị dựng lại → khung đang vẽ
+     mất theo. Trạng thái khoanh phải chết cùng nó, xem dongKhoanh(). */
+  dongKhoanh();
+  $('#baoXem').textContent = '';
   $('#veLuoi').querySelector('span').textContent = tt(TU_DAU === 'album' ? 've_album' : 've_luoi');
   var j = await jget('/crm/face-match/photo/' + id + '/faces');
   var mat = j.items || [], goi = j.goi_y || [], alb = j.album || [];
@@ -391,8 +423,12 @@ async function lamMoiAnhDang(){ await moAnh(ANH_DANG); }
 var KHACH = [], KHACH_DANG = null;
 
 async function napKhach(){
-  var j = await jget('/crm/face-match/guests');
-  KHACH = j.items || [];
+  /* Tự nuốt lỗi ở đây vì giờ hàm này được gọi thẳng từ onclick (G1), không còn
+     chỗ nào await nó — ném ra là thành unhandled rejection, im lặng với người dùng. */
+  try {
+    var j = await jget('/crm/face-match/guests');
+    KHACH = j.items || [];
+  } catch (_) { $('#tomTat').textContent = tt('loi_nap'); return; }
   if (!$('#manKhach').classList.contains('an')) veKhach();
 }
 function veKhach(){
@@ -555,14 +591,14 @@ document.addEventListener('click', async function(e){
       await jpost('/crm/face-match/sample', {
         event_photo_id: Number(the.getAttribute('data-anh')),
         guest_id: Number(g.getAttribute('data-gid')), box: JSON.parse(the.dataset.box) });
-      the.querySelector('.khoanhHuong').textContent = tt('mau_xong');
-      delete the.dataset.box;
-      var k2 = the.querySelector('.khung.moi'); if (k2) k2.remove();
-      the.querySelector('.anhto').classList.remove('khoanh');
-      $('#nutKhoanh').textContent = tt('khoanh');
       g.closest('.ta-ds').classList.add('an');
       $('#ganO').value = '';
-      await napKhach();
+      /* Đóng khoanh qua ĐÚNG một đường (dongKhoanh) rồi mới báo, thay vì tự dọn
+         bốn thứ tại chỗ như bản trước: chính chỗ dọn-tay-thiếu-một-món ấy là lỗi
+         N1 mà Gate 2 chặn. */
+      dongKhoanh();
+      var hg = the.querySelector('.khoanhHuong');
+      hg.textContent = tt('mau_xong'); hg.classList.remove('an');
       return;
     }
     var kq = await jpost('/crm/face-match/assign', {
@@ -570,11 +606,11 @@ document.addEventListener('click', async function(e){
       guest_id: Number(g.getAttribute('data-gid')) });
     g.closest('.ta-ds').classList.add('an');
     $('#ganO').value = '';
-    /* Gắn trùng thì API nói thẳng `da_trong_album` — nói lại cho người dùng, đừng
-       im lặng vẽ lại y hệt rồi để họ tưởng cú bấm không ăn. */
-    if (kq && kq.da_trong_album) $('#xemTom').textContent = tt('da_trong');
     await lamMoiAnhDang();
-    await napKhach();
+    /* Báo SAU khi vẽ lại, không phải trước. Bản trước ghi câu này vào `#xemTom`
+       rồi mới gọi vẽ lại — mà vẽ lại đặt đúng `#xemTom` thành dòng đếm, nên lời
+       báo sống được đúng một nhịp rồi biến mất trước khi ai kịp đọc. */
+    $('#baoXem').textContent = (kq && kq.da_trong_album) ? tt('da_trong') : tt('da_gan_xong');
     return;
   }
 
@@ -583,7 +619,6 @@ document.addEventListener('click', async function(e){
     var dong = b.closest('.goi');
     await jpost('/crm/face-match/' + b.getAttribute('data-do'), { id: Number(dong.getAttribute('data-cid')) });
     await lamMoiAnhDang();
-    await napKhach();
     return;
   }
 });
@@ -592,9 +627,14 @@ $('#veCrm').onclick = function(){ location.href = '/crm'; };
 $('#veLuoi').onclick = function(){
   if (TU_DAU === 'album' && KHACH_DANG){ moAlbum(KHACH_DANG); return; }
   hienMan('manAnh'); veLuoi(); };
-$('#veDs').onclick = function(){ KHACH_DANG = null; hienMan('manKhach'); veKhach(); };
+/* G1 (Gate 2 vòng 1) · danh sách khách chỉ nạp khi người ta MỞ tab Theo khách.
+   Bản trước gọi napKhach() sau mỗi cú bấm trên lưới và trang xem ảnh, tức mỗi lần
+   duyệt một gợi ý lại kéo về cả 410 khách kèm ba câu đếm con cho từng người — để
+   cập nhật một bảng đang ẩn. Nạp tại chỗ mở tab thì số vẫn luôn mới, vì mở tab là
+   lúc duy nhất bảng ấy được nhìn. */
+$('#veDs').onclick = function(){ KHACH_DANG = null; hienMan('manKhach'); napKhach(); };
 $('#tabAnh').onclick = function(){ TU_DAU = 'luoi'; hienMan('manAnh'); veLuoi(); };
-$('#tabKhach').onclick = function(){ hienMan('manKhach'); veKhach(); };
+$('#tabKhach').onclick = function(){ hienMan('manKhach'); napKhach(); };
 $('#taiThem').onclick = function(){ veLuoi(true); };
 $('#timKhach').addEventListener('input', veKhach);
 $('#langBtn').onclick = function(){ setLang(LANG === 'jp' ? 'vn' : 'jp'); };
@@ -605,7 +645,6 @@ apDungTheme(localStorage.getItem('nd_theme') === 'light' ? 'light' : '');
 setLang(LANG);
 jget('/crm/me').then(function(j){ $('#meRole').textContent = (j.role||'') + ' · ' + (j.email||''); }).catch(function(){});
 veLuoi().catch(function(){ $('#anhTom').textContent = tt('loi_nap'); });
-napKhach().catch(function(){});
 </script>
 </body>
 </html>

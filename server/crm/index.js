@@ -8,6 +8,7 @@ const guests = require('./guests');
 const stats = require('./stats');
 const photos = require('./photos');
 const eventPhotos = require('./event-photos');
+const faceMatch = require('./face-match');
 const importer = require('./import');
 
 // Which app shell to serve for the authed /crm entry.
@@ -70,6 +71,9 @@ function mount(app) {
      /crm (CR-132). Đi qua đúng `serveShell` nên hưởng nguyên gác cổng `btl` và
      lối đưa PG về cửa; ảnh phóng sự là dữ liệu của ban tổ chức, PG không mở. */
   app.get('/crm/kho-anh', (req, res) => serveShell(req, res, 'crm-kho-anh.html'));
+  /* E08-D077 · ngăn nhận diện. Cùng khuôn kho-anh: trang riêng, serveShell,
+     btl-only — không nhét vào crm-app-v2.html. */
+  app.get('/crm/nhan-dien', (req, res) => serveShell(req, res, 'crm-nhan-dien.html'));
 
   /* Ảnh mẫu cờ xoay EXIF cho phép dò AC-9. Thư mục `views/` KHÔNG nằm trong
      express.static, nên phải có tuyến riêng — và tuyến này đi cùng gác cổng với
@@ -102,6 +106,7 @@ function mount(app) {
   // E08-D082 — kho ảnh sự kiện. KHÔNG nhận `requireDoorOrAuth`: mọi tuyến ở đây
   // là `btl`, cửa không có việc gì ở kho ảnh phóng sự.
   eventPhotos.mount(app, auth.requireCrmAuth, auth.requireRole);
+  faceMatch.mount(app, auth.requireCrmAuth, auth.requireRole);
   importer.mount(app, auth.requireCrmAuth, auth.requireRole);
   audit.mount(app, auth.requireCrmAuth, auth.requireRole);
   // E08-D032 — hai lệnh TÁCH BẠCH: /crm/import-update/dry-run và /commit.

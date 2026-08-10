@@ -294,6 +294,45 @@ function mount(app, requireCrmAuth, requireRole) {
           ghi_chu: 'Object trên kho GIỮ NGUYÊN — đặt deleted_at về NULL là ảnh trở lại.',
         }), hashIp(ipOf(req))]);
       await cli.query('UPDATE crm_event_photos SET deleted_at = now() WHERE id = $1', [id]);
+      /* FR-11a · gỡ ảnh phải kéo theo dữ liệu sinh trắc sinh ra TỪ nó. Khoá ngoại
+         ON DELETE CASCADE chỉ chạy khi xoá CỨNG; xoá mềm là một lần UPDATE nên
+         nó không kích hoạt gì cả. Không có ba dòng dưới đây thì ảnh biến mất trên
+         giao diện trong khi vector khuôn mặt của mọi người trong tấm đó vẫn nằm
+         nguyên trong Postgres — đúng khoảng cách lời hứa/thực tế mà CR-138 sinh
+         ra để đóng. */
+      const goMat = await cli.query(
+        'UPDATE crm_event_faces SET deleted_at = now(), vec = NULL, vec_xoa_luc = now() '
+        + 'WHERE event_photo_id = $1 AND deleted_at IS NULL', [id]);
+      const goUv = await cli.query(
+        'UPDATE crm_face_candidates SET deleted_at = now() WHERE event_photo_id = $1 AND deleted_at IS NULL', [id]);
+      /* Q4 · mẫu cắt trên tấm này cũng phải mất vector, không chỉ mất chỗ đứng. */
+      const goMau = await cli.query(
+        'UPDATE crm_face_samples SET deleted_at = now(), vec = NULL, vec_xoa_luc = now() '
+        + 'WHERE event_photo_id = $1 AND deleted_at IS NULL RETURNING id', [id]);
+      /* Q5 · và các khớp SINH TỪ những mẫu đó phải quay về chờ duyệt. Không có
+         bước này thì gỡ một tấm làm mẫu biến mất trong khi ảnh nó đẻ ra vẫn nằm
+         "đã xác nhận" trong album khách khác — đúng thứ AC-10 cấm, chỉ ngược
+         chiều. Ảnh đã đánh dấu gửi thì không rút lại được, nên đếm để báo. */
+      const idMau = goMau.rows.map(function(x){ return x.id; });
+      let veCho = { rowCount: 0 }, daGui = 0;
+      if (idMau.length){
+        veCho = await cli.query(
+          "UPDATE crm_face_candidates SET trang_thai = 'cho', decided_by = NULL, decided_at = NULL "
+          + "WHERE sample_id = ANY($1::bigint[]) AND deleted_at IS NULL AND trang_thai <> 'cho'", [idMau]);
+        daGui = (await cli.query(
+          "SELECT count(*)::int n FROM crm_interactions i WHERE i.kind = 'Hình ảnh cảm ơn' "
+          + "AND i.guest_id IN (SELECT guest_id FROM crm_face_samples WHERE id = ANY($1::bigint[]))",
+          [idMau])).rows[0].n;
+      }
+      await cli.query(
+        `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)
+         VALUES ($1,'event_photo_cascade_nhan_dien','event_photo',$2,$3::jsonb,$4)`,
+        [req.actor.email, String(id), JSON.stringify({
+          mat: goMat.rowCount, ung_vien: goUv.rowCount, anh_mau: goMau.rowCount,
+          khop_ve_cho: veCho.rowCount, da_danh_dau_gui: daGui,
+          ghi_chu: 'Vector đã xoá hẳn (vec = NULL) cho CẢ mặt lẫn mẫu cắt tay. Khớp sinh từ mẫu đã '
+            + 'quay về chờ duyệt. Ảnh đã đánh dấu gửi thì không rút lại được.',
+        }), hashIp(ipOf(req))]);
       await cli.query('COMMIT');
       cli.release();
       return res.json({ ok: true, id: String(id) });
@@ -307,6 +346,50 @@ function mount(app, requireCrmAuth, requireRole) {
 
   /* M10 — gỡ CẢ ĐỢT. Nạp nhầm thư mục 3.000 tấm mà chỉ có nút gỡ từng tấm thì
      đường lùi trên giấy có, trên thực tế không ai đi nổi. */
+  /* FR-11c · xoá CỨNG một ảnh sự kiện: Postgres DELETE + object trên MinIO.
+     Dùng khi khách yêu cầu gỡ dữ liệu của mình. Có đường này sẵn thì lúc bị hỏi
+     mới không phải làm vội — mà làm vội chỗ này là làm sai.
+     Khoá ngoại ON DELETE CASCADE lo phần bảng con; ở đây chỉ phải tự lo MinIO,
+     vì cơ sở dữ liệu không biết gì về object trên kho. */
+  app.delete('/crm/event-photos/:id/vinh-vien', ...btl, async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
+    const cli = await pool.connect();
+    try {
+      await cli.query('BEGIN');
+      const p = (await cli.query(
+        'SELECT id, sha256, orig_name, object_key, thumb_key, preview_key FROM crm_event_photos '
+        + 'WHERE id = $1 FOR UPDATE', [id])).rows[0];
+      if (!p) { await cli.query('ROLLBACK'); cli.release(); return res.status(404).json({ ok: false, error: 'Không thấy ảnh.' }); }
+      const dem = (await cli.query(
+        'SELECT (SELECT count(*)::int FROM crm_event_faces WHERE event_photo_id = $1) mat,'
+        + ' (SELECT count(*)::int FROM crm_face_candidates WHERE event_photo_id = $1) uv,'
+        + ' (SELECT count(*)::int FROM crm_face_samples WHERE event_photo_id = $1) mau', [id])).rows[0];
+      /* Audit ghi TRƯỚC khi xoá: sau khi xoá thì không còn gì để mô tả. Không ghi
+         vector vào audit — nó là thứ vé này đang xoá. */
+      await cli.query(
+        `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)
+         VALUES ($1,'event_photo_xoa_vinh_vien','event_photo',$2,$3::jsonb,$4)`,
+        [req.actor.email, String(id), JSON.stringify({ sha256: p.sha256, orig_name: p.orig_name,
+          mat: dem.mat, ung_vien: dem.uv, anh_mau: dem.mau,
+          ghi_chu: 'Xoá HẲN: dòng Postgres và object MinIO. Không khôi phục được.' }), hashIp(ipOf(req))]);
+      await cli.query('DELETE FROM crm_event_photos WHERE id = $1', [id]);
+      await cli.query('COMMIT');
+      /* Xoá object SAU khi giao dịch chốt: giao dịch cuộn lại được, còn object đã
+         xoá thì không. Thà còn một object mồ côi (dò ra được) hơn là mất ảnh mà
+         hàng trong bảng vẫn còn. */
+      for (const k of [p.object_key, p.thumb_key, p.preview_key]){
+        if (!k) continue;
+        try { await storage.removeObject(k); } catch (e){ console.error('[event-photos] xoá object lỗi:', k, e.message); }
+      }
+      return res.json({ ok: true, id, da_xoa: dem });
+    } catch (err) {
+      await cli.query('ROLLBACK');
+      console.error('[event-photos] xoá vĩnh viễn lỗi:', err.message);
+      return res.status(500).json({ ok: false, error: 'Không xoá được.' });
+    } finally { cli.release(); }
+  });
+
   app.delete('/crm/event-photos/batch/:batchId', ...btl, async (req, res) => {
     const batchId = clean(req.params.batchId);
     if (!batchId) return res.status(400).json({ ok: false, error: 'Thiếu mã đợt.' });
@@ -326,6 +409,27 @@ function mount(app, requireCrmAuth, requireRole) {
         }), hashIp(ipOf(req))]);
       const up = await cli.query(
         'UPDATE crm_event_photos SET deleted_at = now() WHERE batch_id = $1 AND deleted_at IS NULL', [batchId]);
+      /* FR-11a · cùng lý do như xoá một tấm: xoá mềm cả đợt cũng phải kéo theo
+         dữ liệu sinh trắc của cả đợt. Lọc theo chính danh sách ảnh của đợt. */
+      const idDot = rows.map(function(x){ return x.id; });
+      let goMat = { rowCount: 0 }, goUv = { rowCount: 0 }, goMau = { rowCount: 0 };
+      if (idDot.length){
+        goMat = await cli.query('UPDATE crm_event_faces SET deleted_at = now(), vec = NULL, vec_xoa_luc = now() '
+          + 'WHERE event_photo_id = ANY($1::bigint[]) AND deleted_at IS NULL', [idDot]);
+        goUv  = await cli.query('UPDATE crm_face_candidates SET deleted_at = now() '
+          + 'WHERE event_photo_id = ANY($1::bigint[]) AND deleted_at IS NULL', [idDot]);
+        goMau = await cli.query('UPDATE crm_face_samples SET deleted_at = now(), vec = NULL, vec_xoa_luc = now() '
+          + 'WHERE event_photo_id = ANY($1::bigint[]) AND deleted_at IS NULL RETURNING id', [idDot]);
+        const idMauDot = goMau.rows.map(function(x){ return x.id; });
+        if (idMauDot.length)
+          await cli.query("UPDATE crm_face_candidates SET trang_thai = 'cho', decided_by = NULL, decided_at = NULL "
+            + "WHERE sample_id = ANY($1::bigint[]) AND deleted_at IS NULL AND trang_thai <> 'cho'", [idMauDot]);
+      }
+      await cli.query(
+        `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)
+         VALUES ($1,'event_batch_cascade_nhan_dien','event_photo_batch',$2,$3::jsonb,$4)`,
+        [req.actor.email, batchId, JSON.stringify({ so_anh: idDot.length,
+          mat: goMat.rowCount, ung_vien: goUv.rowCount, anh_mau: goMau.rowCount }), hashIp(ipOf(req))]);
       await cli.query('COMMIT');
       cli.release();
       return res.json({ ok: true, batch_id: batchId, da_go: up.rowCount });

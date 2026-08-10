@@ -1,0 +1,4 @@
+node_modules/
+# Trọng số tải bằng `npm run tai-model` — 37MB, có checksum, KHÔNG vào git.
+model/*.onnx
+model/*.LICENSE.txt

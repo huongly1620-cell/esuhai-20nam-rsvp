@@ -75,5 +75,15 @@ async function statObject(objectKey) {
   return c.statObject(BUCKET, objectKey);
 }
 
+/* E08-D077 / FR-11c · xoá HẲN một object. Trước vé này module không có đường xoá
+   nào — mọi thứ chỉ ghi vào và đọc ra. Đường xoá cứng cần nó để thực hiện đúng
+   điều nó hứa; thiếu nó thì hàng trong bảng biến mất còn tệp vẫn nằm trên kho. */
+async function removeObject(objectKey) {
+  const c = getClient();
+  if (!c) throw new Error('MinIO chưa cấu hình.');
+  await c.removeObject(BUCKET, objectKey);
+  return true;
+}
+
 module.exports = { isConfigured, ensureBucket, putObject, putObjectAt, presignGet,
-  getObjectStream, statObject, BUCKET };
+  getObjectStream, statObject, removeObject, BUCKET };

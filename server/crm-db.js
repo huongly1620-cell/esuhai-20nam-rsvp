@@ -194,6 +194,174 @@ CREATE INDEX IF NOT EXISTS idx_crm_event_photos_batch
   ON crm_event_photos (batch_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_crm_event_photos_live
   ON crm_event_photos (created_at DESC) WHERE deleted_at IS NULL;
+
+/* ── E08-D077 · nhận diện khuôn mặt ──────────────────────────────────────────
+   Ba bảng, tách theo ba thứ khác nhau về bản chất:
+     crm_face_samples    — MẶT MẪU của khách (biết là ai)
+     crm_event_faces     — mặt tìm thấy trong ảnh sự kiện (chưa biết là ai)
+     crm_face_candidates — một phỏng đoán nối hai cái trên, CHỜ người xác nhận
+
+   Vì sao không gộp: mặt mẫu sống lâu và ít, mặt sự kiện đông và có hạn dùng, còn
+   phỏng đoán thì bị người sửa suốt. Gộp lại thì mỗi lần chạy lại một đợt là phải
+   đụng vào cả dữ liệu đã được người duyệt.
+
+   KHÔNG cột nào ở đây ghi đè crm_photos / crm_guests (AC-1). avatar_photo_id là
+   việc của D048, vé này không chạm (AC-11). */
+
+CREATE TABLE IF NOT EXISTS crm_face_samples (
+  id              BIGSERIAL PRIMARY KEY,
+  guest_id        BIGINT NOT NULL REFERENCES crm_guests(id) ON DELETE CASCADE,
+  /* 'crm-photos' = cắt từ ảnh chân dung đã gắn khách sẵn.
+     'cat-tay'    = BTL khoanh mặt trên ảnh sự kiện rồi gán khách (FR-10).
+     Phân biệt được nguồn là điều kiện để gỡ dây chuyền khi một lần khoanh sai. */
+  nguon           TEXT NOT NULL CHECK (nguon IN ('crm-photos','cat-tay')),
+  photo_id        BIGINT REFERENCES crm_photos(id) ON DELETE SET NULL,
+  event_photo_id  BIGINT REFERENCES crm_event_photos(id) ON DELETE CASCADE,
+  box_x           REAL NOT NULL, box_y REAL NOT NULL,
+  box_w           REAL NOT NULL, box_h REAL NOT NULL,
+  moc             JSONB,                    -- 5 mốc, để căn lại mà không dò lại
+  /* vec CÓ THỂ RỖNG, và đó là hệ quả của một ràng buộc khác: cấm nhét ONNX vào
+     image esuhai-web. Nên khi BTL khoanh mặt (FR-10), trang web chỉ ghi được
+     KHUNG; vector do batch tính ở lượt chạy sau, nơi có engine. Mẫu chờ tính là
+     mẫu chưa dùng được, không phải mẫu hỏng. */
+  vec             BYTEA,                    -- 128 float32; KHÔNG log ra ngoài
+  /* Q4 · mẫu cắt từ ảnh sự kiện cũng là dữ liệu sinh trắc. Gỡ ảnh mà chỉ đặt
+     deleted_at thì vector của mẫu Ở LẠI Postgres, và không có cột nào để nói nó
+     đã đi. Cùng khuôn với crm_event_faces: xoá vec, ghi LÚC xoá.
+
+     N1 · Nhưng mẫu KHÔNG hết hạn theo đồng hồ, khác crm_event_faces. Hai thứ này
+     khác nhau về bản chất: vector mặt sự kiện là chỉ mục hàng loạt, không ai
+     quyết định gì; vector mẫu là hệ quả của MỘT quyết định của người — BTL khoanh
+     mặt để dạy máy nhận ra một khách không có ảnh chân dung.
+     Cho mẫu hết hạn theo đồng hồ vừa vô nghĩa vừa nguy hiểm: ảnh nguồn vẫn nằm
+     đó nên vector luôn tính lại được (hết hạn không xoá được gì thật), mà lượt
+     batch kế tiếp sẽ tính lại đúng cái vừa xoá — sinh ra hàng vừa GIỮ sinh trắc
+     vừa mang vec_xoa_luc, tức dấu chứng minh đã xoá lại chứng minh điều ngược
+     lại. Đường xoá thật của mẫu là: gỡ ảnh nguồn (cascade), gỡ mẫu, hoặc xoá
+     cứng ảnh — cả ba đều gắn với vòng đời dữ liệu, không gắn với đồng hồ. */
+  vec_xoa_luc     TIMESTAMPTZ,
+  diem_do         REAL,                     -- điểm YuNet lúc lấy mẫu
+  created_by      TEXT NOT NULL,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deleted_at      TIMESTAMPTZ,
+  /* Mẫu phải biết mình từ đâu ra: một trong hai nguồn, đúng một. */
+  CHECK ((nguon = 'crm-photos' AND photo_id IS NOT NULL)
+      OR (nguon = 'cat-tay'    AND event_photo_id IS NOT NULL)),
+  /* N1 · Không hàng nào được vừa giữ vector vừa mang dấu đã xoá vector. Đặt ở
+     tầng CSDL chứ không ở tầng ứng dụng: một lời hứa về dữ liệu sinh trắc không
+     nên phụ thuộc vào việc mọi đường ghi đều nhớ kiểm. */
+  CONSTRAINT ck_face_samples_vec_xoa CHECK (vec IS NULL OR vec_xoa_luc IS NULL)
+);
+CREATE INDEX IF NOT EXISTS idx_face_samples_guest
+  ON crm_face_samples (guest_id) WHERE deleted_at IS NULL;
+/* Mẫu khoanh tay đang chờ batch tính vector. */
+CREATE INDEX IF NOT EXISTS idx_face_samples_cho_tinh
+  ON crm_face_samples (created_at) WHERE deleted_at IS NULL AND vec IS NULL;
+CREATE INDEX IF NOT EXISTS idx_face_samples_tu_anh_su_kien
+  ON crm_face_samples (event_photo_id) WHERE deleted_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS crm_event_faces (
+  id              BIGSERIAL PRIMARY KEY,
+  event_photo_id  BIGINT NOT NULL REFERENCES crm_event_photos(id) ON DELETE CASCADE,
+  box_x           REAL NOT NULL, box_y REAL NOT NULL,
+  box_w           REAL NOT NULL, box_h REAL NOT NULL,
+  /* canh_px tính trên ẢNH GỐC, không trên bản 640 đưa vào model — mọi ngưỡng
+     FR-8 phải nói về ảnh thật. do_net để tách chủ thể khỏi người qua đường:
+     số đo đầu cho thấy KÍCH THƯỚC một mình không tách được (người mờ phía sau
+     vẫn 79–87px, mà cả một khung đám đông thật thì 51–78px). */
+  canh_px         REAL NOT NULL,
+  do_net          REAL,
+  diem_do         REAL NOT NULL,
+  moc             JSONB,
+  /* Vector KHÔNG bắt buộc, và có hạn riêng — ngắn hơn hạn của chính bản ghi mặt.
+     Hai thứ này khác hẳn nhau về mức nhạy cảm: hộp/kích thước/độ nét là hình học,
+     còn vector là mẫu sinh trắc. Vector chỉ dùng để SINH gợi ý; lúc BTL ngồi duyệt
+     thì thứ họ nhìn là ảnh và gợi ý đã ghi sẵn. Đo được: dò+căn+nhúng 42ms/ảnh,
+     tức chạy lại cả kho 1.285 tấm mất ~1 phút — giữ vector 30 ngày là đổi dữ liệu
+     sinh trắc lấy một phút CPU. Sponsor chốt 7 ngày (10/08). */
+  vec             BYTEA,
+  vec_xoa_luc     TIMESTAMPTZ,          -- ghi LÚC xoá: chứng minh được, không chỉ là vắng mặt
+  run_id          TEXT NOT NULL,
+  /* N1 · cùng ràng buộc như bảng mẫu: giữ vector và mang dấu đã xoá là hai điều
+     không thể cùng đúng. */
+  CONSTRAINT ck_event_faces_vec_xoa CHECK (vec IS NULL OR vec_xoa_luc IS NULL),
+  het_han_luc     TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '7 days'),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deleted_at      TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_event_faces_anh
+  ON crm_event_faces (event_photo_id) WHERE deleted_at IS NULL;
+/* Quét dọn chỉ nhìn những dòng CÒN vector — dọn xong thì không phải duyệt lại. */
+CREATE INDEX IF NOT EXISTS idx_event_faces_can_don
+  ON crm_event_faces (het_han_luc) WHERE vec IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS crm_face_candidates (
+  id              BIGSERIAL PRIMARY KEY,
+  event_photo_id  BIGINT NOT NULL REFERENCES crm_event_photos(id) ON DELETE CASCADE,
+  face_id         BIGINT REFERENCES crm_event_faces(id) ON DELETE CASCADE,
+  guest_id        BIGINT NOT NULL REFERENCES crm_guests(id) ON DELETE CASCADE,
+  /* sample_id = mẫu nào đẻ ra phỏng đoán này. Không có cột này thì gỡ một mẫu
+     khoanh sai xong không biết những khớp nào sinh từ nó (AC-10). */
+  sample_id       BIGINT REFERENCES crm_face_samples(id) ON DELETE SET NULL,
+  score           REAL,                     -- NULL khi người gán tay (FR-4b)
+  nguon           TEXT NOT NULL DEFAULT 'may' CHECK (nguon IN ('may','tay')),
+  trang_thai      TEXT NOT NULL DEFAULT 'cho'
+                  CHECK (trang_thai IN ('cho','xac-nhan','tu-choi','bo-qua')),
+  decided_by      TEXT,
+  decided_at      TIMESTAMPTZ,
+  run_id          TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deleted_at      TIMESTAMPTZ
+);
+/* Một khuôn mặt chỉ nên có một dòng cho mỗi khách — chạy lại đợt không được đẻ
+   bản sao. Người gán tay (face_id NULL) không rơi vào ràng buộc này. */
+CREATE UNIQUE INDEX IF NOT EXISTS uq_face_candidates_mat_khach
+  ON crm_face_candidates (face_id, guest_id)
+  WHERE deleted_at IS NULL AND face_id IS NOT NULL;
+/* Q6 · gán tay không có face_id nên KHÔNG rơi vào unique một phần ở trên: bấm
+   hai lần đẻ hai dòng album và so_album đếm phồng. Chặn riêng cho nhánh đó. */
+CREATE UNIQUE INDEX IF NOT EXISTS uq_face_candidates_gan_tay
+  ON crm_face_candidates (event_photo_id, guest_id)
+  WHERE deleted_at IS NULL AND face_id IS NULL;
+CREATE INDEX IF NOT EXISTS idx_face_candidates_cho
+  ON crm_face_candidates (score DESC) WHERE deleted_at IS NULL AND trang_thai = 'cho';
+/* Album của một khách = đúng những dòng đã xác nhận (FR-7). */
+CREATE INDEX IF NOT EXISTS idx_face_candidates_album
+  ON crm_face_candidates (guest_id, created_at DESC)
+  WHERE deleted_at IS NULL AND trang_thai = 'xac-nhan';
+CREATE INDEX IF NOT EXISTS idx_face_candidates_theo_anh
+  ON crm_face_candidates (event_photo_id) WHERE deleted_at IS NULL;
+
+/* ── Nâng cấp cho CSDL ĐÃ CÓ ba bảng ────────────────────────────────────────
+   CREATE TABLE IF NOT EXISTS chỉ dựng bảng khi chưa có — nó KHÔNG thêm cột,
+   KHÔNG nới NOT NULL, KHÔNG thêm CHECK vào bảng đã tồn tại. Ba cột và hai ràng
+   buộc dưới đây ra đời SAU lần tạo bảng đầu, nên ở bất kỳ nơi nào bảng đã có sẵn
+   thì chúng lặng lẽ vắng mặt — đúng lớp lỗi vé này đã bắt hai lần: một bất biến
+   không tồn tại thì không báo gì cả, nó chỉ đơn giản là không chặn.
+   Postgres KHÔNG có ADD CONSTRAINT IF NOT EXISTS; phải tự hỏi catalog.
+   (Nhắc lại cảnh báo đầu file: khối này là chuỗi mẫu JS — KHÔNG dùng backtick
+   trong chú thích, kể cả để trích tên lệnh. Vừa dẫm phải đúng bẫy đó.) */
+ALTER TABLE crm_face_samples ADD COLUMN IF NOT EXISTS vec_xoa_luc TIMESTAMPTZ;
+ALTER TABLE crm_event_faces  ADD COLUMN IF NOT EXISTS vec_xoa_luc TIMESTAMPTZ;
+ALTER TABLE crm_face_samples ALTER COLUMN vec DROP NOT NULL;
+ALTER TABLE crm_event_faces  ALTER COLUMN vec DROP NOT NULL;
+
+DO $nangcap$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ck_face_samples_vec_xoa') THEN
+    /* NOT VALID: chỉ ràng buộc từ nay về sau, không quét lại toàn bảng. Nếu có
+       hàng cũ đang ở trạng thái mâu thuẫn thì ALTER sẽ không nổ giữa lúc deploy —
+       hàng đó phải được dọn rồi VALIDATE riêng, chứ không âm thầm chặn khởi động. */
+    ALTER TABLE crm_face_samples
+      ADD CONSTRAINT ck_face_samples_vec_xoa
+      CHECK (vec IS NULL OR vec_xoa_luc IS NULL) NOT VALID;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ck_event_faces_vec_xoa') THEN
+    ALTER TABLE crm_event_faces
+      ADD CONSTRAINT ck_event_faces_vec_xoa
+      CHECK (vec IS NULL OR vec_xoa_luc IS NULL) NOT VALID;
+  END IF;
+END $nangcap$;
 `;
 
 async function migrateCrm() {

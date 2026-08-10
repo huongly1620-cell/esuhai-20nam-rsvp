@@ -107,7 +107,7 @@ a{color:inherit}
   border:1px solid rgba(255,255,255,.07);border-radius:12px}
 .leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
 .leg .ok{background:var(--ok)}.leg .no{background:var(--no)}.leg .empty{background:var(--empty);border:1px dashed rgba(255,255,255,.4)}
-.leg .nv{box-shadow:0 0 0 2px var(--nv)}
+.leg .nv{box-shadow:0 0 0 2px var(--nv);border-radius:2px}
 .leg .note{color:var(--muted2);font-style:italic}
 
 .banner{margin:0 14px;padding:7px 12px;border-radius:9px;font-size:.72rem;display:none;align-items:center;gap:7px}
@@ -186,7 +186,11 @@ a{color:inherit}
    trước đây chỉ mờ bàn đủ ghế, ghế đỏ trên bàn còn trống vẫn sáng → nhìn như filter hỏng. */
 .seat.empty.focus-free{opacity:1;border-color:var(--gold-b);background:rgba(216,184,118,.18);color:var(--gold-b);
   box-shadow:0 0 0 2px rgba(216,184,118,.35)}
-.seat.nv{box-shadow:0 0 0 2px var(--nv),0 1px 3px rgba(0,0,0,.35)}
+/* E08-D101c · bộ hình chạy trên CẢ sơ đồ, không chỉ trong panel: ghế khách tròn, ghế
+   nhân viên vuông. Bán kính 4px chứ không phải 6-8: ghế 21px ở mức zoom nhỏ nhất (45%)
+   chỉ còn ~9px trên màn, bo tay rộng là góc biến mất và vuông lại trông như tròn.
+   Viền vàng giữ nguyên — chú giải cũ vẫn đúng, giờ có thêm hình đỡ cho nó. */
+.seat.nv{border-radius:4px;box-shadow:0 0 0 2px var(--nv),0 1px 3px rgba(0,0,0,.35)}
 .seat.dup{box-shadow:0 0 0 2px #ff8a3d,0 1px 3px rgba(0,0,0,.35)}
 .seat.overflow{box-shadow:0 0 0 2px #ff3d6a,0 1px 3px rgba(0,0,0,.35)}
 .seat.on{outline:2px solid #fff;z-index:3;transform:scale(1.18)}
@@ -452,7 +456,7 @@ var TSD={
    k_tong_t:"Bấm để bỏ lọc",k_trong_t:"Bấm để chỉ nổi bật ghế trống",
    k_ok_t:"Bấm để chỉ nổi bật khách đã đến",k_no_t:"Bấm để chỉ nổi bật khách chưa đến",
    only_free:"Chỉ bàn còn trống",top5:"Còn trống nhiều nhất:",no_table:"không bàn nào",
-   lg_ci:"Đã check-in Gala",lg_chua:"Chưa đến",lg_trong:"Ghế trống (chưa xếp khách)",lg_nv:"Nhân viên (viền vàng)",
+   lg_ci:"Đã check-in Gala",lg_chua:"Chưa đến",lg_trong:"Ghế trống (chưa xếp khách)",lg_nv:"Nhân viên (ô vuông, viền vàng)",
    lg_p1:"🟢 Viền bàn sáng xanh =",lg_p2:"đủ khách hoàn hảo",lg_p3:"(hết ghế trống, tất cả đã check-in)",
    note_diff:"«Trống» ≠ «Chưa đến»: Trống là ghế chưa có ai được xếp; Chưa đến là khách đã có tên nhưng chưa tới cửa.",
    q_ph:"Tìm bàn hoặc tên khách…",loading:"Đang tải sơ đồ…",loading2:"Đang tải sơ đồ Pollux…",stage:"🎤 Phía sân khấu",close:"Đóng",
@@ -489,7 +493,7 @@ var TSD={
    k_tong_t:"押すと絞り込み解除",k_trong_t:"押すと空席だけを強調",
    k_ok_t:"押すとご来場の方だけを強調",k_no_t:"押すと未来場の方だけを強調",
    only_free:"空席のあるテーブルのみ",top5:"空席が多い順:",no_table:"該当なし",
-   lg_ci:"ガラ受付済み",lg_chua:"未来場",lg_trong:"空席(未配席)",lg_nv:"スタッフ(金枠)",
+   lg_ci:"ガラ受付済み",lg_chua:"未来場",lg_trong:"空席(未配席)",lg_nv:"スタッフ(四角・金枠)",
    lg_p1:"🟢 緑に光る枠 =",lg_p2:"満席完了",lg_p3:"(空席なし・全員受付済み)",
    note_diff:"「空席」と「未来場」は別です:空席＝まだ誰も配席されていない席。未来場＝お名前はあるが、まだご到着でない方。",
    q_ph:"テーブル名・お名前で検索…",loading:"座席図を読み込み中…",loading2:"Pollux 座席図を読み込み中…",stage:"🎤 ステージ側",close:"閉じる",

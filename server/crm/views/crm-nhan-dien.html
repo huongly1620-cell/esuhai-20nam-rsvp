@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nhận diện ảnh khách · ESUHAI 20 năm</title>
+<style>
+  :root{
+    --bg1:#050b14;--bg2:#071019;--panel:rgba(255,255,255,.05);--panel2:rgba(7,16,27,.66);
+    --text:#f4eede;--muted:#aca592;--line:rgba(224,189,119,.16);--line2:rgba(224,189,119,.32);
+    --gold:#e0bd77;--ok:#43e08d;--bad:#e05a5a;--fs-small:.72rem;--fs-micro:.66rem;
+  }
+  :root[data-theme=light]{
+    --bg1:#f7f3e8;--bg2:#efe8d6;--panel:rgba(255,255,255,.75);--panel2:rgba(255,255,255,.92);
+    --text:#2a2418;--muted:#6d6552;--line:rgba(120,92,36,.18);--line2:rgba(120,92,36,.34);--gold:#a97f2e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Be Vietnam Pro",-apple-system,"Segoe UI",system-ui,Arial,sans-serif;
+    color:var(--text);background:linear-gradient(166deg,var(--bg1),var(--bg2));min-height:100vh}
+  .wrap{max-width:1100px;margin:0 auto;padding:14px 14px 60px}
+  .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  h1{font-size:1.05rem;margin:0;font-weight:700}
+  .btn{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:10px;
+    padding:8px 13px;font:inherit;font-size:.82rem;cursor:pointer}
+  .btn:hover:not(:disabled){border-color:var(--gold)}
+  .btn:disabled{opacity:.45;cursor:default}
+  .btn.sm{padding:5px 10px;font-size:var(--fs-small)}
+  .btn.ok{border-color:rgba(67,224,141,.5);color:var(--ok)}
+  .btn.bad{border-color:rgba(224,90,90,.5);color:#ffb3b3}
+  .spacer{flex:1}
+  .hint{color:var(--muted);font-size:var(--fs-small)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:13px}
+  input[type=search],input[type=text]{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    color:var(--text);padding:9px 12px;font:inherit;font-size:.85rem;width:100%}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:.85rem}
+  th{color:var(--muted);font-size:var(--fs-small);font-weight:600}
+  tr.kh{cursor:pointer}
+  tr.kh:hover{background:var(--panel2)}
+  .dem{display:inline-block;min-width:26px;text-align:center;border-radius:999px;padding:2px 8px;
+    font-size:var(--fs-micro);border:1px solid var(--line2)}
+  .dem.co{background:rgba(67,224,141,.14);border-color:rgba(67,224,141,.4);color:var(--ok)}
+  .dem.cho{background:rgba(224,189,119,.14);border-color:var(--line2);color:var(--gold)}
+  .canh{color:var(--bad);font-size:var(--fs-micro)}
+  .luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}
+  .o{position:relative;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--panel2)}
+  .o img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:4/3}
+  /* Khung mặt vẽ CHỒNG lên ảnh gốc. Cố ý không cắt-và-lưu ảnh mặt: mỗi tấm mặt
+     lưu ra là một bản sao dữ liệu sinh trắc phải nhớ mà xoá (AC-13). Không tạo
+     thì không phải xoá. */
+  .khung{position:absolute;border:2px solid var(--gold);border-radius:3px;pointer-events:none}
+  .khung.chon{border-color:var(--ok);box-shadow:0 0 0 2px rgba(67,224,141,.35)}
+  .anhto{position:relative;display:inline-block;max-width:100%}
+  .anhto img{max-width:100%;display:block;border-radius:11px}
+  .goi{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .diem{font-variant-numeric:tabular-nums;color:var(--gold);font-size:var(--fs-small)}
+  .ta{position:relative}
+  .ta-ds{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--panel2);
+    border:1px solid var(--line2);border-radius:10px;max-height:220px;overflow:auto}
+  .ta-ds div{padding:8px 11px;cursor:pointer;font-size:.85rem}
+  .ta-ds div:hover{background:var(--panel)}
+  .an{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <button class="btn sm" id="veCrm">← <span data-i="ve_crm">Về CRM</span></button>
+    <h1 data-i="tieu_de">🧑‍🤝‍🧑 Nhận diện ảnh khách</h1>
+    <span class="hint" id="meRole"></span>
+    <div class="spacer"></div>
+    <button class="btn sm" id="langBtn">日本語</button>
+    <button class="btn sm" id="themeBtn">☽</button>
+  </div>
+
+  <!-- HOME = DANH SÁCH KHÁCH (FR-4c). Hàng đợi ảnh là lối phụ, không phải màn gốc:
+       người ta tới đây để làm album cho một khách cụ thể. -->
+  <div id="manKhach">
+    <div class="card">
+      <div class="top" style="margin:0 0 10px">
+        <strong data-i="ds_khach">Danh sách khách</strong>
+        <div class="spacer"></div>
+        <button class="btn sm" id="moHangDoi" data-i="hang_doi">Hàng đợi gợi ý →</button>
+      </div>
+      <input type="search" id="timKhach" placeholder="Tìm tên / đơn vị (cả tiếng Nhật)…">
+      <p class="hint" id="tomTat" style="margin:9px 0 0"></p>
+    </div>
+    <div class="card"><table><thead><tr>
+      <th data-i="c_ten">Khách</th><th data-i="c_album">Ảnh trong album</th>
+      <th data-i="c_cho">Chờ duyệt</th><th data-i="c_mau">Ảnh mẫu</th>
+    </tr></thead><tbody id="bangKhach"></tbody></table></div>
+  </div>
+
+  <!-- ALBUM CỦA MỘT KHÁCH -->
+  <div id="manAlbum" class="an">
+    <div class="card top" style="margin-bottom:13px">
+      <button class="btn sm" id="veDs">← <span data-i="ve_ds">Danh sách khách</span></button>
+      <strong id="tenKhach"></strong>
+      <div class="spacer"></div>
+      <button class="btn sm" id="loc" data-i="loc_goi">Xem gợi ý của khách này</button>
+    </div>
+    <div class="card">
+      <p class="hint" id="albumTom"></p>
+      <div class="luoi" id="album"></div>
+    </div>
+  </div>
+
+  <!-- HÀNG ĐỢI GỢI Ý — lối phụ -->
+  <div id="manHangDoi" class="an">
+    <div class="card top" style="margin-bottom:13px">
+      <button class="btn sm" id="veDs2">← <span data-i="ve_ds">Danh sách khách</span></button>
+      <strong data-i="hd_tieu">Hàng đợi gợi ý</strong>
+      <div class="spacer"></div>
+      <span class="hint" id="hdTom"></span>
+    </div>
+    <div id="hangDoi"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+var $ = function(s){ return document.querySelector(s); };
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+var T = {
+  vn:{ ve_crm:'Về CRM', tieu_de:'🧑‍🤝‍🧑 Nhận diện ảnh khách', ds_khach:'Danh sách khách',
+    hang_doi:'Hàng đợi gợi ý →', c_ten:'Khách', c_album:'Ảnh trong album', c_cho:'Chờ duyệt',
+    c_mau:'Ảnh mẫu', ve_ds:'Danh sách khách', loc_goi:'Xem gợi ý của khách này',
+    hd_tieu:'Hàng đợi gợi ý',
+    tom:'{n} khách · {a} khách đã có ảnh · {m} khách chưa có ảnh mẫu (máy không đoán được)',
+    album_tom:'{n} ảnh đã xác nhận. Đây là tập PG gửi cho khách.',
+    album_rong:'Chưa có ảnh nào được xác nhận cho khách này.',
+    hd_rong:'Không còn gợi ý nào chờ duyệt.',
+    hd_tom:'{n} ảnh có gợi ý chờ duyệt',
+    xac_nhan:'Xác nhận', tu_choi:'Từ chối', bo_qua:'Bỏ qua',
+    gan_tay:'Gán khách…', gan_ph:'Gõ tên / đơn vị (≥2 ký tự)',
+    lam_mau:'Dùng mặt này làm ảnh mẫu',
+    mau_xong:'Đã ghi khung. Lượt chạy batch tới sẽ tính đặc trưng rồi tìm thêm ảnh của khách này.',
+    khong_mau:'chưa có ảnh mẫu', co_mau:'có mẫu',
+    khong_khop:'Không có khách nào khớp. Ô này chỉ chọn từ danh sách mời, không tạo khách mới.',
+    net:'nét', cang:'cạnh' },
+  jp:{ ve_crm:'CRMへ戻る', tieu_de:'🧑‍🤝‍🧑 ゲスト写真の顔認識', ds_khach:'ゲスト一覧',
+    hang_doi:'候補キュー →', c_ten:'ゲスト', c_album:'アルバムの枚数', c_cho:'承認待ち',
+    c_mau:'参照写真', ve_ds:'ゲスト一覧', loc_goi:'このゲストの候補を見る',
+    hd_tieu:'候補キュー',
+    tom:'{n}名 · 写真あり{a}名 · 参照写真なし{m}名（自動判定できません）',
+    album_tom:'確認済み{n}枚。PGがゲストへ送る一式です。',
+    album_rong:'このゲストの確認済み写真はまだありません。',
+    hd_rong:'承認待ちの候補はありません。',
+    hd_tom:'候補が待機中の写真：{n}枚',
+    xac_nhan:'確認', tu_choi:'却下', bo_qua:'スキップ',
+    gan_tay:'ゲストを指定…', gan_ph:'氏名／所属（2文字以上）',
+    lam_mau:'この顔を参照写真にする',
+    mau_xong:'範囲を保存しました。次回のバッチで特徴量を計算し、他の写真を探します。',
+    khong_mau:'参照写真なし', co_mau:'参照あり',
+    khong_khop:'該当するゲストがいません。ここでは招待者一覧からのみ選べます。',
+    net:'鮮明度', cang:'サイズ' }
+};
+var LANG = localStorage.getItem('nd_lang') === 'jp' ? 'jp' : 'vn';
+function tt(k){ return (T[LANG] && T[LANG][k]) || T.vn[k] || k; }
+function fmt(k,o){ var s = tt(k); for (var i in o) s = s.split('{'+i+'}').join(o[i]); return s; }
+function setLang(l){
+  LANG = l; localStorage.setItem('nd_lang', l);
+  document.documentElement.lang = l === 'jp' ? 'ja' : 'vi';
+  document.querySelectorAll('[data-i]').forEach(function(el){
+    var v = tt(el.getAttribute('data-i')); if (v) el.textContent = v; });
+  $('#langBtn').textContent = l === 'jp' ? 'Tiếng Việt' : '日本語';
+  $('#timKhach').placeholder = tt('gan_ph');
+  veKhach(); if (KHACH_DANG) moAlbum(KHACH_DANG); if (!$('#manHangDoi').classList.contains('an')) veHangDoi();
+}
+function apDungTheme(t){ if (t) document.documentElement.setAttribute('data-theme', t);
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('nd_theme', t || ''); $('#themeBtn').innerHTML = t ? '☀' : '☽'; }
+
+async function jget(u){ var r = await fetch(u); if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+async function jpost(u,b,m){ var r = await fetch(u,{ method: m||'POST',
+  headers:{'content-type':'application/json'}, body: b?JSON.stringify(b):undefined });
+  if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+
+var KHACH = [], KHACH_DANG = null;
+
+async function napKhach(){
+  var j = await jget('/crm/face-match/guests');
+  KHACH = j.items || [];
+  veKhach();
+}
+function veKhach(){
+  var q = ($('#timKhach').value || '').trim().toLowerCase();
+  var ds = KHACH.filter(function(g){
+    if (!q) return true;
+    return [g.full_name,g.name_jp,g.org,g.org_jp].some(function(x){
+      return x && String(x).toLowerCase().indexOf(q) >= 0; });
+  });
+  $('#tomTat').textContent = fmt('tom', { n: KHACH.length,
+    a: KHACH.filter(function(g){return g.so_album>0;}).length,
+    m: KHACH.filter(function(g){return !g.so_mau;}).length });
+  $('#bangKhach').innerHTML = ds.map(function(g){
+    var ten = LANG==='jp' && g.name_jp ? g.name_jp : g.full_name;
+    var dv  = LANG==='jp' && g.org_jp ? g.org_jp : (g.org||'');
+    return '<tr class="kh" data-id="'+g.id+'">'
+      + '<td><b>'+esc(ten)+'</b>'+(dv?'<br><span class="hint">'+esc(dv)+'</span>':'')+'</td>'
+      + '<td><span class="dem'+(g.so_album?' co':'')+'">'+g.so_album+'</span></td>'
+      + '<td>'+(g.so_cho?'<span class="dem cho">'+g.so_cho+'</span>':'—')+'</td>'
+      /* Khách không có mẫu thì máy KHÔNG đoán được — nói thẳng thay vì để ô trống,
+         vì đó là lý do album của họ rỗng, không phải vì chưa ai duyệt (AC-6). */
+      + '<td>'+(g.so_mau ? '<span class="hint">'+g.so_mau+' · '+esc(tt('co_mau'))+'</span>'
+                         : '<span class="canh">'+esc(tt('khong_mau'))+'</span>')+'</td></tr>';
+  }).join('');
+}
+
+async function moAlbum(id){
+  KHACH_DANG = id;
+  var g = KHACH.filter(function(x){ return String(x.id)===String(id); })[0] || {};
+  $('#tenKhach').textContent = (LANG==='jp' && g.name_jp ? g.name_jp : g.full_name) || '';
+  $('#manKhach').classList.add('an'); $('#manHangDoi').classList.add('an');
+  $('#manAlbum').classList.remove('an');
+  var j = await jget('/crm/face-match/album/'+id);
+  var it = j.items || [];
+  $('#albumTom').textContent = it.length ? fmt('album_tom',{n:it.length}) : tt('album_rong');
+  $('#album').innerHTML = it.map(function(x){
+    return '<div class="o"><img loading="lazy" src="/crm/event-photos/'+x.event_photo_id+'/thumb" alt="'
+      + esc(x.orig_name)+'"></div>'; }).join('');
+}
+
+async function veHangDoi(gid){
+  $('#manKhach').classList.add('an'); $('#manAlbum').classList.add('an');
+  $('#manHangDoi').classList.remove('an');
+  var j = await jget('/crm/face-match/queue?limit=10'+(gid?'&guest_id='+gid:''));
+  var it = j.items || [];
+  $('#hdTom').textContent = fmt('hd_tom',{n:it.length});
+  if (!it.length){ $('#hangDoi').innerHTML = '<div class="card"><p class="hint">'+esc(tt('hd_rong'))+'</p></div>'; return; }
+  $('#hangDoi').innerHTML = it.map(function(a){
+    /* Khung mặt vẽ theo TỈ LỆ so với ảnh gốc, không theo pixel: ảnh hiển thị đã
+       co lại, mà toạ độ trong CSDL là của ảnh gốc. */
+    var khung = a.goi_y.filter(function(c){ return c.box_w; }).map(function(c){
+      return '<i class="khung" style="left:'+(c.box_x/a.width*100).toFixed(2)+'%;top:'
+        +(c.box_y/a.height*100).toFixed(2)+'%;width:'+(c.box_w/a.width*100).toFixed(2)+'%;height:'
+        +(c.box_h/a.height*100).toFixed(2)+'%"></i>'; }).join('');
+    var goi = a.goi_y.map(function(c){
+      var ten = LANG==='jp' && c.name_jp ? c.name_jp : c.full_name;
+      return '<div class="goi" data-cid="'+c.id+'">'
+        + '<b>'+esc(ten)+'</b>'+(c.org?' <span class="hint">'+esc(c.org)+'</span>':'')
+        + '<span class="diem">'+(c.score!=null?Number(c.score).toFixed(3):'—')+'</span>'
+        + (c.canh_px?'<span class="hint">'+esc(tt('cang'))+' '+Math.round(c.canh_px)+'px · '
+            +esc(tt('net'))+' '+Number(c.do_net||0).toFixed(3)+'</span>':'')
+        + '<div class="spacer"></div>'
+        + '<button class="btn sm ok" data-do="confirm">'+esc(tt('xac_nhan'))+'</button>'
+        + '<button class="btn sm bad" data-do="reject">'+esc(tt('tu_choi'))+'</button>'
+        + '<button class="btn sm" data-do="skip">'+esc(tt('bo_qua'))+'</button></div>';
+    }).join('');
+    return '<div class="card" data-anh="'+a.event_photo_id+'" data-w="'+a.width+'" data-h="'+a.height+'">'
+      + '<div class="anhto"><img src="/crm/event-photos/'+a.event_photo_id+'/preview" alt="'
+      + esc(a.orig_name)+'">'+khung+'</div>'
+      + '<p class="hint" style="margin:8px 0 4px">'+esc(a.orig_name)+'</p>'
+      + goi
+      + '<div class="goi"><span class="hint">'+esc(tt('gan_tay'))+'</span>'
+      +   '<div class="ta" style="flex:1;min-width:220px"><input type="text" class="ganO" placeholder="'
+      +   esc(tt('gan_ph'))+'"><div class="ta-ds an"></div></div></div>'
+      + '</div>';
+  }).join('');
+}
+
+/* Typeahead FR-4b — dùng ĐÚNG /crm/guests?q= sẵn có, không đẻ API mới, và chỉ
+   chọn từ danh sách mời: gõ tên lạ không tạo khách mới ở đây. */
+var henTim = null;
+document.addEventListener('input', function(e){
+  if (!e.target.classList.contains('ganO')) return;
+  var o = e.target, ds = o.parentElement.querySelector('.ta-ds');
+  var q = o.value.trim();
+  clearTimeout(henTim);
+  if (q.length < 2){ ds.classList.add('an'); return; }
+  henTim = setTimeout(async function(){
+    try {
+      var j = await jget('/crm/guests?q=' + encodeURIComponent(q) + '&limit=8');
+      var it = (j.items || j.rows || []).slice(0, 8);
+      ds.innerHTML = it.length ? it.map(function(g){
+        var ten = LANG==='jp' && g.name_jp ? g.name_jp : g.full_name;
+        return '<div data-gid="'+g.id+'">'+esc(ten)+(g.org?' <span class="hint">'+esc(g.org)+'</span>':'')+'</div>';
+      }).join('') : '<div class="hint">'+esc(tt('khong_khop'))+'</div>';
+      ds.classList.remove('an');
+    } catch(_){ ds.classList.add('an'); }
+  }, 220);
+});
+
+document.addEventListener('click', async function(e){
+  var tr = e.target.closest && e.target.closest('tr.kh');
+  if (tr){ moAlbum(tr.getAttribute('data-id')); return; }
+
+  var g = e.target.closest && e.target.closest('.ta-ds div[data-gid]');
+  if (g){
+    var the = g.closest('.card');
+    await jpost('/crm/face-match/assign', { event_photo_id: Number(the.getAttribute('data-anh')),
+      guest_id: Number(g.getAttribute('data-gid')) });
+    g.closest('.ta-ds').classList.add('an');
+    the.querySelector('.ganO').value = '';
+    await napKhach(); await veHangDoi(); return;
+  }
+
+  var b = e.target.closest && e.target.closest('button[data-do]');
+  if (b){
+    var dong = b.closest('.goi');
+    await jpost('/crm/face-match/' + b.getAttribute('data-do'), { id: Number(dong.getAttribute('data-cid')) });
+    dong.remove();
+    await napKhach(); return;
+  }
+});
+
+$('#veCrm').onclick = function(){ location.href = '/crm'; };
+$('#veDs').onclick = $('#veDs2').onclick = function(){
+  KHACH_DANG = null;
+  $('#manAlbum').classList.add('an'); $('#manHangDoi').classList.add('an');
+  $('#manKhach').classList.remove('an'); napKhach(); };
+$('#moHangDoi').onclick = function(){ veHangDoi(); };
+$('#loc').onclick = function(){ veHangDoi(KHACH_DANG); };
+$('#timKhach').addEventListener('input', veKhach);
+$('#langBtn').onclick = function(){ setLang(LANG === 'jp' ? 'vn' : 'jp'); };
+$('#themeBtn').onclick = function(){
+  apDungTheme(document.documentElement.getAttribute('data-theme') === 'light' ? '' : 'light'); };
+
+apDungTheme(localStorage.getItem('nd_theme') === 'light' ? 'light' : '');
+setLang(LANG);
+jget('/crm/me').then(function(j){ $('#meRole').textContent = (j.role||'') + ' · ' + (j.email||''); }).catch(function(){});
+napKhach().catch(function(e){ $('#tomTat').textContent = 'Không nạp được danh sách khách.'; });
+</script>
+</body>
+</html>

@@ -83,7 +83,14 @@ function mount(app, requireCrmAuth, requireRole, requireDoorOrAuth) {
       let join = '';
       if (q) {
         params.push('%' + q + '%');
-        conds.push(`(g.full_name ILIKE $${params.length} OR g.phone_norm ILIKE $${params.length} OR g.org ILIKE $${params.length})`);
+        /* AC-2c (CR-135) · khớp cả tên/đơn vị tiếng Nhật. Khách Nhật là trọng tâm
+           sự kiện, mà gõ một chuỗi kana chỉ tìm trong full_name/org thì không ra —
+           lỗi im lặng: ô typeahead trả rỗng như thể không có khách đó.
+           ILIKE '%q%' chấp nhận quét toàn bảng ở ~410 hàng; bỏ % đầu để "tối ưu"
+           sẽ làm hỏng đúng ca gõ giữa chuỗi, và không có bằng chứng nào đòi thế. */
+        conds.push(`(g.full_name ILIKE ${params.length} OR g.phone_norm ILIKE ${params.length}
+                    OR g.org ILIKE ${params.length} OR g.name_jp ILIKE ${params.length}
+                    OR g.org_jp ILIKE ${params.length})`);
       }
       if (session) {
         // MỘT SoT (E08-D028 AC-A): buổi = tag danh sách ∪ buổi khai trên form,

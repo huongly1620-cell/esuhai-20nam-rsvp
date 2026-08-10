@@ -220,7 +220,11 @@ CREATE TABLE IF NOT EXISTS crm_face_samples (
   box_x           REAL NOT NULL, box_y REAL NOT NULL,
   box_w           REAL NOT NULL, box_h REAL NOT NULL,
   moc             JSONB,                    -- 5 mốc, để căn lại mà không dò lại
-  vec             BYTEA NOT NULL,           -- 128 float32; KHÔNG log ra ngoài
+  /* vec CÓ THỂ RỖNG, và đó là hệ quả của một ràng buộc khác: cấm nhét ONNX vào
+     image esuhai-web. Nên khi BTL khoanh mặt (FR-10), trang web chỉ ghi được
+     KHUNG; vector do batch tính ở lượt chạy sau, nơi có engine. Mẫu chờ tính là
+     mẫu chưa dùng được, không phải mẫu hỏng. */
+  vec             BYTEA,                    -- 128 float32; KHÔNG log ra ngoài
   diem_do         REAL,                     -- điểm YuNet lúc lấy mẫu
   created_by      TEXT NOT NULL,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -231,6 +235,9 @@ CREATE TABLE IF NOT EXISTS crm_face_samples (
 );
 CREATE INDEX IF NOT EXISTS idx_face_samples_guest
   ON crm_face_samples (guest_id) WHERE deleted_at IS NULL;
+/* Mẫu khoanh tay đang chờ batch tính vector. */
+CREATE INDEX IF NOT EXISTS idx_face_samples_cho_tinh
+  ON crm_face_samples (created_at) WHERE deleted_at IS NULL AND vec IS NULL;
 CREATE INDEX IF NOT EXISTS idx_face_samples_tu_anh_su_kien
   ON crm_face_samples (event_photo_id) WHERE deleted_at IS NULL;
 

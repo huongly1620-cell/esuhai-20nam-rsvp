@@ -126,6 +126,40 @@ async function docMau(){
   return r.map(x => ({ id: x.id, guest: String(x.guest_id), v: tuBytes(x.vec) }));
 }
 
+/* Mẫu BTL khoanh tay (FR-10) chỉ có khung, chưa có vector — trang web không tính
+   được vì engine không nằm trong esuhai-web. Batch tính nốt ở đây. */
+async function tinhMauKhoanhTay(phien, log){
+  const r = (await db().query(`SELECT s.id, s.event_photo_id, s.box_x, s.box_y, s.box_w, s.box_h, s.moc,
+      coalesce(e.preview_key, e.object_key) k
+    FROM crm_face_samples s JOIN crm_event_photos e ON e.id = s.event_photo_id
+    WHERE s.deleted_at IS NULL AND s.vec IS NULL AND s.nguon = 'cat-tay'`)).rows;
+  if (!r.length) return 0;
+  let xong = 0;
+  for (const x of r){
+    try {
+      const buf = await layObj(x.k);
+      const g = await E.anhGoc(buf);
+      /* Có mốc thì căn theo mốc; không có (BTL kéo khung tay) thì dò lại TRONG
+         khung đã khoanh để lấy mốc — căn bằng mốc mới cho vector dùng được. */
+      let moc = x.moc;
+      if (!moc){
+        const mat = await E.phatHien(phien, buf, { nguongDiem: 0.3 });
+        const trong = mat.filter(m => m.x >= x.box_x - 8 && m.y >= x.box_y - 8
+          && m.x + m.w <= x.box_x + x.box_w + 8 && m.y + m.h <= x.box_y + x.box_h + 8);
+        if (!trong.length) continue;                 // không thấy mặt trong khung: để nguyên, báo sau
+        trong.sort((a, b) => (b.w * b.h) - (a.w * a.h));
+        moc = trong[0].moc;
+      }
+      const vec = await E.nhung(phien, E.catCan(g.raw, g.w, g.h, moc));
+      if (GHI) await db().query(`UPDATE crm_face_samples SET vec = $1, moc = $2 WHERE id = $3`,
+        [veBytes(vec), JSON.stringify(moc), x.id]);
+      xong++;
+    } catch (e){ /* để lại cho lượt sau, không xoá mẫu của người ta */ }
+  }
+  log('  mẫu khoanh tay chờ tính: ' + r.length + ' · tính xong ' + xong);
+  return xong;
+}
+
 (async () => {
   batBuoc();
   kiemMoiTruong();
@@ -136,6 +170,7 @@ async function docMau(){
     + '  ngưỡng ' + NGUONG + '  top ' + TOP);
 
   const phien = await E.moPhien();
+  if (GHI) await tinhMauKhoanhTay(phien, log);
   const mauTam = await napMau(phien, log);
   const mau = GHI ? await docMau() : mauTam;
   log('  mẫu dùng để so: ' + mau.length + ' vector · ' + new Set(mau.map(m => m.guest)).size + ' khách');

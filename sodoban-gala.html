@@ -251,18 +251,34 @@ a{color:inherit}
 .tstate[data-s="full"]{background:rgba(226,58,46,.14);border-color:rgba(226,58,46,.4);color:#ffb3a8}
 .tstate[data-s="perfect"]{background:rgba(67,224,141,.16);border-color:rgba(67,224,141,.45);color:var(--ok)}
 .tstate[data-s="none"]{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:var(--muted2)}
-.panel .tstats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.panel .tbox{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
-  border-radius:10px;padding:8px 10px;min-width:0}
-.panel .tbox h3{margin:0 0 4px;font-size:.6rem;font-weight:800;letter-spacing:.07em;
-  text-transform:uppercase;color:var(--muted)}
-.panel .tbox .big{font-size:1.3rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
-.panel .tbox .big small{font-size:.56rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--muted2);margin-left:3px}
-.panel .tbox .sm{font-size:.66rem;color:var(--muted2);margin-top:3px;line-height:1.5}
-.panel .tbox .sm b{font-variant-numeric:tabular-nums}
-.panel .tbox .sm b.g-ok{color:var(--ok)}
-.panel .tbox .sm b.g-no{color:#ff9a8f}
+/* E08-D101 · ba con số phải đọc được trong một cái nhìn, trước mọi chi tiết khác:
+   bàn này có bao nhiêu VIP · còn mấy chỗ · khách đến/chưa. Quốc tịch và nhân viên
+   xuống dòng chip phía dưới — cần thì có, nhưng không tranh chỗ của ba số trên. */
+.panel .thero{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:2px 0 9px}
+.panel .thero .h{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+  border-radius:11px;padding:9px 6px 8px;text-align:center;min-width:0}
+.panel .thero .h b{display:block;font-size:1.55rem;font-weight:800;line-height:1;
+  font-variant-numeric:tabular-nums}
+/* `> span` chứ không phải `span`: nhãn là con TRỰC TIẾP của ô. Viết `span` trơn thì
+   quét luôn mấy span đếm bên trong <b> → «2 / 1» tụt xuống ba dòng, bé và xám như nhãn. */
+.panel .thero .h > span{display:block;font-size:.55rem;font-weight:800;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--muted);margin-top:4px;line-height:1.3}
+.panel .thero .h b span{display:inline;font-size:inherit;text-transform:none;letter-spacing:0}
+.panel .thero .h.vip{border-color:rgba(216,184,118,.5);background:rgba(216,184,118,.11)}
+.panel .thero .h.vip b{color:var(--gold-b)}
+.panel .thero .h.vip b small{font-size:.5em;font-weight:800;color:var(--muted2);margin-left:2px}
+.panel .thero .h.came b{font-size:1.3rem}
+.panel .thero .h.came .a{color:var(--ok)}
+.panel .thero .h.came .b{color:#ff9a8f}
+.panel .thero .h.came .s{color:var(--muted2);font-weight:600;margin:0 1px}
+.panel .tmeta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px}
+.panel .tmeta i{font-style:normal;font-size:.66rem;font-weight:700;color:var(--muted);
+  border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);
+  border-radius:99px;padding:4px 9px;white-space:nowrap}
+.panel .tmeta i b{color:var(--cream);font-variant-numeric:tabular-nums}
+.panel .tmeta i.nv b{color:var(--nv)}
+.panel .tmeta i.unk{border-color:rgba(255,138,61,.45);background:rgba(255,138,61,.10);color:#ffcba3}
+.panel .tmeta i.unk b{color:#ffcba3}
 .panel .tsec{margin:16px 0 2px;font-size:.64rem;font-weight:800;letter-spacing:.08em;
   text-transform:uppercase;color:var(--muted)}
 .panel .tnote{margin-top:6px;font-size:.7rem;color:var(--muted2);font-style:italic}
@@ -276,9 +292,26 @@ a{color:inherit}
   border-radius:7px;padding:3px 5px;background:rgba(255,255,255,.07);color:var(--cream);
   font-variant-numeric:tabular-nums}
 .panel .trow .sn.ov{background:rgba(255,61,106,.18);color:#ffb0c2}
+/* Ảnh nhỏ trong danh sách: nhận mặt nhanh hơn đọc tên, và ảnh hỏng thì rơi về chữ
+   cái đầu đã nằm sẵn dưới <img> nên không để lại ô trống. */
+.panel .trow .rav{flex:0 0 auto;width:30px;height:30px;border-radius:50%;position:relative;
+  overflow:hidden;display:grid;place-items:center;background:rgba(255,255,255,.10);
+  color:var(--cream);font-family:"Playfair Display",serif;font-weight:700;font-size:.7rem}
+.panel .trow .rav img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.panel .trow.is-vip{background:linear-gradient(90deg,rgba(216,184,118,.10),transparent 70%);
+  box-shadow:inset 2px 0 0 var(--gold)}
+.panel .trow.is-vip .rav{box-shadow:0 0 0 2px var(--gold)}
 .panel .trow .nm{flex:1 1 auto;min-width:0;font-size:.79rem;font-weight:700}
-.panel .trow .nm span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.panel .trow .nm i{display:block;font-style:normal;font-weight:400;font-size:.68rem;color:var(--muted2);
+/* `> span` / `> i` — dòng tên và dòng đơn vị là con TRỰC TIẾP. Viết trơn thì selector
+   ăn luôn mấy dấu ★VIP/日/? nằm bên trong span tên, biến chúng thành dải nền chiếm
+   hết chiều ngang xếp dọc, thay vì nhãn nhỏ nằm cạnh tên. */
+.panel .trow .nm > span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel .trow .mk{display:inline;font-style:normal;font-size:.62rem;font-weight:800;border-radius:5px;
+  padding:1px 4px;margin-left:5px;vertical-align:1px}
+.panel .trow .mk.vip{background:rgba(216,184,118,.24);color:var(--gold-b)}
+.panel .trow .mk.jp{background:rgba(46,127,204,.26);color:#cfe6ff}
+.panel .trow .mk.unk{background:rgba(255,138,61,.22);color:#ffcba3}
+.panel .trow .nm > i{display:block;font-style:normal;font-weight:400;font-size:.68rem;color:var(--muted2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .panel .trow .bd{flex:0 0 auto;font-size:.6rem;font-weight:800;border-radius:99px;padding:2px 7px;white-space:nowrap}
 .panel .trow .bd.ok{background:rgba(67,224,141,.18);color:var(--ok)}
@@ -386,7 +419,8 @@ a{color:inherit}
     <h2 id="ptName">—</h2>
     <div class="sub" id="ptSub"></div>
     <div class="tstate" id="ptState" data-s="none">—</div>
-    <div class="tstats" id="ptStats"></div>
+    <div class="thero" id="ptHero"></div>
+    <div class="tmeta" id="ptMeta"></div>
     <div id="ptCap"></div>
     <div class="actions" id="ptActs"></div>
     <div id="ptList"></div>
@@ -427,9 +461,16 @@ var TSD={
    h5:" · Bàn CRM 1–34 = VIP1–34 trên Pollux",
    just_ci:" vừa check-in Gala",guest_w:"Khách",b_den:"Đã đến",b_chua:"Chưa đến",nv_w:"Nhân viên",no_w:"Không",
    dup1:"⚠ Ghế này đang có ",dup2:" thẻ khách trùng nhau trong CRM — cần soát lại dữ liệu bàn/ghế",
+   th_vip:"Khách VIP",th_free:"Còn trống",th_came:"Khách đến / chưa",
+   tp_jp:"Nhật",tp_vn:"Việt",tp_unk:"Chưa rõ",tp_vipno:"VIP chưa đến",
+   tp_vip_t:"Khách VIP (tag hạng trong CRM)",
+   tp_jp_t:"Tên bắt đầu bằng chữ Nhật (kanji/kana) — suy từ tên, CSDL không có cột quốc tịch",
+   tp_vn_t:"Tên có dấu tiếng Việt — suy từ tên, CSDL không có cột quốc tịch",
+   tp_unk_t:"Chưa đủ dữ liệu để nói tiếng nào: tên La-tinh không dấu và chưa có bản tên tiếng Nhật. Hỏi khách hoặc bổ sung name_jp trong CRM — đừng đoán.",
+   tp_vipno_t:"Số khách VIP của bàn này còn chưa tới cửa",
    p_ci:"Check-in Gala",co_w:"Có",just_ci_n:" khách vừa check-in Gala",
    tp_show_all:"Hiện lại tất cả bàn",tp_ovseat:"⚠ Ghế này vượt sức chứa thật của bàn",
-   tp_sub:"Chi tiết bàn · Gala",tp_tip:"Bấm để xem chi tiết bàn",tp_guest:"Khách mời",tp_unit:"người",
+   tp_sub:"Chi tiết bàn · Gala",tp_tip:"Bấm để xem chi tiết bàn",
    tp_cap:"Sức chứa (ghế thật)",tp_free:"Ghế trống",tp_seated:"Đã xếp",
    tp_st_free:"Còn trống",tp_st_full:"Đầy ghế · còn chưa đến",tp_st_ok:"Đủ",tp_st_nodata:"Chưa có dữ liệu ghế",
    tp_lsec_g:"Danh sách khách mời",tp_lsec_nv:"Danh sách nhân viên",
@@ -457,9 +498,16 @@ var TSD={
    h5:" · CRMのテーブル1–34 = Pollux の VIP1–34",
    just_ci:" 様 ガラ受付完了",guest_w:"ゲスト",b_den:"ご来場",b_chua:"未来場",nv_w:"スタッフ",no_w:"なし",
    dup1:"⚠ この席には ",dup2:" 件の重複したゲスト登録があります — テーブル/座席データの確認が必要です",
+   th_vip:"VIPゲスト",th_free:"空席",th_came:"来場 / 未来場",
+   tp_jp:"日本",tp_vn:"ベトナム",tp_unk:"不明",tp_vipno:"VIP未来場",
+   tp_vip_t:"VIPゲスト（CRMの区分タグ）",
+   tp_jp_t:"お名前が日本語表記で始まる（漢字・かな）— 氏名による判定で、国籍欄はありません",
+   tp_vn_t:"お名前にベトナム語の記号あり — 氏名による判定で、国籍欄はありません",
+   tp_unk_t:"判定材料が不足：記号なしラテン文字表記で、日本語表記のお名前も未登録です。ご本人に確認するか CRM の name_jp を補完してください — 推測しないこと。",
+   tp_vipno_t:"このテーブルでまだご到着でないVIPの人数",
    p_ci:"ガラ受付",co_w:"あり",just_ci_n:" 名 ガラ受付完了",
    tp_show_all:"全テーブルを再表示",tp_ovseat:"⚠ この席は実際の収容数を超えています",
-   tp_sub:"テーブル詳細 · ガラ",tp_tip:"押すとテーブル詳細",tp_guest:"招待ゲスト",tp_unit:"名",
+   tp_sub:"テーブル詳細 · ガラ",tp_tip:"押すとテーブル詳細",
    tp_cap:"収容（実席数）",tp_free:"空席",tp_seated:"配席済み",
    tp_st_free:"空席",tp_st_full:"満席 · 未来場あり",tp_st_ok:"満席完了",tp_st_nodata:"座席データなし",
    tp_lsec_g:"招待ゲスト一覧",tp_lsec_nv:"スタッフ一覧",
@@ -509,6 +557,28 @@ function $(s){return document.querySelector(s);}
 function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 function tagArr(t){return String(t||"").split(/[,;]+/).map(function(s){return s.trim();}).filter(Boolean);}
 function isNv(g){return tagArr(g.tags).indexOf("pl:nhan-vien")>-1;}
+/* E08-D101 · VIP: dùng đúng luật hai cửa check-in đang chạy — có tag hạng /^V?VIP/i
+   (importer ghi tag `vip`, xem server/crm/vnjb-keys.js hangTags()). Không tag = khách
+   thường. Đo trên prod 10/08: 39 thẻ trong 303 khách đã xếp bàn. */
+function isVipG(g){var a=tagArr(g.tags);for(var i=0;i<a.length;i++)if(/^V?VIP/i.test(a[i]))return true;return false;}
+
+/* Nhật / Việt · CSDL KHÔNG có cột quốc tịch, nên đây là suy ra từ tên — và phải suy
+   cho đúng. Luật của hai cửa (`isKanji(name)||isKanji(name_jp)`) SAI trên dữ liệu thật,
+   đã đo bằng truy vấn chỉ-đọc trên prod 10/08 (303 khách có bàn):
+     · 0 thẻ có chữ Nhật trong `full_name` — tên lưu dạng La-tinh ("Mr. Takebe Tsutomu").
+     · 58 thẻ có chữ Nhật trong `name_jp`, nhưng 2 trong số đó là NGƯỜI VIỆT: name_jp
+       của họ là tên La-tinh kèm chú thích kính ngữ — "Lê Ngọc Tuyền（Tuấn Dũng先生 夫人）"
+       và "Châu Văn Ly氏夫人". Bắt "có chữ Nhật ở bất kỳ đâu" là gọi họ thành người Nhật.
+   Nên xét KÝ TỰ ĐẦU của tên: tên Nhật thật bắt đầu bằng kanji/kana ("河野 あゆみ 様"),
+   chú thích kính ngữ thì nằm ở cuối. Cho 56 Nhật · 238 Việt · 9 chưa rõ.
+   Nhóm «chưa rõ» CỐ Ý hiện ra chứ không nhét vào Việt: trong 9 người đó có 5 người Nhật
+   thật chưa được điền `name_jp` (Kuroe, Satomura, Onuki, Takenaka, Tatsumi) và 2 khách
+   phương Tây. Gọi sai tiếng của khách trước mặt họ là lỗi không cứu được tại chỗ, nên
+   thà nói "chưa rõ" để PG hỏi, hơn là đoán bừa cho tròn số. */
+function firstCh(s){var t=String(s==null?"":s).trim();return t?t.charAt(0):"";}
+function isJa(n){return /[぀-ヿ㐀-䶿一-鿿]/.test(String(n||""));}
+function isJpG(g){return isJa(firstCh(g.name_jp))||isJa(firstCh(g.full_name));}
+function isVnG(g){return !isJpG(g)&&/[ăâđêôơưĂÂĐÊÔƠƯáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/.test(String(g.full_name||""));}
 function cameGala(g){return !!(g.checked_in_gala || (g.checked_in && String(g.session||"").toLowerCase()==="gala"));}
 function initials(name){
   var p=String(name||"").trim().split(/\s+/); if(!p.length||!p[0]) return "?";
@@ -581,20 +651,28 @@ function tableStats(ban, t){
   var st={cap:cap, overflow:overflow,
     tOk:0, tNo:0, tEmpty:0, tOkOv:0, tNoOv:0, hasEmptyOv:false, ovTot:0,
     gTot:0, gOk:0, gNo:0, nvTot:0, nvOk:0, nvNo:0,
+    // VIP / Nhật / Việt đếm trên KHÁCH MỜI (nhân viên đứng riêng ở nvTot) — ba con số
+    // đầu panel nói về khách của bàn, không trộn người phục vụ bàn vào.
+    vipTot:0, vipOk:0, vipNo:0, jpTot:0, vnTot:0, unkTot:0,
     rows:[]}; // rows in ascending seat order — the panel lists them as-is, no re-sort
   for(var s=1;s<=cap+overflow;s++){
     var gs=byKey[seatKey(ban,s)]||[];
     var isOv=s>cap;
     if(!gs.length){ if(isOv) st.hasEmptyOv=true; else st.tEmpty++; continue; }
     gs.forEach(function(g){
-      var ok=cameGala(g), nv=isNv(g);
+      var ok=cameGala(g), nv=isNv(g), vip=!nv&&isVipG(g);
+      var jp=isJpG(g), vn=isVnG(g), unk=!jp&&!vn;
       if(isOv){ st.ovTot++; if(ok) st.tOkOv++; else st.tNoOv++; }
       else{
         if(ok) st.tOk++; else st.tNo++;
         if(nv){ st.nvTot++; if(ok) st.nvOk++; else st.nvNo++; }
-        else  { st.gTot++;  if(ok) st.gOk++;  else st.gNo++;  }
+        else{
+          st.gTot++; if(ok) st.gOk++; else st.gNo++;
+          if(vip){ st.vipTot++; if(ok) st.vipOk++; else st.vipNo++; }
+          if(jp) st.jpTot++; else if(vn) st.vnTot++; else st.unkTot++;
+        }
       }
-      st.rows.push({g:g, ghe:s, ok:ok, nv:nv, ov:isOv, dup:gs.length});
+      st.rows.push({g:g, ghe:s, ok:ok, nv:nv, vip:vip, jp:jp, unk:unk, ov:isOv, dup:gs.length});
     });
   }
   // "perfect" — unchanged formula: every physical seat filled AND everyone, overflow
@@ -842,18 +920,32 @@ function tableLabel(ban){
   return t.label||("VIP"+ban);
 }
 
-function statBox(title, tot, ok, no){
-  return '<div class="tbox"><h3>'+esc(title)+'</h3>'+
-    '<div class="big">'+tot+'<small>'+esc(tsd("tp_unit"))+'</small></div>'+
-    '<div class="sm"><b class="g-ok">'+ok+'</b> '+esc(tsd("b_den"))+
-    ' · <b class="g-no">'+no+'</b> '+esc(tsd("b_chua"))+'</div></div>';
+// Ảnh nhỏ trong dòng danh sách. Chữ cái đầu nằm SAU <img> trong cùng ô, nên ảnh 404
+// bị gỡ là chữ hiện ra ngay — không có ô trống. onerror gắn bằng JS ở bindRowAvatars()
+// chứ không viết trong chuỗi HTML: cả script này trong IIFE nên handler dạng chữ chạy
+// ở scope global sẽ không thấy hàm (bài học D075).
+function rowAvatar(g){
+  var u=g.photo_view_url||g.photo_url||"";
+  return '<span class="rav">'+(u?'<img loading="lazy" decoding="async" src="'+esc(u)+'" alt="">':'')+
+    esc(initials(g.full_name))+'</span>';
+}
+function bindRowAvatars(root){
+  root.querySelectorAll(".rav img").forEach(function(im){
+    im.onerror=function(){ im.remove(); };
+  });
 }
 
 function seatRow(r, ban){
-  return '<button type="button" class="trow" data-id="'+esc(r.g.id)+'"'+
+  return '<button type="button" class="trow'+(r.vip?" is-vip":"")+'" data-id="'+esc(r.g.id)+'"'+
       ' data-ban="'+esc(ban)+'" data-ghe="'+r.ghe+'">'+
     '<span class="sn'+(r.ov?" ov":"")+'">'+r.ghe+'</span>'+
-    '<span class="nm"><span>'+esc(r.g.full_name||"—")+'</span>'+
+    rowAvatar(r.g)+
+    '<span class="nm"><span>'+esc(r.g.full_name||"—")+
+      (r.vip?'<i class="mk vip" title="'+esc(tsd("tp_vip_t"))+'">★ VIP</i>':'')+
+      // Dấu Nhật/chưa-rõ chỉ gắn cho KHÁCH MỜI, đúng phạm vi mấy con số phía trên.
+      // Nhân viên Esuhai phục vụ bàn thì "chưa rõ tiếng nào" là nhiễu, không phải tin.
+      (!r.nv&&r.jp?'<i class="mk jp" title="'+esc(tsd("tp_jp_t"))+'">日</i>':'')+
+      (!r.nv&&r.unk?'<i class="mk unk" title="'+esc(tsd("tp_unk_t"))+'">?</i>':'')+'</span>'+
       (r.g.org?'<i>'+esc(r.g.org)+'</i>':'')+'</span>'+
     (r.dup>1?'<span class="bd warn">'+esc(tsd("tp_dup"))+'</span>':'')+
     (r.ov?'<span class="bd warn">'+esc(tsd("tp_ov"))+'</span>':'')+
@@ -881,9 +973,24 @@ function renderTablePanel(ban){
   stateEl.setAttribute("data-s", sState);
   stateEl.textContent=sTxt;
 
-  $("#ptStats").innerHTML=
-    statBox(tsd("tp_guest"), st.gTot, st.gOk, st.gNo)+
-    statBox(tsd("nv_w"), st.nvTot, st.nvOk, st.nvNo);
+  // Ba số đọc trong một cái nhìn: VIP · còn trống · khách đến/chưa.
+  $("#ptHero").innerHTML=
+    '<div class="h vip"><b>'+st.vipTot+(st.vipTot?'<small>/'+st.gTot+'</small>':'')+'</b>'+
+      '<span>'+esc(tsd("th_vip"))+'</span></div>'+
+    '<div class="h free"><b>'+st.tEmpty+'</b><span>'+esc(tsd("th_free"))+'</span></div>'+
+    '<div class="h came"><b><span class="a">'+st.gOk+'</span>'+
+      '<span class="s">/</span><span class="b">'+st.gNo+'</span></b>'+
+      '<span>'+esc(tsd("th_came"))+'</span></div>';
+
+  // Chi tiết «tính sau»: quốc tịch theo chữ viết của tên, rồi nhân viên phục vụ bàn.
+  var meta='';
+  if(st.jpTot) meta+='<i title="'+esc(tsd("tp_jp_t"))+'">🇯🇵 '+esc(tsd("tp_jp"))+' <b>'+st.jpTot+'</b></i>';
+  if(st.vnTot) meta+='<i title="'+esc(tsd("tp_vn_t"))+'">🇻🇳 '+esc(tsd("tp_vn"))+' <b>'+st.vnTot+'</b></i>';
+  if(st.unkTot) meta+='<i class="unk" title="'+esc(tsd("tp_unk_t"))+'">❓ '+esc(tsd("tp_unk"))+' <b>'+st.unkTot+'</b></i>';
+  if(st.vipNo) meta+='<i title="'+esc(tsd("tp_vipno_t"))+'">★ '+esc(tsd("tp_vipno"))+' <b>'+st.vipNo+'</b></i>';
+  meta+='<i class="nv">'+esc(tsd("nv_w"))+' <b>'+st.nvTot+'</b>'+
+    (st.nvTot?' ('+st.nvOk+'/'+st.nvNo+')':'')+'</i>';
+  $("#ptMeta").innerHTML=meta;
 
   $("#ptCap").innerHTML=
     '<div class="row"><span class="k">'+esc(tsd("tp_cap"))+'</span><span class="v">'+st.cap+'</span></div>'+
@@ -913,6 +1020,7 @@ function renderTablePanel(ban){
       '<div class="tnote">'+esc(tsd("tp_hint"))+'</div>';
   }
   $("#ptList").innerHTML=html;
+  bindRowAvatars($("#ptList"));
 }
 
 function openTablePanel(ban){

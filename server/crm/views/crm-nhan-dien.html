@@ -42,18 +42,37 @@
   .dem.co{background:rgba(67,224,141,.14);border-color:rgba(67,224,141,.4);color:var(--ok)}
   .dem.cho{background:rgba(224,189,119,.14);border-color:var(--line2);color:var(--gold)}
   .canh{color:var(--bad);font-size:var(--fs-micro)}
-  .luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}
+  /* E08-D102 · lưới ảnh là màn chính. minmax nhỏ hơn bản D077 (150→120) vì ở 360px
+     một cột 150 cộng khe cộng padding vẫn vừa, nhưng hai cột thì tràn — mà lưới một
+     cột thì không còn là lưới. 120 cho đúng hai cột ở 360px. */
+  .luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:9px}
   .o{position:relative;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--panel2)}
   .o img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:4/3}
+  button.o{padding:0;cursor:pointer;font:inherit;color:inherit;text-align:left}
+  button.o:hover{border-color:var(--gold)}
+  /* Hai dấu trên ô lưới. Chữ nghĩa của chúng nằm ở dòng chú giải phía trên lưới,
+     không nhét vào `title`: chuỗi trong title không đổi theo ngôn ngữ nếu quên
+     dịch, và AC-7 quét đúng chỗ đó. */
+  .co{position:absolute;top:6px;border-radius:999px;font-size:var(--fs-micro);
+    padding:2px 7px;border:1px solid;backdrop-filter:blur(3px)}
+  .co.cho{right:6px;background:rgba(224,189,119,.82);border-color:var(--gold);color:#231a06}
+  .co.alb{left:6px;background:rgba(67,224,141,.82);border-color:var(--ok);color:#04240f}
+  .chip{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:999px;
+    padding:6px 13px;font:inherit;font-size:var(--fs-small);cursor:pointer}
+  .chip[aria-pressed=true]{background:rgba(224,189,119,.18);border-color:var(--gold);color:var(--gold)}
+  .tab{display:flex;gap:8px;margin-bottom:13px;flex-wrap:wrap}
   /* Khung mặt vẽ CHỒNG lên ảnh gốc. Cố ý không cắt-và-lưu ảnh mặt: mỗi tấm mặt
      lưu ra là một bản sao dữ liệu sinh trắc phải nhớ mà xoá (AC-13). Không tạo
      thì không phải xoá. */
   .khung{position:absolute;border:2px solid var(--gold);border-radius:3px;pointer-events:none}
   .khung.chon{border-color:var(--ok);box-shadow:0 0 0 2px rgba(67,224,141,.35)}
+  .khung.tron{border-color:rgba(255,255,255,.34);border-style:dashed}
   .anhto{position:relative;display:inline-block;max-width:100%}
   .anhto img{max-width:100%;display:block;border-radius:11px}
   .goi{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
-  .diem{font-variant-numeric:tabular-nums;color:var(--gold);font-size:var(--fs-small)}
+  .goi b{word-break:break-word}
+  .diem{font-size:var(--fs-small);color:var(--gold)}
+  .diem.vua{color:var(--muted)}
   .ta{position:relative}
   .ta-ds{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--panel2);
     border:1px solid var(--line2);border-radius:10px;max-height:220px;overflow:auto}
@@ -78,16 +97,61 @@
     <button class="btn sm" id="themeBtn">☽</button>
   </div>
 
-  <!-- HOME = DANH SÁCH KHÁCH (FR-4c). Hàng đợi ảnh là lối phụ, không phải màn gốc:
-       người ta tới đây để làm album cho một khách cụ thể. -->
-  <div id="manKhach">
+  <!-- E08-D102 (CR-159) · Hai lối vào. Ảnh đứng trước: người làm việc ở đây nhìn
+       một khung hình rồi nói "đây là ai", chứ không mở sổ tên rồi đi tìm ảnh.
+       Lối theo khách vẫn còn nguyên cho việc ngược lại — soát album của một người. -->
+  <div class="tab" id="thanhTab">
+    <button class="chip" id="tabAnh" aria-pressed="true" data-i="tab_anh">Ảnh sự kiện</button>
+    <button class="chip" id="tabKhach" aria-pressed="false" data-i="tab_khach">Theo khách</button>
+  </div>
+
+  <!-- ══ HOME: LƯỚI ẢNH ══ -->
+  <div id="manAnh">
     <div class="card">
-      <div class="top" style="margin:0 0 10px">
-        <strong data-i="ds_khach">Danh sách khách</strong>
-        <div class="spacer"></div>
-        <button class="btn sm" id="moHangDoi" data-i="hang_doi">Hàng đợi gợi ý →</button>
+      <div class="tab" style="margin-bottom:10px">
+        <button class="chip loc" data-loc="tat-ca" aria-pressed="true" data-i="loc_tat">Tất cả</button>
+        <button class="chip loc" data-loc="co-goi-y" aria-pressed="false" data-i="loc_goi">Máy có gợi ý chờ duyệt</button>
+        <button class="chip loc" data-loc="chua-album" aria-pressed="false" data-i="loc_chua">Chưa gắn tên ai</button>
       </div>
-      <input type="search" id="timKhach" placeholder="Tìm tên / đơn vị (cả tiếng Nhật)…">
+      <p class="hint" id="anhTom" style="margin:0"></p>
+      <p class="hint" id="chuGiai" style="margin:6px 0 0"></p>
+    </div>
+    <div class="luoi" id="luoiAnh"></div>
+    <div class="top" style="justify-content:center;margin-top:13px">
+      <button class="btn" id="taiThem" data-i="tai_them">Xem thêm ảnh</button>
+    </div>
+  </div>
+
+  <!-- ══ XEM MỘT ẢNH: gắn tên, duyệt gợi ý, khoanh mặt ══ -->
+  <div id="manXem" class="an">
+    <div class="card top" style="margin-bottom:13px">
+      <button class="btn sm" id="veLuoi">← <span data-i="ve_luoi">Lưới ảnh</span></button>
+      <div class="spacer"></div>
+      <span class="hint" id="xemTom"></span>
+    </div>
+    <div class="card" id="theAnh">
+      <div class="anhto" id="anhTo"></div>
+      <p class="hint khoanhHuong an" style="margin:8px 0 0"></p>
+      <!-- Chỗ báo kết quả của trang xem. Tách khỏi `#xemTom` (dòng đếm) vì mỗi lần
+           vẽ lại đều ghi đè `#xemTom`, mà lời báo phải sống qua đúng lượt vẽ ấy. -->
+      <p class="hint" id="baoXem" style="margin:6px 0 0"></p>
+
+      <div id="dsGoi"></div>
+
+      <div class="goi" style="border-bottom:0;padding-top:11px">
+        <span class="hint" data-i="gan_tay">Gắn tên khách vào ảnh này</span>
+        <div class="ta" style="flex:1;min-width:200px">
+          <input type="text" class="ganO" id="ganO"><div class="ta-ds an"></div>
+        </div>
+        <button class="btn sm" id="nutKhoanh" data-i="khoanh">✏️ Khoanh mặt làm ảnh mẫu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB PHỤ: DANH SÁCH KHÁCH (hành vi home cũ CR-136) ══ -->
+  <div id="manKhach" class="an">
+    <div class="card">
+      <input type="search" id="timKhach">
       <p class="hint" id="tomTat" style="margin:9px 0 0"></p>
     </div>
     <div class="card"><table><thead><tr>
@@ -96,29 +160,16 @@
     </tr></thead><tbody id="bangKhach"></tbody></table></div>
   </div>
 
-  <!-- ALBUM CỦA MỘT KHÁCH -->
+  <!-- ══ ALBUM CỦA MỘT KHÁCH ══ -->
   <div id="manAlbum" class="an">
     <div class="card top" style="margin-bottom:13px">
       <button class="btn sm" id="veDs">← <span data-i="ve_ds">Danh sách khách</span></button>
       <strong id="tenKhach"></strong>
-      <div class="spacer"></div>
-      <button class="btn sm" id="loc" data-i="loc_goi">Xem gợi ý của khách này</button>
     </div>
     <div class="card">
       <p class="hint" id="albumTom"></p>
       <div class="luoi" id="album"></div>
     </div>
-  </div>
-
-  <!-- HÀNG ĐỢI GỢI Ý — lối phụ -->
-  <div id="manHangDoi" class="an">
-    <div class="card top" style="margin-bottom:13px">
-      <button class="btn sm" id="veDs2">← <span data-i="ve_ds">Danh sách khách</span></button>
-      <strong data-i="hd_tieu">Hàng đợi gợi ý</strong>
-      <div class="spacer"></div>
-      <span class="hint" id="hdTom"></span>
-    </div>
-    <div id="hangDoi"></div>
   </div>
 </div>
 
@@ -129,46 +180,68 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 
 var T = {
-  vn:{ ve_crm:'Về CRM', tieu_de:'🧑‍🤝‍🧑 Nhận diện ảnh khách', ds_khach:'Danh sách khách',
-    hang_doi:'Hàng đợi gợi ý →', c_ten:'Khách', c_album:'Ảnh trong album', c_cho:'Chờ duyệt',
-    c_mau:'Ảnh mẫu', ve_ds:'Danh sách khách', loc_goi:'Xem gợi ý của khách này',
-    hd_tieu:'Hàng đợi gợi ý',
-    tom:'{n} khách · {a} khách đã có ảnh · {m} khách chưa có ảnh mẫu (máy không đoán được)',
-    album_tom:'{n} ảnh đã xác nhận. Đây là tập PG gửi cho khách.',
-    album_rong:'Chưa có ảnh nào được xác nhận cho khách này.',
-    hd_rong:'Không còn gợi ý nào chờ duyệt.',
-    hd_tom:'{n} ảnh có gợi ý chờ duyệt',
-    xac_nhan:'Xác nhận', tu_choi:'Từ chối', bo_qua:'Bỏ qua',
-    gan_tay:'Gán khách…', gan_ph:'Gõ tên / đơn vị (≥2 ký tự)',
-    lam_mau:'Dùng mặt này làm ảnh mẫu',
+  vn:{ ve_crm:'Về CRM', tieu_de:'🧑‍🤝‍🧑 Nhận diện ảnh khách',
+    tab_anh:'Ảnh sự kiện', tab_khach:'Theo khách',
+    loc_tat:'Tất cả', loc_goi:'Máy có gợi ý chờ duyệt', loc_chua:'Chưa gắn tên ai',
+    anh_tom:'{n} ảnh · đang xem {c}',
+    chu_giai:'Số vàng góc phải = số gợi ý máy đang chờ người duyệt. Dấu xanh góc trái = ảnh đã được gắn tên ít nhất một khách.',
+    anh_rong:'Không có ảnh nào trong mục này.',
+    anh_alt:'Ảnh sự kiện',
+    tai_them:'Xem thêm ảnh', het_anh:'Đã hết ảnh.',
+    ve_luoi:'Lưới ảnh', ve_album:'Album của khách',
+    xem_tom:'{m} khuôn mặt máy tìm thấy · {g} gợi ý chờ · {a} người đã gắn tên',
+    may_goi:'Máy gợi ý — bấm để chốt',
+    da_gan:'Đã gắn tên trong ảnh này',
+    chua_goi:'Máy không có gợi ý nào cho ảnh này. Anh chị nhìn và gắn tên bên dưới.',
+    rat_giong:'rất giống', kha_giong:'khá giống', hoi_giong:'hơi giống',
+    xac_nhan:'Đúng người này', tu_choi:'Không phải', bo_qua:'Để sau',
+    gan_tay:'Gắn tên khách vào ảnh này', gan_ph:'Gõ tên / đơn vị (≥2 ký tự)',
+    da_trong:'Ảnh này đã có tên khách đó rồi.',
+    da_gan_xong:'Đã gắn tên vào ảnh này. Ảnh đã vào album của khách.',
     khoanh:'✏️ Khoanh mặt làm ảnh mẫu', khoanh_thoi:'Thôi khoanh',
     khoanh_huong:'Kéo một khung quanh khuôn mặt, rồi chọn khách trong ô bên dưới.',
     khoanh_nho:'Khung quá nhỏ — kéo rộng hơn quanh khuôn mặt.',
     khoanh_chon:'Khung đã vẽ. Chọn khách để lưu làm ảnh mẫu:',
-    mau_xong:'Đã ghi khung. Lượt chạy batch tới sẽ tính đặc trưng rồi tìm thêm ảnh của khách này.',
+    mau_xong:'Đã ghi khung. Lượt chạy tới sẽ học khuôn mặt này rồi tìm thêm ảnh của khách đó.',
+    c_ten:'Khách', c_album:'Ảnh trong album', c_cho:'Chờ duyệt',
+    c_mau:'Ảnh mẫu', ve_ds:'Danh sách khách', tim_ph:'Tìm tên / đơn vị (cả tiếng Nhật)…',
+    tom:'{n} khách · {a} khách đã có ảnh · {m} khách chưa có ảnh mẫu (máy không đoán được)',
+    album_tom:'{n} ảnh đã xác nhận. Đây là tập PG gửi cho khách.',
+    album_rong:'Chưa có ảnh nào được xác nhận cho khách này.',
     khong_mau:'chưa có ảnh mẫu', co_mau:'có mẫu',
     khong_khop:'Không có khách nào khớp. Ô này chỉ chọn từ danh sách mời, không tạo khách mới.',
-    net:'nét', cang:'cạnh' },
-  jp:{ ve_crm:'CRMへ戻る', tieu_de:'🧑‍🤝‍🧑 ゲスト写真の顔認識', ds_khach:'ゲスト一覧',
-    hang_doi:'候補キュー →', c_ten:'ゲスト', c_album:'アルバムの枚数', c_cho:'承認待ち',
-    c_mau:'参照写真', ve_ds:'ゲスト一覧', loc_goi:'このゲストの候補を見る',
-    hd_tieu:'候補キュー',
-    tom:'{n}名 · 写真あり{a}名 · 参照写真なし{m}名（自動判定できません）',
-    album_tom:'確認済み{n}枚。PGがゲストへ送る一式です。',
-    album_rong:'このゲストの確認済み写真はまだありません。',
-    hd_rong:'承認待ちの候補はありません。',
-    hd_tom:'候補が待機中の写真：{n}枚',
-    xac_nhan:'確認', tu_choi:'却下', bo_qua:'スキップ',
-    gan_tay:'ゲストを指定…', gan_ph:'氏名／所属（2文字以上）',
-    lam_mau:'この顔を参照写真にする',
+    loi_nap:'Không nạp được dữ liệu. Thử tải lại trang.' },
+  jp:{ ve_crm:'CRMへ戻る', tieu_de:'🧑‍🤝‍🧑 ゲスト写真の顔認識',
+    tab_anh:'イベント写真', tab_khach:'ゲスト別',
+    loc_tat:'すべて', loc_goi:'承認待ちの候補あり', loc_chua:'名前未登録',
+    anh_tom:'{n}枚 · 表示中{c}枚',
+    chu_giai:'右上の金色の数字＝承認待ちの候補数。左上の緑の印＝すでにゲスト名が登録された写真。',
+    anh_rong:'この条件に該当する写真はありません。',
+    anh_alt:'イベント写真',
+    tai_them:'写真をもっと見る', het_anh:'これ以上の写真はありません。',
+    ve_luoi:'写真一覧', ve_album:'ゲストのアルバム',
+    xem_tom:'検出された顔{m}件 · 承認待ち{g}件 · 登録済み{a}名',
+    may_goi:'自動候補 — 押して確定',
+    da_gan:'この写真で登録済みのゲスト',
+    chua_goi:'この写真には自動候補がありません。ご覧のうえ、下で名前を登録してください。',
+    rat_giong:'よく似ています', kha_giong:'やや似ています', hoi_giong:'少し似ています',
+    xac_nhan:'この人で正しい', tu_choi:'別人です', bo_qua:'あとで',
+    gan_tay:'この写真にゲスト名を登録', gan_ph:'氏名／所属（2文字以上）',
+    da_trong:'この写真にはすでにそのゲストが登録されています。',
+    da_gan_xong:'この写真にゲスト名を登録しました。ゲストのアルバムに追加されています。',
     khoanh:'✏️ 顔を囲んで参照写真にする', khoanh_thoi:'囲むのをやめる',
     khoanh_huong:'顔のまわりをドラッグして囲み、下の欄でゲストを選んでください。',
     khoanh_nho:'範囲が小さすぎます — 顔を囲むように広げてください。',
     khoanh_chon:'範囲を保存しました。参照写真にするゲストを選んでください：',
-    mau_xong:'範囲を保存しました。次回のバッチで特徴量を計算し、他の写真を探します。',
+    mau_xong:'範囲を保存しました。次回の処理でこの顔を学習し、他の写真を探します。',
+    c_ten:'ゲスト', c_album:'アルバムの枚数', c_cho:'承認待ち',
+    c_mau:'参照写真', ve_ds:'ゲスト一覧', tim_ph:'氏名／所属で検索（日本語も可）…',
+    tom:'{n}名 · 写真あり{a}名 · 参照写真なし{m}名（自動判定できません）',
+    album_tom:'確認済み{n}枚。PGがゲストへ送る一式です。',
+    album_rong:'このゲストの確認済み写真はまだありません。',
     khong_mau:'参照写真なし', co_mau:'参照あり',
     khong_khop:'該当するゲストがいません。ここでは招待者一覧からのみ選べます。',
-    net:'鮮明度', cang:'サイズ' }
+    loi_nap:'データを読み込めませんでした。ページを再読み込みしてください。' }
 };
 var LANG = localStorage.getItem('nd_lang') === 'jp' ? 'jp' : 'vn';
 function tt(k){ return (T[LANG] && T[LANG][k]) || T.vn[k] || k; }
@@ -179,8 +252,16 @@ function setLang(l){
   document.querySelectorAll('[data-i]').forEach(function(el){
     var v = tt(el.getAttribute('data-i')); if (v) el.textContent = v; });
   $('#langBtn').textContent = l === 'jp' ? 'Tiếng Việt' : '日本語';
-  $('#timKhach').placeholder = tt('gan_ph');
-  veKhach(); if (KHACH_DANG) moAlbum(KHACH_DANG); if (!$('#manHangDoi').classList.contains('an')) veHangDoi();
+  $('#timKhach').placeholder = tt('tim_ph');
+  $('#ganO').placeholder = tt('gan_ph');
+  $('#chuGiai').textContent = tt('chu_giai');
+  /* Vẽ lại đúng màn đang mở. Không gọi hết mọi hàm vẽ: màn đang ẩn mà vẫn nạp lại
+     là mỗi lần đổi ngôn ngữ lại bắn ba yêu cầu mạng không ai nhìn. */
+  if (!DA_NAP) return;
+  if (!$('#manAnh').classList.contains('an')) veLuoi();
+  else if (!$('#manXem').classList.contains('an')) moAnh(ANH_DANG);
+  else if (!$('#manKhach').classList.contains('an')) veKhach();
+  else if (!$('#manAlbum').classList.contains('an')) moAlbum(KHACH_DANG);
 }
 function apDungTheme(t){ if (t) document.documentElement.setAttribute('data-theme', t);
   else document.documentElement.removeAttribute('data-theme');
@@ -191,12 +272,164 @@ async function jpost(u,b,m){ var r = await fetch(u,{ method: m||'POST',
   headers:{'content-type':'application/json'}, body: b?JSON.stringify(b):undefined });
   if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
 
+/* N1 (Gate 2 vòng 1) · ĐÓNG chế độ khoanh — trạng thái DOM lẫn trạng thái JS.
+   Vì sao phải gom vào một hàm và gọi ở HAI chỗ: khung đang vẽ nằm bên trong
+   `#anhTo`, mà `#anhTo` bị dựng lại nguyên khối mỗi lần moAnh() chạy. Khung biến
+   mất khỏi màn hình, nhưng `dataset.box` thì không — và ô typeahead phân nhánh
+   dựa trên đúng `dataset.box` ấy. Còn sót nó thì cú chọn tên kế tiếp không GẮN
+   TÊN mà lại GHI MỘT ẢNH MẪU, với khung của tấm trước, dưới tên người đang đăng
+   nhập. Album không tăng, người dùng tưởng đã gắn, còn khớp khách thì bị đầu độc
+   bằng một khuôn mặt không phải của ai cả.
+   Rộng hơn phiếu một nhịp: phiếu đòi reset khi RỜI trang xem, nhưng cùng một tấm
+   cũng rò — vẽ khung xong bấm "Đúng người này" là `#anhTo` dựng lại ngay. Nên
+   trạng thái khoanh đi theo vòng đời của `#anhTo`, không theo vòng đời màn hình. */
+function dongKhoanh(){
+  KHUNG_MOI = null;
+  var the = $('#theAnh'), anh = $('#anhTo');
+  delete the.dataset.box;
+  anh.classList.remove('khoanh');
+  var k = anh.querySelector('.khung.moi'); if (k) k.remove();
+  $('#nutKhoanh').textContent = tt('khoanh');
+  var hg = the.querySelector('.khoanhHuong');
+  hg.classList.add('an'); hg.textContent = '';
+}
+
+function hienMan(id){
+  ['manAnh','manXem','manKhach','manAlbum'].forEach(function(m){
+    document.getElementById(m).classList.toggle('an', m !== id); });
+  /* Rời trang xem thì XOÁ nội dung của nó, không chỉ giấu đi. Hai lý do:
+     ảnh preview cỡ lớn thôi nằm trong bộ nhớ; và chữ đã vẽ bằng ngôn ngữ cũ thôi
+     nằm lại trong DOM — người dùng không thấy, nhưng mọi phép quét chuỗi (AC-7)
+     đều vấp phải nó và không có cách nào phân biệt với lỗi dịch thật. */
+  if (id !== 'manXem'){
+    $('#anhTo').innerHTML = ''; $('#dsGoi').innerHTML = '';
+    $('#xemTom').textContent = ''; $('#ganO').value = '';
+    $('#baoXem').textContent = '';
+    dongKhoanh();
+  }
+  $('#tabAnh').setAttribute('aria-pressed', String(id === 'manAnh' || id === 'manXem'));
+  $('#tabKhach').setAttribute('aria-pressed', String(id === 'manKhach' || id === 'manAlbum'));
+}
+
+/* ══════════ LƯỚI ẢNH (FR-H1) ══════════ */
+var LOC = 'tat-ca', ANH = [], TONG = 0, ANH_DANG = null;
+/* Nhớ lối vào để nút quay lại trả người dùng về đúng chỗ họ vừa rời: mở ảnh từ
+   album của một khách rồi bị đẩy ra lưới 3 479 tấm là mất chỗ đang soát. */
+var TU_DAU = 'luoi';
+/* Chưa nạp lần nào thì setLang không được vẽ lại — nếu không, mỗi lần khởi động
+   trang bắn hai lượt yêu cầu y hệt nhau, một từ setLang một từ dòng gọi cuối file. */
+var DA_NAP = false;
+
+async function veLuoi(noiTiep){
+  var offset = noiTiep ? ANH.length : 0;
+  var j = await jget('/crm/face-match/photos?filter=' + encodeURIComponent(LOC)
+    + '&limit=60&offset=' + offset);
+  ANH = noiTiep ? ANH.concat(j.items || []) : (j.items || []);
+  TONG = j.tong || 0;
+  $('#anhTom').textContent = ANH.length ? fmt('anh_tom', { n: TONG, c: ANH.length }) : tt('anh_rong');
+  $('#luoiAnh').innerHTML = ANH.map(function(a){
+    return '<button class="o" data-anh="' + a.id + '">'
+      + '<img loading="lazy" src="' + a.thumb_url + '" alt="' + esc(tt('anh_alt')) + '">'
+      + (a.so_cho ? '<span class="co cho">' + a.so_cho + '</span>' : '')
+      + (a.so_album ? '<span class="co alb">✓</span>' : '')
+      + '</button>';
+  }).join('');
+  var het = ANH.length >= TONG;
+  $('#taiThem').disabled = het;
+  $('#taiThem').textContent = het ? tt('het_anh') : tt('tai_them');
+  DA_NAP = true;
+}
+
+/* ══════════ XEM MỘT ẢNH (FR-H2 / H3 / H6) ══════════ */
+/* Điểm giống nhau hiện bằng CHỮ chứ không phải số thập phân. Người ngồi duyệt cần
+   biết "có nên tin không", không cần biết 0.512; và FR-H5 cấm chữ kỹ thuật trên
+   giao diện. Ba mốc lấy đúng từ phân bố thật của kho: ≥0,55 là vùng chắc (473/853
+   gợi ý), 0,50–0,55 vùng giữa, dưới đó là sát ngưỡng 0,45. */
+function chuGiong(s){
+  if (s == null) return '';
+  return s >= 0.55 ? tt('rat_giong') : (s >= 0.5 ? tt('kha_giong') : tt('hoi_giong'));
+}
+function tenKh(x){ return (LANG==='jp' && x.name_jp ? x.name_jp : x.full_name) || ''; }
+
+async function moAnh(id, tuDau){
+  if (!id) return;
+  ANH_DANG = id;
+  if (tuDau) TU_DAU = tuDau;
+  hienMan('manXem');
+  /* Đổi ảnh (hoặc vẽ lại chính tấm này) = `#anhTo` bị dựng lại → khung đang vẽ
+     mất theo. Trạng thái khoanh phải chết cùng nó, xem dongKhoanh(). */
+  dongKhoanh();
+  $('#baoXem').textContent = '';
+  $('#veLuoi').querySelector('span').textContent = tt(TU_DAU === 'album' ? 've_album' : 've_luoi');
+  var j = await jget('/crm/face-match/photo/' + id + '/faces');
+  var mat = j.items || [], goi = j.goi_y || [], alb = j.album || [];
+  /* Kích thước lấy từ chính phản hồi, không nhặt lại từ mảng lưới: mở ảnh từ album
+     thì mảng đó không có tấm này. */
+  var W = Number(j.anh && j.anh.width) || 0, H = Number(j.anh && j.anh.height) || 0;
+  $('#xemTom').textContent = fmt('xem_tom', { m: mat.length, g: goi.length, a: alb.length });
+
+  /* Khung vẽ theo TỈ LỆ so với ảnh gốc, không theo pixel: ảnh hiển thị đã co lại,
+     mà toạ độ trong CSDL là của ảnh gốc. */
+  function oKhung(f, lop){
+    if (!f.box_w || !W || !H) return '';
+    return '<i class="khung ' + lop + '" style="left:' + (f.box_x/W*100).toFixed(2) + '%;top:'
+      + (f.box_y/H*100).toFixed(2) + '%;width:' + (f.box_w/W*100).toFixed(2) + '%;height:'
+      + (f.box_h/H*100).toFixed(2) + '%"></i>';
+  }
+  var coGoi = {}; goi.forEach(function(c){ if (c.face_id) coGoi[c.face_id] = 1; });
+  var daXn = {}; alb.forEach(function(c){ if (c.face_id) daXn[c.face_id] = 1; });
+  var khung = mat.map(function(f){
+    return oKhung(f, daXn[f.id] ? 'chon' : (coGoi[f.id] ? '' : 'tron')); }).join('');
+
+  $('#anhTo').innerHTML = '<img src="/crm/event-photos/' + id + '/preview" alt="'
+    + esc(tt('anh_alt')) + '">' + khung;
+  $('#theAnh').setAttribute('data-anh', id);
+  $('#theAnh').setAttribute('data-w', W);
+  $('#theAnh').setAttribute('data-h', H);
+
+  var html = '';
+  if (alb.length){
+    html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('da_gan')) + '</p>';
+    html += alb.map(function(c){
+      return '<div class="goi"><b>' + esc(tenKh(c)) + '</b>'
+        + (c.org ? ' <span class="hint">' + esc(c.org) + '</span>' : '')
+        + '<div class="spacer"></div><span class="dem co">✓</span></div>'; }).join('');
+  }
+  if (goi.length){
+    html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('may_goi')) + '</p>';
+    html += goi.map(function(c){
+      var m = c.score != null && c.score >= 0.55;
+      return '<div class="goi" data-cid="' + c.id + '">'
+        + '<b>' + esc(tenKh(c)) + '</b>'
+        + (c.org ? ' <span class="hint">' + esc(c.org) + '</span>' : '')
+        + '<span class="diem' + (m ? '' : ' vua') + '">' + esc(chuGiong(c.score)) + '</span>'
+        + '<div class="spacer"></div>'
+        + '<button class="btn sm ok" data-do="confirm">' + esc(tt('xac_nhan')) + '</button>'
+        + '<button class="btn sm bad" data-do="reject">' + esc(tt('tu_choi')) + '</button>'
+        + '<button class="btn sm" data-do="skip">' + esc(tt('bo_qua')) + '</button></div>';
+    }).join('');
+  } else {
+    html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('chua_goi')) + '</p>';
+  }
+  $('#dsGoi').innerHTML = html;
+}
+
+/* Sau mỗi cú bấm: vẽ lại chính tấm đang mở. Con số trên ô lưới không phải sửa tay
+   ở đây — nút quay lại luôn gọi veLuoi(), tức hỏi lại máy chủ, nên dấu trên lưới
+   không thể lệch với thứ vừa quyết. */
+async function lamMoiAnhDang(){ await moAnh(ANH_DANG); }
+
+/* ══════════ TAB THEO KHÁCH (FR-H4) ══════════ */
 var KHACH = [], KHACH_DANG = null;
 
 async function napKhach(){
-  var j = await jget('/crm/face-match/guests');
-  KHACH = j.items || [];
-  veKhach();
+  /* Tự nuốt lỗi ở đây vì giờ hàm này được gọi thẳng từ onclick (G1), không còn
+     chỗ nào await nó — ném ra là thành unhandled rejection, im lặng với người dùng. */
+  try {
+    var j = await jget('/crm/face-match/guests');
+    KHACH = j.items || [];
+  } catch (_) { $('#tomTat').textContent = tt('loi_nap'); return; }
+  if (!$('#manKhach').classList.contains('an')) veKhach();
 }
 function veKhach(){
   var q = ($('#timKhach').value || '').trim().toLowerCase();
@@ -209,74 +442,36 @@ function veKhach(){
     a: KHACH.filter(function(g){return g.so_album>0;}).length,
     m: KHACH.filter(function(g){return !g.so_mau;}).length });
   $('#bangKhach').innerHTML = ds.map(function(g){
-    var ten = LANG==='jp' && g.name_jp ? g.name_jp : g.full_name;
+    var ten = tenKh(g);
     var dv  = LANG==='jp' && g.org_jp ? g.org_jp : (g.org||'');
     return '<tr class="kh" data-id="'+g.id+'">'
       + '<td><b>'+esc(ten)+'</b>'+(dv?'<br><span class="hint">'+esc(dv)+'</span>':'')+'</td>'
       + '<td><span class="dem'+(g.so_album?' co':'')+'">'+g.so_album+'</span></td>'
       + '<td>'+(g.so_cho?'<span class="dem cho">'+g.so_cho+'</span>':'—')+'</td>'
       /* Khách không có mẫu thì máy KHÔNG đoán được — nói thẳng thay vì để ô trống,
-         vì đó là lý do album của họ rỗng, không phải vì chưa ai duyệt (AC-6). */
+         vì đó là lý do album của họ rỗng, không phải vì chưa ai duyệt (AC-6 D077). */
       + '<td>'+(g.so_mau ? '<span class="hint">'+g.so_mau+' · '+esc(tt('co_mau'))+'</span>'
                          : '<span class="canh">'+esc(tt('khong_mau'))+'</span>')+'</td></tr>';
   }).join('');
 }
 
 async function moAlbum(id){
+  if (!id) return;
   KHACH_DANG = id;
   var g = KHACH.filter(function(x){ return String(x.id)===String(id); })[0] || {};
-  $('#tenKhach').textContent = (LANG==='jp' && g.name_jp ? g.name_jp : g.full_name) || '';
-  $('#manKhach').classList.add('an'); $('#manHangDoi').classList.add('an');
-  $('#manAlbum').classList.remove('an');
+  $('#tenKhach').textContent = tenKh(g);
+  hienMan('manAlbum');
   var j = await jget('/crm/face-match/album/'+id);
   var it = j.items || [];
   $('#albumTom').textContent = it.length ? fmt('album_tom',{n:it.length}) : tt('album_rong');
+  /* Ô album mở được sang trang xem ảnh: từ album của một khách nhìn thấy tấm sai thì
+     bấm thẳng vào đó mà sửa, không phải quay ra lưới đi tìm lại. */
   $('#album').innerHTML = it.map(function(x){
-    return '<div class="o"><img loading="lazy" src="/crm/event-photos/'+x.event_photo_id+'/thumb" alt="'
-      + esc(x.orig_name)+'"></div>'; }).join('');
+    return '<button class="o" data-anh="'+x.event_photo_id+'"><img loading="lazy" src="/crm/event-photos/'
+      + x.event_photo_id + '/thumb" alt="' + esc(tt('anh_alt')) + '"></button>'; }).join('');
 }
 
-async function veHangDoi(gid){
-  $('#manKhach').classList.add('an'); $('#manAlbum').classList.add('an');
-  $('#manHangDoi').classList.remove('an');
-  var j = await jget('/crm/face-match/queue?limit=10'+(gid?'&guest_id='+gid:''));
-  var it = j.items || [];
-  $('#hdTom').textContent = fmt('hd_tom',{n:it.length});
-  if (!it.length){ $('#hangDoi').innerHTML = '<div class="card"><p class="hint">'+esc(tt('hd_rong'))+'</p></div>'; return; }
-  $('#hangDoi').innerHTML = it.map(function(a){
-    /* Khung mặt vẽ theo TỈ LỆ so với ảnh gốc, không theo pixel: ảnh hiển thị đã
-       co lại, mà toạ độ trong CSDL là của ảnh gốc. */
-    var khung = a.goi_y.filter(function(c){ return c.box_w; }).map(function(c){
-      return '<i class="khung" style="left:'+(c.box_x/a.width*100).toFixed(2)+'%;top:'
-        +(c.box_y/a.height*100).toFixed(2)+'%;width:'+(c.box_w/a.width*100).toFixed(2)+'%;height:'
-        +(c.box_h/a.height*100).toFixed(2)+'%"></i>'; }).join('');
-    var goi = a.goi_y.map(function(c){
-      var ten = LANG==='jp' && c.name_jp ? c.name_jp : c.full_name;
-      return '<div class="goi" data-cid="'+c.id+'">'
-        + '<b>'+esc(ten)+'</b>'+(c.org?' <span class="hint">'+esc(c.org)+'</span>':'')
-        + '<span class="diem">'+(c.score!=null?Number(c.score).toFixed(3):'—')+'</span>'
-        + (c.canh_px?'<span class="hint">'+esc(tt('cang'))+' '+Math.round(c.canh_px)+'px · '
-            +esc(tt('net'))+' '+Number(c.do_net||0).toFixed(3)+'</span>':'')
-        + '<div class="spacer"></div>'
-        + '<button class="btn sm ok" data-do="confirm">'+esc(tt('xac_nhan'))+'</button>'
-        + '<button class="btn sm bad" data-do="reject">'+esc(tt('tu_choi'))+'</button>'
-        + '<button class="btn sm" data-do="skip">'+esc(tt('bo_qua'))+'</button></div>';
-    }).join('');
-    return '<div class="card" data-anh="'+a.event_photo_id+'" data-w="'+a.width+'" data-h="'+a.height+'">'
-      + '<div class="anhto"><img src="/crm/event-photos/'+a.event_photo_id+'/preview" alt="'
-      + esc(a.orig_name)+'">'+khung+'</div>'
-      + '<p class="hint" style="margin:8px 0 4px">'+esc(a.orig_name)+'</p>'
-      + goi
-      + '<div class="goi"><span class="hint">'+esc(tt('gan_tay'))+'</span>'
-      +   '<div class="ta" style="flex:1;min-width:220px"><input type="text" class="ganO" placeholder="'
-      +   esc(tt('gan_ph'))+'"><div class="ta-ds an"></div></div>'
-      +   '<button class="btn sm" data-khoanh="1">'+esc(tt('khoanh'))+'</button></div>'
-      + '<p class="hint khoanhHuong an" style="margin:4px 0 0"></p>'
-      + '</div>';
-  }).join('');
-}
-
-/* FR-10 · khoanh mặt trên ảnh sự kiện → ảnh mẫu.
+/* ══════════ FR-10 · khoanh mặt trên ảnh sự kiện → ảnh mẫu ══════════
    Toạ độ đổi về ẢNH GỐC ngay lúc thả chuột: CSDL lưu theo ảnh gốc, còn trình
    duyệt đang hiện bản đã co. Đổi ở đây một lần, thay vì để mỗi chỗ đọc lại tự
    quy đổi — mỗi lần quy đổi là một lần có thể quên. */
@@ -334,8 +529,7 @@ document.addEventListener('touchstart', function(e){
 document.addEventListener('touchmove', keoKhoanh, { passive: false });
 document.addEventListener('touchend', thaKhoanh);
 
-/* Typeahead FR-4b — dùng ĐÚNG /crm/guests?q= sẵn có, không đẻ API mới, và chỉ
-   chọn từ danh sách mời: gõ tên lạ không tạo khách mới ở đây. */
+/* ══════════ Typeahead FR-4b — dùng ĐÚNG /crm/guests?q= sẵn có ══════════ */
 var henTim = null;
 document.addEventListener('input', function(e){
   if (!e.target.classList.contains('ganO')) return;
@@ -348,8 +542,8 @@ document.addEventListener('input', function(e){
       var j = await jget('/crm/guests?q=' + encodeURIComponent(q) + '&limit=8');
       var it = (j.items || j.rows || []).slice(0, 8);
       ds.innerHTML = it.length ? it.map(function(g){
-        var ten = LANG==='jp' && g.name_jp ? g.name_jp : g.full_name;
-        return '<div data-gid="'+g.id+'">'+esc(ten)+(g.org?' <span class="hint">'+esc(g.org)+'</span>':'')+'</div>';
+        return '<div data-gid="'+g.id+'">'+esc(tenKh(g))
+          +(g.org?' <span class="hint">'+esc(g.org)+'</span>':'')+'</div>';
       }).join('') : '<div class="hint">'+esc(tt('khong_khop'))+'</div>';
       ds.classList.remove('an');
     } catch(_){ ds.classList.add('an'); }
@@ -357,12 +551,27 @@ document.addEventListener('input', function(e){
 });
 
 document.addEventListener('click', async function(e){
-  var tr = e.target.closest && e.target.closest('tr.kh');
-  if (tr){ moAlbum(tr.getAttribute('data-id')); return; }
+  var oAnh = e.target.closest && e.target.closest('button.o[data-anh]');
+  if (oAnh){
+    await moAnh(oAnh.getAttribute('data-anh'),
+      oAnh.closest('#album') ? 'album' : 'luoi');
+    return;
+  }
 
-  var nk = e.target.closest && e.target.closest('button[data-khoanh]');
+  var tr = e.target.closest && e.target.closest('tr.kh');
+  if (tr){ await moAlbum(tr.getAttribute('data-id')); return; }
+
+  var chip = e.target.closest && e.target.closest('.chip.loc');
+  if (chip){
+    LOC = chip.getAttribute('data-loc');
+    document.querySelectorAll('.chip.loc').forEach(function(c){
+      c.setAttribute('aria-pressed', String(c === chip)); });
+    await veLuoi(); return;
+  }
+
+  var nk = e.target.closest && e.target.closest('#nutKhoanh');
   if (nk){
-    var theK = nk.closest('.card'), anh = theK.querySelector('.anhto');
+    var theK = $('#theAnh'), anh = theK.querySelector('.anhto');
     var bat = !anh.classList.contains('khoanh');
     anh.classList.toggle('khoanh', bat);
     nk.textContent = bat ? tt('khoanh_thoi') : tt('khoanh');
@@ -375,44 +584,58 @@ document.addEventListener('click', async function(e){
 
   var g = e.target.closest && e.target.closest('.ta-ds div[data-gid]');
   if (g){
-    var the = g.closest('.card');
+    var the = $('#theAnh');
     /* Cùng một ô typeahead phục vụ hai việc: đang khoanh thì lưu ẢNH MẪU (FR-10),
-       không khoanh thì GÁN ảnh vào album (FR-4b). Spec đòi dùng chung ô này. */
+       không khoanh thì GẮN TÊN vào ảnh (FR-H2). Spec đòi dùng chung ô này. */
     if (the.dataset.box){
-      var kq = await jpost('/crm/face-match/sample', {
+      await jpost('/crm/face-match/sample', {
         event_photo_id: Number(the.getAttribute('data-anh')),
         guest_id: Number(g.getAttribute('data-gid')), box: JSON.parse(the.dataset.box) });
-      the.querySelector('.khoanhHuong').textContent = tt('mau_xong');
-      delete the.dataset.box;
-      var k2 = the.querySelector('.khung.moi'); if (k2) k2.remove();
-      the.querySelector('.anhto').classList.remove('khoanh');
-      the.querySelector('button[data-khoanh]').textContent = tt('khoanh');
-    } else {
-      await jpost('/crm/face-match/assign', { event_photo_id: Number(the.getAttribute('data-anh')),
-        guest_id: Number(g.getAttribute('data-gid')) });
-      await veHangDoi();
+      g.closest('.ta-ds').classList.add('an');
+      $('#ganO').value = '';
+      /* Đóng khoanh qua ĐÚNG một đường (dongKhoanh) rồi mới báo, thay vì tự dọn
+         bốn thứ tại chỗ như bản trước: chính chỗ dọn-tay-thiếu-một-món ấy là lỗi
+         N1 mà Gate 2 chặn. */
+      dongKhoanh();
+      var hg = the.querySelector('.khoanhHuong');
+      hg.textContent = tt('mau_xong'); hg.classList.remove('an');
+      return;
     }
+    var kq = await jpost('/crm/face-match/assign', {
+      event_photo_id: Number(the.getAttribute('data-anh')),
+      guest_id: Number(g.getAttribute('data-gid')) });
     g.closest('.ta-ds').classList.add('an');
-    the.querySelector('.ganO').value = '';
-    await napKhach(); return;
+    $('#ganO').value = '';
+    await lamMoiAnhDang();
+    /* Báo SAU khi vẽ lại, không phải trước. Bản trước ghi câu này vào `#xemTom`
+       rồi mới gọi vẽ lại — mà vẽ lại đặt đúng `#xemTom` thành dòng đếm, nên lời
+       báo sống được đúng một nhịp rồi biến mất trước khi ai kịp đọc. */
+    $('#baoXem').textContent = (kq && kq.da_trong_album) ? tt('da_trong') : tt('da_gan_xong');
+    return;
   }
 
   var b = e.target.closest && e.target.closest('button[data-do]');
   if (b){
     var dong = b.closest('.goi');
     await jpost('/crm/face-match/' + b.getAttribute('data-do'), { id: Number(dong.getAttribute('data-cid')) });
-    dong.remove();
-    await napKhach(); return;
+    await lamMoiAnhDang();
+    return;
   }
 });
 
 $('#veCrm').onclick = function(){ location.href = '/crm'; };
-$('#veDs').onclick = $('#veDs2').onclick = function(){
-  KHACH_DANG = null;
-  $('#manAlbum').classList.add('an'); $('#manHangDoi').classList.add('an');
-  $('#manKhach').classList.remove('an'); napKhach(); };
-$('#moHangDoi').onclick = function(){ veHangDoi(); };
-$('#loc').onclick = function(){ veHangDoi(KHACH_DANG); };
+$('#veLuoi').onclick = function(){
+  if (TU_DAU === 'album' && KHACH_DANG){ moAlbum(KHACH_DANG); return; }
+  hienMan('manAnh'); veLuoi(); };
+/* G1 (Gate 2 vòng 1) · danh sách khách chỉ nạp khi người ta MỞ tab Theo khách.
+   Bản trước gọi napKhach() sau mỗi cú bấm trên lưới và trang xem ảnh, tức mỗi lần
+   duyệt một gợi ý lại kéo về cả 410 khách kèm ba câu đếm con cho từng người — để
+   cập nhật một bảng đang ẩn. Nạp tại chỗ mở tab thì số vẫn luôn mới, vì mở tab là
+   lúc duy nhất bảng ấy được nhìn. */
+$('#veDs').onclick = function(){ KHACH_DANG = null; hienMan('manKhach'); napKhach(); };
+$('#tabAnh').onclick = function(){ TU_DAU = 'luoi'; hienMan('manAnh'); veLuoi(); };
+$('#tabKhach').onclick = function(){ hienMan('manKhach'); napKhach(); };
+$('#taiThem').onclick = function(){ veLuoi(true); };
 $('#timKhach').addEventListener('input', veKhach);
 $('#langBtn').onclick = function(){ setLang(LANG === 'jp' ? 'vn' : 'jp'); };
 $('#themeBtn').onclick = function(){
@@ -421,7 +644,7 @@ $('#themeBtn').onclick = function(){
 apDungTheme(localStorage.getItem('nd_theme') === 'light' ? 'light' : '');
 setLang(LANG);
 jget('/crm/me').then(function(j){ $('#meRole').textContent = (j.role||'') + ' · ' + (j.email||''); }).catch(function(){});
-napKhach().catch(function(e){ $('#tomTat').textContent = 'Không nạp được danh sách khách.'; });
+veLuoi().catch(function(){ $('#anhTom').textContent = tt('loi_nap'); });
 </script>
 </body>
 </html>

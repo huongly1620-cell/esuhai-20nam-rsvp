@@ -140,7 +140,11 @@ a{color:inherit}
 .tbl{position:absolute;border-radius:50%;transform:translate(-50%,-50%);
   background:radial-gradient(circle at 36% 30%,var(--tbl-top),var(--tbl-bot) 78%);
   box-shadow:0 10px 20px rgba(0,0,0,.5),inset 0 2px 5px rgba(255,255,255,.55),inset 0 -7px 15px rgba(0,0,0,.2);
-  border:2px solid rgba(255,255,255,.55)}
+  border:2px solid rgba(255,255,255,.55);cursor:pointer}
+/* E08-D100 · bàn đang mở trong panel: viền xanh cùng màu viền panel, giữ lại
+   khối nổi 3D của đĩa bàn (không thay hẳn box-shadow như .focus-ban). */
+.tbl.picked{box-shadow:0 0 0 3px rgba(46,127,204,.75),0 10px 20px rgba(0,0,0,.5),
+  inset 0 2px 5px rgba(255,255,255,.55),inset 0 -7px 15px rgba(0,0,0,.2)}
 .tbl::after{content:"";position:absolute;inset:-6px;border-radius:inherit;
   border:1.5px solid var(--ring-color,var(--tierA-ring));opacity:.6;pointer-events:none}
 .tbl.perfect{border-color:rgba(255,255,255,.75)}
@@ -240,6 +244,47 @@ a{color:inherit}
 .panel .dupwarn{margin-top:12px;padding:9px 11px;border-radius:9px;background:rgba(255,138,61,.12);
   border:1px solid rgba(255,138,61,.4);color:#ffcba3;font-size:.72rem}
 
+/* ---------- panel mode «table» (E08-D100) ---------- */
+.panel .tstate{display:inline-block;font-size:.72rem;font-weight:800;border-radius:99px;
+  padding:5px 12px;margin:2px 0 12px;border:1px solid transparent}
+.tstate[data-s="has"]{background:rgba(216,184,118,.16);border-color:rgba(216,184,118,.45);color:var(--gold-b)}
+.tstate[data-s="full"]{background:rgba(226,58,46,.14);border-color:rgba(226,58,46,.4);color:#ffb3a8}
+.tstate[data-s="perfect"]{background:rgba(67,224,141,.16);border-color:rgba(67,224,141,.45);color:var(--ok)}
+.tstate[data-s="none"]{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:var(--muted2)}
+.panel .tstats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.panel .tbox{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  border-radius:10px;padding:8px 10px;min-width:0}
+.panel .tbox h3{margin:0 0 4px;font-size:.6rem;font-weight:800;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted)}
+.panel .tbox .big{font-size:1.3rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.panel .tbox .big small{font-size:.56rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted2);margin-left:3px}
+.panel .tbox .sm{font-size:.66rem;color:var(--muted2);margin-top:3px;line-height:1.5}
+.panel .tbox .sm b{font-variant-numeric:tabular-nums}
+.panel .tbox .sm b.g-ok{color:var(--ok)}
+.panel .tbox .sm b.g-no{color:#ff9a8f}
+.panel .tsec{margin:16px 0 2px;font-size:.64rem;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted)}
+.panel .tnote{margin-top:6px;font-size:.7rem;color:var(--muted2);font-style:italic}
+.panel .tlist{display:block}
+.panel .trow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;font:inherit;
+  color:inherit;background:transparent;border:0;border-bottom:1px dashed var(--line);
+  padding:8px 2px;cursor:pointer;border-radius:6px}
+.panel .trow:hover{background:rgba(255,255,255,.06)}
+.panel .trow:active{transform:scale(.995)}
+.panel .trow .sn{flex:0 0 auto;min-width:26px;text-align:center;font-size:.66rem;font-weight:800;
+  border-radius:7px;padding:3px 5px;background:rgba(255,255,255,.07);color:var(--cream);
+  font-variant-numeric:tabular-nums}
+.panel .trow .sn.ov{background:rgba(255,61,106,.18);color:#ffb0c2}
+.panel .trow .nm{flex:1 1 auto;min-width:0;font-size:.79rem;font-weight:700}
+.panel .trow .nm span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel .trow .nm i{display:block;font-style:normal;font-weight:400;font-size:.68rem;color:var(--muted2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel .trow .bd{flex:0 0 auto;font-size:.6rem;font-weight:800;border-radius:99px;padding:2px 7px;white-space:nowrap}
+.panel .trow .bd.ok{background:rgba(67,224,141,.18);color:var(--ok)}
+.panel .trow .bd.no{background:rgba(226,58,46,.18);color:#ff9a8f}
+.panel .trow .bd.warn{background:rgba(255,138,61,.16);color:#ffcba3}
+
 .err{color:#ff9a8f;padding:20px;text-align:center}
 .skel{padding:40px 14px;text-align:center;color:var(--muted)}
 .skel .ring{width:34px;height:34px;border-radius:50%;border:3px solid rgba(216,184,118,.25);
@@ -319,7 +364,7 @@ a{color:inherit}
 <div class="scrim" id="scrim"></div>
 <aside class="panel" id="panel">
   <button class="btn close" type="button" id="pClose" data-i="close">Đóng</button>
-  <div style="margin-top:40px">
+  <div style="margin-top:40px" id="pGuest">
     <div class="avatar" id="pAv" style="background:var(--gold-b)">—</div>
     <h2 id="pName">—</h2>
     <div class="sub" id="pSub"></div>
@@ -333,6 +378,17 @@ a{color:inherit}
       <a class="btn acc" id="pDoor" href="#" data-i="p_door">Mở ở cửa Gala</a>
       <a class="btn only-btl" id="pCrm" href="/crm" target="_blank" rel="noopener" style="display:none" data-i="p_crm">Mở CRM</a>
     </p>
+  </div>
+  <!-- E08-D100 · mode «table»: cùng #panel + #scrim với hồ sơ khách, chỉ đổi khối
+       hiện ra. Nội dung do renderTablePanel() sinh nên đổi ngôn ngữ / poll 25s
+       đều vẽ lại được mà không cần đóng panel. -->
+  <div style="margin-top:40px;display:none" id="pTable">
+    <h2 id="ptName">—</h2>
+    <div class="sub" id="ptSub"></div>
+    <div class="tstate" id="ptState" data-s="none">—</div>
+    <div class="tstats" id="ptStats"></div>
+    <div id="ptCap"></div>
+    <div id="ptList"></div>
   </div>
 </aside>
 
@@ -370,6 +426,13 @@ var TSD={
    h5:" · Bàn CRM 1–34 = VIP1–34 trên Pollux",
    just_ci:" vừa check-in Gala",guest_w:"Khách",b_den:"Đã đến",b_chua:"Chưa đến",nv_w:"Nhân viên",no_w:"Không",
    dup1:"⚠ Ghế này đang có ",dup2:" thẻ khách trùng nhau trong CRM — cần soát lại dữ liệu bàn/ghế",
+   tp_sub:"Chi tiết bàn · Gala",tp_tip:"Bấm để xem chi tiết bàn",tp_guest:"Khách mời",tp_tot:"Tổng xếp",
+   tp_cap:"Sức chứa (ghế thật)",tp_free:"Ghế trống",tp_seated:"Đã xếp",
+   tp_st_free:"Còn trống",tp_st_full:"Đầy ghế · còn chưa đến",tp_st_ok:"Đủ",tp_st_nodata:"Chưa có dữ liệu ghế",
+   tp_lsec_g:"Danh sách khách mời",tp_lsec_nv:"Danh sách nhân viên",
+   tp_none:"Bàn này chưa xếp ai.",tp_nogu:"Không có khách mời nào.",tp_nonv:"Không có nhân viên nào.",
+   tp_hint:"Bấm một dòng để mở hồ sơ khách.",
+   tp_dup:"⚠ Trùng ghế",tp_ov:"⚠ Vượt sức chứa",tp_ov1:"⚠ Có ",tp_ov2:" người mang số ghế vượt sức chứa thật của bàn — cần soát lại table_no/seat_no.",
    upd:"Cập nhật ",rf_ok:"↻ Đã làm mới sơ đồ",rf_err:"Lỗi tải — vẫn hiện dữ liệu cũ",
    offline:"⚠ Mất kết nối mạng — đang chờ mạng để tự làm mới…",only1:"Chỉ bàn ",only2:" — bấm lại chip để hiện tất cả",show_all:"Đã hiện lại tất cả bàn"},
  jp:{ttl:"座席図 · ガラ",pgttl:"座席図 · ガラ Pollux",back:"← ガラ受付",rf:"↻ 更新",zoom:"拡大",
@@ -391,6 +454,13 @@ var TSD={
    h5:" · CRMのテーブル1–34 = Pollux の VIP1–34",
    just_ci:" 様 ガラ受付完了",guest_w:"ゲスト",b_den:"ご来場",b_chua:"未来場",nv_w:"スタッフ",no_w:"なし",
    dup1:"⚠ この席には ",dup2:" 件の重複したゲスト登録があります — テーブル/座席データの確認が必要です",
+   tp_sub:"テーブル詳細 · ガラ",tp_tip:"押すとテーブル詳細",tp_guest:"招待ゲスト",tp_tot:"配席合計",
+   tp_cap:"収容（実席数）",tp_free:"空席",tp_seated:"配席済み",
+   tp_st_free:"空席",tp_st_full:"満席 · 未来場あり",tp_st_ok:"満席完了",tp_st_nodata:"座席データなし",
+   tp_lsec_g:"招待ゲスト一覧",tp_lsec_nv:"スタッフ一覧",
+   tp_none:"このテーブルは未配席です。",tp_nogu:"招待ゲストはいません。",tp_nonv:"スタッフはいません。",
+   tp_hint:"行を押すとゲスト詳細が開きます。",
+   tp_dup:"⚠ 座席重複",tp_ov:"⚠ 収容超過",tp_ov1:"⚠ ",tp_ov2:" 名の座席番号が実際の収容数を超えています — table_no/seat_no の確認が必要です。",
    upd:"更新 ",rf_ok:"↻ 座席図を更新しました",rf_err:"読み込みエラー — 以前のデータを表示中",
    offline:"⚠ ネットワーク未接続 — 接続を待って自動更新します…",only1:"テーブル ",only2:" のみ表示中 — もう一度押すと全表示",show_all:"全テーブルを再表示しました"}};
 /* TÊN `tsd` chứ không phải `t`: trong render() có `var t=tables[ban]` che mất
@@ -421,6 +491,9 @@ var PAD_TOP=46, PAD_BOTTOM=18; // breathing room so front-row labels clear the s
    Hai chỗ cùng khai một giá trị là hai chỗ có thể lệch nhau — sửa `value` trong
    HTML mà quên chỗ này thì bản đồ vẽ một cỡ còn thanh trượt chỉ một cỡ khác. */
 var META=null, G=[], byKey={}, pollBusy=false, sel=null;
+// panelMode: "guest" (hồ sơ khách, mặc định cũ) | "table" (E08-D100). selTable = số bàn
+// đang mở ở mode table — giữ lại để poll 25s và nút đổi ngôn ngữ vẽ lại được panel.
+var panelMode="guest", selTable="";
 var scale=(function(){ var z=document.getElementById("z");
   return (parseInt(z&&z.value,10)||100)/100; })();
 var prevArrived={}; // id -> bool, to detect fresh check-ins between polls
@@ -491,6 +564,40 @@ function maxSeatKnown(ban){
   return m||0;
 }
 
+// ONE place counts a table, so the popup can never disagree with the map: the
+// "Trống N" pill, the green `perfect` ring and the panel all read this object.
+// Physical seats 1..cap carry the group stats; overflow seats (a CRM seat_no past
+// the real chair count) are counted apart in ovTot and only ever listed, flagged —
+// folding them into cap-based stats is what would make "trống + xếp = sức chứa" lie.
+function tableStats(ban, t){
+  var seatPos=(t&&t.seats)||[];
+  var cap=seatPos.length;
+  var overflow=Math.max(0, maxSeatKnown(ban)-cap);
+  var st={cap:cap, overflow:overflow,
+    tOk:0, tNo:0, tEmpty:0, tOkOv:0, tNoOv:0, hasEmptyOv:false, ovTot:0,
+    gTot:0, gOk:0, gNo:0, nvTot:0, nvOk:0, nvNo:0,
+    rows:[]}; // rows in ascending seat order — the panel lists them as-is, no re-sort
+  for(var s=1;s<=cap+overflow;s++){
+    var gs=byKey[seatKey(ban,s)]||[];
+    var isOv=s>cap;
+    if(!gs.length){ if(isOv) st.hasEmptyOv=true; else st.tEmpty++; continue; }
+    gs.forEach(function(g){
+      var ok=cameGala(g), nv=isNv(g);
+      if(isOv){ st.ovTot++; if(ok) st.tOkOv++; else st.tNoOv++; }
+      else{
+        if(ok) st.tOk++; else st.tNo++;
+        if(nv){ st.nvTot++; if(ok) st.nvOk++; else st.nvNo++; }
+        else  { st.gTot++;  if(ok) st.gOk++;  else st.gNo++;  }
+      }
+      st.rows.push({g:g, ghe:s, ok:ok, nv:nv, ov:isOv, dup:gs.length});
+    });
+  }
+  // "perfect" — unchanged formula: every physical seat filled AND everyone, overflow
+  // guests included, has actually arrived.
+  st.perfect = cap>0 && st.tNo===0 && st.tEmpty===0 && st.tNoOv===0 && !st.hasEmptyOv;
+  return st;
+}
+
 function toast(msg){
   var w=$("#toastWrap");
   var el=document.createElement("div");
@@ -506,7 +613,9 @@ function matchesSearch(g, ban){
   return hay.indexOf(qText)>-1;
 }
 
-window.__sodoRender=function(){return render();};
+// setLang gọi hàm này: vẽ lại sơ đồ VÀ panel bàn đang mở (chuỗi trong panel bàn do JS
+// sinh, không phải [data-i], nên không vẽ lại là panel đứng ở tiếng cũ).
+window.__sodoRender=function(){ render(); refreshTablePanel(); };
 function render(){
   var root=$("#seats"); root.innerHTML="";
   var tables=(META&&META.tables)||{};
@@ -524,34 +633,16 @@ function render(){
     var ty=t.y+PAD_TOP; // shifted center — PAD_TOP just adds canvas margin, never touches raw measured data
     var seatRingR=r; // how far the real chairs actually extend from center — for label/aura clearance
     seatPos.forEach(function(p){ var dd=Math.hypot(p[0]-t.x,p[1]-t.y); if(dd>seatRingR) seatRingR=dd; });
-    var knownMax=maxSeatKnown(ban);
-    var overflow=Math.max(0, knownMax-cap); // CRM has seat_no beyond real chair count — flag, don't hide
 
-    // Stats within REAL physical capacity only — this is what the aura donut ring
-    // (drawn at the physical chair radius) must use, so its percentage can never
-    // exceed 100% and desync from what's actually drawn.
-    var tOk=0,tNo=0,tEmpty=0;
-    for(var s=1;s<=cap;s++){
-      var guests=byKey[seatKey(ban,s)]||[];
-      if(!guests.length){ tEmpty++; continue; }
-      guests.forEach(function(g){ if(cameGala(g)) tOk++; else tNo++; });
-    }
-    var tCap=cap;
-    // Overflow guests (CRM seat_no beyond the real chair count) are REAL people who
-    // ARE drawn on the map with their own flagged seat icon — counting them only in
-    // `nSeat` (the footer hint) but never in the "Đã đến/Chưa đến" KPI totals would
-    // silently undercount arrivals by however many overflow guests exist. Tally them
-    // separately (tOkOv/tNoOv) and fold into the GLOBAL totals below, but keep them
-    // OUT of tOk/tNo/tCap so the per-table aura ring stays a clean 0–100% of real seats.
-    var tOkOv=0,tNoOv=0,hasEmptyOv=false;
-    for(var so=cap+1; so<=cap+overflow; so++){
-      var gso=byKey[seatKey(ban,so)]||[];
-      if(!gso.length){ hasEmptyOv=true; continue; }
-      gso.forEach(function(g){ if(cameGala(g)) tOkOv++; else tNoOv++; });
-    }
-    // "perfect" = every physical seat filled AND everyone incl. any overflow guest
-    // has actually arrived — the strongest, most honest "this table is fully done" signal.
-    var perfect = tCap>0 && tNo===0 && tEmpty===0 && tNoOv===0 && !hasEmptyOv;
+    // Stats within REAL physical capacity only (tOk/tNo/tCap) — this is what the aura
+    // donut ring (drawn at the physical chair radius) must use, so its percentage can
+    // never exceed 100% and desync from what's actually drawn. Overflow guests are REAL
+    // people, drawn with their own flagged seat icon, so their arrivals (tOkOv/tNoOv)
+    // still fold into the GLOBAL KPI totals below — just never into the per-table ring.
+    var st=tableStats(ban, t);
+    var overflow=st.overflow; // CRM has seat_no beyond real chair count — flag, don't hide
+    var tOk=st.tOk, tNo=st.tNo, tEmpty=st.tEmpty, tOkOv=st.tOkOv, tNoOv=st.tNoOv;
+    var tCap=st.cap, perfect=st.perfect;
     var tableMatches=false;
     if(hasSearch){
       if(String(ban).toLowerCase().indexOf(qText)>-1 || String(t.label||"").toLowerCase().indexOf(qText)>-1) tableMatches=true;
@@ -577,7 +668,14 @@ function render(){
     tbl.style.width=tblD+"px"; tbl.style.height=tblD+"px";
     tbl.style.left=t.x+"px"; tbl.style.top=ty+"px";
     tbl.style.setProperty("--ring-color", t.vip==="yellow" ? "var(--tierB-ring)" : "var(--tierA-ring)");
+    // E08-D100 · đĩa bàn giờ là một nút thật: bấm → panel chi tiết bàn. `.tbl-lab` phía
+    // trên vẫn pointer-events:none nên bấm vào giữa nhãn cũng rơi xuống đúng đĩa này.
+    tbl.setAttribute("data-ban", ban);
+    tbl.setAttribute("role","button");
+    tbl.setAttribute("tabindex","0");
+    tbl.title=tsd("tp_tip")+" — "+(t.label||("VIP"+ban));
     if(perfect) tbl.classList.add("perfect");
+    if(panelMode==="table" && String(selTable)===String(ban)) tbl.classList.add("picked");
     // onlyFree: bàn không còn ghế trống → mờ cả đĩa bàn (trước chỉ mờ nhãn/aura,
     // đĩa vẫn sáng nên nhìn như filter không ăn).
     var tableNoFree = onlyFree && tEmpty===0 && tCap>0;
@@ -728,7 +826,105 @@ function render(){
   }
 }
 
+function setPanelMode(m){
+  panelMode=m;
+  $("#pGuest").style.display = m==="guest" ? "" : "none";
+  $("#pTable").style.display = m==="table" ? "" : "none";
+}
+
+function tableLabel(ban){
+  var t=((META&&META.tables)||{})[ban]||{};
+  return t.label||("VIP"+ban);
+}
+
+function statBox(title, tot, ok, no){
+  return '<div class="tbox"><h3>'+esc(title)+'</h3>'+
+    '<div class="big">'+tot+'<small>'+esc(tsd("tp_tot"))+'</small></div>'+
+    '<div class="sm"><b class="g-ok">'+ok+'</b> '+esc(tsd("b_den"))+
+    ' · <b class="g-no">'+no+'</b> '+esc(tsd("b_chua"))+'</div></div>';
+}
+
+function seatRow(r, ban){
+  return '<button type="button" class="trow" data-id="'+esc(r.g.id)+'"'+
+      ' data-ban="'+esc(ban)+'" data-ghe="'+r.ghe+'">'+
+    '<span class="sn'+(r.ov?" ov":"")+'">'+r.ghe+'</span>'+
+    '<span class="nm"><span>'+esc(r.g.full_name||"—")+'</span>'+
+      (r.g.org?'<i>'+esc(r.g.org)+'</i>':'')+'</span>'+
+    (r.dup>1?'<span class="bd warn">'+esc(tsd("tp_dup"))+'</span>':'')+
+    (r.ov?'<span class="bd warn">'+esc(tsd("tp_ov"))+'</span>':'')+
+    '<span class="bd '+(r.ok?"ok":"no")+'">'+esc(r.ok?tsd("b_den"):tsd("b_chua"))+'</span>'+
+  '</button>';
+}
+
+// Vẽ lại nội dung panel bàn từ dữ liệu hiện có. Tách khỏi openTablePanel để poll 25s
+// và setLang gọi lại được mà không phải đóng/mở panel.
+function renderTablePanel(ban){
+  var t=((META&&META.tables)||{})[ban];
+  if(!t) return;
+  var st=tableStats(ban, t);
+  var seated=st.tOk+st.tNo; // người đã xếp trong ghế thật (dup đếm từng người)
+
+  $("#ptName").textContent=tableLabel(ban);
+  $("#ptSub").textContent=tsd("tp_sub");
+
+  // Một dòng trạng thái, cùng ngữ nghĩa với viên "Trống N / ✓ Đủ khách" trên sơ đồ.
+  var sState = st.cap<1 ? "none" : (st.tEmpty>0 ? "has" : (st.perfect ? "perfect" : "full"));
+  var sTxt = st.cap<1 ? tsd("tp_st_nodata")
+    : st.tEmpty>0 ? (tsd("tp_st_free")+" "+st.tEmpty)
+    : st.perfect ? tsd("tp_st_ok") : tsd("tp_st_full");
+  var stateEl=$("#ptState");
+  stateEl.setAttribute("data-s", sState);
+  stateEl.textContent=sTxt;
+
+  $("#ptStats").innerHTML=
+    statBox(tsd("tp_guest"), st.gTot, st.gOk, st.gNo)+
+    statBox(tsd("nv_w"), st.nvTot, st.nvOk, st.nvNo);
+
+  $("#ptCap").innerHTML=
+    '<div class="row"><span class="k">'+esc(tsd("tp_cap"))+'</span><span class="v">'+st.cap+'</span></div>'+
+    '<div class="row"><span class="k">'+esc(tsd("tp_free"))+'</span><span class="v">'+st.tEmpty+'</span></div>'+
+    '<div class="row"><span class="k">'+esc(tsd("tp_seated"))+'</span><span class="v">'+seated+'</span></div>'+
+    (st.ovTot?'<div class="dupwarn" style="display:block">'+esc(tsd("tp_ov1")+st.ovTot+tsd("tp_ov2"))+'</div>':'');
+
+  // Khách mời trước, nhân viên sau; trong mỗi nhóm giữ thứ tự ghế tăng dần của st.rows.
+  var gu=st.rows.filter(function(r){return !r.nv;});
+  var nv=st.rows.filter(function(r){return r.nv;});
+  var html='';
+  if(!st.rows.length){
+    html='<div class="tnote">'+esc(tsd("tp_none"))+'</div>';
+  }else{
+    html+='<div class="tsec">'+esc(tsd("tp_lsec_g"))+' · '+gu.length+'</div>'+
+      (gu.length?'<div class="tlist">'+gu.map(function(r){return seatRow(r,ban);}).join("")+'</div>'
+                :'<div class="tnote">'+esc(tsd("tp_nogu"))+'</div>')+
+      '<div class="tsec">'+esc(tsd("tp_lsec_nv"))+' · '+nv.length+'</div>'+
+      (nv.length?'<div class="tlist">'+nv.map(function(r){return seatRow(r,ban);}).join("")+'</div>'
+                :'<div class="tnote">'+esc(tsd("tp_nonv"))+'</div>')+
+      '<div class="tnote">'+esc(tsd("tp_hint"))+'</div>';
+  }
+  $("#ptList").innerHTML=html;
+}
+
+function openTablePanel(ban){
+  if(!((META&&META.tables)||{})[ban]) return;
+  sel=null; // panel bàn không ghim ghế nào — bỏ vòng sáng trắng của khách trước đó
+  selTable=String(ban);
+  setPanelMode("table");
+  renderTablePanel(selTable);
+  $("#panel").scrollTop=0;
+  $("#panel").classList.add("show");
+  $("#scrim").classList.add("show");
+  render();
+}
+
+// Panel bàn đang mở thì mọi lần dữ liệu/ngôn ngữ đổi phải vẽ lại nó, nếu không PG
+// đọc số đã cũ 25 giây mà không có dấu hiệu gì.
+function refreshTablePanel(){
+  if(panelMode==="table" && selTable) renderTablePanel(selTable);
+}
+
 function openPanel(g, ban, ghe){
+  setPanelMode("guest");
+  selTable="";
   sel={ban:String(ban), ghe:String(ghe), id:String(g.id)};
   var ok=cameGala(g), nv=isNv(g);
   var av=$("#pAv"), ini=initials(g.full_name), photoUrl=g.photo_view_url||g.photo_url||"";
@@ -774,7 +970,7 @@ function openPanel(g, ban, ghe){
 function closePanel(){
   $("#panel").classList.remove("show");
   $("#scrim").classList.remove("show");
-  sel=null; render();
+  sel=null; selTable=""; panelMode="guest"; render();
 }
 
 function focusTable(ban){
@@ -821,6 +1017,7 @@ async function loadAll(manual){
     indexGuests(j.rows||[]);
     applyZoom();
     render();
+    refreshTablePanel();
     $("#upd").textContent=tsd("upd")+new Date().toLocaleTimeString(LANG==="jp"?"ja-JP":"vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
     $("#banOff").className="banner warn";
     if(manual) toast(tsd("rf_ok"));
@@ -834,13 +1031,43 @@ async function loadAll(manual){
   }finally{ pollBusy=false; }
 }
 
+// Bấm ghế = hồ sơ khách (như cũ, không đụng D075). Bấm đĩa bàn = panel chi tiết bàn.
+// `pd` chặn cái bẫy: chuột nhấn xuống rồi kéo ngang qua bản đồ vẫn sinh `click` trên
+// chính đĩa bàn đó khi nhả — tức là kéo bản đồ tự mở popup. Quá 8px thì không phải bấm.
+var pd=null;
+$("#seats").addEventListener("pointerdown", function(e){ pd={x:e.clientX,y:e.clientY}; });
 $("#seats").addEventListener("click", function(e){
-  var lab=e.target.closest(".tbl-lab"); // clicking label not interactive besides highlight
-  var b=e.target.closest(".seat"); if(!b||b.classList.contains("empty")) return;
-  var id=b.getAttribute("data-id");
+  var b=e.target.closest(".seat");
+  if(b){
+    if(b.classList.contains("empty")) return; // ghế trống: không bịa khách
+    var id=b.getAttribute("data-id");
+    var g=G.filter(function(x){return String(x.id)===String(id);})[0];
+    if(!g) return;
+    openPanel(g, b.getAttribute("data-ban"), b.getAttribute("data-ghe"));
+    return;
+  }
+  // `.tbl-lab` đang pointer-events:none nên thường không tới đây — vẫn bắt để nếu sau
+  // này bật lại pointer-events thì nhãn bàn cũng mở đúng panel, không thành lỗ đen.
+  var tb=e.target.closest(".tbl")||e.target.closest(".tbl-lab");
+  if(!tb) return;
+  if(pd && Math.hypot(e.clientX-pd.x, e.clientY-pd.y)>8) return; // đó là cú kéo, không phải bấm
+  var ban=tb.getAttribute("data-ban");
+  if(ban) openTablePanel(ban);
+});
+// Đĩa bàn là div nên không tự nhận Enter/Space như <button> ghế — nối tay.
+$("#seats").addEventListener("keydown", function(e){
+  if(e.key!=="Enter" && e.key!==" ") return;
+  var tb=e.target.closest && e.target.closest(".tbl"); if(!tb) return;
+  e.preventDefault();
+  var ban=tb.getAttribute("data-ban");
+  if(ban) openTablePanel(ban);
+});
+$("#ptList").addEventListener("click", function(e){
+  var r=e.target.closest(".trow"); if(!r) return;
+  var id=r.getAttribute("data-id");
   var g=G.filter(function(x){return String(x.id)===String(id);})[0];
   if(!g) return;
-  openPanel(g, b.getAttribute("data-ban"), b.getAttribute("data-ghe"));
+  openPanel(g, r.getAttribute("data-ban"), r.getAttribute("data-ghe"));
 });
 $("#pClose").addEventListener("click", closePanel);
 $("#scrim").addEventListener("click", closePanel);
@@ -880,7 +1107,9 @@ $("#fabTop").addEventListener("click", function(){ $("#wrap").scrollTo({top:0,le
 (function(){
   var wrap=$("#wrap"); var dragging=false, sx=0, sy=0, sl=0, st=0;
   wrap.addEventListener("pointerdown", function(e){
-    if(e.target.closest(".seat")||e.target.closest(".tbl-lab")) return;
+    // `.tbl` cũng được miễn như `.seat`: đĩa bàn nay là nút, drag bắt đầu ngay trên nó
+    // sẽ nuốt cú bấm. Trên cảm ứng bản đồ vẫn kéo được bằng scroll gốc (touch-action).
+    if(e.target.closest(".seat")||e.target.closest(".tbl-lab")||e.target.closest(".tbl")) return;
     dragging=true; wrap.classList.add("grabbing");
     sx=e.clientX; sy=e.clientY; sl=wrap.scrollLeft; st=wrap.scrollTop;
     wrap.setPointerCapture(e.pointerId);

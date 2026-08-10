@@ -80,6 +80,33 @@ const veBytes = v => { const b = Buffer.alloc(v.length * 4);
 const tuBytes = b => { const v = new Array(b.length / 4);
   for (let i = 0; i < v.length; i++) v[i] = b.readFloatLE(i * 4); return v; };
 
+/* Q1 · THANG TOẠ ĐỘ — một chỗ duy nhất quy đổi, và nói rõ vì sao.
+   `crm_event_photos.width/height` là của bản WEB 2048 (do trang nạp ghi lên).
+   Batch lại đọc `preview_key` = bản 1024 cho nhẹ, nên mọi toạ độ engine trả về
+   nằm trong thang 1024. Giao diện chia cho `width` (2048) ⇒ khung vẽ đúng một
+   nửa vị trí và một nửa kích thước, mà KHÔNG có lỗi nào báo: một màn duyệt trông
+   vẫn bình thường trong khi ô vàng nằm trên mặt người khác.
+   `width/height` đã là hợp đồng công khai với UI, nên thang chuẩn là bản 2048 và
+   batch quy về đó ngay khi rời engine — không để mỗi chỗ đọc tự đoán. */
+function heSoThang(banGhi, buffer){
+  const kx = (banGhi.width  && buffer.w) ? banGhi.width  / buffer.w : 1;
+  const ky = (banGhi.height && buffer.h) ? banGhi.height / buffer.h : 1;
+  return { kx, ky };
+}
+function quyThang(m, k, khung){
+  let x = m.x * k.kx, y = m.y * k.ky, w = m.w * k.kx, h = m.h * k.ky;
+  /* Kẹp vào trong mép ảnh. Phép lồng khung 640 làm tròn nên khung có thể thò ra
+     vài pixel; giao diện vẽ theo % nên một khung tràn mép sẽ lệch khỏi ô ảnh, và
+     canh_px sẽ tính cả phần không tồn tại. */
+  if (khung && khung.w && khung.h){
+    x = Math.max(0, Math.min(x, khung.w));
+    y = Math.max(0, Math.min(y, khung.h));
+    w = Math.max(1, Math.min(w, khung.w - x));
+    h = Math.max(1, Math.min(h, khung.h - y));
+  }
+  return { x, y, w, h, diem: m.diem, moc: m.moc.map(p => [p[0] * k.kx, p[1] * k.ky]) };
+}
+
 function batBuoc(){
   /* AC-4 · thiếu model thì DỪNG, không tự tải. Batch tự tải nghĩa là "0 egress
      lúc chạy" không còn kiểm được, và một lần chạy có thể lặng lẽ kéo về file
@@ -143,7 +170,13 @@ async function docMau(){
 /* Mẫu BTL khoanh tay (FR-10) chỉ có khung, chưa có vector — trang web không tính
    được vì engine không nằm trong esuhai-web. Batch tính nốt ở đây. */
 async function tinhMauKhoanhTay(phien, log){
-  const r = (await db().query(`SELECT s.id, s.event_photo_id, s.box_x, s.box_y, s.box_w, s.box_h, s.moc,
+  /* Q2 · guest_id PHẢI có mặt. Thiếu nó thì `String(x.guest_id)` ra chuỗi
+     "undefined", Postgres ném 22P02 và cả lượt chạy chết — mà nhánh --khop-lai
+     lại đi qua docMau() (có guest_id) nên chính cái cờ đó che mất lỗi ở đường
+     chạy mặc định. */
+  const r = (await db().query(`SELECT s.id, s.guest_id, s.event_photo_id,
+      s.box_x, s.box_y, s.box_w, s.box_h, s.moc,
+      e.width AS anh_w, e.height AS anh_h,
       coalesce(e.preview_key, e.object_key) k
     FROM crm_face_samples s JOIN crm_event_photos e ON e.id = s.event_photo_id
     WHERE s.deleted_at IS NULL AND s.vec IS NULL AND s.nguon = 'cat-tay'`)).rows;
@@ -157,12 +190,20 @@ async function tinhMauKhoanhTay(phien, log){
          khung đã khoanh để lấy mốc — căn bằng mốc mới cho vector dùng được. */
       let moc = x.moc;
       if (!moc){
-        const mat = await E.phatHien(phien, buf, { nguongDiem: 0.3 });
-        const trong = mat.filter(m => m.x >= x.box_x - 8 && m.y >= x.box_y - 8
-          && m.x + m.w <= x.box_x + x.box_w + 8 && m.y + m.h <= x.box_y + x.box_h + 8);
+        /* Khung do BTL kéo nằm trong thang 2048 (UI quy theo width/height của bản
+           ghi). Mặt dò được nằm trong thang của buffer đang đọc. So thẳng hai
+           thang khác nhau thì KHÔNG mặt nào lọt vào khung — và hỏng im lặng: mẫu
+           nằm lại ở trạng thái "chờ tính" đúng như thiết kế, không ai biết. */
+        const k = heSoThang({ width: x.anh_w, height: x.anh_h }, g);
+        const mat = (await E.phatHien(phien, buf, { nguongDiem: 0.3 }))
+          .map(m => quyThang(m, k, { w: x.anh_w, h: x.anh_h }));
+        const noi = 12;
+        const trong = mat.filter(m => m.x >= x.box_x - noi && m.y >= x.box_y - noi
+          && m.x + m.w <= x.box_x + x.box_w + noi && m.y + m.h <= x.box_y + x.box_h + noi);
         if (!trong.length) continue;                 // không thấy mặt trong khung: để nguyên, báo sau
         trong.sort((a, b) => (b.w * b.h) - (a.w * a.h));
-        moc = trong[0].moc;
+        /* Căn mặt cần mốc trong thang BUFFER, nên đổi ngược lại. */
+        moc = trong[0].moc.map(p => [p[0] / k.kx, p[1] / k.ky]);
       }
       const vec = await E.nhung(phien, E.catCan(g.raw, g.w, g.h, moc));
       if (GHI) await db().query(`UPDATE crm_face_samples SET vec = $1, moc = $2 WHERE id = $3`,
@@ -217,6 +258,17 @@ async function khopMauMoiVoiMatCu(mauMoi, log){
   log((GHI ? '── GHI THẬT ──' : '── THỬ (không ghi gì) ──') + '  đợt ' + runId
     + '  ngưỡng ' + NGUONG + '  top ' + TOP);
 
+  /* Dọn hạn TRƯỚC mỗi lượt ghi. Đặt ở đây vì đây là chỗ chắc chắn được chạy —
+     một lệnh dọn riêng mà không ai nhớ gọi thì cũng chỉ là lời hứa lần hai. */
+  if (GHI){
+    const r = await db().query(`UPDATE crm_event_faces SET vec = NULL, vec_xoa_luc = now()
+      WHERE vec IS NOT NULL AND het_han_luc <= now()`);
+    const rm = await db().query(`UPDATE crm_face_samples SET vec = NULL, vec_xoa_luc = now()
+      WHERE vec IS NOT NULL AND nguon = 'cat-tay' AND created_at <= now() - interval '7 days'`);
+    if (r.rowCount || rm.rowCount)
+      log('  dọn hạn: xoá vector của ' + r.rowCount + ' mặt · ' + rm.rowCount + ' mẫu cắt tay');
+  }
+
   const phien = await E.moPhien();
   let mauVuaTinh = [];
   if (GHI) mauVuaTinh = await tinhMauKhoanhTay(phien, log);
@@ -230,7 +282,7 @@ async function khopMauMoiVoiMatCu(mauMoi, log){
   log('  mẫu dùng để so: ' + mau.length + ' vector · ' + new Set(mau.map(m => m.guest)).size + ' khách');
   if (!mau.length) throw new Error('không có mẫu nào dùng được — kiểm lại cửa ảnh mẫu');
 
-  const anh = (await db().query(`SELECT id, orig_name, coalesce(preview_key, object_key) k
+  const anh = (await db().query(`SELECT id, orig_name, width, height, coalesce(preview_key, object_key) k
     FROM crm_event_photos WHERE deleted_at IS NULL
       ${GHI ? `AND NOT EXISTS (SELECT 1 FROM crm_event_faces f
                WHERE f.event_photo_id = crm_event_photos.id AND f.deleted_at IS NULL)` : ''}
@@ -243,13 +295,18 @@ async function khopMauMoiVoiMatCu(mauMoi, log){
   for (const a of anh){
     try {
       const buf = await layObj(a.k);
-      const mat = await E.phatHien(phien, buf, { nguongDiem: 0.6 });
-      if (!mat.length){ khongMat++; continue; }
+      const matThuc = await E.phatHien(phien, buf, { nguongDiem: 0.6 });
+      if (!matThuc.length){ khongMat++; continue; }
       const g = await E.anhGoc(buf);
-      for (const m of mat){
+      /* Cắt mặt vẫn dùng toạ độ của CHÍNH buffer đang cầm; chỉ những gì GHI RA
+         hoặc so với dữ liệu bên ngoài mới quy về thang 2048. */
+      const k = heSoThang(a, g);
+      const mat = matThuc.map(m => ({ goc: m, ghi: quyThang(m, k, { w: a.width, h: a.height }) }));
+      for (const mm of mat){
+        const m = mm.goc, mGhi = mm.ghi;
         const crop = E.catCan(g.raw, g.w, g.h, m.moc);
         const vec = await E.nhung(phien, crop);
-        const canh = Math.max(m.w, m.h), net = E.doNet(crop);
+        const canh = Math.max(mGhi.w, mGhi.h), net = E.doNet(crop);
         phanBo.push([canh, net]);
         soMat++;
         let faceId = null;
@@ -257,7 +314,8 @@ async function khopMauMoiVoiMatCu(mauMoi, log){
           faceId = (await db().query(`INSERT INTO crm_event_faces
             (event_photo_id,box_x,box_y,box_w,box_h,canh_px,do_net,diem_do,moc,vec,run_id)
             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
-            [a.id, m.x, m.y, m.w, m.h, canh, net, m.diem, JSON.stringify(m.moc), veBytes(vec), runId])).rows[0].id;
+            [a.id, mGhi.x, mGhi.y, mGhi.w, mGhi.h, canh, net, mGhi.diem,
+             JSON.stringify(mGhi.moc), veBytes(vec), runId])).rows[0].id;
         }
         /* Một khách chỉ giữ điểm CAO NHẤT trong số các mẫu của họ: nhiều mẫu cùng
            người không được biến thành nhiều gợi ý trùng nhau. */

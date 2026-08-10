@@ -35,8 +35,13 @@ async function tai(url){
     const dich = path.join(THU_MUC, m.ten);
     const buf = await tai(m.url);
     const sha = crypto.createHash('sha256').update(buf).digest('hex');
-    if (inSha){ console.log(m.ten.padEnd(12) + sha + '  ' + (buf.length/1048576).toFixed(2) + ' MB'); }
-    else if (sha !== m.sha){
+    if (inSha){
+      /* Q8 · CHỈ in. Bản đầu vẫn writeFileSync sau khi bỏ qua so checksum — một
+         lần gõ nhầm cờ là trọng số chưa kiểm nằm trên đĩa và batch dùng luôn. */
+      console.log(m.ten.padEnd(12) + sha + '  ' + (buf.length/1048576).toFixed(2) + ' MB');
+      continue;
+    }
+    if (sha !== m.sha){
       throw new Error('checksum lệch cho ' + m.ten + '\n  mong: ' + m.sha + '\n  thật: ' + sha
         + '\n  Chạy lại với --in-sha để xem, và CHỈ cập nhật hằng số sau khi biết vì sao nó đổi.');
     }

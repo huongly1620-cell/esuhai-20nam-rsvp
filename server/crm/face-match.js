@@ -128,13 +128,31 @@ function mount(app, requireCrmAuth, requireRole) {
     try {
       const { event_photo_id, guest_id, face_id } = req.body || {};
       if (!event_photo_id || !guest_id) return res.status(400).json({ ok: false, error: 'thiếu ảnh hoặc khách' });
+      /* Q6 · ON CONFLICT DO NOTHING rồi vẫn trả ok:true là nói dối: đã có gợi ý
+         máy 'cho' cùng (face_id, guest_id) thì không ghi gì, ảnh KHÔNG vào album,
+         mà giao diện báo xong. Người gán tay đang RA QUYẾT ĐỊNH — nếu đã có dòng
+         thì nâng nó lên đã-xác-nhận, chứ không im lặng bỏ qua. */
       const r = await pool.query(`INSERT INTO crm_face_candidates
         (event_photo_id, face_id, guest_id, score, nguon, trang_thai, decided_by, decided_at)
         VALUES ($1,$2,$3,NULL,'tay','xac-nhan',$4,now())
         ON CONFLICT DO NOTHING RETURNING id`,
         [event_photo_id, face_id || null, guest_id, req.actor.email]);
+      let daCo = false;
+      if (!r.rowCount){
+        const nang = await pool.query(`UPDATE crm_face_candidates
+          SET trang_thai = 'xac-nhan', decided_by = $1, decided_at = now()
+          WHERE event_photo_id = $2 AND guest_id = $3 AND deleted_at IS NULL
+            AND (face_id IS NOT DISTINCT FROM $4) AND trang_thai <> 'xac-nhan'
+          RETURNING id`, [req.actor.email, event_photo_id, guest_id, face_id || null]);
+        daCo = true;
+        if (!nang.rowCount){
+          /* Không chèn được, cũng không có gì để nâng ⇒ ảnh này đã nằm trong
+             album khách đó rồi. Nói đúng như vậy thay vì báo "đã thêm". */
+          return res.json({ ok: true, id: null, da_trong_album: true });
+        }
+      }
       await ghiAudit(pool, req, 'face_assign_tay', 'event_photo', event_photo_id, { guest_id, face_id: face_id || null });
-      res.json({ ok: true, id: r.rows[0] ? r.rows[0].id : null });
+      res.json({ ok: true, id: r.rows[0] ? r.rows[0].id : null, nang_tu_goi_y: daCo });
     } catch (e) { console.error('[face-match] assign:', e.message); res.status(500).json({ ok: false, error: 'loi' }); }
   });
 

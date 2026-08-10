@@ -305,14 +305,33 @@ function mount(app, requireCrmAuth, requireRole) {
         + 'WHERE event_photo_id = $1 AND deleted_at IS NULL', [id]);
       const goUv = await cli.query(
         'UPDATE crm_face_candidates SET deleted_at = now() WHERE event_photo_id = $1 AND deleted_at IS NULL', [id]);
+      /* Q4 · mẫu cắt trên tấm này cũng phải mất vector, không chỉ mất chỗ đứng. */
       const goMau = await cli.query(
-        'UPDATE crm_face_samples SET deleted_at = now() WHERE event_photo_id = $1 AND deleted_at IS NULL', [id]);
+        'UPDATE crm_face_samples SET deleted_at = now(), vec = NULL, vec_xoa_luc = now() '
+        + 'WHERE event_photo_id = $1 AND deleted_at IS NULL RETURNING id', [id]);
+      /* Q5 · và các khớp SINH TỪ những mẫu đó phải quay về chờ duyệt. Không có
+         bước này thì gỡ một tấm làm mẫu biến mất trong khi ảnh nó đẻ ra vẫn nằm
+         "đã xác nhận" trong album khách khác — đúng thứ AC-10 cấm, chỉ ngược
+         chiều. Ảnh đã đánh dấu gửi thì không rút lại được, nên đếm để báo. */
+      const idMau = goMau.rows.map(function(x){ return x.id; });
+      let veCho = { rowCount: 0 }, daGui = 0;
+      if (idMau.length){
+        veCho = await cli.query(
+          "UPDATE crm_face_candidates SET trang_thai = 'cho', decided_by = NULL, decided_at = NULL "
+          + "WHERE sample_id = ANY($1::bigint[]) AND deleted_at IS NULL AND trang_thai <> 'cho'", [idMau]);
+        daGui = (await cli.query(
+          "SELECT count(*)::int n FROM crm_interactions i WHERE i.kind = 'Hình ảnh cảm ơn' "
+          + "AND i.guest_id IN (SELECT guest_id FROM crm_face_samples WHERE id = ANY($1::bigint[]))",
+          [idMau])).rows[0].n;
+      }
       await cli.query(
         `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)
          VALUES ($1,'event_photo_cascade_nhan_dien','event_photo',$2,$3::jsonb,$4)`,
         [req.actor.email, String(id), JSON.stringify({
           mat: goMat.rowCount, ung_vien: goUv.rowCount, anh_mau: goMau.rowCount,
-          ghi_chu: 'Vector đã xoá hẳn (vec = NULL) chứ không chỉ đánh dấu — khôi phục ảnh thì phải chạy lại batch.',
+          khop_ve_cho: veCho.rowCount, da_danh_dau_gui: daGui,
+          ghi_chu: 'Vector đã xoá hẳn (vec = NULL) cho CẢ mặt lẫn mẫu cắt tay. Khớp sinh từ mẫu đã '
+            + 'quay về chờ duyệt. Ảnh đã đánh dấu gửi thì không rút lại được.',
         }), hashIp(ipOf(req))]);
       await cli.query('COMMIT');
       cli.release();
@@ -399,8 +418,12 @@ function mount(app, requireCrmAuth, requireRole) {
           + 'WHERE event_photo_id = ANY($1::bigint[]) AND deleted_at IS NULL', [idDot]);
         goUv  = await cli.query('UPDATE crm_face_candidates SET deleted_at = now() '
           + 'WHERE event_photo_id = ANY($1::bigint[]) AND deleted_at IS NULL', [idDot]);
-        goMau = await cli.query('UPDATE crm_face_samples SET deleted_at = now() '
-          + 'WHERE event_photo_id = ANY($1::bigint[]) AND deleted_at IS NULL', [idDot]);
+        goMau = await cli.query('UPDATE crm_face_samples SET deleted_at = now(), vec = NULL, vec_xoa_luc = now() '
+          + 'WHERE event_photo_id = ANY($1::bigint[]) AND deleted_at IS NULL RETURNING id', [idDot]);
+        const idMauDot = goMau.rows.map(function(x){ return x.id; });
+        if (idMauDot.length)
+          await cli.query("UPDATE crm_face_candidates SET trang_thai = 'cho', decided_by = NULL, decided_at = NULL "
+            + "WHERE sample_id = ANY($1::bigint[]) AND deleted_at IS NULL AND trang_thai <> 'cho'", [idMauDot]);
       }
       await cli.query(
         `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta, ip_hash)

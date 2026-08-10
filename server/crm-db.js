@@ -225,6 +225,10 @@ CREATE TABLE IF NOT EXISTS crm_face_samples (
      KHUNG; vector do batch tính ở lượt chạy sau, nơi có engine. Mẫu chờ tính là
      mẫu chưa dùng được, không phải mẫu hỏng. */
   vec             BYTEA,                    -- 128 float32; KHÔNG log ra ngoài
+  /* Q4 · mẫu cắt từ ảnh sự kiện cũng là dữ liệu sinh trắc. Gỡ ảnh mà chỉ đặt
+     deleted_at thì vector của mẫu Ở LẠI Postgres, và không có cột nào để nói nó
+     đã đi. Cùng khuôn với crm_event_faces: xoá vec, ghi LÚC xoá. */
+  vec_xoa_luc     TIMESTAMPTZ,
   diem_do         REAL,                     -- điểm YuNet lúc lấy mẫu
   created_by      TEXT NOT NULL,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -296,6 +300,11 @@ CREATE TABLE IF NOT EXISTS crm_face_candidates (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_face_candidates_mat_khach
   ON crm_face_candidates (face_id, guest_id)
   WHERE deleted_at IS NULL AND face_id IS NOT NULL;
+/* Q6 · gán tay không có face_id nên KHÔNG rơi vào unique một phần ở trên: bấm
+   hai lần đẻ hai dòng album và so_album đếm phồng. Chặn riêng cho nhánh đó. */
+CREATE UNIQUE INDEX IF NOT EXISTS uq_face_candidates_gan_tay
+  ON crm_face_candidates (event_photo_id, guest_id)
+  WHERE deleted_at IS NULL AND face_id IS NULL;
 CREATE INDEX IF NOT EXISTS idx_face_candidates_cho
   ON crm_face_candidates (score DESC) WHERE deleted_at IS NULL AND trang_thai = 'cho';
 /* Album của một khách = đúng những dòng đã xác nhận (FR-7). */

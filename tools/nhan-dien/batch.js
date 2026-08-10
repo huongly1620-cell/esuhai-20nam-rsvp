@@ -37,6 +37,11 @@ const BO_QUA   = so('--bo-qua', 0);
    và ngưỡng có thể đổi lại sau khi có nó. */
 const NGUONG  = so('--nguong', 0.45);
 const TOP     = so('--top', 5);
+/* Khớp lại TOÀN BỘ mẫu với các mặt đã lưu. Bản đầu chỉ khớp những mẫu vừa được
+   tính trong chính lượt chạy đó — nghe thì hợp lý, nhưng nghĩa là bấm chạy lại
+   lần thứ hai sẽ không làm gì cả, và người dùng không có cách nào bảo hệ thống
+   "tìm lại đi". ON CONFLICT DO NOTHING khiến chạy bao nhiêu lần cũng vô hại. */
+const KHOP_LAI = co('--khop-lai');
 
 /* Cửa ảnh MẪU — chặt hơn cửa dò ảnh sự kiện. Đo thật trên crm_photos: có ảnh
    lẵng hoa nằm dưới một guest_id và YuNet vẫn trả về "một mặt" ở ngưỡng 0,5.
@@ -142,8 +147,8 @@ async function tinhMauKhoanhTay(phien, log){
       coalesce(e.preview_key, e.object_key) k
     FROM crm_face_samples s JOIN crm_event_photos e ON e.id = s.event_photo_id
     WHERE s.deleted_at IS NULL AND s.vec IS NULL AND s.nguon = 'cat-tay'`)).rows;
-  if (!r.length) return 0;
-  let xong = 0;
+  if (!r.length) return [];
+  let xong = 0; const moi = [];
   for (const x of r){
     try {
       const buf = await layObj(x.k);
@@ -162,11 +167,45 @@ async function tinhMauKhoanhTay(phien, log){
       const vec = await E.nhung(phien, E.catCan(g.raw, g.w, g.h, moc));
       if (GHI) await db().query(`UPDATE crm_face_samples SET vec = $1, moc = $2 WHERE id = $3`,
         [veBytes(vec), JSON.stringify(moc), x.id]);
+      moi.push({ id: x.id, guest: String(x.guest_id), v: vec });
       xong++;
     } catch (e){ /* để lại cho lượt sau, không xoá mẫu của người ta */ }
   }
   log('  mẫu khoanh tay chờ tính: ' + r.length + ' · tính xong ' + xong);
-  return xong;
+  return moi;
+}
+
+/* Khớp MẪU MỚI với những mặt ĐÃ nằm sẵn trong CSDL.
+   Không có bước này thì lời hứa của FR-10 không thành: batch bỏ qua ảnh đã xử lý
+   (đúng, để chạy lại không tốn công), nên một mẫu vừa thêm sẽ chẳng bao giờ gặp
+   những khuôn mặt đã dò từ lượt trước — BTL khoanh xong, chạy lại, và không có
+   gì mới xuất hiện. Đây chính là chỗ vector lưu 7 ngày trả công: khớp lại không
+   phải tải và dò lại ảnh nào. */
+async function khopMauMoiVoiMatCu(mauMoi, log){
+  if (!mauMoi.length) return 0;
+  const mat = (await db().query(`SELECT id, event_photo_id, vec FROM crm_event_faces
+    WHERE deleted_at IS NULL AND vec IS NOT NULL`)).rows;
+  if (!mat.length) return 0;
+  let them = 0;
+  for (const f of mat){
+    const v = tuBytes(f.vec);
+    const theo = new Map();
+    for (const s of mauMoi){
+      const d = E.giongNhau(v, s.v);
+      if (d < NGUONG) continue;
+      const cu = theo.get(s.guest);
+      if (!cu || d > cu.d) theo.set(s.guest, { d, sample: s.id });
+    }
+    for (const [gid, o] of theo){
+      const r = await db().query(`INSERT INTO crm_face_candidates
+        (event_photo_id, face_id, guest_id, sample_id, score, nguon, trang_thai, run_id)
+        VALUES ($1,$2,$3,$4,$5,'may','cho',$6) ON CONFLICT DO NOTHING RETURNING id`,
+        [f.event_photo_id, f.id, gid, o.sample, o.d, 'run-khop-lai']);
+      if (r.rowCount) them++;
+    }
+  }
+  log('  khớp lại mặt cũ với ' + mauMoi.length + ' mẫu mới: thêm ' + them + ' gợi ý');
+  return them;
 }
 
 (async () => {
@@ -179,9 +218,15 @@ async function tinhMauKhoanhTay(phien, log){
     + '  ngưỡng ' + NGUONG + '  top ' + TOP);
 
   const phien = await E.moPhien();
-  if (GHI) await tinhMauKhoanhTay(phien, log);
+  let mauVuaTinh = [];
+  if (GHI) mauVuaTinh = await tinhMauKhoanhTay(phien, log);
   const mauTam = await napMau(phien, log);
   const mau = GHI ? await docMau() : mauTam;
+  if (GHI){
+    const canKhop = KHOP_LAI ? await docMau() : mauVuaTinh;
+    if (KHOP_LAI) log('  --khop-lai: đối chiếu TẤT CẢ ' + canKhop.length + ' mẫu với mặt đã lưu');
+    await khopMauMoiVoiMatCu(canKhop, log);
+  }
   log('  mẫu dùng để so: ' + mau.length + ' vector · ' + new Set(mau.map(m => m.guest)).size + ' khách');
   if (!mau.length) throw new Error('không có mẫu nào dùng được — kiểm lại cửa ảnh mẫu');
 

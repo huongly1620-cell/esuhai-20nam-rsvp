@@ -2,7 +2,10 @@
 /* E08-D077 · API cho màn nhận diện — chỉ `btl`.
    Nguyên tắc xuyên suốt: máy KHÔNG tự gán ai cho ảnh nào (CR-127). Mọi thứ batch
    sinh ra đều ở trạng thái 'cho'; chỉ một cú bấm của người mới đổi được. */
-const { pool } = require('../crm-db');
+/* pool nằm ở ../db (crm-db chỉ xuất migrateCrm) — đúng như event-photos.js làm.
+   Lấy nhầm đường thì `pool` là undefined và MỌI route ở đây ném 500; node --check
+   không thấy được vì nó chỉ soi cú pháp. */
+const { pool } = require('../db');
 const { hashIp } = require('./audit');
 const { ipOf } = require('./auth');
 

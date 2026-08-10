@@ -179,7 +179,8 @@ async function tinhMauKhoanhTay(phien, log){
       e.width AS anh_w, e.height AS anh_h,
       coalesce(e.preview_key, e.object_key) k
     FROM crm_face_samples s JOIN crm_event_photos e ON e.id = s.event_photo_id
-    WHERE s.deleted_at IS NULL AND s.vec IS NULL AND s.nguon = 'cat-tay'`)).rows;
+    WHERE s.deleted_at IS NULL AND s.vec IS NULL AND s.vec_xoa_luc IS NULL
+      AND s.nguon = 'cat-tay'`)).rows;
   if (!r.length) return [];
   let xong = 0; const moi = [];
   for (const x of r){
@@ -263,10 +264,13 @@ async function khopMauMoiVoiMatCu(mauMoi, log){
   if (GHI){
     const r = await db().query(`UPDATE crm_event_faces SET vec = NULL, vec_xoa_luc = now()
       WHERE vec IS NOT NULL AND het_han_luc <= now()`);
-    const rm = await db().query(`UPDATE crm_face_samples SET vec = NULL, vec_xoa_luc = now()
-      WHERE vec IS NOT NULL AND nguon = 'cat-tay' AND created_at <= now() - interval '7 days'`);
-    if (r.rowCount || rm.rowCount)
-      log('  dọn hạn: xoá vector của ' + r.rowCount + ' mặt · ' + rm.rowCount + ' mẫu cắt tay');
+    /* N1 · KHÔNG dọn vector của mẫu ở đây. Bản trước vừa xoá vector mẫu cat-tay
+       quá 7 ngày, vừa để tinhMauKhoanhTay() tính lại chính chúng ngay sau đó
+       (điều kiện của nó là `vec IS NULL`) — cùng một lượt chạy. Hàng ra khỏi đó
+       vừa giữ sinh trắc vừa mang vec_xoa_luc. Mẫu nay chỉ mất vector khi ảnh
+       nguồn bị gỡ, khi mẫu bị gỡ, hoặc khi xoá cứng — gắn với vòng đời dữ liệu,
+       không gắn với đồng hồ. Xem chú thích ở crm-db.js. */
+    if (r.rowCount) log('  dọn hạn: xoá vector của ' + r.rowCount + ' mặt sự kiện');
   }
 
   const phien = await E.moPhien();

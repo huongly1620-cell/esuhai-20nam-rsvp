@@ -20,8 +20,48 @@ function ghiAudit(client, req, loai, targetType, targetId, meta){
     [req.actor.email, loai, targetType, String(targetId), JSON.stringify(meta), hashIp(ipOf(req))]);
 }
 
+/* N2 · CHỦ NGỮ của hạn 7 ngày.
+   Một lệnh dọn nằm trong tools/ chỉ chạy khi có người gõ nó, và "có người nhớ gõ"
+   không phải là một cơ chế — nó là một hy vọng. Cron thì phải dựng hạ tầng và vẫn
+   có thể bị tắt lặng lẽ. Chủ ngữ chắc chắn nhất ở đây là chính tiến trình đang
+   phục vụ: còn prod chạy thì còn quét.
+   Đây là một câu UPDATE, không ONNX, không xử lý ảnh — FR-1 cấm nhét engine nặng
+   vào app, không cấm app tự dọn dữ liệu của mình.
+   Vẫn giữ tools/nhan-dien/don-han.js cho lần chạy tay và cho việc kiểm chứng. */
+const NHIP_QUET = 60 * 60 * 1000;          // mỗi giờ
+async function quetHan(){
+  try {
+    const r = await pool.query(
+      'UPDATE crm_event_faces SET vec = NULL, vec_xoa_luc = now() '
+      + 'WHERE vec IS NOT NULL AND het_han_luc <= now()');
+    if (r.rowCount) console.log('[face-match] quét hạn: xoá vector của ' + r.rowCount + ' mặt sự kiện');
+  } catch (e){
+    /* Bảng chưa tồn tại (chưa migrate) là bình thường — không làm ồn mỗi giờ. */
+    if (!/does not exist/i.test(e.message)) console.error('[face-match] quét hạn lỗi:', e.message);
+  }
+}
+
 function mount(app, requireCrmAuth, requireRole) {
   const btl = [requireCrmAuth, requireRole('btl')];
+
+  /* Quét ngay khi khởi động rồi lặp: máy chủ vừa dựng lại sau một kỳ nghỉ thì
+     không phải đợi hết một nhịp mới dọn phần đã quá hạn từ lâu. */
+  setTimeout(quetHan, 20 * 1000);
+  const hen = setInterval(quetHan, NHIP_QUET);
+  if (hen.unref) hen.unref();              // đừng giữ tiến trình sống chỉ vì cái hẹn này
+
+  /* Cho phép gọi tay để kiểm chứng — cùng đường mã với nhịp tự động, nên đo cái
+     này là đo đúng thứ đang chạy hàng giờ. */
+  app.post('/crm/face-match/quet-han', ...btl, async (req, res) => {
+    try {
+      const truoc = (await pool.query('SELECT count(*)::int n FROM crm_event_faces '
+        + 'WHERE vec IS NOT NULL AND het_han_luc <= now()')).rows[0].n;
+      await quetHan();
+      const sau = (await pool.query('SELECT count(*)::int n FROM crm_event_faces '
+        + 'WHERE vec IS NOT NULL AND het_han_luc <= now()')).rows[0].n;
+      res.json({ ok: true, qua_han_truoc: truoc, con_lai: sau, nhip_gio: NHIP_QUET / 3600000 });
+    } catch (e){ res.status(500).json({ ok: false, error: 'loi' }); }
+  });
 
   /* Home của ngăn nhận diện = DANH SÁCH KHÁCH, không phải hàng đợi ảnh (FR-4c).
      Hàng đợi là công cụ; danh sách khách mới là thứ người ta đến đây để làm. */

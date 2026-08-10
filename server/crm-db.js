@@ -227,7 +227,18 @@ CREATE TABLE IF NOT EXISTS crm_face_samples (
   vec             BYTEA,                    -- 128 float32; KHÔNG log ra ngoài
   /* Q4 · mẫu cắt từ ảnh sự kiện cũng là dữ liệu sinh trắc. Gỡ ảnh mà chỉ đặt
      deleted_at thì vector của mẫu Ở LẠI Postgres, và không có cột nào để nói nó
-     đã đi. Cùng khuôn với crm_event_faces: xoá vec, ghi LÚC xoá. */
+     đã đi. Cùng khuôn với crm_event_faces: xoá vec, ghi LÚC xoá.
+
+     N1 · Nhưng mẫu KHÔNG hết hạn theo đồng hồ, khác crm_event_faces. Hai thứ này
+     khác nhau về bản chất: vector mặt sự kiện là chỉ mục hàng loạt, không ai
+     quyết định gì; vector mẫu là hệ quả của MỘT quyết định của người — BTL khoanh
+     mặt để dạy máy nhận ra một khách không có ảnh chân dung.
+     Cho mẫu hết hạn theo đồng hồ vừa vô nghĩa vừa nguy hiểm: ảnh nguồn vẫn nằm
+     đó nên vector luôn tính lại được (hết hạn không xoá được gì thật), mà lượt
+     batch kế tiếp sẽ tính lại đúng cái vừa xoá — sinh ra hàng vừa GIỮ sinh trắc
+     vừa mang vec_xoa_luc, tức dấu chứng minh đã xoá lại chứng minh điều ngược
+     lại. Đường xoá thật của mẫu là: gỡ ảnh nguồn (cascade), gỡ mẫu, hoặc xoá
+     cứng ảnh — cả ba đều gắn với vòng đời dữ liệu, không gắn với đồng hồ. */
   vec_xoa_luc     TIMESTAMPTZ,
   diem_do         REAL,                     -- điểm YuNet lúc lấy mẫu
   created_by      TEXT NOT NULL,
@@ -235,7 +246,11 @@ CREATE TABLE IF NOT EXISTS crm_face_samples (
   deleted_at      TIMESTAMPTZ,
   /* Mẫu phải biết mình từ đâu ra: một trong hai nguồn, đúng một. */
   CHECK ((nguon = 'crm-photos' AND photo_id IS NOT NULL)
-      OR (nguon = 'cat-tay'    AND event_photo_id IS NOT NULL))
+      OR (nguon = 'cat-tay'    AND event_photo_id IS NOT NULL)),
+  /* N1 · Không hàng nào được vừa giữ vector vừa mang dấu đã xoá vector. Đặt ở
+     tầng CSDL chứ không ở tầng ứng dụng: một lời hứa về dữ liệu sinh trắc không
+     nên phụ thuộc vào việc mọi đường ghi đều nhớ kiểm. */
+  CHECK (vec IS NULL OR vec_xoa_luc IS NULL)
 );
 CREATE INDEX IF NOT EXISTS idx_face_samples_guest
   ON crm_face_samples (guest_id) WHERE deleted_at IS NULL;
@@ -267,6 +282,9 @@ CREATE TABLE IF NOT EXISTS crm_event_faces (
   vec             BYTEA,
   vec_xoa_luc     TIMESTAMPTZ,          -- ghi LÚC xoá: chứng minh được, không chỉ là vắng mặt
   run_id          TEXT NOT NULL,
+  /* N1 · cùng ràng buộc như bảng mẫu: giữ vector và mang dấu đã xoá là hai điều
+     không thể cùng đúng. */
+  CHECK (vec IS NULL OR vec_xoa_luc IS NULL),
   het_han_luc     TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '7 days'),
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
   deleted_at      TIMESTAMPTZ

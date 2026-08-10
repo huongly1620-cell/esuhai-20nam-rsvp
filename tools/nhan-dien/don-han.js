@@ -30,14 +30,10 @@ async function don(){
   const r = await q(`UPDATE crm_event_faces
     SET vec = NULL, vec_xoa_luc = now()
     WHERE vec IS NOT NULL AND het_han_luc <= now()`);
-  /* Mẫu cũng có hạn: mẫu cắt từ ảnh sự kiện là sinh trắc y như mặt sự kiện.
-     Mẫu từ crm-photos thì KHÔNG hết hạn — đó là tập tham chiếu, mất nó là mất
-     khả năng nhận diện, và nó không sinh ra từ ảnh phóng sự. */
-  const rm = await q(`UPDATE crm_face_samples
-    SET vec = NULL, vec_xoa_luc = now()
-    WHERE vec IS NOT NULL AND nguon = 'cat-tay'
-      AND created_at <= now() - interval '7 days'`);
-  console.log('  đã xoá vector: ' + r.rowCount + ' mặt sự kiện · ' + rm.rowCount + ' mẫu cắt tay');
+  /* N1 · Mẫu KHÔNG nằm trong phạm vi dọn theo đồng hồ — xem chú thích ở
+     crm-db.js. Dọn mẫu ở đây thì lượt batch kế tiếp tính lại chính nó, và hàng
+     ra khỏi đó vừa giữ vector vừa mang dấu đã xoá. */
+  console.log('  đã xoá vector: ' + r.rowCount + ' mặt sự kiện');
   const con = (await q(`SELECT count(*)::int n FROM crm_event_faces
     WHERE deleted_at IS NULL AND vec IS NOT NULL AND het_han_luc <= now()`)).rows[0].n;
   console.log('  còn sót quá hạn sau khi dọn: ' + con + '  (mong 0)');

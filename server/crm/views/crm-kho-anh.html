@@ -866,16 +866,24 @@ var ThietBiAdapter = {
    ─────────────────────────────────────────────────────────────────────────── */
 
 var DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder';
+/* Cách BTL giữ một thư mục được chia sẻ phổ biến nhất là "Add shortcut to My
+   Drive" — thứ hiện ra khi đó KHÔNG phải thư mục mà là LỐI TẮT trỏ tới nó.
+   Lối tắt không khớp mime thư mục, cũng không có đuôi tệp để LA_ANH nhận, nên
+   trước đây nó rơi câm: chọn đúng thư mục cha vẫn ra 0 ảnh. */
+var DRIVE_SHORTCUT_MIME = 'application/vnd.google-apps.shortcut';
 
 var GoogleDriveAdapter = {
   ten: 'google-drive',
   _token: null,
 
   /* Tạo một SourceItem từ một file Drive đã biết metadata. */
-  _makeItem: function(f, relPath){
+  _makeItem: function(f, relPath, idTai){
     var self = this;
+    /* Lối tắt: siêu dữ liệu là của lối tắt, nội dung nằm ở tệp ĐÍCH — tải theo
+       id đích, còn tên/đường dẫn vẫn lấy theo cái người ta nhìn thấy. */
+    var idNoiDung = idTai || f.id;
     return {
-      id: 'gd-' + f.id,
+      id: 'gd-' + idNoiDung,
       name: f.name,
       relativePath: relPath || f.name,
       source: 'google-drive',
@@ -883,8 +891,10 @@ var GoogleDriveAdapter = {
       lastModified: f.lastEditedUtc ? new Date(f.lastEditedUtc).getTime()
                   : f.modifiedTime  ? new Date(f.modifiedTime).getTime() : 0,
       getBlob: function(){
-        return fetch('https://www.googleapis.com/drive/v3/files/' + f.id
-          + '?alt=media', { headers: { Authorization: 'Bearer ' + self._token } })
+        /* supportsAllDrives: thiếu cờ này thì tệp nằm trong Shared Drive tải hỏng
+           — đúng loại kho mà vé này sinh ra để nạp. */
+        return fetch('https://www.googleapis.com/drive/v3/files/' + idNoiDung
+          + '?alt=media&supportsAllDrives=true', { headers: { Authorization: 'Bearer ' + self._token } })
           .then(function(r){
             if (r.status === 401 || r.status === 403) throw new Error(tt('drive_err_token'));
             if (!r.ok) throw new Error('Drive HTTP ' + r.status);
@@ -895,6 +905,30 @@ var GoogleDriveAdapter = {
   },
 
   /* Từ danh sách file đã biết (Picker response, KHÔNG phải thư mục) → SourceItem[] */
+  /* Đổi mỗi lối tắt trong danh sách Picker thành thứ nó trỏ tới. Lỗi tra cứu
+     thì giữ nguyên phần tử — thà nó đi tiếp và hỏng rõ ràng ở bước sau còn hơn
+     biến mất im lặng ở đây. */
+  moLoiTat: async function(docs, token){
+    var self = this, ra = [];
+    for (var i = 0; i < docs.length; i++){
+      var d = docs[i];
+      if (d.mimeType !== DRIVE_SHORTCUT_MIME){ ra.push(d); continue; }
+      try {
+        var r = await fetch('https://www.googleapis.com/drive/v3/files/' + d.id
+          + '?fields=' + encodeURIComponent('id,name,mimeType,size,modifiedTime,shortcutDetails(targetId,targetMimeType)')
+          + '&supportsAllDrives=true', { headers: { Authorization: 'Bearer ' + token } });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var j = await r.json();
+        if (j.shortcutDetails && j.shortcutDetails.targetId){
+          ra.push({ id: j.shortcutDetails.targetId, name: d.name,
+                    mimeType: j.shortcutDetails.targetMimeType || d.mimeType,
+                    sizeBytes: d.sizeBytes, lastEditedUtc: d.lastEditedUtc });
+        } else ra.push(d);
+      } catch(e){ ghiLog('không mở được lối tắt ' + d.name + ': ' + e.message); ra.push(d); }
+    }
+    return ra;
+  },
+
   tuFiles: function(files, token){
     this._token = token;
     var self = this;
@@ -909,7 +943,7 @@ var GoogleDriveAdapter = {
     do {
       var url = 'https://www.googleapis.com/drive/v3/files'
         + '?q=' + encodeURIComponent("'" + folderId + "' in parents and trashed=false")
-        + '&fields=' + encodeURIComponent('nextPageToken,files(id,name,size,modifiedTime,mimeType)')
+        + '&fields=' + encodeURIComponent('nextPageToken,files(id,name,size,modifiedTime,mimeType,shortcutDetails(targetId,targetMimeType))')
         + '&pageSize=1000'
         + '&supportsAllDrives=true&includeItemsFromAllDrives=true'
         + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : '');
@@ -925,8 +959,11 @@ var GoogleDriveAdapter = {
 
   /* Duyệt ĐỆ QUY (BFS) thư mục Drive → SourceItem[].
      - Nhận diện thư mục con bằng mimeType === DRIVE_FOLDER_MIME.
+     - LỐI TẮT được mở ra theo đích: trỏ tới thư mục thì đi tiếp vào đó, trỏ tới
+       ảnh thì lấy ảnh đó. Trước đây lối tắt không khớp nhánh nào nên rơi câm.
      - relativePath phản ánh đường dẫn thật (Máy 3/IMG_1234.JPG).
-     - Chặn vòng lặp shortcut: set `visited` ghi lại folderId đã duyệt.
+     - Chặn đi vòng: set `visited` ghi theo id ĐÍCH, nên hai lối tắt trỏ cùng một
+       thư mục chỉ duyệt một lần, và lối tắt trỏ ngược lên trên không thành vòng.
      - FR-5: feedback ghiLog từng thư mục, không đóng băng tab >5s.
      Kho Gala ~15k ảnh, 5 nhánh (Máy 1–5), nên BFS phù hợp. */
   tuFolderId: async function(folderId, folderName, token){
@@ -942,14 +979,19 @@ var GoogleDriveAdapter = {
       ghiLog(fmt('drive_reading', { name: cur.path }));
       var children = await self._listFolder(cur.id, token);
       children.forEach(function(f){
-        if (f.mimeType === DRIVE_FOLDER_MIME){
-          /* Thư mục con → xếp vào hàng đợi (nếu chưa duyệt). */
-          if (!visited[f.id]){
-            visited[f.id] = true;
-            queue.push({ id: f.id, path: cur.path + '/' + f.name });
+        /* Mở lối tắt ra trước khi phân loại: cái đáng quan tâm là ĐÍCH của nó. */
+        var la = f.mimeType, idDich = f.id;
+        if (la === DRIVE_SHORTCUT_MIME && f.shortcutDetails){
+          la = f.shortcutDetails.targetMimeType || '';
+          idDich = f.shortcutDetails.targetId || f.id;
+        }
+        if (la === DRIVE_FOLDER_MIME){
+          if (!visited[idDich]){
+            visited[idDich] = true;
+            queue.push({ id: idDich, path: cur.path + '/' + f.name });
           }
         } else if (LA_ANH.test(f.name)){
-          items.push(self._makeItem(f, cur.path + '/' + f.name));
+          items.push(self._makeItem(f, cur.path + '/' + f.name, idDich));
         }
       });
     }
@@ -1844,7 +1886,10 @@ function _moPickerVoiToken(token){
   var myDriveView = new google.picker.DocsView(google.picker.ViewId.DOCS)
     .setIncludeFolders(true)
     .setSelectFolderEnabled(true)
-    .setMimeTypes('image/jpeg,image/png,image/webp,application/vnd.google-apps.folder');
+    /* Mời đúng những thứ trang này nhận (LA_ANH có cả heic/heif/tiff): ảnh iPhone
+       chọn lẻ trước đây không hiện trong Picker, dù cùng tấm ấy nằm trong thư mục
+       thì lại nạp được. Và cho thấy cả lối tắt, vì thư mục chia sẻ thường là lối tắt. */
+    .setMimeTypes('image/jpeg,image/png,image/webp,image/heic,image/heif,image/tiff,application/vnd.google-apps.folder,application/vnd.google-apps.shortcut');
 
   /* View 2: Shared with me — kho Gala tới tay BTL qua link chia sẻ, không phải
      file họ sở hữu. Không thêm view này thì BTL không thấy thư mục nào (mục B). */
@@ -1852,7 +1897,7 @@ function _moPickerVoiToken(token){
     .setIncludeFolders(true)
     .setSelectFolderEnabled(true)
     .setOwnedByMe(false)
-    .setMimeTypes('image/jpeg,image/png,image/webp,application/vnd.google-apps.folder');
+    .setMimeTypes('image/jpeg,image/png,image/webp,image/heic,image/heif,image/tiff,application/vnd.google-apps.folder,application/vnd.google-apps.shortcut');
 
   var builder = new google.picker.PickerBuilder()
     .setAppId(PICKER_CFG.appId)
@@ -1871,8 +1916,13 @@ function _moPickerVoiToken(token){
 }
 
 async function _xuLyPicked(docs, token){
-  var folders = docs.filter(function(d){ return d.mimeType === 'application/vnd.google-apps.folder'; });
-  var files   = docs.filter(function(d){ return d.mimeType !== 'application/vnd.google-apps.folder'; });
+  /* Picker trả lối tắt y như người ta thấy nó. Hỏi Drive xem nó trỏ đi đâu rồi
+     mới phân loại — không hỏi thì một lối tắt-tới-thư-mục sẽ bị xếp nhầm vào
+     nhóm tệp, LA_ANH loại vì không có đuôi, và người dùng nhận "không có ảnh"
+     sau khi vừa chọn đúng thứ cần chọn. */
+  docs = await GoogleDriveAdapter.moLoiTat(docs, token);
+  var folders = docs.filter(function(d){ return d.mimeType === DRIVE_FOLDER_MIME; });
+  var files   = docs.filter(function(d){ return d.mimeType !== DRIVE_FOLDER_MIME; });
 
   var items = GoogleDriveAdapter.tuFiles(files, token);
 

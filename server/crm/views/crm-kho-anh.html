@@ -253,6 +253,8 @@
     border-radius:4px;pointer-events:none;display:none}
   .rubber.on{display:block}
   #grid{position:relative}
+  .pager{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+  .pager .hint{min-width:0}
   body.dangkeo{user-select:none;-webkit-user-select:none}
 
   /* ── AC-18 · chế độ chọn trên chạm ── */
@@ -438,6 +440,11 @@
     <button class="btn sm" id="coachX" type="button" data-i="coach_ok">Đã hiểu</button>
   </div>
   <div class="grid" id="grid"></div>
+  <div class="pager" id="pager" hidden>
+    <button class="btn sm" id="pgPrev" type="button" data-i="pg_prev">Trước</button>
+    <span class="hint" id="pgInfo"></span>
+    <button class="btn sm" id="pgNext" type="button" data-i="pg_next">Sau</button>
+  </div>
   <div class="log" id="log" style="display:none"></div>
 </div>
 
@@ -547,6 +554,9 @@ var T = {
     st_new:'đã nạp', st_dup:'đã có', st_bad:'lỗi', st_pass:'bỏ qua', heic:'HEIC — bỏ qua',
     sel_mode:'Chế độ chọn — chạm để tick, không cần giữ nữa.', sel_done:'Xong',
     zoom:'Xem ảnh lớn', lb_close:'Đóng', lb_prev:'Ảnh trước', lb_next:'Ảnh sau', lb_of:'{i}/{n}',
+    pg_prev:'← Trước', pg_next:'Sau →',
+    pg_info:'Trang {t}/{tt} · ảnh {a}–{b} trong {n}',
+    pg_tick:'Đã tick {n} ảnh (tính cả trang khác)',
     dot_la:'đợt {d}',
     coach:'<b>Bấm vào ảnh</b> để xem lớn. <b>Bấm ô vuông góc trái</b> để tick chọn. Muốn chọn cả mảng thì <b>giữ chuột kéo ngang qua nhiều ảnh</b> — kéo qua ô đang tick sẽ bỏ tick cả vùng. Trên điện thoại: <b>nhấn giữ một ảnh</b> để vào chế độ chọn.',
     coach_ok:'Đã hiểu', tip_dup:'Ảnh này đã có trong kho — trùng với một tấm đã nạp trước, nên lượt này bỏ qua.', tip_err:'Không nạp được: {e}',
@@ -594,6 +604,9 @@ var T = {
     st_new:'取込済', st_dup:'既存', st_bad:'失敗', st_pass:'除外', heic:'HEIC — 除外',
     sel_mode:'選択モード — 長押し不要、タップで選べます。', sel_done:'完了',
     zoom:'拡大表示', lb_close:'閉じる', lb_prev:'前の写真', lb_next:'次の写真', lb_of:'{i}/{n}',
+    pg_prev:'← 前へ', pg_next:'次へ →',
+    pg_info:'{tt}ページ中{t}ページ目 · 全{n}枚中 {a}–{b}枚',
+    pg_tick:'{n}枚選択中（他ページ分を含む）',
     dot_la:'{d} の回',
     coach:'<b>写真をタップ</b>すると拡大表示。<b>左上の四角</b>で選択します。まとめて選ぶには<b>マウスで横にドラッグ</b> — 選択済みの上をなぞると範囲ごと解除されます。スマートフォンでは<b>長押し</b>で選択モードへ。',
     coach_ok:'閉じる', tip_dup:'この写真は既に保管済みです（同じ写真が取り込み済み）。今回はスキップしました。', tip_err:'取り込み失敗: {e}',
@@ -1037,10 +1050,47 @@ var quanSat = new IntersectionObserver(function(es){
   });
 }, { rootMargin: '300px' });
 
+/* D094 · Lưới tick chỉ dựng ĐÚNG một trang.
+   Thumbnail thì đã ổn từ D083: IntersectionObserver + trần TRAN_URL nên 1500 ảnh
+   vẫn chỉ ~9 object URL sống. Thứ tăng tuyến tính là SỐ NÚT DOM và thời gian
+   veLuoi() — 1500 ô ≈ 7.800 nút ≈ 236ms, và kho Gala thật có 15.056 tấm.
+   Phân trang cắt đúng chỗ đó, không đụng gì tới thumbnail. */
+var NAP_TRANG = 200;
+var NAP_TR = 0;                 // chỉ số trang đang xem, đếm từ 0
+function soTrang(){ return Math.max(1, Math.ceil(ITEMS.length / NAP_TRANG)); }
+function chuanTrang(){
+  /* ITEMS co lại (bỏ ảnh, chọn thư mục khác) thì trang đang đứng có thể không
+     còn tồn tại — kẹp lại thay vì vẽ ra một trang rỗng câm. */
+  if (NAP_TR > soTrang() - 1) NAP_TR = soTrang() - 1;
+  if (NAP_TR < 0) NAP_TR = 0;
+}
+function vePager(){
+  var el = $('#pager'); if (!el) return;
+  chuanTrang();
+  if (ITEMS.length <= NAP_TRANG){ el.hidden = true; return; }
+  el.hidden = false;
+  var a = NAP_TR * NAP_TRANG, b = Math.min(ITEMS.length, a + NAP_TRANG);
+  $('#pgInfo').textContent = fmt('pg_info',
+    { t: NAP_TR + 1, tt: soTrang(), a: a + 1, b: b, n: ITEMS.length });
+  $('#pgPrev').disabled = (NAP_TR === 0);
+  $('#pgNext').disabled = (NAP_TR >= soTrang() - 1);
+}
+function doiTrang(d){
+  var cu = NAP_TR;
+  NAP_TR += d; chuanTrang();
+  if (NAP_TR === cu) return;
+  veLuoi();
+  /* Sang trang mới thì đứng ở ĐẦU lưới. Giữ nguyên vị trí cuộn cũ sẽ thả người
+     ta vào giữa một trang khác mà không có mốc nào để biết mình đang ở đâu. */
+  var g = $('#grid');
+  if (g) window.scrollTo({ top: g.getBoundingClientRect().top + window.scrollY - 12,
+                           behavior: GIAM_DONG ? 'auto' : 'smooth' });
+}
 function veLuoi(){
   var g = $('#grid');
   g.innerHTML = '';
-  ITEMS.forEach(function(it){
+  chuanTrang();
+  ITEMS.slice(NAP_TR * NAP_TRANG, (NAP_TR + 1) * NAP_TRANG).forEach(function(it){
     var st = TRANG_THAI[it.id] || 'cho';
     var d = document.createElement('div');
     d.className = 'tile'
@@ -1116,12 +1166,17 @@ function veLuoi(){
     g.appendChild(d);
     if (!laHeic) quanSat.observe(d);
   });
+  vePager();
   demLai();
 }
 function demLai(){
   var n = Object.keys(CHON).length;
   $('#nTotal').textContent = ITEMS.length;
   $('#nSel').textContent = n;
+  /* Khi có nhiều trang, con số "đã tick" lớn hơn số ô đang nhìn thấy. Nói thẳng
+     ra là nó tính cả trang khác — không thì nó trông như một lỗi đếm. */
+  var sel = $('#nSel').closest('.selbar') || $('#nSel').parentElement;
+  if (sel) sel.title = (ITEMS.length > NAP_TRANG) ? fmt('pg_tick', { n: n }) : '';
   $('#nSkip').textContent = BO_QUA;
   capNhatNutSync();
 }
@@ -1427,6 +1482,7 @@ function nhanItems(list){
   });
   ITEMS = giu;
   CHON = Object.create(null);
+  NAP_TR = 0;                                        // bộ ảnh mới thì đứng lại từ trang 1
   giu.forEach(function(it){ CHON[it.id] = 1; });      // mặc định tick hết, người dùng bỏ bớt
   $('#pickCard').style.display = '';
   /* AC-19 (1/2) · chỉ hiện lần đầu. Người đã đọc rồi mà lần nào mở cũng bị dạy
@@ -1763,8 +1819,14 @@ $('#btnFolder').onclick = function(){ $('#fFolder').click(); };
 $('#btnFiles').onclick  = function(){ $('#fFiles').click(); };
 $('#fFolder').onchange = function(e){ nhanItems(ThietBiAdapter.tuFileList(e.target.files)); };
 $('#fFiles').onchange  = function(e){ nhanItems(ThietBiAdapter.tuFileList(e.target.files)); };
+/* D094 · "Chọn tất cả" nghĩa là TẤT CẢ, không phải trang đang xem. Người ta bấm
+   nó để khỏi phải nghĩ; nếu nó chỉ chọn 200 tấm đang hiện thì con số ở thanh
+   Đồng bộ sẽ đúng mà kết quả lại thiếu, và không ai phát hiện cho tới lúc đếm
+   ảnh trong kho. */
 $('#selAll').onclick  = function(){ ITEMS.forEach(function(it){ CHON[it.id] = 1; }); veLuoi(); };
 $('#selNone').onclick = function(){ CHON = Object.create(null); veLuoi(); };
+$('#pgPrev').onclick = function(){ doiTrang(-1); };
+$('#pgNext').onclick = function(){ doiTrang(1); };
 $('#btnSync').onclick = dongBo;
 $('#btnReload').onclick = taiKho;
 $('#langBtn').onclick = function(){ setLang(LANG === 'jp' ? 'vn' : 'jp'); };

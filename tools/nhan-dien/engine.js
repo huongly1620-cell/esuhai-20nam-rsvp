@@ -165,6 +165,30 @@ async function nhung(phien, mat112){
   let n = Math.hypot(...v) || 1;
   return v.map(x => x / n);
 }
+/* Độ nét = phương sai của Laplacian trên bản xám của mặt ĐÃ CĂN. Đo trên mặt đã
+   căn chứ không trên cả ảnh: một khung nét căng vẫn có thể chứa một người mờ ở
+   hậu cảnh, và đó đúng là ca FR-8 cần tách. Chia cho phương sai độ sáng để ảnh
+   tối không bị phạt oan — số ra là độ nét TƯƠNG ĐỐI, không phụ thuộc phơi sáng. */
+function doNet(mat112){
+  const n = 112, xam = new Float32Array(n * n);
+  for (let i = 0; i < n * n; i++){
+    const p = i * 3;
+    xam[i] = 0.114 * mat112[p] + 0.587 * mat112[p + 1] + 0.299 * mat112[p + 2];  // BGR
+  }
+  let tong = 0, tong2 = 0, m = 0;
+  for (let y = 1; y < n - 1; y++){
+    for (let x = 1; x < n - 1; x++){
+      const i = y * n + x;
+      const l = xam[i - n] + xam[i + n] + xam[i - 1] + xam[i + 1] - 4 * xam[i];
+      tong += l; tong2 += l * l; m++;
+    }
+  }
+  const pv = tong2 / m - (tong / m) * (tong / m);
+  let s = 0, s2 = 0;
+  for (let i = 0; i < n * n; i++){ s += xam[i]; s2 += xam[i] * xam[i]; }
+  const pvSang = Math.max(1, s2 / (n * n) - (s / (n * n)) ** 2);
+  return pv / pvSang;
+}
 function giongNhau(a, b){ let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
 
 /* Đọc ảnh ở độ phân giải THẬT để cắt mặt: cắt từ bản 640px đã lồng khung sẽ mất
@@ -175,4 +199,4 @@ async function anhGoc(buf){
   return { raw, w: m.width, h: m.height };
 }
 
-module.exports = { moPhien, phatHien, docAnh, anhGoc, catCan, nhung, giongNhau, KHUON };
+module.exports = { moPhien, phatHien, docAnh, anhGoc, catCan, nhung, giongNhau, doNet, KHUON };

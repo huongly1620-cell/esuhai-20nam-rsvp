@@ -20,13 +20,22 @@ const so  = (k, m) => { const i = CO.indexOf(k); return i < 0 ? m : Number(CO[i 
 const GHI     = co('--commit');
 const GIOI_HAN = so('--gioi-han', 0);
 const BO_QUA   = so('--bo-qua', 0);
-/* NGƯỠNG TẠM, chưa phải ngưỡng vận hành. 0,55 lấy từ thí nghiệm chân dung↔chân
-   dung KHÔNG chuyển sang được: đo trên kho thật, mặt sự kiện khớp mẫu ở p50≈0,28
-   trong khi mặt sự kiện khớp NHAU ở ~0,95. Cặp chéo miền điểm cao nhất (0,619)
-   soi mắt thì đúng người, nên engine bắc được cầu — chỉ là thang điểm khác hẳn.
-   Precision ở 0,35 CHƯA ĐO. Chính hàng đợi duyệt của BTL mới sinh ra số cho
-   AC-5, và ngưỡng chốt sau khi có số đó. */
-const NGUONG  = so('--nguong', 0.35);
+/* Ngưỡng gợi ý — khoá 0,45 ngày 10/08 theo Bước 0 (soi tay), KHÔNG phải AC-5.
+   locked 2026-08-10 step-0 hand review; not AC-5.
+
+   Đường đi tới con số này, để người sau không phải dựng lại:
+   0,55 ban đầu lấy từ thí nghiệm chân dung↔chân dung — KHÔNG chuyển sang được,
+   vì bài thật là chân dung→ảnh tiệc và thang điểm chéo miền thấp hẳn: mặt sự
+   kiện khớp mẫu ở p50≈0,28 trong khi khớp NHAU ở ~0,95.
+   Soi tay 13 cặp trên phóng sự Máy 1: từ 0,45 trở lên không thấy ca sai rõ nào;
+   ngay dưới đó thì có, gồm một cặp 0,370 khớp một người đàn ông với một phụ nữ.
+   Ở 0,45 kho Máy 1 cho ~880 gợi ý — dư sàn 300 của AC-5, nên không phải hạ
+   ngưỡng để lấy cho đủ số.
+
+   Đây VẪN chưa phải precision đo được: 13 cặp là quá ít cho khoảng tin cậy, và
+   ba trong số đó tôi không kết luận chắc. Con số của AC-5 do BTL chấm sinh ra,
+   và ngưỡng có thể đổi lại sau khi có nó. */
+const NGUONG  = so('--nguong', 0.45);
 const TOP     = so('--top', 5);
 
 /* Cửa ảnh MẪU — chặt hơn cửa dò ảnh sự kiện. Đo thật trên crm_photos: có ảnh

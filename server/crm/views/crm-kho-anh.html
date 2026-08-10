@@ -391,7 +391,7 @@
     <button class="btn" id="btnFiles" type="button" data-i="btn_files">🖼 Chọn từng ảnh</button>
     <button class="btn cloud" type="button" disabled>Dropbox <span class="soon" data-i="soon">Sắp có</span></button>
     <button class="btn cloud" type="button" disabled>OneDrive <span class="soon" data-i="soon">Sắp có</span></button>
-    <button class="btn cloud" type="button" disabled>Google Drive <span class="soon" data-i="soon">Sắp có</span></button>
+    <button class="btn cloud" type="button" id="btnDrive" data-i="btn_drive" disabled>☁ Google Drive <span class="soon" id="driveBadge" data-i="soon">Sắp có</span></button>
   </div>
   <div class="drop" id="drop" data-i="drop">…hoặc kéo thả thư mục / ảnh vào đây</div>
   <input type="file" id="fFolder" webkitdirectory directory multiple hidden>
@@ -479,6 +479,16 @@
 </div>
 
 <script src="/crm/kho-anh/exif6.fixture.js"></script>
+<!-- E08-D091 · GIS + Picker API. async/defer: không chặn trang.
+     Hai callback _gisLoaded / _pickerLoaded PHẢI khai báo TRƯỚC script async
+     vì khi cache nóng, onload có thể chạy trước inline script bên dưới. -->
+<script>
+var _gisOk = false, _pickerOk = false;
+function _gisLoaded(){ _gisOk = true; if (typeof _batNutDrive === 'function') _batNutDrive(); }
+function _pickerLoaded(){ _pickerOk = true; if (typeof _batNutDrive === 'function') _batNutDrive(); }
+</script>
+<script src="https://accounts.google.com/gsi/client" async defer onload="_gisLoaded()"></script>
+<script src="https://apis.google.com/js/api.js" async defer onload="gapi.load('picker',function(){_pickerLoaded()})"></script>
 <script>
 'use strict';
 
@@ -539,7 +549,12 @@ var T = {
     zoom:'Xem ảnh lớn', lb_close:'Đóng', lb_prev:'Ảnh trước', lb_next:'Ảnh sau', lb_of:'{i}/{n}',
     dot_la:'đợt {d}',
     coach:'<b>Bấm vào ảnh</b> để xem lớn. <b>Bấm ô vuông góc trái</b> để tick chọn. Muốn chọn cả mảng thì <b>giữ chuột kéo ngang qua nhiều ảnh</b> — kéo qua ô đang tick sẽ bỏ tick cả vùng. Trên điện thoại: <b>nhấn giữ một ảnh</b> để vào chế độ chọn.',
-    coach_ok:'Đã hiểu', tip_dup:'Ảnh này đã có trong kho — trùng với một tấm đã nạp trước, nên lượt này bỏ qua.', tip_err:'Không nạp được: {e}'
+    coach_ok:'Đã hiểu', tip_dup:'Ảnh này đã có trong kho — trùng với một tấm đã nạp trước, nên lượt này bỏ qua.', tip_err:'Không nạp được: {e}',
+    btn_drive:'☁ Google Drive',
+    drive_reading:'Đang đọc Drive: {name}…',
+    drive_found:'→ {n} ảnh trong {name}',
+    drive_err_token:'Token Drive hết hạn — bấm lại nút Google Drive.',
+    drive_no_img:'Không tìm thấy ảnh JPG/PNG/WebP nào từ Drive.'
   },
   jp:{
     h_title:'📸 イベント写真庫', back:'← CRMへ戻る',
@@ -579,7 +594,12 @@ var T = {
     zoom:'拡大表示', lb_close:'閉じる', lb_prev:'前の写真', lb_next:'次の写真', lb_of:'{i}/{n}',
     dot_la:'{d} の回',
     coach:'<b>写真をタップ</b>すると拡大表示。<b>左上の四角</b>で選択します。まとめて選ぶには<b>マウスで横にドラッグ</b> — 選択済みの上をなぞると範囲ごと解除されます。スマートフォンでは<b>長押し</b>で選択モードへ。',
-    coach_ok:'閉じる', tip_dup:'この写真は既に保管済みです（同じ写真が取り込み済み）。今回はスキップしました。', tip_err:'取り込み失敗: {e}'
+    coach_ok:'閉じる', tip_dup:'この写真は既に保管済みです（同じ写真が取り込み済み）。今回はスキップしました。', tip_err:'取り込み失敗: {e}',
+    btn_drive:'☁ Google Drive',
+    drive_reading:'Drive読み込み中: {name}…',
+    drive_found:'→ {name}に{n}枚',
+    drive_err_token:'Driveトークン期限切れ — Google Driveボタンを再度押してください。',
+    drive_no_img:'Drive上にJPG/PNG/WebP画像が見つかりません。'
   }
 };
 function tt(k){ return (T[LANG] && T[LANG][k]) || T.vn[k] || k; }
@@ -840,6 +860,103 @@ var ThietBiAdapter = {
   }
 };
 /* ── hết vùng cấm chạm số 2 ── */
+
+/* ───────────────────────────────────────────────────────────────────────────
+   2b · E08-D091 GoogleDriveAdapter — cùng hình dạng SourceItem (D082 Pha 1b)
+   ─────────────────────────────────────────────────────────────────────────── */
+
+var DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder';
+
+var GoogleDriveAdapter = {
+  ten: 'google-drive',
+  _token: null,
+
+  /* Tạo một SourceItem từ một file Drive đã biết metadata. */
+  _makeItem: function(f, relPath){
+    var self = this;
+    return {
+      id: 'gd-' + f.id,
+      name: f.name,
+      relativePath: relPath || f.name,
+      source: 'google-drive',
+      size: parseInt(f.sizeBytes || f.size || 0, 10),
+      lastModified: f.lastEditedUtc ? new Date(f.lastEditedUtc).getTime()
+                  : f.modifiedTime  ? new Date(f.modifiedTime).getTime() : 0,
+      getBlob: function(){
+        return fetch('https://www.googleapis.com/drive/v3/files/' + f.id
+          + '?alt=media', { headers: { Authorization: 'Bearer ' + self._token } })
+          .then(function(r){
+            if (r.status === 401 || r.status === 403) throw new Error(tt('drive_err_token'));
+            if (!r.ok) throw new Error('Drive HTTP ' + r.status);
+            return r.blob();
+          });
+      }
+    };
+  },
+
+  /* Từ danh sách file đã biết (Picker response, KHÔNG phải thư mục) → SourceItem[] */
+  tuFiles: function(files, token){
+    this._token = token;
+    var self = this;
+    return files.filter(function(f){ return LA_ANH.test(f.name); })
+                .map(function(f){ return self._makeItem(f, f.name); });
+  },
+
+  /* Liệt kê MỘT CẤP con của một thư mục (phân trang). Trả về mảng file metadata
+     thô (bao gồm cả thư mục con, lọc bằng mimeType ở ngoài). */
+  _listFolder: async function(folderId, token){
+    var all = [], pageToken = '';
+    do {
+      var url = 'https://www.googleapis.com/drive/v3/files'
+        + '?q=' + encodeURIComponent("'" + folderId + "' in parents and trashed=false")
+        + '&fields=' + encodeURIComponent('nextPageToken,files(id,name,size,modifiedTime,mimeType)')
+        + '&pageSize=1000'
+        + '&supportsAllDrives=true&includeItemsFromAllDrives=true'
+        + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : '');
+      var r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+      if (r.status === 401 || r.status === 403) throw new Error(tt('drive_err_token'));
+      if (!r.ok) throw new Error('Drive list HTTP ' + r.status);
+      var j = await r.json();
+      all = all.concat(j.files || []);
+      pageToken = j.nextPageToken || '';
+    } while (pageToken);
+    return all;
+  },
+
+  /* Duyệt ĐỆ QUY (BFS) thư mục Drive → SourceItem[].
+     - Nhận diện thư mục con bằng mimeType === DRIVE_FOLDER_MIME.
+     - relativePath phản ánh đường dẫn thật (Máy 3/IMG_1234.JPG).
+     - Chặn vòng lặp shortcut: set `visited` ghi lại folderId đã duyệt.
+     - FR-5: feedback ghiLog từng thư mục, không đóng băng tab >5s.
+     Kho Gala ~15k ảnh, 5 nhánh (Máy 1–5), nên BFS phù hợp. */
+  tuFolderId: async function(folderId, folderName, token){
+    this._token = token;
+    var self = this, items = [];
+    var visited = Object.create(null);      // chặn shortcut trỏ vòng
+    /* Hàng đợi BFS: [{id, path}]. path là tiền tố relativePath. */
+    var queue = [{ id: folderId, path: folderName }];
+    visited[folderId] = true;
+
+    while (queue.length){
+      var cur = queue.shift();
+      ghiLog(fmt('drive_reading', { name: cur.path }));
+      var children = await self._listFolder(cur.id, token);
+      children.forEach(function(f){
+        if (f.mimeType === DRIVE_FOLDER_MIME){
+          /* Thư mục con → xếp vào hàng đợi (nếu chưa duyệt). */
+          if (!visited[f.id]){
+            visited[f.id] = true;
+            queue.push({ id: f.id, path: cur.path + '/' + f.name });
+          }
+        } else if (LA_ANH.test(f.name)){
+          items.push(self._makeItem(f, cur.path + '/' + f.name));
+        }
+      });
+    }
+    ghiLog(fmt('drive_found', { n: items.length, name: folderName }));
+    return items;
+  }
+};
 
 /* ───────────────────────────────────────────────────────────────────────────
    3 · Lưới kiểm duyệt — CHỈ ăn SourceItem
@@ -1680,6 +1797,102 @@ apDungTheme(localStorage.getItem('crm_theme') === 'light' ? 'light' : '');
 setLang(LANG);
 napMe();
 chayDoEXIF();
+
+/* ───────────────────────────────────────────────────────────────────────────
+   E08-D091 · Google Drive Picker — nối dây
+   ─────────────────────────────────────────────────────────────────────────── */
+
+var PICKER_CFG = null;   // {clientId, apiKey, appId} — null = chưa có / env thiếu
+/* _gisOk, _pickerOk, _gisLoaded, _pickerLoaded đã khai báo ở <script> TRƯỚC
+   async scripts (fix race khi cache nóng — vòng 2 mục C). */
+
+/* Lấy config từ server — 204 = thiếu env, giữ disabled (AC-2). */
+async function napPickerConfig(){
+  try {
+    var r = await fetch('/crm/kho-anh/picker-config');
+    if (r.status === 204 || !r.ok) return;
+    PICKER_CFG = await r.json();
+    _batNutDrive();
+  } catch(_){ /* mạng hỏng — nút giữ disabled, không lỗi console */ }
+}
+
+/* Bật nút Google Drive khi CẢ BA điều kiện đủ: config + GIS + Picker API. */
+function _batNutDrive(){
+  if (!PICKER_CFG || !_gisOk || !_pickerOk) return;
+  var btn = $('#btnDrive'); if (!btn) return;
+  btn.disabled = false;
+  var badge = $('#driveBadge');
+  if (badge) badge.remove();
+}
+
+/* Bấm nút → GIS requestAccessToken → Picker. */
+function moGoogleDrive(){
+  if (!PICKER_CFG || !_gisOk) return;
+  var tc = google.accounts.oauth2.initTokenClient({
+    client_id: PICKER_CFG.clientId,
+    scope: 'https://www.googleapis.com/auth/drive.readonly',
+    callback: function(resp){
+      if (resp.error){ toast('OAuth: ' + (resp.error_description || resp.error), 'err'); return; }
+      _moPickerVoiToken(resp.access_token);
+    }
+  });
+  tc.requestAccessToken();
+}
+
+function _moPickerVoiToken(token){
+  /* View 1: My Drive — hiện thư mục + ảnh, cho chọn thư mục. */
+  var myDriveView = new google.picker.DocsView(google.picker.ViewId.DOCS)
+    .setIncludeFolders(true)
+    .setSelectFolderEnabled(true)
+    .setMimeTypes('image/jpeg,image/png,image/webp,application/vnd.google-apps.folder');
+
+  /* View 2: Shared with me — kho Gala tới tay BTL qua link chia sẻ, không phải
+     file họ sở hữu. Không thêm view này thì BTL không thấy thư mục nào (mục B). */
+  var sharedView = new google.picker.DocsView(google.picker.ViewId.DOCS)
+    .setIncludeFolders(true)
+    .setSelectFolderEnabled(true)
+    .setOwnedByMe(false)
+    .setMimeTypes('image/jpeg,image/png,image/webp,application/vnd.google-apps.folder');
+
+  var builder = new google.picker.PickerBuilder()
+    .setAppId(PICKER_CFG.appId)
+    .setOAuthToken(token)
+    .setDeveloperKey(PICKER_CFG.apiKey)
+    .addView(myDriveView)
+    .addView(sharedView)
+    .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+    .enableFeature(google.picker.Feature.SUPPORT_DRIVES)
+    .setCallback(function(data){
+      if (data.action === google.picker.Action.PICKED) _xuLyPicked(data.docs, token);
+    })
+    .setTitle(tt('btn_drive'));
+
+  builder.build().setVisible(true);
+}
+
+async function _xuLyPicked(docs, token){
+  var folders = docs.filter(function(d){ return d.mimeType === 'application/vnd.google-apps.folder'; });
+  var files   = docs.filter(function(d){ return d.mimeType !== 'application/vnd.google-apps.folder'; });
+
+  var items = GoogleDriveAdapter.tuFiles(files, token);
+
+  /* FR-5: thư mục lớn — liệt kê từng cái, feedback rõ. */
+  for (var i = 0; i < folders.length; i++){
+    try {
+      var more = await GoogleDriveAdapter.tuFolderId(folders[i].id, folders[i].name, token);
+      items = items.concat(more);
+    } catch(e){
+      ghiLog('lỗi đọc thư mục ' + folders[i].name + ': ' + e.message);
+      toast(e.message, 'err');
+    }
+  }
+
+  if (items.length) nhanItems(items);
+  else toast(tt('drive_no_img'), 'err');
+}
+
+$('#btnDrive').onclick = moGoogleDrive;
+napPickerConfig();
 </script>
 </body>
 </html>

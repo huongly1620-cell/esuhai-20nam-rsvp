@@ -87,6 +87,54 @@ function mount(app, requireCrmAuth, requireRole) {
     } catch (e) { console.error('[face-match] guests:', e.message); res.status(500).json({ ok: false, error: 'loi' }); }
   });
 
+  /* E08-D102 (CR-159) · LƯỚI ẢNH — home mới của ngăn nhận diện.
+     Route `/crm/event-photos` đã liệt kê ảnh rồi, nhưng nó không biết gì về gợi ý
+     hay album, mà lưới ở đây sống bằng đúng hai con số ấy: tấm nào máy có ý kiến,
+     tấm nào chưa ai gắn tên. Ghép ở trình duyệt thì phải kéo cả 3 479 dòng candidate
+     về máy khách chỉ để đếm — nên đếm ở chỗ có dữ liệu. Thêm route mới, KHÔNG đụng
+     contract của kho ảnh (AC-8).
+     Không trả `vec`, không trả toạ độ mặt: lưới chỉ cần thumb và hai con số. */
+  app.get('/crm/face-match/photos', ...btl, async (req, res) => {
+    try {
+      const limit = Math.min(120, Math.max(1, Number(req.query.limit) || 60));
+      const offset = Math.max(0, Number(req.query.offset) || 0);
+      /* Ba bộ lọc của FR-H1. Tên gửi lên là tiếng Việt không dấu vì đây là API nội
+         bộ của đúng một màn hình; đặt tên máy kiểu `filter=pending` rồi lại dịch
+         ngược ở UI chỉ thêm một lớp phải nhớ. */
+      const loc = String(req.query.filter || 'tat-ca');
+      let dieuKien = '';
+      if (loc === 'co-goi-y') {
+        dieuKien = `AND EXISTS (SELECT 1 FROM crm_face_candidates c
+          WHERE c.event_photo_id = e.id AND c.deleted_at IS NULL AND c.trang_thai = 'cho')`;
+      } else if (loc === 'chua-album') {
+        /* "Chưa gắn album" = chưa có dòng nào đã xác nhận. Định nghĩa này phải khớp
+           đúng chữ hiện trên UI, nếu không người dùng lọc ra một tập không giải
+           thích được. */
+        dieuKien = `AND NOT EXISTS (SELECT 1 FROM crm_face_candidates c
+          WHERE c.event_photo_id = e.id AND c.deleted_at IS NULL AND c.trang_thai = 'xac-nhan')`;
+      }
+      const r = await pool.query(`
+        SELECT e.id, e.orig_name, e.width, e.height,
+          (SELECT count(*)::int FROM crm_face_candidates c
+             WHERE c.event_photo_id = e.id AND c.deleted_at IS NULL AND c.trang_thai = 'cho') AS so_cho,
+          (SELECT count(*)::int FROM crm_face_candidates c
+             WHERE c.event_photo_id = e.id AND c.deleted_at IS NULL AND c.trang_thai = 'xac-nhan') AS so_album,
+          (SELECT count(*)::int FROM crm_event_faces f
+             WHERE f.event_photo_id = e.id AND f.deleted_at IS NULL) AS so_mat
+        FROM crm_event_photos e
+        WHERE e.deleted_at IS NULL ${dieuKien}
+        ORDER BY e.created_at DESC, e.id DESC
+        LIMIT $1 OFFSET $2`, [limit, offset]);
+      const tong = await pool.query(`SELECT count(*)::int n FROM crm_event_photos e
+        WHERE e.deleted_at IS NULL ${dieuKien}`);
+      res.json({ ok: true, tong: tong.rows[0].n, offset, items: r.rows.map(x => ({
+        id: String(x.id), orig_name: x.orig_name, width: x.width, height: x.height,
+        so_cho: x.so_cho, so_album: x.so_album, so_mat: x.so_mat,
+        thumb_url: '/crm/event-photos/' + x.id + '/thumb',
+      })) });
+    } catch (e) { console.error('[face-match] photos:', e.message); res.status(500).json({ ok: false, error: 'loi' }); }
+  });
+
   /* Album của một khách = ĐÚNG những dòng đã xác nhận (FR-7 / AC-7). */
   app.get('/crm/face-match/album/:guestId', ...btl, async (req, res) => {
     try {
@@ -134,14 +182,42 @@ function mount(app, requireCrmAuth, requireRole) {
     } catch (e) { console.error('[face-match] queue:', e.message); res.status(500).json({ ok: false, error: 'loi' }); }
   });
 
-  /* Mọi ảnh trong một khung — kể cả mặt chưa có gợi ý nào, để gán tay (FR-4b). */
+  /* Mọi ảnh trong một khung — kể cả mặt chưa có gợi ý nào, để gán tay (FR-4b).
+
+     E08-D102 · trả THÊM `goi_y` và `album` của đúng tấm này. Trước D102 màn hình
+     lấy gợi ý từ `/queue`, vốn gom theo lô ảnh đang chờ; giờ người dùng mở MỘT tấm
+     bất kỳ trong lưới — kể cả tấm không nằm trong hàng đợi — nên phải hỏi được theo
+     ảnh. Thêm trường vào phản hồi, không đổi trường cũ: `items` giữ nguyên hình
+     dạng, nên đây là thay đổi additive (AC-8). */
   app.get('/crm/face-match/photo/:id/faces', ...btl, async (req, res) => {
     try {
+      /* Kích thước ảnh gốc đi kèm ngay đây. Khung mặt vẽ theo tỉ lệ với ảnh gốc,
+         nên trang xem BẮT BUỘC có `width`/`height`; để nó tự nhặt từ danh sách lưới
+         thì mở ảnh từ album của một khách (không đi qua lưới) sẽ vẽ trượt hết khung
+         mà không báo lỗi gì — đúng kiểu hỏng im lặng. */
+      const anh = await pool.query(`SELECT id, orig_name, width, height
+        FROM crm_event_photos WHERE id = $1 AND deleted_at IS NULL`, [req.params.id]);
+      if (!anh.rows[0]) return res.status(404).json({ ok: false, error: 'không thấy' });
       const r = await pool.query(`SELECT id, box_x, box_y, box_w, box_h, canh_px, do_net, diem_do
         FROM crm_event_faces WHERE event_photo_id = $1 AND deleted_at IS NULL ORDER BY canh_px DESC`,
         [req.params.id]);
-      res.json({ ok: true, items: r.rows });
-    } catch (e) { res.status(500).json({ ok: false, error: 'loi' }); }
+      const c = await pool.query(`
+        SELECT c.id, c.face_id, c.guest_id, c.score, c.trang_thai, c.nguon,
+               g.full_name, g.name_jp, g.org, g.org_jp,
+               f.box_x, f.box_y, f.box_w, f.box_h, f.canh_px, f.do_net
+        FROM crm_face_candidates c
+        JOIN crm_guests g ON g.id = c.guest_id
+        LEFT JOIN crm_event_faces f ON f.id = c.face_id
+        WHERE c.event_photo_id = $1 AND c.deleted_at IS NULL
+          AND c.trang_thai IN ('cho','xac-nhan')
+        ORDER BY c.trang_thai, c.score DESC NULLS LAST, c.id`, [req.params.id]);
+      res.json({ ok: true,
+        anh: { id: String(anh.rows[0].id), orig_name: anh.rows[0].orig_name,
+               width: anh.rows[0].width, height: anh.rows[0].height },
+        items: r.rows,
+        goi_y: c.rows.filter(x => x.trang_thai === 'cho'),
+        album: c.rows.filter(x => x.trang_thai === 'xac-nhan') });
+    } catch (e) { console.error('[face-match] faces:', e.message); res.status(500).json({ ok: false, error: 'loi' }); }
   });
 
   const quyet = (trangThai) => async (req, res) => {

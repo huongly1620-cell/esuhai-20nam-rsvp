@@ -31,6 +31,21 @@ Ràng buộc `CHECK (vec IS NULL OR vec_xoa_luc IS NULL)` đặt ở **tầng CS
 hai bảng: trạng thái mâu thuẫn nay **không biểu diễn được**, không phụ thuộc vào
 việc mọi đường ghi đều nhớ kiểm.
 
+Hai tên ràng buộc: `ck_face_samples_vec_xoa` · `ck_event_faces_vec_xoa`. Trên CSDL
+**đã có sẵn bảng**, `CREATE TABLE IF NOT EXISTS` không thêm được gì — nên `crm-db.js`
+có khối `ALTER` riêng, tự hỏi `pg_constraint` (Postgres **không** có `ADD CONSTRAINT
+IF NOT EXISTS`). Khối đó thêm ràng buộc ở dạng **`NOT VALID`**: chặn mọi lượt ghi từ
+đó về sau, nhưng **không quét lại hàng cũ**. Nghĩa là nếu một CSDL đã lỡ mang hàng
+mâu thuẫn từ bản trước, hàng đó **vẫn nằm đó** — ràng buộc không tự dọn hộ. Kiểm:
+
+```sql
+SELECT count(*) FROM crm_face_samples WHERE vec IS NOT NULL AND vec_xoa_luc IS NOT NULL;
+SELECT count(*) FROM crm_event_faces  WHERE vec IS NOT NULL AND vec_xoa_luc IS NOT NULL;
+```
+
+Cả hai phải bằng **0**. Nếu > 0: dọn (`vec = NULL`) rồi
+`ALTER TABLE … VALIDATE CONSTRAINT …` để ràng buộc phủ luôn quá khứ.
+
 ## Đường xoá thật của vector mẫu
 
 Gắn với **vòng đời dữ liệu**, không gắn với đồng hồ:

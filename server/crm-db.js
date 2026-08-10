@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS crm_face_samples (
   /* N1 · Không hàng nào được vừa giữ vector vừa mang dấu đã xoá vector. Đặt ở
      tầng CSDL chứ không ở tầng ứng dụng: một lời hứa về dữ liệu sinh trắc không
      nên phụ thuộc vào việc mọi đường ghi đều nhớ kiểm. */
-  CHECK (vec IS NULL OR vec_xoa_luc IS NULL)
+  CONSTRAINT ck_face_samples_vec_xoa CHECK (vec IS NULL OR vec_xoa_luc IS NULL)
 );
 CREATE INDEX IF NOT EXISTS idx_face_samples_guest
   ON crm_face_samples (guest_id) WHERE deleted_at IS NULL;
@@ -284,7 +284,7 @@ CREATE TABLE IF NOT EXISTS crm_event_faces (
   run_id          TEXT NOT NULL,
   /* N1 · cùng ràng buộc như bảng mẫu: giữ vector và mang dấu đã xoá là hai điều
      không thể cùng đúng. */
-  CHECK (vec IS NULL OR vec_xoa_luc IS NULL),
+  CONSTRAINT ck_event_faces_vec_xoa CHECK (vec IS NULL OR vec_xoa_luc IS NULL),
   het_han_luc     TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '7 days'),
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
   deleted_at      TIMESTAMPTZ
@@ -331,6 +331,37 @@ CREATE INDEX IF NOT EXISTS idx_face_candidates_album
   WHERE deleted_at IS NULL AND trang_thai = 'xac-nhan';
 CREATE INDEX IF NOT EXISTS idx_face_candidates_theo_anh
   ON crm_face_candidates (event_photo_id) WHERE deleted_at IS NULL;
+
+/* ── Nâng cấp cho CSDL ĐÃ CÓ ba bảng ────────────────────────────────────────
+   CREATE TABLE IF NOT EXISTS chỉ dựng bảng khi chưa có — nó KHÔNG thêm cột,
+   KHÔNG nới NOT NULL, KHÔNG thêm CHECK vào bảng đã tồn tại. Ba cột và hai ràng
+   buộc dưới đây ra đời SAU lần tạo bảng đầu, nên ở bất kỳ nơi nào bảng đã có sẵn
+   thì chúng lặng lẽ vắng mặt — đúng lớp lỗi vé này đã bắt hai lần: một bất biến
+   không tồn tại thì không báo gì cả, nó chỉ đơn giản là không chặn.
+   Postgres KHÔNG có ADD CONSTRAINT IF NOT EXISTS; phải tự hỏi catalog.
+   (Nhắc lại cảnh báo đầu file: khối này là chuỗi mẫu JS — KHÔNG dùng backtick
+   trong chú thích, kể cả để trích tên lệnh. Vừa dẫm phải đúng bẫy đó.) */
+ALTER TABLE crm_face_samples ADD COLUMN IF NOT EXISTS vec_xoa_luc TIMESTAMPTZ;
+ALTER TABLE crm_event_faces  ADD COLUMN IF NOT EXISTS vec_xoa_luc TIMESTAMPTZ;
+ALTER TABLE crm_face_samples ALTER COLUMN vec DROP NOT NULL;
+ALTER TABLE crm_event_faces  ALTER COLUMN vec DROP NOT NULL;
+
+DO $nangcap$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ck_face_samples_vec_xoa') THEN
+    /* NOT VALID: chỉ ràng buộc từ nay về sau, không quét lại toàn bảng. Nếu có
+       hàng cũ đang ở trạng thái mâu thuẫn thì ALTER sẽ không nổ giữa lúc deploy —
+       hàng đó phải được dọn rồi VALIDATE riêng, chứ không âm thầm chặn khởi động. */
+    ALTER TABLE crm_face_samples
+      ADD CONSTRAINT ck_face_samples_vec_xoa
+      CHECK (vec IS NULL OR vec_xoa_luc IS NULL) NOT VALID;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ck_event_faces_vec_xoa') THEN
+    ALTER TABLE crm_event_faces
+      ADD CONSTRAINT ck_event_faces_vec_xoa
+      CHECK (vec IS NULL OR vec_xoa_luc IS NULL) NOT VALID;
+  END IF;
+END $nangcap$;
 `;
 
 async function migrateCrm() {

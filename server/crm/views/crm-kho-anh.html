@@ -554,7 +554,9 @@ var T = {
     drive_reading:'Đang đọc Drive: {name}…',
     drive_found:'→ {n} ảnh trong {name}',
     drive_err_token:'Token Drive hết hạn — bấm lại nút Google Drive.',
-    drive_no_img:'Không tìm thấy ảnh JPG/PNG/WebP nào từ Drive.'
+    drive_no_img:'Không tìm thấy ảnh JPG/PNG/WebP nào từ Drive.',
+    drive_khong_mo:'Không mở được Google Drive. Nhờ BTL kiểm tra cấu hình kho ảnh giúp em.',
+    drive_tuchoi:'Chưa cấp quyền đọc Google Drive nên không mở được.'
   },
   jp:{
     h_title:'📸 イベント写真庫', back:'← CRMへ戻る',
@@ -599,6 +601,8 @@ var T = {
     drive_reading:'Drive読み込み中: {name}…',
     drive_found:'→ {name}に{n}枚',
     drive_err_token:'Driveトークン期限切れ — Google Driveボタンを再度押してください。',
+    drive_khong_mo:'Google Driveを開けません。写真保管庫の設定をご担当者にご確認ください。',
+    drive_tuchoi:'Google Driveの読み取り権限が許可されていないため開けません。',
     drive_no_img:'Drive上にJPG/PNG/WebP画像が見つかりません。'
   }
 };
@@ -1868,20 +1872,58 @@ function _batNutDrive(){
 }
 
 /* Bấm nút → GIS requestAccessToken → Picker. */
+/* D093 · Ghi chi tiết kỹ thuật vào console, KHÔNG lên màn. Người ngồi ở quầy
+   không sửa được "invalid_client"; người sửa được thì mở console. Giữ cả hai
+   đường thay vì bắt một trong hai chịu thiệt. */
+function _ghiKyThuat(cho, e){
+  try { console.warn('[kho-anh] ' + cho + ':', e); } catch(_){}
+}
 function moGoogleDrive(){
   if (!PICKER_CFG || !_gisOk) return;
-  var tc = google.accounts.oauth2.initTokenClient({
-    client_id: PICKER_CFG.clientId,
-    scope: 'https://www.googleapis.com/auth/drive.readonly',
-    callback: function(resp){
-      if (resp.error){ toast('OAuth: ' + (resp.error_description || resp.error), 'err'); return; }
-      _moPickerVoiToken(resp.access_token);
-    }
-  });
-  tc.requestAccessToken();
+  try {
+    var tc = google.accounts.oauth2.initTokenClient({
+      client_id: PICKER_CFG.clientId,
+      scope: 'https://www.googleapis.com/auth/drive.readonly',
+      callback: function(resp){
+        /* Chuỗi của Google là tiếng Anh, dành cho lập trình viên, và đôi khi kèm
+           cả tên biến cấu hình. Dịch sang một câu người ở quầy hiểu; bản gốc đi
+           vào console. Luật D086, đã áp hai lần ở D090. */
+        if (resp && resp.error){
+          _ghiKyThuat('OAuth', resp);
+          toast(tt(resp.error === 'access_denied' ? 'drive_tuchoi' : 'drive_khong_mo'), 'err');
+          return;
+        }
+        _moPickerVoiToken(resp.access_token);
+      },
+      /* Người dùng đóng cửa sổ đăng nhập là HỦY, không phải hỏng: im lặng.
+         Không có nhánh này thì GIS nuốt luôn, hoặc ném ra chỗ không ai bắt. */
+      error_callback: function(err){
+        _ghiKyThuat('OAuth error_callback', err);
+        var ma = err && (err.type || err.message) || '';
+        if (/popup_closed|user_cancel|abort/i.test(String(ma))) return;
+        toast(tt('drive_khong_mo'), 'err');
+      }
+    });
+    tc.requestAccessToken();
+  } catch (e){
+    /* initTokenClient ném khi client_id sai dạng — trước đây lỗi này chỉ nằm ở
+       console và nút trông như chết. */
+    _ghiKyThuat('initTokenClient', e);
+    toast(tt('drive_khong_mo'), 'err');
+  }
 }
 
+/* D093 · Cả khối dựng Picker nằm trong try/catch.
+   Khi khoá API sai, trình tự người dùng gặp là: bấm nút → cấp quyền Drive THẬT
+   → rồi không có gì xảy ra. Họ đã trao quyền xong mới thấy nút như chết, nên
+   đọc ra thành "phần mềm hỏng" chứ không phải "cấu hình sai" — và đi tìm nhầm
+   chỗ. Một câu nói đúng chuyện gì đang xảy ra là rẻ hơn nhiều so với thời gian
+   mất vì đoán. */
 function _moPickerVoiToken(token){
+  try { _dungPicker(token); }
+  catch (e){ _ghiKyThuat('Picker build', e); toast(tt('drive_khong_mo'), 'err'); }
+}
+function _dungPicker(token){
   /* View 1: My Drive — hiện thư mục + ảnh, cho chọn thư mục. */
   var myDriveView = new google.picker.DocsView(google.picker.ViewId.DOCS)
     .setIncludeFolders(true)
@@ -1908,6 +1950,10 @@ function _moPickerVoiToken(token){
     .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
     .enableFeature(google.picker.Feature.SUPPORT_DRIVES)
     .setCallback(function(data){
+      if (!data) return;
+      /* HỦY là một câu trả lời hợp lệ, không phải lỗi: đóng Picker thì im.
+         Toast đỏ ở đây sẽ dạy người dùng rằng thao tác đúng của họ là sai. */
+      if (data.action === google.picker.Action.CANCEL) return;
       if (data.action === google.picker.Action.PICKED) _xuLyPicked(data.docs, token);
     })
     .setTitle(tt('btn_drive'));

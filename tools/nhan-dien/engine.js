@@ -97,4 +97,82 @@ async function phatHien(phien, buf, { nguongDiem = 0.6 } = {}){
     moc: m.moc.map(p => [p[0] * kx, p[1] * ky]),
   }));
 }
-module.exports = { moPhien, phatHien, docAnh };
+
+/* ── Căn mặt ───────────────────────────────────────────────────────────────
+   SFace nhận mặt đã căn về khuôn 112×112: hai mắt nằm đúng chỗ, mặt xoay thẳng.
+   Không căn mà cắt thẳng hộp thì cùng một người nghiêng đầu hai kiểu sẽ ra hai
+   vector khác nhau — đó là lỗi im lặng, không ai báo, chỉ thấy điểm khớp tụt.
+   Khuôn ArcFace tiêu chuẩn; thứ tự mốc của YuNet trùng thứ tự khuôn này
+   (mắt phải chủ thể trước — tức là điểm nằm bên TRÁI ảnh). */
+const KHUON = [[38.2946, 51.6963], [73.5318, 51.5014], [56.0252, 71.7366],
+               [41.5493, 92.3655], [70.7299, 92.2041]];
+
+/* Biến đổi tương tự (xoay + phóng + tịnh tiến) bình phương tối thiểu, viết bằng
+   số phức: q = a·p + t. Nghiệm đóng, không cần SVD. */
+function uocLuongBienDoi(nguon, dich){
+  const n = nguon.length;
+  let px = 0, py = 0, qx = 0, qy = 0;
+  for (let i = 0; i < n; i++){ px += nguon[i][0]; py += nguon[i][1]; qx += dich[i][0]; qy += dich[i][1]; }
+  px /= n; py /= n; qx /= n; qy /= n;
+  let sr = 0, si = 0, sp = 0;
+  for (let i = 0; i < n; i++){
+    const ax = nguon[i][0] - px, ay = nguon[i][1] - py;
+    const bx = dich[i][0]  - qx, by = dich[i][1]  - qy;
+    sr += ax * bx + ay * by;          // Re(conj(a)·b)
+    si += ax * by - ay * bx;          // Im(conj(a)·b)
+    sp += ax * ax + ay * ay;
+  }
+  if (sp === 0) throw new Error('năm mốc trùng nhau — không dựng được phép căn');
+  const ar = sr / sp, ai = si / sp;   // a = ar + i·ai
+  return { ar, ai, tx: qx - (ar * px - ai * py), ty: qy - (ai * px + ar * py) };
+}
+
+/* Lấy mẫu ngược + nội suy song tuyến: duyệt từng điểm ảnh ĐẦU RA rồi tìm nguồn.
+   Duyệt xuôi sẽ để lại lỗ khi phóng to. */
+function catCan(rgb, w, h, moc){
+  const T = uocLuongBienDoi(moc, KHUON);
+  const d = T.ar * T.ar + T.ai * T.ai;
+  if (d === 0) throw new Error('phép căn suy biến');
+  const ra = Buffer.alloc(112 * 112 * 3);
+  for (let v = 0; v < 112; v++){
+    for (let u = 0; u < 112; u++){
+      const ux = u - T.tx, uy = v - T.ty;
+      const x = (T.ar * ux + T.ai * uy) / d;      // nhân với nghịch đảo của a
+      const y = (T.ar * uy - T.ai * ux) / d;
+      const o = (v * 112 + u) * 3;
+      if (x < 0 || y < 0 || x >= w - 1 || y >= h - 1) continue;   // ngoài ảnh → đen
+      const x0 = Math.floor(x), y0 = Math.floor(y);
+      const fx = x - x0, fy = y - y0;
+      for (let c = 0; c < 3; c++){
+        const p00 = rgb[(y0 * w + x0) * 3 + c],       p10 = rgb[(y0 * w + x0 + 1) * 3 + c];
+        const p01 = rgb[((y0 + 1) * w + x0) * 3 + c], p11 = rgb[((y0 + 1) * w + x0 + 1) * 3 + c];
+        ra[o + c] = (p00 * (1 - fx) + p10 * fx) * (1 - fy) + (p01 * (1 - fx) + p11 * fx) * fy;
+      }
+    }
+  }
+  return ra;
+}
+
+/* SFace: 1×3×112×112 BGR thô, ra vector 128 chiều. Chuẩn hoá L2 để so bằng
+   cosine — không chuẩn hoá thì độ dài vector lẫn vào điểm giống nhau. */
+async function nhung(phien, mat112){
+  const t = new Float32Array(3 * 112 * 112), mp = 112 * 112;
+  for (let i = 0, p = 0; i < mp; i++, p += 3){
+    t[i] = mat112[p + 2]; t[mp + i] = mat112[p + 1]; t[2 * mp + i] = mat112[p];
+  }
+  const out = await phien.nhung.run({ data: new ort.Tensor('float32', t, [1, 3, 112, 112]) });
+  const v = Array.from(out.fc1.data);
+  let n = Math.hypot(...v) || 1;
+  return v.map(x => x / n);
+}
+function giongNhau(a, b){ let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
+
+/* Đọc ảnh ở độ phân giải THẬT để cắt mặt: cắt từ bản 640px đã lồng khung sẽ mất
+   chi tiết đúng lúc cần nó nhất. */
+async function anhGoc(buf){
+  const m = await sharp(buf).metadata();
+  const raw = await sharp(buf).removeAlpha().raw().toBuffer();
+  return { raw, w: m.width, h: m.height };
+}
+
+module.exports = { moPhien, phatHien, docAnh, anhGoc, catCan, nhung, giongNhau, KHUON };

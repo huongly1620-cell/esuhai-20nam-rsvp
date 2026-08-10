@@ -247,19 +247,24 @@ CREATE TABLE IF NOT EXISTS crm_event_faces (
   do_net          REAL,
   diem_do         REAL NOT NULL,
   moc             JSONB,
-  vec             BYTEA NOT NULL,
+  /* Vector KHÔNG bắt buộc, và có hạn riêng — ngắn hơn hạn của chính bản ghi mặt.
+     Hai thứ này khác hẳn nhau về mức nhạy cảm: hộp/kích thước/độ nét là hình học,
+     còn vector là mẫu sinh trắc. Vector chỉ dùng để SINH gợi ý; lúc BTL ngồi duyệt
+     thì thứ họ nhìn là ảnh và gợi ý đã ghi sẵn. Đo được: dò+căn+nhúng 42ms/ảnh,
+     tức chạy lại cả kho 1.285 tấm mất ~1 phút — giữ vector 30 ngày là đổi dữ liệu
+     sinh trắc lấy một phút CPU. Sponsor chốt 7 ngày (10/08). */
+  vec             BYTEA,
+  vec_xoa_luc     TIMESTAMPTZ,          -- ghi LÚC xoá: chứng minh được, không chỉ là vắng mặt
   run_id          TEXT NOT NULL,
-  /* Hạn dùng: spec đòi embedding chỉ giữ tạm cho đợt xử lý, Gate 1 chưa chốt số.
-     Đặt 30 ngày làm mặc định CÓ THỂ ĐỔI, kèm lệnh dọn — con số này là quyết định
-     cần Sponsor xác nhận, không phải hằng số kỹ thuật. */
-  het_han_luc     TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '30 days'),
+  het_han_luc     TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '7 days'),
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
   deleted_at      TIMESTAMPTZ
 );
 CREATE INDEX IF NOT EXISTS idx_event_faces_anh
   ON crm_event_faces (event_photo_id) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_event_faces_het_han
-  ON crm_event_faces (het_han_luc) WHERE deleted_at IS NULL;
+/* Quét dọn chỉ nhìn những dòng CÒN vector — dọn xong thì không phải duyệt lại. */
+CREATE INDEX IF NOT EXISTS idx_event_faces_can_don
+  ON crm_event_faces (het_han_luc) WHERE vec IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS crm_face_candidates (
   id              BIGSERIAL PRIMARY KEY,

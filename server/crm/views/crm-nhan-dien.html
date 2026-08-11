@@ -876,7 +876,15 @@ document.addEventListener('change', function(e){
   else if (o.closest('#manMotKhach')) capNhatThanh($('#manMotKhach'));
 });
 
-$('#veCrm').onclick = function(){ location.href = '/crm'; };
+/* E08-D107 · hai tham số của lối vào sâu. Chỉ nhận chuỗi toàn số — cả hai đều đi
+   thẳng vào đường dẫn/URL, nên rác phải chết ngay ở đây. */
+function qSo(ten){ try{ var v = new URLSearchParams(location.search).get(ten);
+  return v && /^\d+$/.test(v) ? v : ''; }catch(e){ return ''; } }
+var qAnh = qSo('anh'), qKhach = qSo('khach');
+/* Đi từ hồ sơ một khách sang đây thì «Về CRM» phải trả về ĐÚNG hồ sơ ấy, không
+   phải danh sách trần: xem một tấm mà mất chỗ đang đứng thì lần sau người ta
+   không bấm nữa — đúng cái vòng lặp mà vé này sinh ra để cắt. */
+$('#veCrm').onclick = function(){ location.href = qKhach ? ('/crm?guest=' + qKhach) : '/crm'; };
 /* AC-6 · nút quay lại trả về ĐÚNG chỗ vừa rời: khối, màn một khách, hay lưới ảnh. */
 $('#veLuoi').onclick = function(){
   if (TU_DAU === 'khach' && KHACH_DANG){ moMotKhach(KHACH_DANG, KHACH_OFFSET); return; }
@@ -901,14 +909,12 @@ $('#themeBtn').onclick = function(){
 apDungTheme(localStorage.getItem('nd_theme') === 'light' ? 'light' : '');
 setLang(LANG);
 jget('/crm/me').then(function(j){ $('#meRole').textContent = (j.role||'') + ' · ' + (j.email||''); }).catch(function(){});
-/* E08-D107 · `?anh=<id>` — mở THẲNG đúng tấm ấy. Đây là đầu kia của dải ảnh sự
-   kiện trên hồ sơ CRM và trên panel sơ đồ: bấm một tấm nhỏ thì phải tới chính tấm
-   đó, chứ không phải đổ người xem vào lưới 15.000 ảnh để tự tìm lại.
+/* E08-D107 · `?anh=<id>` (đọc ở trên) — mở THẲNG đúng tấm ấy. Đây là đầu kia của
+   dải ảnh sự kiện trên hồ sơ CRM và trên panel sơ đồ: bấm một tấm nhỏ thì phải tới
+   chính tấm đó, chứ không phải đổ người xem vào lưới 15.000 ảnh để tự tìm lại.
    Lưới vẫn nạp trước, vì nút «Về lưới ảnh» cần có chỗ để quay về.
-   Chỉ nhận chuỗi toàn số; id lạ / ảnh đã xoá ⇒ ở lại lưới kèm một câu, không để
-   lại màn xem trống (moAnh đã chuyển màn TRƯỚC khi hỏi máy chủ). */
-var qAnh = (function(){ try{ var v = new URLSearchParams(location.search).get('anh');
-  return v && /^\d+$/.test(v) ? v : ''; }catch(e){ return ''; } })();
+   Id lạ / ảnh đã xoá ⇒ ở lại lưới kèm một câu, không để lại màn xem trống (moAnh
+   đã chuyển màn TRƯỚC khi hỏi máy chủ). */
 veLuoi()
   .catch(function(){ $('#anhTom').textContent = tt('loi_nap'); })
   .then(function(){ if (qAnh) return moAnh(qAnh, 'luoi'); })

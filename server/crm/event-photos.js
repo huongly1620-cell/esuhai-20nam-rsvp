@@ -227,19 +227,52 @@ function mount(app, requireCrmAuth, requireRole) {
     }
   });
 
-  async function serveDerived(req, res, col) {
+  /* E08-D110 · `tai` = lượt TẢI VỀ, không phải lượt xem. Chỉ tuyến `preview` truyền
+     cờ này (xem chỗ mount bên dưới); bản 2048 KHÔNG mở thêm đường nào — nới nó là
+     việc của D111 và của một quyết định khác.
+
+     Ba khác biệt so với lượt xem, cả ba đều cố ý:
+       * `Content-Disposition: attachment` — trình duyệt lưu ra file thay vì mở ảnh
+         trong tab, đó là toàn bộ điều người dùng xin.
+       * `no-store` và bỏ nhánh 304: mỗi lượt tải phải là một lượt truyền thật, để
+         «1 dòng audit / 1 tấm» đếm được. Giữ 304 thì lần tải thứ hai vẫn ra file
+         trên máy người dùng mà sổ không có dòng nào — sổ nói ít hơn sự thật.
+       * tên file nói ĐÚNG bậc đang trả. Tấm thiếu bản 1024 thì tuyến này rơi về bản
+         2048 (dòng `dkey`, có từ D082); lúc ấy không được đặt tên `-mobile`, vì cả
+         vé D110 sinh ra để cấm chuyện nhãn nói một đằng bytes một nẻo. KHÔNG đổi
+         bytes trả về ở đây: đổi là đổi luôn đường xem của mọi tấm.
+
+     Tên file không lấy `orig_name`: tên trên đĩa phóng viên có thể đã bị đổi thành
+     tên khách, mà tên khách trong thư mục Tải về của một máy dùng chung là PII rò
+     ra chỗ không ai gác. `photo-{id}` truy ngược được về bản ghi mà không kể gì. */
+  async function serveDerived(req, res, col, tai) {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
     try {
       const r = await pool.query(
         `SELECT object_key, ${col} AS dkey FROM crm_event_photos WHERE id = $1 AND deleted_at IS NULL`, [id]);
       if (!r.rows[0]) return res.status(404).json({ ok: false, error: 'not found' });
+      const coBanPhu = !!r.rows[0].dkey;
       const dkey = r.rows[0].dkey || r.rows[0].object_key;   // chưa có bản phụ → dùng bản 2048
       const etag = '"' + dkey + '"';
-      if (req.headers['if-none-match'] === etag) return res.status(304).end();
+      if (!tai && req.headers['if-none-match'] === etag) return res.status(304).end();
       res.setHeader('Content-Type', 'image/jpeg');
-      res.setHeader('Cache-Control', CACHE);
-      res.setHeader('ETag', etag);
+      if (tai) {
+        const tenFile = 'photo-' + id + (coBanPhu ? '-mobile' : '') + '.jpg';
+        res.setHeader('Content-Disposition', 'attachment; filename="' + tenFile + '"');
+        res.setHeader('Cache-Control', 'no-store');
+        await logAudit(pool, {
+          actor_email: req.actor && req.actor.email,
+          event_type: 'event_photo_download',
+          target_type: 'event_photo', target_id: String(id),
+          meta: { bac: 'mobile', da_tra: coBanPhu ? 'preview-1024' : 'web-2048',
+            key: dkey, ten_file: tenFile },
+          ip: ipOf(req),
+        });
+      } else {
+        res.setHeader('Cache-Control', CACHE);
+        res.setHeader('ETag', etag);
+      }
       const stream = await storage.getObjectStream(dkey);
       stream.on('error', (e) => {
         console.error('[event-photos] stream failed:', e.message);
@@ -279,7 +312,11 @@ function mount(app, requireCrmAuth, requireRole) {
     }
   }
   app.get('/crm/event-photos/:id/thumb', requireCrmAuth, tamDaDuyet, (req, res) => serveDerived(req, res, 'thumb_key'));
-  app.get('/crm/event-photos/:id/preview', requireCrmAuth, tamDaDuyet, (req, res) => serveDerived(req, res, 'preview_key'));
+  /* `?dl=1` KHÔNG phải tuyến mới: cùng đường, cùng cổng gác, cùng bytes — chỉ khác
+     ở chỗ nói với trình duyệt «lưu ra file» và ghi một dòng sổ. Làm tuyến riêng thì
+     có hai chỗ phải nhớ nới/siết quyền, và một ngày nào đó chúng lệch nhau. */
+  app.get('/crm/event-photos/:id/preview', requireCrmAuth, tamDaDuyet,
+    (req, res) => serveDerived(req, res, 'preview_key', req.query.dl === '1'));
 
   app.get('/crm/event-photos/:id', ...btl, async (req, res) => {
     const id = parseInt(req.params.id, 10);

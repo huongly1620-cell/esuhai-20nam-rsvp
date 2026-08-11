@@ -137,6 +137,33 @@
   .khung{position:absolute;border:2px solid var(--gold);border-radius:3px;pointer-events:none}
   .khung.chon{border-color:var(--ok);box-shadow:0 0 0 2px rgba(67,224,141,.35)}
   .khung.tron{border-color:rgba(255,255,255,.34);border-style:dashed}
+  /* ── E08-D112 · khung mặt là thứ BẤM ĐƯỢC (FR-1) ──────────────────────────
+     Chỉ khung mang `data-face` mới nhận cú chạm. Khung đang kéo (`.khung.moi`)
+     vẫn là hình vẽ thuần — nó chưa là mặt của ai. Và khi đang ở chế độ khoanh
+     mẫu thì cả lớp khung phải trả cú kéo lại cho ảnh: không thì cú kéo bắt đầu
+     trên một khuôn mặt bị khung nuốt, người dùng khoanh mãi không ra khung nào,
+     tức tính năng ảnh mẫu của D077 chết vì vé này. */
+  .khung[data-face]{pointer-events:auto;cursor:pointer}
+  .anhto.khoanh .khung[data-face]{pointer-events:none;cursor:inherit}
+  /* Mặt đang chọn: viền VÀNG ĐẶC 3px. Phải thắng cả `.chon` (xanh, đã gắn tên)
+     lẫn `.tron` (nét đứt, máy không có gợi ý) — hai lớp ấy cùng độ đặc hiệu với
+     lớp này, nên thứ quyết định là THỨ TỰ, và phải nói lại cả ba thuộc tính viền
+     chứ không riêng màu: chỉ đổi màu thì khung `.tron` được chọn vẫn nét đứt. */
+  .khung.pick{border:3px solid var(--gold);box-shadow:0 0 0 2px rgba(7,16,27,.55)}
+  /* Dấu ✓ nằm HẲN trên mép khung (`bottom:100%`), không phủ lên mặt. Đặt nó ở góc
+     trong khung — hay lấn vào khung vài pixel — thì với khuôn mặt nhỏ nhất trong
+     kho (~15px ở 360px) huy hiệu che gần hết chính khuôn mặt người ta đang nhìn để
+     nhận ra là ai. `bottom:100%` không phụ thuộc cỡ khung nên nó đúng cho cả mặt
+     to lẫn mặt bé, không cần đo trong JS.
+     Lệch phải 3px thôi (không 9px): mặt sát mép phải ảnh mà huy hiệu thò ra xa là
+     trang tràn ngang ở 360px. Thò lên trên thì an toàn — chỗ ấy là khe giữa hai
+     thẻ, không đè lên nội dung nào.
+     `+5px` chứ không `+2px`: gốc của `bottom:100%` là HỘP PADDING của khung, tức
+     mép TRONG của viền. Viền lúc đang chọn dày 3px, nên 2px hụt đúng 3px và huy
+     hiệu vẫn liếm lên viền — 3px viền + 2px khe. */
+  .khung .dau{position:absolute;bottom:calc(100% + 5px);right:-3px;background:var(--gold);
+    color:#231a06;border-radius:999px;font-size:10px;line-height:1;font-weight:700;
+    padding:3px 5px;pointer-events:auto}
   .anhto{position:relative;display:inline-block;max-width:100%}
   .anhto img{max-width:100%;display:block;border-radius:11px}
   .goi{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -303,6 +330,11 @@ var T = {
     may_goi:'Máy gợi ý — bấm để chốt',
     da_gan:'Đã gắn tên trong ảnh này',
     chua_goi:'Máy không có gợi ý nào cho ảnh này. Anh chị nhìn và gắn tên bên dưới.',
+    /* ── E08-D112 · chọn mặt trên ảnh ── */
+    pick_1:'Đang chọn 1 khuôn mặt — bên dưới chỉ còn gợi ý của mặt đó. Bấm lại vào mặt, hoặc bấm nền ảnh, để xem lại cả tấm.',
+    pick_n:'Đang chọn {n} khuôn mặt — bên dưới chỉ còn gợi ý của những mặt đó. Bấm nền ảnh để xem lại cả tấm.',
+    pick_trong:'Mặt đang chọn chưa có gợi ý nào. Anh chị gắn tên ở ô bên dưới.',
+    dau_chon:'Mặt đang chọn',
     rat_giong:'rất giống', kha_giong:'khá giống', hoi_giong:'hơi giống',
     xac_nhan:'Đúng người này', tu_choi:'Không phải', bo_qua:'Để sau',
     gan_tay:'Gắn tên khách vào ảnh này', gan_ph:'Gõ tên / đơn vị (≥2 ký tự)',
@@ -350,6 +382,11 @@ var T = {
     may_goi:'自動候補 — 押して確定',
     da_gan:'この写真で登録済みのゲスト',
     chua_goi:'この写真には自動候補がありません。ご覧のうえ、下で名前を登録してください。',
+    /* ── E08-D112 ── */
+    pick_1:'顔を1件選択中 — 下にはその顔の候補のみを表示しています。もう一度その顔を押すか、写真の背景を押すと全体に戻ります。',
+    pick_n:'顔を{n}件選択中 — 下にはそれらの顔の候補のみを表示しています。写真の背景を押すと全体に戻ります。',
+    pick_trong:'選択中の顔には候補がありません。下の欄で名前を登録してください。',
+    dau_chon:'選択中の顔',
     rat_giong:'よく似ています', kha_giong:'やや似ています', hoi_giong:'少し似ています',
     xac_nhan:'この人で正しい', tu_choi:'別人です', bo_qua:'あとで',
     gan_tay:'この写真にゲスト名を登録', gan_ph:'氏名／所属（2文字以上）',
@@ -469,6 +506,11 @@ function hienMan(id){
     $('#xemTom').textContent = ''; $('#ganO').value = '';
     $('#baoXem').textContent = '';
     dongKhoanh();
+    /* E08-D112 · tập mặt đang chọn cũng phải chết cùng màn hình, đúng một lý do
+       với hai dòng trên: `face_id` của tấm vừa rời không có nghĩa ở tấm sắp mở,
+       mà nếu nó sống sót thì lượt vẽ sau lại lọc danh sách theo một khuôn mặt
+       không còn trên màn — cùng bài học với `dataset.box` của D077. */
+    PICK = []; XEM = { goi: [], alb: [] };
   }
   /* Trang xem một ảnh không phải một tab — nó là màn con của tab mà người dùng ĐI
      TỪ ĐÓ vào. D103 gán cứng nó cho tab Phân loại; từ D106 URL cũng nói tab đang
@@ -551,6 +593,12 @@ function tenKh(x){ return (LANG==='jp' && x.name_jp ? x.name_jp : x.full_name) |
 
 async function moAnh(id, tuDau){
   if (!id) return;
+  /* E08-D112 · sang tấm KHÁC thì tập mặt đang chọn phải chết theo: một `face_id`
+     của tấm này không có nghĩa gì ở tấm kia. Còn vẽ lại CHÍNH tấm đang mở — sau
+     mỗi cú duyệt gợi ý, hay khi đổi ngôn ngữ — thì giữ nguyên tập ấy: mất chỗ
+     đang chọn sau mỗi lượt chốt là bắt người ta bấm lại mặt từ đầu, mà đúng cái
+     lặp đó là thứ vé này sinh ra để cắt. */
+  var doiTam = String(ANH_DANG == null ? '' : ANH_DANG) !== String(id);
   ANH_DANG = id;
   /* Ghi chỗ cuộn TRƯỚC khi đổi màn, và chỉ khi đây là một lượt MỞ thật (có
      `tuDau`). `moAnh(ANH_DANG)` không tham số còn được gọi để vẽ lại chính tấm
@@ -558,6 +606,7 @@ async function moAnh(id, tuDau){
      đứng của màn kia. */
   if (tuDau === 'khoi') SCROLL_KHOI = window.scrollY;
   else if (tuDau === 'khach') SCROLL_KHACH = window.scrollY;
+  if (doiTam) PICK = [];
   if (tuDau) TU_DAU = tuDau;
   hienMan('manXem');
   /* Đổi ảnh (hoặc vẽ lại chính tấm này) = `#anhTo` bị dựng lại → khung đang vẽ
@@ -577,7 +626,11 @@ async function moAnh(id, tuDau){
      mà toạ độ trong CSDL là của ảnh gốc. */
   function oKhung(f, lop){
     if (!f.box_w || !W || !H) return '';
-    return '<i class="khung ' + lop + '" style="left:' + (f.box_x/W*100).toFixed(2) + '%;top:'
+    /* `data-face` là thứ duy nhất nối khung trên ảnh với dòng gợi ý bên dưới —
+       trước D112 khung không mang id nào, nên không có cách nào hỏi "gợi ý này
+       của mặt nào". */
+    return '<i class="khung ' + lop + '" data-face="' + Number(f.id)
+      + '" style="left:' + (f.box_x/W*100).toFixed(2) + '%;top:'
       + (f.box_y/H*100).toFixed(2) + '%;width:' + (f.box_w/W*100).toFixed(2) + '%;height:'
       + (f.box_h/H*100).toFixed(2) + '%"></i>';
   }
@@ -592,14 +645,106 @@ async function moAnh(id, tuDau){
   $('#theAnh').setAttribute('data-w', W);
   $('#theAnh').setAttribute('data-h', H);
 
+  /* Mặt có thể biến mất giữa hai lượt vẽ (kho chạy lại nhận diện). Lọc PICK theo
+     đúng những khung VỪA vẽ: giữ một face_id không còn khung nào là lọc danh sách
+     gợi ý xuống rỗng trong khi trên ảnh không còn gì đang sáng để bấm bỏ — người
+     dùng bị nhốt trong một bộ lọc vô hình. */
+  var coMat = {}; mat.forEach(function(f){ coMat[String(f.id)] = 1; });
+  PICK = PICK.filter(function(x){ return coMat[x]; });
+  XEM = { goi: goi, alb: alb };
+  apDungPick(false);
+}
+
+/* ══════════ E08-D112 · chọn khuôn mặt trên ảnh lớn (FR-1…FR-5) ══════════
+
+   LUẬT CHỌN — một luật, viết ra đây để người sau và người chấm đọc cùng một chỗ:
+     · bấm trong một khung          = cộng mặt đó vào tập đang chọn
+     · bấm lại đúng khung đang chọn = bỏ mặt đó ra
+     · bấm nền ảnh, ngoài mọi khung = bỏ hết
+   KHÔNG dùng phím phụ (Ctrl/Cmd) để chọn nhiều. Trang này chạy trên điện thoại ở
+   cửa sự kiện, nơi không ai có bàn phím — một luật cần phím phụ là luật mà phân
+   nửa người dùng không thực hiện được, và họ sẽ không biết vì sao mình không làm
+   được. Cộng-dồn-bằng-cú-bấm chạy giống nhau trên cả chuột lẫn ngón tay.
+
+   Tập chọn giữ trong biến, KHÔNG đọc lại từ URL hay localStorage: nó là chỗ đứng
+   trong một lượt soát, không phải một tuỳ chọn của người dùng. */
+var PICK = [], XEM = { goi: [], alb: [] };
+
+/* FR-5 · hit-slop. Khung vẽ đúng bằng khuôn mặt máy tìm thấy, mà trong ảnh đám
+   đông ở 360px khuôn mặt chỉ còn ~20px — nhỏ hơn đầu ngón tay. Nới VÙNG CHẠM cho
+   đủ 44px; không nới khung vẽ, vì khung vẽ đang nói "máy thấy mặt ở đúng đây".
+   Làm bằng JS chứ không bằng một pseudo-element phủ rộng: vùng nới của mặt này
+   chồng lên khung THẬT của mặt bên cạnh, mà trong CSS cái vẽ sau luôn thắng — nới
+   bằng CSS là cướp mất cú bấm chính xác của hàng xóm. Ở đây cú bấm trúng khung
+   thật đã được xử trước khi gọi hàm này; xuống tới đây chỉ còn những cú bấm trượt
+   ra nền, và ta trả về khung có tâm gần nhất. */
+function matGanDiem(el, ev){
+  var x = ev.clientX, y = ev.clientY, gan = null, xa = Infinity;
+  /* Cú `.click()` tổng hợp không có toạ độ (0,0). Không có toạ độ thì không có cú
+     bấm trượt để cứu — đừng đo từ góc màn hình, vì góc ấy có thể lọt vào vùng nới
+     của một khuôn mặt trên cùng và biến "bấm nền" thành "chọn mặt". */
+  if (!x && !y) return null;
+  el.querySelectorAll('.khung[data-face]').forEach(function(k){
+    var r = k.getBoundingClientRect();
+    var nx = Math.max(0, (44 - r.width) / 2), ny = Math.max(0, (44 - r.height) / 2);
+    if (x < r.left - nx || x > r.right + nx || y < r.top - ny || y > r.bottom + ny) return;
+    var d = Math.abs(x - (r.left + r.right) / 2) + Math.abs(y - (r.top + r.bottom) / 2);
+    if (d < xa){ xa = d; gan = k; }
+  });
+  return gan;
+}
+
+function doiPick(fid){
+  var i = PICK.indexOf(fid);
+  if (i > -1) PICK.splice(i, 1); else PICK.push(fid);
+  apDungPick(true);
+}
+function boPick(){ if (!PICK.length) return; PICK = []; apDungPick(false); }
+
+/* Một đường duy nhất để trạng thái chọn hiện ra: viền + dấu ✓ trên ảnh, và danh
+   sách bên dưới. Hai nơi ấy phải đổi CÙNG một nhịp — lệch nhau là người dùng thấy
+   một mặt đang sáng mà danh sách nói chuyện của mặt khác. */
+function apDungPick(cuon){
+  document.querySelectorAll('#anhTo .khung[data-face]').forEach(function(k){
+    var co = PICK.indexOf(k.getAttribute('data-face')) > -1;
+    k.classList.toggle('pick', co);
+    var d = k.querySelector('.dau');
+    if (co && !d){
+      d = document.createElement('b'); d.className = 'dau'; d.textContent = '✓';
+      /* Nhãn cho trình đọc màn hình đi qua tt(): dấu ✓ không mang chữ nào, nhưng
+         cái nhãn thì có — để nguyên tiếng Việt là bỏ quên nó ở bản 日本語. */
+      d.setAttribute('aria-label', tt('dau_chon'));
+      k.appendChild(d);
+    } else if (!co && d) d.remove();
+  });
+  veDsGoi();
+  /* FR-3 · cuộn tới danh sách sau khi CHỌN. Không cuộn khi bỏ chọn hay khi vẽ lại
+     ảnh: lúc ấy người dùng đang nhìn ảnh, giật trang xuống là cướp chỗ họ đang nhìn. */
+  if (cuon && PICK.length) $('#dsGoi').scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+/* FR-3 · danh sách dưới ảnh. 0 mặt đang chọn = cả tấm, đúng như trước D112.
+   Có mặt đang chọn = CHỈ những dòng thuộc các mặt ấy. Dòng gắn tay không có
+   `face_id` (API cho phép NULL) nên khi đang lọc nó không thuộc mặt nào — đúng,
+   vì nó gắn vào TẤM ẢNH chứ không vào một khuôn mặt. */
+function veDsGoi(){
+  var loc = PICK.length;
+  function cuaPick(c){
+    return !loc || PICK.indexOf(String(c.face_id == null ? '' : c.face_id)) > -1; }
+  function dfa(c){ return c.face_id ? ' data-face="' + Number(c.face_id) + '"' : ''; }
+  var alb = XEM.alb.filter(cuaPick), goi = XEM.goi.filter(cuaPick);
   var html = '';
+  /* Danh sách ngắn lại mà không nói vì sao thì người dùng đọc đó là "gợi ý biến
+     mất", không phải "đang lọc" — và cách thoát cũng phải nằm ngay trong câu ấy. */
+  if (loc) html += '<p class="hint" id="chuPick" style="margin:11px 0 0">'
+    + esc(loc === 1 ? tt('pick_1') : fmt('pick_n', { n: loc })) + '</p>';
   if (alb.length){
     html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('da_gan')) + '</p>';
-    /* AC-11 · tên + đơn vị nằm trong MỘT cột co được, ✓ là con thứ hai của hàng.
-       Bản trước dùng `<div class="spacer">` đẩy ✓ sang phải — spacer là phần tử
-       thứ ba, và ở 360px chính nó là chỗ hàng gãy. */
+    /* AC-11 (D106) · tên + đơn vị nằm trong MỘT cột co được, ✓ là con thứ hai của
+       hàng. Bản trước dùng `<div class="spacer">` đẩy ✓ sang phải — spacer là phần
+       tử thứ ba, và ở 360px chính nó là chỗ hàng gãy. */
     html += alb.map(function(c){
-      return '<div class="goi da"><span class="ten"><b>' + esc(tenKh(c)) + '</b>'
+      return '<div class="goi da"' + dfa(c) + '><span class="ten"><b>' + esc(tenKh(c)) + '</b>'
         + (c.org ? ' <span class="hint">' + esc(c.org) + '</span>' : '')
         + '</span><span class="dem co">✓</span></div>'; }).join('');
   }
@@ -607,7 +752,7 @@ async function moAnh(id, tuDau){
     html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('may_goi')) + '</p>';
     html += goi.map(function(c){
       var m = c.score != null && c.score >= 0.55;
-      return '<div class="goi" data-cid="' + c.id + '">'
+      return '<div class="goi" data-cid="' + c.id + '"' + dfa(c) + '>'
         + '<b>' + esc(tenKh(c)) + '</b>'
         + (c.org ? ' <span class="hint">' + esc(c.org) + '</span>' : '')
         + '<span class="diem' + (m ? '' : ' vua') + '">' + esc(chuGiong(c.score)) + '</span>'
@@ -616,8 +761,13 @@ async function moAnh(id, tuDau){
         + '<button class="btn sm bad" data-do="reject">' + esc(tt('tu_choi')) + '</button>'
         + '<button class="btn sm" data-do="skip">' + esc(tt('bo_qua')) + '</button></div>';
     }).join('');
-  } else {
+  } else if (!loc){
     html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('chua_goi')) + '</p>';
+  } else if (!alb.length){
+    /* Mặt đang chọn không có gợi ý NÀO và cũng chưa mang tên: lối đi tiếp là ô gắn
+       tay ngay bên dưới, nên chỉ tới đó. Mặt đã có tên thì dòng tên ở trên đã trả
+       lời rồi, không cần thêm câu nào. */
+    html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('pick_trong')) + '</p>';
   }
   $('#dsGoi').innerHTML = html;
 }
@@ -985,6 +1135,19 @@ document.addEventListener('input', function(e){
 document.addEventListener('click', async function(e){
   var oAnh = e.target.closest && e.target.closest('button.o[data-anh]');
   if (oAnh){ await moAnh(oAnh.getAttribute('data-anh'), 'luoi'); return; }
+
+  /* ── E08-D112 · chọn mặt trên ảnh lớn (FR-1) ──
+     Cả vùng `#anhTo` được xử ở ĐÂY và dừng lại ở đây: bấm trúng khung thì chọn,
+     bấm trượt ra nền thì bỏ hết. Không để cú bấm rơi tiếp xuống các nhánh dưới. */
+  var trongAnh = e.target.closest && e.target.closest('#anhTo');
+  if (trongAnh){
+    /* Đang khoanh mẫu thì cú bấm này là phần đuôi của một cú KÉO, không phải một
+       cú chọn mặt. Trả nó về cho chế độ khoanh, đừng vừa vẽ khung vừa đổi tập chọn. */
+    if (trongAnh.classList.contains('khoanh')) return;
+    var kh = e.target.closest('.khung[data-face]') || matGanDiem(trongAnh, e);
+    if (kh) doiPick(kh.getAttribute('data-face')); else boPick();
+    return;
+  }
 
   /* ── E08-D103 · thao tác trong khối ── */
   /* Chạm ô tick thì CHỈ tick. Không có dòng này thì mỗi lần chọn một tấm lại nhảy

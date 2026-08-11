@@ -941,6 +941,21 @@ function veLaiTai(){
   capNhatThanh($('#manMotKhach'));
 }
 
+/* Mối nối D110 × D109. `hienMan` đặt `TAI_MO=''` mỗi lượt đổi màn, và trước D109
+   điều đó luôn đi kèm một lượt vẽ lại — biến với DOM không thể lệch. D109 cắt đúng
+   lượt vẽ lại ấy (nó là chỗ giữ tick và chỗ cuộn), nên bảng chọn bậc đang mở lúc
+   người dùng bấm vào một tấm vẫn còn nguyên trên màn khi họ quay về, trong khi biến
+   đã nói là đóng. Lệch nhau thì cú bấm «Tải» kế tiếp mở lại một bảng ĐANG mở: người
+   dùng thấy nút chết, phải bấm hai lần mới đóng được.
+
+   Chỉ chạy khi thật sự còn bảng mở, và chạy TRƯỚC khoiPhucCuon: đóng bảng làm card
+   thấp xuống, khôi phục chỗ cuộn trước rồi mới đổi chiều cao là trả người dùng về
+   sai chỗ. Vẽ lại `.thanhChon` không mất gì của D109 — tick nằm trong `.luoi`, còn
+   ô «chọn hết» D109 cố ý đặt ngoài thanh (xem chú thích ở veKhoi). */
+function dongBangTaiCu(){
+  if ($('.tai.mo')) veLaiTai();
+}
+
 /* Tải TỪNG tấm, không gói ZIP (CR-156): gói trên máy chủ là thêm một tiến trình
    phải canh bộ nhớ và thời gian chạy; gói trên trình duyệt là kéo hết bytes vào RAM
    điện thoại. Người phụ trách cần vài tấm gửi Zalo, không cần một cái kho.
@@ -1155,6 +1170,7 @@ function veManKhoi(gidNhin){
   var conKhoi = !KHOI_CU && !!$('#dsKhoi').querySelector('.khoi');
   hienMan('manKhach');
   if (!conKhoi){ veKhoi(); return; }
+  dongBangTaiCu();
   khoiPhucCuon(SCROLL_KHOI, gidNhin ? '.khoi[data-gid="' + gidNhin + '"]' : null);
 }
 
@@ -1167,6 +1183,7 @@ function veManMotKhach(){
     && !!$('#anhMotKhach').querySelector('.anh-o');
   if (!conTrang){ moMotKhach(KHACH_DANG, KHACH_OFFSET); return; }
   hienMan('manMotKhach');
+  dongBangTaiCu();
   khoiPhucCuon(SCROLL_KHACH, null);
 }
 

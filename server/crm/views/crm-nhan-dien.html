@@ -1879,7 +1879,13 @@ function veMotLuong(l){
   if (l.trang_thai === 'chay' || l.trang_thai === 'tam-dung') DB_MOC[l.id] = { t: nay, n: l.da_soi };
   else delete DB_MOC[l.id];
 
-  if (l.nhip_cuoi_giay != null){
+  /* Nhịp chỉ có nghĩa cho luồng CÒN PHẢI THỞ. Một luồng đã xong mà vẫn khoe
+     «nhịp 940s trước» là bày ra một con số tăng mãi, và người đọc phải tự hiểu
+     rằng nó không nói gì cả. Luồng mất liên lạc thì giữ lại — ở đó chính con số
+     ấy là bằng chứng. */
+  var canNhip = l.trang_thai === 'chay' || l.trang_thai === 'tam-dung'
+             || l.trang_thai === 'mat-lien-lac';
+  if (canNhip && l.nhip_cuoi_giay != null){
     var nh = document.createElement('span'); nh.className = 'qmuc';
     nh.textContent = fmt('q_nhip', { n: dbSo(l.nhip_cuoi_giay) });
     d.appendChild(nh);
@@ -2013,12 +2019,14 @@ function veDongBo(j){
   }
   /* FR-10 · KHÔNG có máy quét nào trực thì phải nói, và nói TRƯỚC câu khác. Một
      đợt đang mở mà không ai nhận là thứ trông giống «đang chạy» nhất, và im lặng
-     ở đây là để người ta ngồi đợi một cái không bao giờ nhúc nhích. */
-  if (mo && j.co_may_truc === false) chu = tt('q_khong_truc') + (chu ? ' · ' + chu : '');
-  /* Thiếu bộ nhận diện TẠI MÁY CHỦ chỉ có nghĩa «máy chủ không tự chạy được» —
-     đường chính là máy quét trực ở máy khác. Nên câu này chỉ nói khi cũng KHÔNG
-     có máy quét nào trực; nói cả hai lúc mọi thứ đang chạy tốt là gây hoang mang. */
-  else if (j.san_sang === false && !j.co_may_truc && !mo) chu = tt('db_thieu') + (chu ? ' · ' + chu : '');
+     ở đây là để người ta ngồi đợi một cái không bao giờ nhúc nhích. Chưa mở đợt
+     mà cũng không có máy trực thì vẫn nói — đó là thứ cần biết TRƯỚC khi bấm.
+
+     Cố ý KHÔNG dùng câu `db_thieu` của D124 («máy chủ chưa có bộ nhận diện nên
+     nút này chưa chạy được») ở đây nữa: từ D126 nó SAI. Máy chủ prod không bao
+     giờ có engine — đó là chủ ý của D077 — và cái nút vẫn chạy được, nó xếp việc
+     cho máy quét trực. Câu đúng là câu chỉ đường bật máy quét. */
+  if (j.co_may_truc === false) chu = tt('q_khong_truc') + (chu ? ' · ' + chu : '');
 
   $('#dbTom').textContent = tt2;
   $('#dbChu').textContent = chu;

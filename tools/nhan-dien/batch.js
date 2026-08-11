@@ -557,6 +557,13 @@ async function chayMotLuong(phien, luong, log){
           WHERE id = $1 AND trang_thai = 'chay'`,
         [luong.id, d.da_soi, d.so_mat, d.goi_y, d.so_loi, tuHam]);
       log('  luồng ' + luong.so + ': ' + tuHam + ' Đã nhả ' + nha + ' tấm.');
+      /* Câu lý do phải SỐNG SÓT qua những nhịp thở kế tiếp. Không có dòng này thì
+         `nhip()` ở đầu vòng lặp sau ghi đè `loi` bằng câu lỗi của tấm cuối cùng —
+         và hai giây sau, bảng hiện «Tấm anh-20.jpg: khoá MinIO sai» thay vì
+         «tự tạm dừng vì 20/20 tấm gần đây bị lỗi». Câu thứ nhất nói tấm nào hỏng;
+         chỉ câu thứ hai trả lời được câu người vận hành thật sự đang hỏi: vì sao
+         luồng này đứng. Đo được ở lab. */
+      d.loi = tuHam;
       tuHam = null;
       cuaSo.length = 0;                  // tiếp tục là bắt đầu đếm lại, không hãm ngay
     }

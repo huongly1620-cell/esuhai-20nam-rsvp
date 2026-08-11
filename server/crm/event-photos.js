@@ -251,8 +251,35 @@ function mount(app, requireCrmAuth, requireRole) {
       if (!res.headersSent) return res.status(500).json({ ok: false, error: 'view error' });
     }
   }
-  app.get('/crm/event-photos/:id/thumb', ...btl, (req, res) => serveDerived(req, res, 'thumb_key'));
-  app.get('/crm/event-photos/:id/preview', ...btl, (req, res) => serveDerived(req, res, 'preview_key'));
+  /* E08-D107 · thumb/preview mở cho `staff`, nhưng CÓ ĐIỀU KIỆN: chỉ tấm đã có
+     ít nhất một dòng `xac-nhan`.
+
+     Vì sao phải nới: album trả JSON cho phụ trách (face-match.js) mà hai tuyến
+     ảnh này còn `...btl` thì cửa hiện ra một dải ô vỡ hình — nới nửa vời còn tệ
+     hơn không nới, vì nó trông như lỗi hạ tầng chứ không như một quyết định.
+
+     Vì sao KHÔNG nới cả kho: tấm chưa gắn ai là ảnh phóng sự thô — có mặt người
+     chưa ai duyệt, chưa ai quyết là được phép gửi đi. Điều kiện `xac-nhan` giữ
+     đúng ranh giới CR-127: phụ trách xem được thứ BTL ĐÃ duyệt, không xem được
+     thứ chưa duyệt. `btl` đi thẳng, không tốn một lượt hỏi CSDL nào.
+
+     Lưu ý ranh giới: list kho / upload / xoá / nhận diện vẫn `...btl` nguyên. */
+  async function tamDaDuyet(req, res, next) {
+    if (req.actor && req.actor.role === 'btl') return next();
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ ok: false, error: 'bad id' });
+    try {
+      const r = await pool.query(`SELECT 1 FROM crm_face_candidates
+        WHERE event_photo_id = $1 AND deleted_at IS NULL AND trang_thai = 'xac-nhan' LIMIT 1`, [id]);
+      if (!r.rows[0]) return res.status(403).json({ ok: false, error: 'tấm này chưa được duyệt' });
+      return next();
+    } catch (e) {
+      console.error('[event-photos] gác tấm đã duyệt:', e.message);
+      return res.status(500).json({ ok: false, error: 'loi' });
+    }
+  }
+  app.get('/crm/event-photos/:id/thumb', requireCrmAuth, tamDaDuyet, (req, res) => serveDerived(req, res, 'thumb_key'));
+  app.get('/crm/event-photos/:id/preview', requireCrmAuth, tamDaDuyet, (req, res) => serveDerived(req, res, 'preview_key'));
 
   app.get('/crm/event-photos/:id', ...btl, async (req, res) => {
     const id = parseInt(req.params.id, 10);

@@ -296,8 +296,28 @@ function mount(app, requireCrmAuth, requireRole) {
     finally { c.release(); }
   });
 
-  /* Album của một khách = ĐÚNG những dòng đã xác nhận (FR-7 / AC-7). */
-  app.get('/crm/face-match/album/:guestId', ...btl, async (req, res) => {
+  /* Album của một khách = ĐÚNG những dòng đã xác nhận (FR-7 / AC-7).
+
+     E08-D107 · TUYẾN DUY NHẤT của ngăn nhận diện mà `staff` đọc được.
+     Sponsor 11/08 10:3x: «nhân viên phụ trách phải có quyền xem ảnh để còn tải
+     về gửi cho khách đó». Mặt chính của phụ trách là CỬA (`serveShell` vẫn chặn
+     `/crm` ở role staff), nên nếu tuyến này còn `...btl` thì phụ trách không có
+     đường nào xem — lấp album chỉ trên CRM là lấp cho BTL xem một mình.
+
+     Ba ranh giới, cố ý:
+     · `requireCrmAuth` KHÔNG có `requireDoorOrAuth`: làn `CRM_DOOR_OPEN`/`door@`
+       là một cánh cửa không tên, mà đây là dữ liệu người thật. Phải OTP.
+     · MỌI khách, không lọc theo phụ trách (Sponsor 10:4x). Người gửi ảnh cho
+       khách hôm nay chưa chắc là người đã đón khách ấy hôm qua.
+     · Chỉ ĐỌC. Xác nhận / gán / kho / duyệt vẫn `...btl` — xem thêm được một
+       thứ không có nghĩa là quyết định thêm được một thứ.
+
+     Audit MỖI lượt đọc (AC-13): mở rộng người đọc thì phải mở rộng cả sổ ghi ai
+     đã đọc — «ai đang hoạt động và hoạt động những gì» là điều kiện Sponsor đặt
+     ra cùng lúc với việc nới quyền, không phải phần thêm cho đẹp. */
+  app.get('/crm/face-match/album/:guestId', requireCrmAuth, async (req, res) => {
+    const gid = Number(req.params.guestId);
+    if (!Number.isInteger(gid) || gid <= 0) return res.status(400).json({ ok: false, error: 'thiếu id' });
     try {
       const r = await pool.query(`
         SELECT c.id, c.event_photo_id, c.score, c.nguon, c.decided_by, c.decided_at,
@@ -306,7 +326,13 @@ function mount(app, requireCrmAuth, requireRole) {
         JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
         LEFT JOIN crm_event_faces f ON f.id = c.face_id
         WHERE c.guest_id = $1 AND c.deleted_at IS NULL AND c.trang_thai = 'xac-nhan'
-        ORDER BY c.decided_at DESC NULLS LAST, c.id DESC`, [req.params.guestId]);
+        ORDER BY c.decided_at DESC NULLS LAST, c.id DESC`, [gid]);
+      /* Ghi sổ TRƯỚC khi trả lời, và `await`: ghi kiểu bắn-rồi-quên thì lượt đọc
+         cuối cùng trước khi tiến trình chết là lượt không có trong sổ — mà đó
+         đúng là lượt người ta cần tra. Sổ hỏng thì thà 500 còn hơn trả ảnh ra
+         mà không ai biết đã trả cho ai. */
+      await ghiAudit(pool, req, 'album_xem', 'guest', gid,
+        { so_tam: r.rows.length, vai: req.actor.role });
       res.json({ ok: true, items: r.rows });
     } catch (e) { console.error('[face-match] album:', e.message); res.status(500).json({ ok: false, error: 'loi' }); }
   });

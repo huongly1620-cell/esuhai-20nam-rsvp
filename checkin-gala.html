@@ -72,6 +72,30 @@
    border-radius:12px;padding:9px 8px;font:inherit;font-size:.86rem;cursor:pointer}
  select.fban{appearance:auto}
  .fban.fpt{width:118px;cursor:text}
+ /* E08-D107 · khối ẢNH SỰ KIỆN của khách — ảnh phóng sự ĐÃ được BTL xác nhận là
+    của người này. Khác dải `.kho` ngay bên trên: `.kho` là ảnh phụ trách tự chụp
+    tại quầy, còn đây là ảnh sự kiện do máy gợi ý + người duyệt. Trộn hai loại là
+    mất đúng ranh giới ấy, nên hai khối, hai nhãn.
+    Lưới auto-fill: hàng cuối không hụt một mẩu lệch phải như flex-wrap, và ô tự
+    chia đều bề ngang mọi cỡ màn (AC-8). */
+ .alb{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:7px;margin-top:9px}
+ .alb1,.alb0{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;
+   background:rgba(255,255,255,.05);display:block}
+ .alb1{cursor:zoom-in}
+ .alb1 img{width:100%;height:100%;object-fit:cover;display:block}
+ /* Ô chờ: cùng hộp nhưng KHÔNG con trỏ phóng to — ô chưa có gì mà mời bấm là hứa suông. */
+ .alb.dang .alb0{animation:albpul 1.1s ease-in-out infinite}
+ @keyframes albpul{50%{opacity:.4}}
+ /* Bản nhỏ không tải được (tệp mất khỏi kho): dấu vuông mờ vẽ bằng CSS + nhãn nói
+    rõ. Ô trống trơn trông như ảnh nền trắng chứ không như một lỗi. */
+ .alb1.mat{display:grid;place-items:center}
+ .alb1.mat img{display:none}
+ .alb1.mat::after{content:"";width:15px;height:15px;border:1.5px solid var(--muted);border-radius:4px}
+ .albmore{margin-top:9px;width:100%;border:1px solid var(--line2);background:transparent;
+   color:var(--muted);border-radius:10px;padding:9px 10px;font:inherit;font-size:.78rem;
+   font-weight:700;cursor:pointer}
+ .albmsg{color:var(--muted);font-size:.8rem;margin:8px 0 0;text-align:center}
+ @media (prefers-reduced-motion:reduce){.alb.dang .alb0{animation:none;opacity:.5}}
  .kho{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:14px}
  .kho .k1{position:relative;width:62px;height:62px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.05);flex:none}
  .kho .k1 img{width:100%;height:100%;object-fit:cover}
@@ -369,7 +393,7 @@
 <input type="file" id="pick" accept="image/*">
 <script>
 var G=[];var SESSION="gala";var SESS="Gala"; /* E08-D020: SoT = /crm API, filter theo tag buổi */
-var T={"vn": {"ci": "CHECK-IN · Gala", "lich": "📅 Lịch trình", "sodo": "🗺 Sơ đồ", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "bs": "(bổ sung)", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Gala", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)","sdt_mo":"Xem số","sdt_hoi":"Nhập mật khẩu để xem số điện thoại:","sdt_ok":"Đã mở khoá số điện thoại (30 phút) ✓","sdt_sai":"Mật khẩu không đúng","sdt_net":"Mất mạng — chưa mở khoá được", "makhach": "Mã khách", "ci_fail":"Máy chủ từ chối — CHƯA điểm danh được, thử lại","ci_auth":"Phiên hết hạn — đăng nhập lại rồi điểm danh","ci_404":"Không tìm thấy khách này trên máy chủ","ci_net":"Mất mạng — CHƯA điểm danh được, thử lại","cambtn":"Chụp ảnh khách","pickbtn":"Thêm hình từ thiết bị","cam_up":"Đang tải ảnh…","cam_ok":"Đã lưu ảnh ✓","cam_fail":"Không lưu được ảnh","cam_net":"Lỗi mạng — ảnh chưa lưu. Điểm danh vẫn giữ.","cam_auth":"Phiên đã hết hạn — đăng nhập lại để gửi ảnh","cam_notimg":"File không phải ảnh","cam_heic":"Ảnh dạng HEIC không hiện được. Vào Cài đặt → Camera → Định dạng → chọn Tương thích nhất, rồi chụp lại.","cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in","undo_ask":"Huỷ check-in khách này?\n\nGiờ đến sẽ bị xoá. Check-in lại sẽ ghi giờ mới.","undo_ok":"Đã huỷ check-in ✓","undo_fail":"Máy chủ từ chối — CHƯA huỷ được","undo_net":"Mất mạng — CHƯA huỷ được","undo_role":"Chỉ ban tổ chức mới huỷ được check-in", "close": "Đóng","sch_h3":"Gala · 08.08.2026","sch_loc":"Tầng 3 · Sảnh POLLUX · GEM Center","sch_t1":"Đón tiếp & tham quan","sch_t1s":"Tầng 3 · Sảnh POLLUX","sch_t2":"Khai mạc & Lễ tri ân","sch_t3":"Tầm nhìn 20 năm","sch_t4":"Chụp ảnh lưu niệm","att_du":"Có tham dự","att_khong":"Không tham dự","att_cho":"Chưa xác nhận","quay_h":"Ghi nhận tại quầy","q_anh":"Ảnh khách","q_tang":"🎁 Quà khách tặng","q_tang_ph":"Quà khách tặng là gì? (giỏ hoa, tranh…)","q_camqua":"Chụp ảnh quà","q_dap":"🎀 Quà đáp lễ","q_dap_ph":"Loại quà đáp lễ (引き出物)…","q_dap_note":"⌛ Danh sách quà đáp lễ đang chờ chị Thúy Hà xác nhận","q_note":"📝 Ghi chú","q_note_ph":"Ghi chú thêm tại quầy…","q_save":"Lưu ghi nhận","q_saved":"Đã lưu ghi nhận ✓","q_empty":"Chưa có gì để lưu","q_fail":"Máy chủ từ chối — CHƯA lưu được","q_net":"Mất mạng — CHƯA lưu được","kho_h":"Ảnh đã chụp","q_hist":"Lịch sử tại quầy","q_ob":"OB Esuhai","q_dongdu":"Đông Du","gdtgd":"Gia đình TGĐ","b_noi":"Nội","b_ngoai":"Ngoại","b_tgd":"GĐ TGĐ","b_jp":"🎌 Nhật","rf_ok":"Đã cập nhật số ✓","rf_fail":"Không tải lại được — kiểm tra mạng","nv_khong_ci":"Nhân viên — không cần check-in","nv_dem":"· nhân viên {n} (không tính vào số khách)","upd":"Cập nhật {t}"}, "jp": {"ci": "受付 · ガラ", "lich": "📅 式次第", "sodo": "🗺 座席図", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "bs": "（後日追加）", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "ガラ ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)","sdt_mo":"番号を表示","sdt_hoi":"電話番号を表示するにはパスワードを入力してください：","sdt_ok":"電話番号のロックを解除しました（30分）✓","sdt_sai":"パスワードが違います","sdt_net":"通信エラー — 解除できません", "makhach": "ゲストID", "ci_fail":"サーバーが拒否 — チェックインできません、再試行してください","ci_auth":"セッション切れ — 再ログインしてからチェックインしてください","ci_404":"このゲストがサーバーに見つかりません","ci_net":"通信エラー — チェックインできません、再試行してください","cambtn":"ゲストを撮影","pickbtn":"端末から写真を追加","cam_up":"写真をアップロード中…","cam_ok":"写真を保存しました ✓","cam_fail":"写真を保存できません","cam_net":"通信エラー — 写真は保存されていません。チェックインは維持されます。","cam_auth":"セッション切れ — 写真を送るには再ログインしてください","cam_notimg":"画像ファイルではありません","cam_heic":"HEIC形式の画像は表示できません。設定 → カメラ → フォーマット → 「互換性優先」を選択してから撮り直してください。","cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消","undo_ask":"チェックインを取り消しますか？\n\n受付時刻は削除されます。再受付すると新しい時刻になります。","undo_ok":"チェックインを取り消しました ✓","undo_fail":"サーバーが拒否 — 取り消せません","undo_net":"通信エラー — 取り消せません","undo_role":"取消は主催者のみ可能です", "close": "閉じる","sch_h3":"ガラ · 2026.08.08","sch_loc":"3階・POLLUXホール・GEMセンター","sch_t1":"受付・会場見学","sch_t1s":"3階・POLLUXホール","sch_t2":"開会・感謝式典","sch_t3":"20周年ビジョン","sch_t4":"記念撮影","att_du":"出席","att_khong":"欠席","att_cho":"未確認","quay_h":"受付での記録","q_anh":"ゲスト写真","q_tang":"🎁 ゲストからの贈り物","q_tang_ph":"贈り物の内容(花かご・絵画など)","q_camqua":"贈り物を撮影","q_dap":"🎀 引出物","q_dap_ph":"引出物の種類…","q_dap_note":"⌛ 引出物リストは確認待ちです","q_note":"📝 メモ","q_note_ph":"受付でのメモ…","q_save":"記録を保存","q_saved":"記録を保存しました ✓","q_empty":"保存する内容がありません","q_fail":"サーバーが拒否 — 保存できません","q_net":"通信エラー — 保存できません","kho_h":"撮影済みの写真","q_hist":"受付の記録","q_ob":"OB エスハイ","q_dongdu":"ドンズー","gdtgd":"社長ご家族","b_noi":"内","b_ngoai":"外","b_tgd":"社長ご家族","b_jp":"🎌 日本","rf_ok":"更新しました ✓","rf_fail":"更新できません — 通信をご確認ください","nv_khong_ci":"スタッフ — 受付不要","nv_dem":"· スタッフ {n}名（ゲスト数に含めず）","upd":"{t} 更新"}};var LANG=(function(){/* E08 09/08 — MỘT khoá ngôn ngữ CHUNG cho mọi trang.
+var T={"vn": {"ci": "CHECK-IN · Gala", "lich": "📅 Lịch trình", "sodo": "🗺 Sơ đồ", "came_label": "ĐÃ ĐẾN", "guests": "Khách tham dự", "btn_came": "Đã đến", "bs": "(bổ sung)", "btn_no": "Chưa đến", "search": "Gõ tên khách (không dấu cũng được)…", "vip": "★ VIP", "nhat": "🎌 Khách Nhật", "noi": "Gia đình-Nội", "ngoai": "Gia đình-Ngoại", "total": "Tổng {n} khách Gala", "res": "{n} kết quả", "notfound": "Không tìm thấy.", "pf": "Hồ sơ khách", "ban": "Bàn", "ghe": "Ghế", "hang": "Hạng", "buoi": "Buổi", "amthuc": "Ẩm thực", "phutrach": "Người phụ trách", "vaitro": "Vai trò / đi cùng", "sdt": "SĐT", "sdthide": "••• (đã ẩn)","sdt_mo":"Xem số","sdt_hoi":"Nhập mật khẩu để xem số điện thoại:","sdt_ok":"Đã mở khoá số điện thoại (30 phút) ✓","sdt_sai":"Mật khẩu không đúng","sdt_net":"Mất mạng — chưa mở khoá được", "makhach": "Mã khách", "ci_fail":"Máy chủ từ chối — CHƯA điểm danh được, thử lại","ci_auth":"Phiên hết hạn — đăng nhập lại rồi điểm danh","ci_404":"Không tìm thấy khách này trên máy chủ","ci_net":"Mất mạng — CHƯA điểm danh được, thử lại","cambtn":"Chụp ảnh khách","pickbtn":"Thêm hình từ thiết bị","cam_up":"Đang tải ảnh…","cam_ok":"Đã lưu ảnh ✓","cam_fail":"Không lưu được ảnh","cam_net":"Lỗi mạng — ảnh chưa lưu. Điểm danh vẫn giữ.","cam_auth":"Phiên đã hết hạn — đăng nhập lại để gửi ảnh","cam_notimg":"File không phải ảnh","cam_heic":"Ảnh dạng HEIC không hiện được. Vào Cài đặt → Camera → Định dạng → chọn Tương thích nhất, rồi chụp lại.","cibtn": "Check-in — Khách đã đến", "cidone": "Đã check-in lúc {t}", "undo": "Huỷ check-in","undo_ask":"Huỷ check-in khách này?\n\nGiờ đến sẽ bị xoá. Check-in lại sẽ ghi giờ mới.","undo_ok":"Đã huỷ check-in ✓","undo_fail":"Máy chủ từ chối — CHƯA huỷ được","undo_net":"Mất mạng — CHƯA huỷ được","undo_role":"Chỉ ban tổ chức mới huỷ được check-in", "close": "Đóng","sch_h3":"Gala · 08.08.2026","sch_loc":"Tầng 3 · Sảnh POLLUX · GEM Center","sch_t1":"Đón tiếp & tham quan","sch_t1s":"Tầng 3 · Sảnh POLLUX","sch_t2":"Khai mạc & Lễ tri ân","sch_t3":"Tầm nhìn 20 năm","sch_t4":"Chụp ảnh lưu niệm","att_du":"Có tham dự","att_khong":"Không tham dự","att_cho":"Chưa xác nhận","quay_h":"Ghi nhận tại quầy","q_anh":"Ảnh khách","q_tang":"🎁 Quà khách tặng","q_tang_ph":"Quà khách tặng là gì? (giỏ hoa, tranh…)","q_camqua":"Chụp ảnh quà","q_dap":"🎀 Quà đáp lễ","q_dap_ph":"Loại quà đáp lễ (引き出物)…","q_dap_note":"⌛ Danh sách quà đáp lễ đang chờ chị Thúy Hà xác nhận","q_note":"📝 Ghi chú","q_note_ph":"Ghi chú thêm tại quầy…","q_save":"Lưu ghi nhận","q_saved":"Đã lưu ghi nhận ✓","q_empty":"Chưa có gì để lưu","q_fail":"Máy chủ từ chối — CHƯA lưu được","q_net":"Mất mạng — CHƯA lưu được","kho_h":"Ảnh đã chụp","alb_h":"Ảnh sự kiện","alb_empty":"Chưa có ảnh sự kiện gắn với khách này.","alb_loi":"Chưa tải được ảnh sự kiện — mở lại hồ sơ để thử lần nữa.","alb_all":"Xem tất cả {n} tấm","alb_thu":"Thu gọn","alb_xem":"Xem lớn","alb_mat":"Không tải được bản nhỏ — bấm để xem bản lớn","q_hist":"Lịch sử tại quầy","q_ob":"OB Esuhai","q_dongdu":"Đông Du","gdtgd":"Gia đình TGĐ","b_noi":"Nội","b_ngoai":"Ngoại","b_tgd":"GĐ TGĐ","b_jp":"🎌 Nhật","rf_ok":"Đã cập nhật số ✓","rf_fail":"Không tải lại được — kiểm tra mạng","nv_khong_ci":"Nhân viên — không cần check-in","nv_dem":"· nhân viên {n} (không tính vào số khách)","upd":"Cập nhật {t}"}, "jp": {"ci": "受付 · ガラ", "lich": "📅 式次第", "sodo": "🗺 座席図", "came_label": "ご来場", "guests": "ご出席者", "btn_came": "来場済", "bs": "（後日追加）", "btn_no": "未来場", "search": "お名前で検索…", "vip": "★ VIP", "nhat": "🎌 日本人ゲスト", "noi": "ご親族(内)", "ngoai": "ご親族(外)", "total": "ガラ ご出席者 {n}名", "res": "{n}件", "notfound": "見つかりません。", "pf": "ゲスト情報", "ban": "テーブル", "ghe": "お席", "hang": "ランク", "buoi": "セッション", "amthuc": "お食事", "phutrach": "ご担当", "vaitro": "役割・ご同伴", "sdt": "お電話", "sdthide": "•••(非表示)","sdt_mo":"番号を表示","sdt_hoi":"電話番号を表示するにはパスワードを入力してください：","sdt_ok":"電話番号のロックを解除しました（30分）✓","sdt_sai":"パスワードが違います","sdt_net":"通信エラー — 解除できません", "makhach": "ゲストID", "ci_fail":"サーバーが拒否 — チェックインできません、再試行してください","ci_auth":"セッション切れ — 再ログインしてからチェックインしてください","ci_404":"このゲストがサーバーに見つかりません","ci_net":"通信エラー — チェックインできません、再試行してください","cambtn":"ゲストを撮影","pickbtn":"端末から写真を追加","cam_up":"写真をアップロード中…","cam_ok":"写真を保存しました ✓","cam_fail":"写真を保存できません","cam_net":"通信エラー — 写真は保存されていません。チェックインは維持されます。","cam_auth":"セッション切れ — 写真を送るには再ログインしてください","cam_notimg":"画像ファイルではありません","cam_heic":"HEIC形式の画像は表示できません。設定 → カメラ → フォーマット → 「互換性優先」を選択してから撮り直してください。","cibtn": "チェックイン(ご来場)", "cidone": "{t} チェックイン済み", "undo": "チェックイン取消","undo_ask":"チェックインを取り消しますか？\n\n受付時刻は削除されます。再受付すると新しい時刻になります。","undo_ok":"チェックインを取り消しました ✓","undo_fail":"サーバーが拒否 — 取り消せません","undo_net":"通信エラー — 取り消せません","undo_role":"取消は主催者のみ可能です", "close": "閉じる","sch_h3":"ガラ · 2026.08.08","sch_loc":"3階・POLLUXホール・GEMセンター","sch_t1":"受付・会場見学","sch_t1s":"3階・POLLUXホール","sch_t2":"開会・感謝式典","sch_t3":"20周年ビジョン","sch_t4":"記念撮影","att_du":"出席","att_khong":"欠席","att_cho":"未確認","quay_h":"受付での記録","q_anh":"ゲスト写真","q_tang":"🎁 ゲストからの贈り物","q_tang_ph":"贈り物の内容(花かご・絵画など)","q_camqua":"贈り物を撮影","q_dap":"🎀 引出物","q_dap_ph":"引出物の種類…","q_dap_note":"⌛ 引出物リストは確認待ちです","q_note":"📝 メモ","q_note_ph":"受付でのメモ…","q_save":"記録を保存","q_saved":"記録を保存しました ✓","q_empty":"保存する内容がありません","q_fail":"サーバーが拒否 — 保存できません","q_net":"通信エラー — 保存できません","kho_h":"撮影済みの写真","alb_h":"イベント写真","alb_empty":"このゲストに紐づくイベント写真はまだありません。","alb_loi":"イベント写真を読み込めませんでした。開き直してください。","alb_all":"{n}枚をすべて表示","alb_thu":"折りたたむ","alb_xem":"拡大表示","alb_mat":"サムネイルを読み込めません — タップで拡大表示","q_hist":"受付の記録","q_ob":"OB エスハイ","q_dongdu":"ドンズー","gdtgd":"社長ご家族","b_noi":"内","b_ngoai":"外","b_tgd":"社長ご家族","b_jp":"🎌 日本","rf_ok":"更新しました ✓","rf_fail":"更新できません — 通信をご確認ください","nv_khong_ci":"スタッフ — 受付不要","nv_dem":"· スタッフ {n}名（ゲスト数に含めず）","upd":"{t} 更新"}};var LANG=(function(){/* E08 09/08 — MỘT khoá ngôn ngữ CHUNG cho mọi trang.
    Sponsor: "trang trước là ngôn ngữ gì thì qua trang khác cũng phải vậy, cho
    trôi mạch tư duy, không bị ngắt nhịp đi tìm nút chuyển ngôn ngữ".
    Trước đây hai cửa lưu `ci_lang` còn /crm lưu `crm_lang` ⇒ PG chọn 日本語 ở cửa,
@@ -928,6 +952,78 @@ function khoHtml(g){
       +(q?'<span class="qb">&#127873;</span>':'')+'</span>';}).join("")
   +'</div>';}
 
+/* ═══════════ E08-D107 · ẢNH SỰ KIỆN CỦA KHÁCH (hồ sơ cửa) ═══════════
+   Sponsor 11/08 10:3x: phụ trách phải XEM được ảnh đã duyệt để còn gửi cho khách.
+   Cửa là mặt chính của phụ trách (`/crm` vẫn chặn role staff), nên khối này là
+   đường xem DUY NHẤT của họ.
+
+   Cùng luật với hồ sơ CRM, không phải bản rút gọn:
+   · Chỉ tấm `xac-nhan`. Gợi ý «cho» KHÔNG lên hồ sơ ở bất kỳ màn nào — chỗ để
+     phán đoán là màn nhận diện của BTL, nơi có nút xác nhận/từ chối.
+   · Ba kết cục ba câu: đang hỏi → khung chờ · 0 tấm → câu rỗng · lỗi → nói lỗi.
+     Nói «chưa có ảnh» trong lúc chưa hỏi xong, hoặc khi máy chủ vừa từ chối, là
+     bịa một sự thật về dữ liệu.
+   · CHƯA ĐĂNG NHẬP (làn `CRM_DOOR_OPEN`, phiên door@) → 401 ⇒ ẩn hẳn khối, im
+     lặng. Đó không phải lỗi: cửa vẫn mở cho người chưa OTP, chỉ là ảnh khách thì
+     phải biết ai đang xem. Hiện một câu lỗi đỏ ở đây là dạy người ta bỏ qua chữ đỏ.
+   · Thumb KHÔNG dẫn sang `/crm/nhan-dien`: shell ấy là btl-only, staff bấm vào
+     sẽ ăn 403 — một nút hứa suông. Xem lớn ngay tại chỗ bằng lightbox có sẵn. */
+var ALB_MAX=12, ALB_DS=[], ALB_HET=false;
+function albUrlXem(id){return "/crm/event-photos/"+encodeURIComponent(String(id))+"/preview";}
+function albVeCua(){
+ var box=document.getElementById("pfAlbum");if(!box)return;
+ var n=ALB_DS.length,hien=ALB_HET?n:Math.min(n,ALB_MAX);
+ var html='<div class="alb">'+ALB_DS.slice(0,hien).map(function(p,i){
+   return '<span class="alb1" data-ai="'+i+'" title="'+esc(t("alb_xem"))+'" role="button" tabindex="0">'
+     +'<img src="'+esc(p.thumb_url)+'" loading="lazy" decoding="async" alt="">'
+     +'</span>';}).join("")+'</div>';
+ /* Công tắc hai chiều: mở hết 124 tấm rồi mà không thu lại được thì phải đóng hồ
+    sơ mở lại mới thấy nút check-in — cửa một chiều, dù nhỏ. */
+ if(n>ALB_MAX)html+='<button class="albmore" type="button" id="albMore">'
+   +esc(ALB_HET?t("alb_thu"):t("alb_all",{n:n}))+'</button>';
+ box.innerHTML=html;
+ Array.prototype.forEach.call(box.querySelectorAll(".alb1 img"),function(im){
+   im.addEventListener("error",function(){
+     var s=im.parentNode;if(!s)return;
+     s.classList.add("mat");s.setAttribute("title",t("alb_mat"));});});
+ var b=document.getElementById("albMore");
+ if(b)b.addEventListener("click",function(){ALB_HET=!ALB_HET;albVeCua();});
+}
+function albAn(){
+ var w=document.getElementById("pfAlbumWrap");if(w)w.style.display="none";
+}
+function albKhungCho(){
+ var box=document.getElementById("pfAlbum");
+ if(box)box.innerHTML='<div class="alb dang" aria-hidden="true"><i class="alb0"></i><i class="alb0"></i><i class="alb0"></i></div>';
+}
+function albCau(k){
+ var box=document.getElementById("pfAlbum");
+ if(box)box.innerHTML='<p class="albmsg">'+esc(t(k))+'</p>';
+}
+async function napAlbumCua(id){
+ ALB_DS=[];ALB_HET=false;albKhungCho();
+ var j;
+ try{ j=await jget("/crm/face-match/album/"+encodeURIComponent(String(id))); }
+ catch(e){
+   if(String(curId)!==String(id))return;
+   /* 401/403 = chưa OTP hoặc không được phép: ẩn khối, đừng dạy người ta bỏ qua
+      chữ đỏ. Lỗi khác (mạng/máy chủ) thì nói thật là chưa tải được. */
+   if(e&&(e.status===401||e.status===403)){albAn();return;}
+   albCau("alb_loi");return;}
+ if(String(curId)!==String(id))return;     /* đã sang khách khác trong lúc chờ */
+ /* MỘT TẤM = MỘT Ô: album trả theo DÒNG khớp mặt, một tấm có thể có hai mặt cùng
+    được xác nhận cho một khách ⇒ hai dòng, vẫn một tấm. Không gộp thì hồ sơ hiện
+    trùng ô và con số trên nút đếm phồng. */
+ var thay={};ALB_DS=[];
+ (j&&j.items||[]).forEach(function(x){
+   var k=String(x.event_photo_id);if(thay[k])return;thay[k]=1;
+   ALB_DS.push({id:k,
+     thumb_url:"/crm/event-photos/"+encodeURIComponent(k)+"/thumb",
+     view_url:albUrlXem(k),url:albUrlXem(k)});});
+ if(!ALB_DS.length){albCau("alb_empty");return;}
+ albVeCua();
+}
+
 /* ─────────── E08-D048 §3c · LIGHTBOX kho ảnh ───────────
    Bấm thumb → xem lớn, ← → / vuốt để lướt HẾT `_photos` (chân dung + quà), đóng
    bằng nền · nút Đóng · phím Escape (AC-7).
@@ -971,9 +1067,13 @@ function lbVe(){
  q.textContent=p.interaction_id?t("lb_qua"):(String(p.id)===String(lbGhim||"")?t("lb_ghim"):"");
 }
 var lbGhim="";
-function lbMo(g,i){
- lbList=g._photos||[];if(!lbList.length)return;
- lbGhim=g._ghim||"";lbIdx=Math.max(0,Math.min(i|0,lbList.length-1));
+function lbMo(g,i){ lbMoDs(g._photos||[], g._ghim||"", i); }
+/* E08-D107 · cùng một lightbox cho DẢI ẢNH SỰ KIỆN. Dùng lại thay vì dựng cái
+   thứ hai: vuốt, phím Escape, nút đóng, thả `src` lúc đóng — bốn thứ ấy đã được
+   đo ở cửa từ D048, và hai lightbox trong một trang là hai nơi để lệch nhau. */
+function lbMoDs(ds,ghim,i){
+ lbList=ds||[];if(!lbList.length)return;
+ lbGhim=ghim||"";lbIdx=Math.max(0,Math.min(i|0,lbList.length-1));
  lbDung();lbVe();lbEl().classList.add("show");
 }
 function lbGo(d){if(!lbList.length)return;lbIdx=(lbIdx+d+lbList.length)%lbList.length;lbVe();}
@@ -981,7 +1081,13 @@ function lbDong(){var d=lbEl();if(d){d.classList.remove("show");
  /* Bỏ src để trình duyệt thả ảnh lớn — mở/đóng nhiều lần ở cửa không dồn bộ nhớ. */
  var im=document.getElementById("lbImg");if(im)im.removeAttribute("src");}
  lbIdx=-1;lbList=[];}
+/* E08-D107 · ô ảnh sự kiện mang role="button" nên bàn phím phải mở được nó —
+   gắn role mà không gắn phím là hứa với trình đọc màn hình một thứ không có. */
 document.addEventListener("keydown",function(e){
+ if(lbIdx<0&&(e.key==="Enter"||e.key===" ")){
+   var el=document.activeElement;
+   if(el&&el.classList&&el.classList.contains("alb1")){
+     e.preventDefault();lbMoDs(ALB_DS,"",parseInt(el.getAttribute("data-ai"),10)||0);return;}}
  if(lbIdx<0)return;
  if(e.key==="Escape")lbDong();
  else if(e.key==="ArrowLeft")lbGo(-1);
@@ -1250,8 +1356,17 @@ function openPf(id){grabDraft();var g=byId(id);if(!g)return;curId=id;var cm=came
      ở đây — đó là đảo một quyết định đã chốt, không phải sửa sót.
      Che số phía MÁY CHỦ của D041 giữ NGUYÊN (tuyến /crm vẫn dùng) — vé này chỉ
      đụng hai tệp cửa. */
-  +'<div class="ir"><span class="k">'+t("makhach")+'</span><span class="v">'+esc(g.id)+'</span></div></div>'+ciBox;
- $("#pf").classList.add("show");document.body.style.overflow="hidden";if(!g._enriched)enrich(g,id);}
+  +'<div class="ir"><span class="k">'+t("makhach")+'</span><span class="v">'+esc(g.id)+'</span></div></div>'+ciBox
+  /* E08-D107 · khối ảnh sự kiện, đặt CUỐI hồ sơ: việc ở cửa là điểm danh và ghi
+     nhận tại quầy — hai thứ ấy phải ở trên, đúng chỗ cũ. Ảnh là việc làm sau. */
+  /* Nhãn nằm TRONG cùng khối với dải ảnh: phiên chưa OTP thì cả hai cùng biến
+     mất. Một tiêu đề «Ảnh sự kiện» đứng trơ trên khoảng trắng là câu hỏi không
+     có câu trả lời — người ở cửa sẽ tưởng ảnh hỏng. */
+  +'<div id="pfAlbumWrap"><div class="cap" style="margin-top:16px">'+t("alb_h")+'</div>'
+  +'<div id="pfAlbum"></div></div>';
+ $("#pf").classList.add("show");document.body.style.overflow="hidden";
+ napAlbumCua(id);
+ if(!g._enriched)enrich(g,id);}
 async function enrich(g,id){try{var j=await jget("/crm/guests/"+id);g._enriched=true;
  /* Ảnh có interaction_id là ảnh QUÀ chụp tại quầy — không phải mặt khách. */
  var pf=(j.photos||[]).filter(function(p){return !p.interaction_id;});
@@ -1350,6 +1465,9 @@ $("#pfBody").addEventListener("click",function(e){
     TRƯỚC phép lọc button bên dưới, nếu không lightbox không bao giờ mở. */
  var th=e.target.closest(".k1");
  if(th&&curId){lbMo(byId(curId)||{},parseInt(th.getAttribute("data-idx"),10)||0);return;}
+ /* E08-D107 — ô ảnh sự kiện cũng là <span>, cũng phải bắt trước phép lọc button. */
+ var ta=e.target.closest(".alb1");
+ if(ta){lbMoDs(ALB_DS,"",parseInt(ta.getAttribute("data-ai"),10)||0);return;}
  var b=e.target.closest("button");if(!b)return;
  if(b.getAttribute("data-cam")){camQua=false;camFor=b.getAttribute("data-cam");var ci=document.getElementById("cam");if(ci){ci.value="";ci.click();}return;}
   if(b.getAttribute("data-pick")){camQua=false;camFor=b.getAttribute("data-pick");var pk=document.getElementById("pick");if(pk){pk.value="";pk.click();}return;}

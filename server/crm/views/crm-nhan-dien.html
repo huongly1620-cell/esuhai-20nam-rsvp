@@ -1006,7 +1006,17 @@ function veManMotKhach(){
    (face-match.js:200 và :371) — nên đây là phép sửa đúng một dòng, không phải đoán.
    Sửa cả con số của khối luôn: khối tự nói «9 chờ duyệt» mà đếm được 8 tấm chờ thì
    con số và thứ nhìn thấy nói hai điều khác nhau — đúng thứ khối này sinh ra để bỏ. */
-function capNhatSauQuyet(cid, trangThai){
+function capNhatSauQuyet(cid, trangThai, kq){
+  /* E08-D115 · `da_trong_album` = tấm ấy đã nằm trong album của khách TRƯỚC cú
+     bấm này, nên album không dày thêm và con số không được +1.
+     Nhưng bỏ +1 thôi thì chưa đủ: con số đang hiện có thể đã cũ từ trước (đường
+     gắn tên tay cố ý không sửa số, nó đánh dấu list cũ rồi nạp lại). Cộng thêm
+     một cú "không +1" nữa là để lại một con số THIẾU mà không có ai sửa. Nên ở
+     đây đánh dấu list cũ: lượt về khối sẽ hỏi lại máy chủ. Đoán số bằng số học
+     tại chỗ chỉ đúng khi ta biết chắc mình vừa làm album dày thêm đúng một tấm —
+     ngoài trường hợp ấy thì đi hỏi, đừng đoán. */
+  var daCo = !!(kq && kq.da_trong_album);
+  if (daCo) KHOI_CU = true;
   document.querySelectorAll('.anh-o[data-cid="' + cid + '"]').forEach(function(o){
     if (!o.classList.contains('cho')) return;      // đã quyết rồi thì không đếm lần hai
     var the = o.closest('.khoi') || o.closest('#manMotKhach');
@@ -1015,7 +1025,7 @@ function capNhatSauQuyet(cid, trangThai){
       var tick = o.querySelector('.tick'); if (tick) tick.remove();
       var g = o.querySelector('.giong'); if (g) g.remove();   // mức giống chỉ có nghĩa lúc còn chờ
       var nh = o.querySelector('.nhan'); if (nh) nh.textContent = tt('nhan_alb');
-      doiSo(the, 'album', 1);
+      if (!daCo) doiSo(the, 'album', 1);
     } else {
       /* tu-choi / bo-qua: máy chủ loại nó khỏi cả hai truy vấn khối, nên lượt nạp
          tới sẽ không có tấm này. Giữ nó lại là hiện một thứ vừa bị bỏ — và còn
@@ -1255,11 +1265,11 @@ document.addEventListener('click', async function(e){
     var dong = b.closest('.goi');
     var cid = Number(dong.getAttribute('data-cid'));
     var viec = b.getAttribute('data-do');
-    await jpost('/crm/face-match/' + viec, { id: cid });
+    var kqQuyet = await jpost('/crm/face-match/' + viec, { id: cid });
     /* FR-3 · vá đúng một ô trên DOM đang giấu thay vì nạp lại cả list. Tên đường
        (`confirm`/`reject`/`skip`) và tên trạng thái trong CSDL (`xac-nhan`/…) là
        hai bảng chữ khác nhau — đổi ở đúng một chỗ, không rải `if` khắp nơi. */
-    capNhatSauQuyet(cid, { confirm: 'xac-nhan', reject: 'tu-choi', skip: 'bo-qua' }[viec]);
+    capNhatSauQuyet(cid, { confirm: 'xac-nhan', reject: 'tu-choi', skip: 'bo-qua' }[viec], kqQuyet);
     await lamMoiAnhDang();
     return;
   }

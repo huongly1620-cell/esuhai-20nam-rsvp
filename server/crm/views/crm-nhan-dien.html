@@ -9,6 +9,11 @@
     --bg1:#050b14;--bg2:#071019;--panel:rgba(255,255,255,.05);--panel2:rgba(7,16,27,.66);
     --text:#f4eede;--muted:#aca592;--line:rgba(224,189,119,.16);--line2:rgba(224,189,119,.32);
     --gold:#e0bd77;--ok:#43e08d;--bad:#e05a5a;--fs-small:.72rem;--fs-micro:.66rem;
+    /* E08-D122 · cỡ riêng cho ba nhãn ĐÈ LÊN ẢNH (`.hieu` `.nhan` `.pt`). Không hạ
+       thẳng `--fs-micro`: biến ấy còn nuôi `.dem` và `.canh` — hai thứ nằm trên MẶT
+       GIẤY của trang, nơi chữ nhỏ hơn nữa là chữ khó đọc chứ không phải chữ khiêm
+       tốn. Chỉ chữ nằm trên ảnh mới phải nhường ảnh. */
+    --fs-nhan:.6rem;
   }
   :root[data-theme=light]{
     --bg1:#f7f3e8;--bg2:#efe8d6;--panel:rgba(255,255,255,.75);--panel2:rgba(255,255,255,.92);
@@ -76,16 +81,27 @@
      diện sáng, và vàng sẫm trên scrim tối là chữ không đọc được.
      `-webkit-backdrop-filter` phải nói riêng: Safari trên iPhone — máy của người
      ngồi duyệt — chưa nhận tên không tiền tố. Trình duyệt nào không có
-     `backdrop-filter` thì vẫn còn .56 độ đục đỡ nền, chữ không rơi thẳng lên ảnh. */
-  .hieu,.nhan,.pt{background:rgba(7,16,27,.56);
+     `backdrop-filter` thì vẫn còn độ đục đỡ nền, chữ không rơi thẳng lên ảnh.
+     ── E08-D122 · MỎNG HƠN · NHỎ HƠN · NHẠT HƠN ẢNH ─────────────────────────
+     D118 làm ba nhãn cùng một họ, nhưng để họ ấy ở 600/700 đậm, .66rem, scrim .56
+     và chữ trắng gần đặc — cộng lại thành một tấm biển dán đè lên ảnh. Người mở
+     khối là để nhìn TẤM HÌNH; nhãn chỉ trả lời câu hỏi thứ hai.
+     Ba đòn bẩy đi CÙNG nhau chứ không một mình, vì mỗi cái một mình đều hỏng:
+     hạ mỗi độ đậm thì chữ nhạt mà khối chữ vẫn to; hạ mỗi cỡ thì chữ bé mà vẫn
+     đen kịt; hạ mỗi scrim thì chữ đậm rơi thẳng lên ảnh, đọc còn khó hơn cũ.
+     Chữ KHÔNG trắng đặc nữa (`.86` thay vì `#eef3f9`) và `text-shadow` giữ
+     nguyên: khi scrim mỏng đi thì bóng chữ mới là thứ giữ chữ đọc được trên tấm
+     sáng, và bóng thì không làm chữ trông nặng thêm như độ đậm. */
+  .hieu,.nhan,.pt{background:rgba(7,16,27,.42);
     -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
-    color:#eef3f9;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+    font-size:var(--fs-nhan);font-weight:450;letter-spacing:.005em;
+    color:rgba(238,243,249,.86);text-shadow:0 1px 2px rgba(0,0,0,.6)}
   /* Bo NHẸ, không `999px`: cùng lý do bỏ viên thuốc ở thanh đáy — hình tròn lẳn
      nằm trên ảnh là một vật thể lạ, hình chữ nhật bo nhẹ là một lớp phủ. */
-  .hieu{position:absolute;top:6px;border-radius:7px;font-size:var(--fs-micro);
-    padding:2px 7px;border:1px solid var(--line2)}
-  .hieu.cho{right:6px;color:#e8c789;border-color:rgba(224,189,119,.5)}
-  .hieu.alb{left:6px;color:#6fe8a8;border-color:rgba(67,224,141,.5)}
+  .hieu{position:absolute;top:6px;border-radius:7px;
+    padding:2px 6px;border:1px solid rgba(224,189,119,.22)}
+  .hieu.cho{right:6px;color:rgba(232,199,137,.9);border-color:rgba(224,189,119,.34)}
+  .hieu.alb{left:6px;color:rgba(111,232,168,.9);border-color:rgba(67,224,141,.34)}
   .chip{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:999px;
     padding:6px 13px;font:inherit;font-size:var(--fs-small);cursor:pointer}
   /* E08-D106 · chip tab Kho là <a>, không phải <button>: nó rời tài liệu này. Mặc
@@ -109,7 +125,10 @@
      là chưa đủ: người mù màu đọc viền vàng thành viền xanh, mà nhầm chiều này
      nghĩa là khách B nhận ảnh khách A. Nên mỗi tấm mang cả viền, cả nhãn chữ. */
   .khoi{border-color:var(--line2)}
-  .khoi h3{margin:0;font-size:.95rem;font-weight:700;word-break:break-word}
+  /* E08-D122 · 700 → 600. Tên khách KHÔNG nằm trên ảnh nên nó không phải nhường
+     đường như ba nhãn kia, nhưng nó là thứ đậm nhất trong khối và mắt bám vào nó
+     trước tấm hình. 600 vẫn là chữ đậm nhất khối — chỉ thôi đua với ảnh. */
+  .khoi h3{margin:0;font-size:.95rem;font-weight:600;word-break:break-word}
   /* Con số và nhãn của nó là MỘT khối không tách. Bản đầu để chúng là bốn phần tử
      rời trong một hàng flex-wrap: ở 360px hàng gãy giữa chừng, "6" ở lại dòng trên
      còn "trong album" rơi xuống cạnh "9" — hai con số đổi nhãn cho nhau trước mắt
@@ -127,12 +146,18 @@
      riêng cho thanh: bo trong bo thì thừa ra một vành ảnh mỏng dưới thanh, nhìn
      như thanh bị lệch.
      Hai trạng thái vẫn phân biệt được KHÔNG CẦN màu (FR-2 · AC-4): chữ đã khác
-     nhau («Đã trong album» ≠ «Máy đoán, chờ duyệt»), thêm độ đậm khác nhau và một
-     vạch viền trên khác màu. Người mù màu đọc được cả hai lối còn lại. */
-  .nhan{position:absolute;left:0;right:0;bottom:0;font-size:var(--fs-micro);
-    padding:3px 6px;text-align:center;font-weight:600;border-top:1px solid transparent}
-  .anh-o.alb .nhan{font-weight:700;border-top-color:rgba(67,224,141,.6)}
-  .anh-o.cho .nhan{border-top-color:rgba(224,189,119,.6)}
+     nhau («Đã trong album» ≠ «Máy đoán, chờ duyệt») và một vạch viền trên khác
+     màu. Người mù màu đọc được cả hai lối còn lại.
+     E08-D122 · BỎ hẳn lối phân biệt thứ ba là ĐỘ ĐẬM (alb 700 vs chờ 600). Nó
+     vốn là lối yếu nhất trong ba lối — không ai đọc được «đậm hơn» khi không có
+     tấm kia nằm cạnh để so — mà lại là lối đắt nhất: chính nó biến thanh đáy
+     thành cái biển. Hai lối còn lại đứng một mình vẫn đọc được, nên bỏ được.
+     `line-height` phải nói ra: thanh này cao bằng chữ cộng đệm, mà `normal` của
+     Be Vietnam Pro ~1.45 — đủ để thanh ăn quá phần ảnh mà vé này muốn trả lại. */
+  .nhan{position:absolute;left:0;right:0;bottom:0;line-height:1.35;
+    padding:2px 6px;text-align:center;border-top:1px solid transparent}
+  .anh-o.alb .nhan{border-top-color:rgba(67,224,141,.5)}
+  .anh-o.cho .nhan{border-top-color:rgba(224,189,119,.5)}
   /* Ô tick phải to và dễ chạm: đây là cử chỉ bắt buộc trước mọi lượt duyệt, làm
      nó bé là dồn người dùng đi tìm nút tắt — mà nút tắt là thứ vé này cấm. */
   .tick{position:absolute;top:5px;left:5px;width:26px;height:26px;border-radius:7px;
@@ -151,11 +176,11 @@
      `tabular-nums`: cả cột thumb có số rộng bằng nhau, không nhảy trái phải giữa
      «9%» và «71%». */
   .pt{position:absolute;top:5px;right:5px;max-width:calc(100% - 42px);
-    border-radius:7px;font-size:var(--fs-micro);padding:2px 6px;font-weight:700;
-    border:1px solid var(--line2);font-variant-numeric:tabular-nums;white-space:nowrap}
+    border-radius:7px;padding:2px 5px;
+    border:1px solid rgba(224,189,119,.22);font-variant-numeric:tabular-nums;white-space:nowrap}
   /* Chỉ dải chắc nhất mới đổi màu. Tô ba màu khác nhau là dựng lại một thang điểm
      bằng màu, mà thang ấy chính là thứ người chấm không nên bị neo vào. */
-  .pt.chac{color:#e8c789;border-color:rgba(224,189,119,.55)}
+  .pt.chac{color:rgba(232,199,137,.9);border-color:rgba(224,189,119,.36)}
   .mo-them{display:flex;align-items:center;justify-content:center;text-align:center;
     border:1px dashed var(--line2);border-radius:11px;background:transparent;
     color:var(--gold);font:inherit;font-size:var(--fs-small);cursor:pointer;padding:8px;

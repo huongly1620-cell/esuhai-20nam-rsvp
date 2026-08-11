@@ -388,6 +388,43 @@ CREATE INDEX IF NOT EXISTS idx_face_candidates_album
 CREATE INDEX IF NOT EXISTS idx_face_candidates_theo_anh
   ON crm_face_candidates (event_photo_id) WHERE deleted_at IS NULL;
 
+/* ── E08-D120 · SỔ CHIA SẺ ALBUM (một người một link) ─────────────────────────
+   Bảng này KHÔNG phải sổ khách thứ hai và KHÔNG phải timeline: nó chỉ ghi việc
+   một đường dẫn đã được phát cho ai, lúc nào, và khách đã mở chưa. Mọi dữ liệu
+   khách vẫn nằm nguyên ở crm_guests (trục [X]); ở đây chỉ có guest_id.
+
+   Ba điều được đặt ở TẦNG CSDL chứ không ở tầng ứng dụng, vì cả ba là lời hứa
+   với người thật, không nên phụ thuộc vào việc mọi đường ghi tương lai đều nhớ:
+
+   · token_hash UNIQUE, và LƯU BĂM. Cột này không bao giờ chứa bản thô — rò một
+     bản sao lưu CSDL không đưa cho ai một đường dẫn dùng được.
+   · MỘT LINK ĐANG SỐNG cho mỗi khách (luật 1): unique một phần trên guest_id
+     với điều kiện chưa thu hồi. Tạo lại buộc phải thu hồi cái cũ trước, nếu
+     không CSDL từ chối — «link cũ chết» không thể quên.
+   · CHECK (dong_y): không hàng nào tồn tại mà thiếu ô tick đồng ý (luật 6).
+     Sổ share vì thế KHÔNG THỂ mang một dòng không có người đồng ý.
+
+   Hàng đã thu hồi Ở LẠI — đó chính là sổ: AC-8 đòi còn thấy lần share trước. */
+CREATE TABLE IF NOT EXISTS crm_album_links (
+  id           BIGSERIAL PRIMARY KEY,
+  guest_id     BIGINT NOT NULL REFERENCES crm_guests(id) ON DELETE CASCADE,
+  token_hash   TEXT NOT NULL UNIQUE,
+  created_by   TEXT NOT NULL,
+  dong_y       BOOLEAN NOT NULL DEFAULT false,
+  het_han_luc  TIMESTAMPTZ NOT NULL,
+  thu_hoi_luc  TIMESTAMPTZ,
+  thu_hoi_boi  TEXT,
+  so_lan_mo    INTEGER NOT NULL DEFAULT 0,
+  mo_lan_dau   TIMESTAMPTZ,
+  mo_gan_nhat  TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT ck_album_links_dong_y CHECK (dong_y)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_album_links_song
+  ON crm_album_links (guest_id) WHERE thu_hoi_luc IS NULL;
+CREATE INDEX IF NOT EXISTS idx_album_links_guest
+  ON crm_album_links (guest_id, created_at DESC);
+
 /* ── Nâng cấp cho CSDL ĐÃ CÓ ba bảng ────────────────────────────────────────
    CREATE TABLE IF NOT EXISTS chỉ dựng bảng khi chưa có — nó KHÔNG thêm cột,
    KHÔNG nới NOT NULL, KHÔNG thêm CHECK vào bảng đã tồn tại. Ba cột và hai ràng

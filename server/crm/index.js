@@ -9,6 +9,7 @@ const stats = require('./stats');
 const photos = require('./photos');
 const eventPhotos = require('./event-photos');
 const faceMatch = require('./face-match');
+const albumLink = require('./album-link');
 const importer = require('./import');
 
 // Which app shell to serve for the authed /crm entry.
@@ -129,6 +130,12 @@ function mount(app) {
   // là `btl`, cửa không có việc gì ở kho ảnh phóng sự.
   eventPhotos.mount(app, auth.requireCrmAuth, auth.requireRole);
   faceMatch.mount(app, auth.requireCrmAuth, auth.requireRole);
+  /* E08-D120 — link album riêng của khách. KHÔNG nhận `requireDoorOrAuth`:
+     tạo/đọc token là việc của `btl` có OTP, cửa mở (CRM_DOOR_OPEN) không đụng
+     vào. Trang khách `/album/:token` nằm trong module này và cố ý KHÔNG có gác
+     cổng CRM nào — token là chìa duy nhất; nó được mount ở đây, tức TRƯỚC
+     express.static của index.js, nên không tệp tĩnh nào che được tuyến ấy. */
+  albumLink.mount(app, auth.requireCrmAuth, auth.requireRole);
   importer.mount(app, auth.requireCrmAuth, auth.requireRole);
   audit.mount(app, auth.requireCrmAuth, auth.requireRole);
   // E08-D032 — hai lệnh TÁCH BẠCH: /crm/import-update/dry-run và /commit.

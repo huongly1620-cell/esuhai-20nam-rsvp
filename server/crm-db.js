@@ -425,6 +425,40 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_album_links_song
 CREATE INDEX IF NOT EXISTS idx_album_links_guest
   ON crm_album_links (guest_id, created_at DESC);
 
+/* ── E08-D124 · SỔ VIỆC ĐOÁN MẶT (một việc một lúc) ──────────────────────────
+   Trước vé này, đợt nhận diện chỉ chạy từ máy người kỹ thuật nên «đang chạy hay
+   không» là thứ chỉ người ấy biết. Nay ban tổ chức tự bấm, nên trạng thái phải
+   nằm ở chỗ mọi tab và mọi lần F5 đều đọc được — tức trong CSDL, không trong một
+   biến của tiến trình máy chủ (biến ấy chết theo mỗi lần deploy).
+
+   Bảng cố ý NGHÈO: đếm và một câu lỗi, không giữ log. Nó nằm cạnh dữ liệu khách
+   nên mọi cột thêm vào đây là một cột phải trả lời câu hỏi PDPL — không tên
+   khách, không token, không chuỗi kết nối. Cột boi là email nhân sự BTL, cùng
+   loại dữ liệu với crm_audit_events.actor_email đã có.
+
+   UNIQUE MỘT PHẦN LÀ CÁI KHOÁ, và đó là điểm của cả bảng: «một việc một lúc»
+   không được phép phụ thuộc vào việc mọi đường mở việc tương lai đều nhớ kiểm
+   trước. Chỉ mục đặt trên chính cột trạng thái với điều kiện chỉ nhìn hàng đang
+   chạy, nên nhiều nhất một hàng như thế tồn tại — hai tab bấm cùng một phần nghìn
+   giây thì một cú thắng, cú kia nhận 23505.
+   (Nhắc lại cảnh báo đầu khối D082: đây là chuỗi mẫu JS — KHÔNG dấu huyền trong
+   chú thích, kể cả để trích tên cột. Vừa dẫm phải đúng bẫy đó lần thứ ba.) */
+CREATE TABLE IF NOT EXISTS crm_nhan_dien_runs (
+  id          BIGSERIAL PRIMARY KEY,
+  trang_thai  TEXT NOT NULL DEFAULT 'chay' CHECK (trang_thai IN ('chay','xong','loi')),
+  /* 'tay' = bấm nút trên trang ảnh · 'nap-kho' = tự chạy sau một lượt nạp ảnh. */
+  nguon       TEXT NOT NULL DEFAULT 'tay' CHECK (nguon IN ('tay','nap-kho')),
+  boi         TEXT NOT NULL,
+  bat_dau     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  xong_luc    TIMESTAMPTZ,
+  so_mau      INTEGER,                   -- mẫu khoanh tay vừa tính được vector
+  so_tam      INTEGER,                   -- tấm chưa có hàng mặt, lượt này dò
+  so_goi_y    INTEGER,                   -- gợi ý sinh thêm (tấm mới + khớp lại)
+  loi         TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_nhan_dien_runs_dang_chay
+  ON crm_nhan_dien_runs (trang_thai) WHERE trang_thai = 'chay';
+
 /* ── Nâng cấp cho CSDL ĐÃ CÓ ba bảng ────────────────────────────────────────
    CREATE TABLE IF NOT EXISTS chỉ dựng bảng khi chưa có — nó KHÔNG thêm cột,
    KHÔNG nới NOT NULL, KHÔNG thêm CHECK vào bảng đã tồn tại. Ba cột và hai ràng

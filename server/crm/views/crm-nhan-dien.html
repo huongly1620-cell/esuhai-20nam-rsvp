@@ -285,6 +285,25 @@
     <button class="chip" id="tabKhach" aria-pressed="false" data-i="tab_khach">Theo khách</button>
   </div>
 
+  <!-- ══ E08-D124 (CR-181) · MỘT NÚT, MÁY ĐOÁN MẶT ══
+       Đặt NGOÀI ba màn con, ngay dưới thanh tab: việc này thuộc về cả trang, không
+       thuộc riêng lưới ảnh. Người vừa khoanh xong mấy khuôn mặt ở màn xem một tấm
+       phải bấm được ngay tại chỗ, không phải nhớ quay về lưới trước — và trạng thái
+       «đang chạy» phải nhìn thấy ở mọi màn, vì nó nói về máy chứ không về màn.
+
+       Hai dòng chữ, hai nhiệm vụ khác nhau, cố ý không gộp: `#dbTom` là TRẠNG THÁI
+       (một hai chữ, liếc là biết), `#dbChu` là CÂU GIẢI THÍCH (giờ giấc, con số,
+       câu lỗi). Gộp làm một thì lúc bình thường nó dài dòng, còn lúc hỏng thì câu
+       lỗi lại bị nhét vào một chỗ chỉ đủ chứa hai chữ. -->
+  <div class="card" id="theDongBo">
+    <div class="top" style="margin:0">
+      <button class="btn ok" id="nutDongBo" data-i="db_nut">🤖 Đồng bộ nhận diện</button>
+      <div class="spacer"></div>
+      <span class="hint" id="dbTom"></span>
+    </div>
+    <p class="hint" id="dbChu" style="margin:8px 0 0"></p>
+  </div>
+
   <!-- ══ HOME: LƯỚI ẢNH ══ -->
   <div id="manAnh">
     <div class="card">
@@ -448,6 +467,20 @@ var T = {
     tai_chay:'Tải {n} tấm',
     tai_dang:'Đang gửi {n} tấm về máy…',
     tai_xong:'Đã gửi {n} tấm về máy. Xem trong thư mục Tải về.',
+    /* ── E08-D124 · nút đồng bộ nhận diện ── */
+    db_nut:'🤖 Đồng bộ nhận diện',
+    db_giai:'Máy dò mặt trên những tấm chưa dò, và học các khuôn mặt anh chị vừa khoanh. Máy CHỈ gợi ý — ảnh chỉ vào album của khách khi có người bấm duyệt.',
+    db_chua:'Chưa chạy lần nào.',
+    db_dang:'Đang chạy…',
+    db_dang_ct:'Bắt đầu {t} · {b}. Anh chị cứ dùng trang bình thường; tải lại trang vẫn thấy trạng thái này.',
+    db_xong:'Xong ✓',
+    db_xong_ct:'Xong lúc {t} · {m} ảnh mẫu vừa tính · {a} tấm vừa dò · {g} gợi ý mới. Xem ở mục «Máy có gợi ý chờ duyệt».',
+    db_loi:'Lỗi',
+    db_loi_ct:'Lần chạy lúc {t} không xong: {e}',
+    db_dang_roi:'Đang có một việc chạy rồi — chờ xong đã.',
+    db_thieu:'Máy chủ chưa có bộ nhận diện nên nút này chưa chạy được — nhờ anh Kha / kỹ thuật cài giúp.',
+    db_mo:'Đã bắt đầu — máy đang đoán.',
+    db_hong:'Không mở được việc. Thử lại, hoặc báo kỹ thuật.',
     loi_nap:'Không nạp được dữ liệu. Thử tải lại trang.' },
   jp:{ ve_crm:'CRMへ戻る', tieu_de:'📸 イベント写真',
     tab_kho:'保管庫', tab_anh:'仕分け', tab_khach:'ゲスト別',
@@ -508,6 +541,20 @@ var T = {
     tai_chay:'{n}枚をダウンロード',
     tai_dang:'{n}枚を保存しています…',
     tai_xong:'{n}枚を保存しました。ダウンロードフォルダをご確認ください。',
+    /* ── E08-D124 ── */
+    db_nut:'🤖 顔認識を同期',
+    db_giai:'未処理の写真から顔を検出し、囲んだばかりの顔を学習します。機械は候補を出すだけです — 担当者が承認するまで、ゲストのアルバムには入りません。',
+    db_chua:'まだ一度も実行されていません。',
+    db_dang:'実行中…',
+    db_dang_ct:'{t} 開始 · {b}。ページは通常どおりお使いいただけます。再読み込みしてもこの状態は残ります。',
+    db_xong:'完了 ✓',
+    db_xong_ct:'{t} に完了 · 参照写真{m}件を計算 · 写真{a}枚を検出 · 新しい候補{g}件。「承認待ちの候補あり」でご確認ください。',
+    db_loi:'エラー',
+    db_loi_ct:'{t} の実行は完了しませんでした：{e}',
+    db_dang_roi:'すでに実行中です — 完了までお待ちください。',
+    db_thieu:'サーバーに認識エンジンがまだ入っていないため、このボタンは実行できません — 技術担当に設置を依頼してください。',
+    db_mo:'開始しました — 判定中です。',
+    db_hong:'処理を開始できませんでした。もう一度お試しいただくか、技術担当にご連絡ください。',
     loi_nap:'データを読み込めませんでした。ページを再読み込みしてください。' }
 };
 /* E08-D106 · ngôn ngữ và theme là của NGƯỜI, không của trang. Ba tab giờ là MỘT
@@ -531,6 +578,11 @@ function setLang(l){
   $('#timKhach').placeholder = tt('tim_ph');
   $('#ganO').placeholder = tt('gan_ph');
   $('#chuGiai').textContent = tt('chu_giai');
+  /* D124 · thẻ đồng bộ nằm NGOÀI ba màn con nên nó không được vẽ lại bởi khối
+     bên dưới — mà chữ của nó (giờ giấc, con số, câu lỗi) do JS ghép, tức `data-i`
+     không với tới. Vẽ lại trước cả cửa `DA_NAP`: thẻ này có chữ ngay từ lượt hỏi
+     đầu tiên, không đợi lưới ảnh. */
+  veDongBo(DB_CUOI);
   /* Vẽ lại đúng màn đang mở. Không gọi hết mọi hàm vẽ: màn đang ẩn mà vẫn nạp lại
      là mỗi lần đổi ngôn ngữ lại bắn ba yêu cầu mạng không ai nhìn. */
   if (!DA_NAP) return;
@@ -1591,6 +1643,88 @@ $('#themeBtn').onclick = function(){
 apDungTheme(nhoCu('crm_theme', 'nd_theme') === 'light' ? 'light' : '');
 setLang(LANG);
 jget('/crm/me').then(function(j){ $('#meRole').textContent = (j.role||'') + ' · ' + (j.email||''); }).catch(function(){});
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   E08-D124 · ĐỒNG BỘ NHẬN DIỆN — bấm một nút, máy đoán
+   ══════════════════════════════════════════════════════════════════════════════
+   Máy chủ trả 202 ngay rồi làm việc ở tiến trình con, nên màn hình KHÔNG chờ một
+   yêu cầu duy nhất chạy tới cùng: nó hỏi lại trạng thái theo nhịp. Hỏi lại là lý
+   do F5 không mất gì — nguồn sự thật nằm ở máy chủ, không ở biến của trang này.
+
+   Nhịp 4 giây: một việc thật kéo vài phút tới vài chục phút, nên hỏi dày hơn chỉ
+   tốn yêu cầu mà không sớm biết thêm điều gì; thưa hơn thì lúc việc vừa xong người
+   ta ngồi nhìn chữ «đang chạy» đã hết đúng. Chỉ hẹn khi ĐANG chạy — trang mở suốt
+   buổi không được biến thành một cái đồng hồ gõ mãi vào máy chủ. */
+var DB_NHIP = 4000;
+var DB_HEN = null, DB_CUOI = null, DB_TRUOC = '';
+function dbGio(t){
+  if (!t) return '—';
+  try { return new Date(t).toLocaleTimeString(LANG === 'jp' ? 'ja-JP' : 'vi-VN',
+    { hour: '2-digit', minute: '2-digit' }); } catch (e){ return '—'; }
+}
+function veDongBo(j){
+  if (!j) return;
+  DB_CUOI = j;
+  var v = j.viec, tt2 = '', chu = '';
+  var dangChay = !!(v && v.trang_thai === 'chay');
+  if (!v){ chu = tt('db_chua') + ' ' + tt('db_giai'); }
+  else if (dangChay){
+    tt2 = tt('db_dang');
+    chu = fmt('db_dang_ct', { t: dbGio(v.bat_dau), b: v.boi || '' });
+  } else if (v.trang_thai === 'xong'){
+    tt2 = tt('db_xong');
+    chu = fmt('db_xong_ct', { t: dbGio(v.xong), m: v.so_mau == null ? 0 : v.so_mau,
+      a: v.so_tam == null ? 0 : v.so_tam, g: v.so_goi_y == null ? 0 : v.so_goi_y });
+  } else {
+    tt2 = tt('db_loi');
+    chu = fmt('db_loi_ct', { t: dbGio(v.xong || v.bat_dau), e: v.loi || '' });
+  }
+  /* Thiếu bộ nhận diện thì nói NGAY, đừng bắt người ta bấm mới biết. Nút vẫn bấm
+     được: một nút xám không giải thích được vì sao nó xám, mà cú bấm là thứ để
+     lại dòng trong sổ cho người kỹ thuật đọc. */
+  if (j.san_sang === false) chu = tt('db_thieu') + (chu ? ' · ' + chu : '');
+  $('#dbTom').textContent = tt2;
+  $('#dbChu').textContent = chu;
+  $('#nutDongBo').disabled = dangChay;
+
+  if (DB_HEN){ clearTimeout(DB_HEN); DB_HEN = null; }
+  if (dangChay) DB_HEN = setTimeout(hoiDongBo, DB_NHIP);
+  /* Vừa CHUYỂN từ đang-chạy sang xong ⇒ lưới đang hiện những con số đã cũ: gợi ý
+     mới vừa được đẻ ra mà ô nào cũng còn ghi số của mấy phút trước. Chỉ vẽ lại khi
+     đúng cú chuyển ấy và đúng màn lưới đang mở — vẽ lại theo mỗi nhịp hỏi thì cứ
+     4 giây một lần trang lại giật dưới tay người đang duyệt. */
+  var nay = v ? v.trang_thai : '';
+  if (DB_TRUOC === 'chay' && nay === 'xong' && !$('#manAnh').classList.contains('an')) veLuoi();
+  DB_TRUOC = nay;
+}
+async function hoiDongBo(){
+  try { veDongBo(await jget('/crm/face-match/dong-bo')); }
+  catch (e){ /* mạng chớp một nhịp không phải lý do để xoá trạng thái đang hiện */
+    if (DB_CUOI && DB_CUOI.viec && DB_CUOI.viec.trang_thai === 'chay')
+      DB_HEN = setTimeout(hoiDongBo, DB_NHIP); }
+}
+$('#nutDongBo').onclick = async function(){
+  $('#nutDongBo').disabled = true;
+  $('#dbTom').textContent = '';
+  try {
+    /* Không dùng `jpost`: nó ném ở mọi mã ≠ 2xx nên nuốt mất THÂN của 409 và 503,
+       mà thân ấy chính là câu cần hiện («đang chạy rồi», «chưa có bộ nhận diện»).
+       Ở đây mã trạng thái là dữ liệu, không phải ngoại lệ. */
+    var r = await fetch('/crm/face-match/dong-bo', { method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ nguon: 'tay' }) });
+    var j = null; try { j = await r.json(); } catch (e){ j = null; }
+    if (r.status === 202) $('#dbChu').textContent = tt('db_mo');
+    else if (r.status === 409) $('#dbChu').textContent = tt('db_dang_roi');
+    else if (r.status === 503) $('#dbChu').textContent = tt('db_thieu')
+      + ((j && j.thieu && j.thieu.length) ? ' (' + j.thieu.join(', ') + ')' : '');
+    else $('#dbChu').textContent = tt('db_hong');
+  } catch (e){ $('#dbChu').textContent = tt('db_hong'); }
+  /* Dù nhánh nào cũng hỏi lại trạng thái: máy chủ mới là nơi biết sự thật, và
+     chính lượt hỏi này bật/tắt lại cái nút cho đúng. */
+  hoiDongBo();
+};
+hoiDongBo();
 
 /* Tab mở đầu do URL quyết định (D106). `?anh=` mở thẳng tấm (D107) — sau khi
    lưới đã nạp, vì nút «Về lưới ảnh» cần chỗ quay về. */

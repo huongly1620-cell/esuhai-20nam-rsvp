@@ -425,6 +425,164 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_album_links_song
 CREATE INDEX IF NOT EXISTS idx_album_links_guest
   ON crm_album_links (guest_id, created_at DESC);
 
+/* ── E08-D124 · SỔ VIỆC ĐOÁN MẶT (một việc một lúc) ──────────────────────────
+   Trước vé này, đợt nhận diện chỉ chạy từ máy người kỹ thuật nên «đang chạy hay
+   không» là thứ chỉ người ấy biết. Nay ban tổ chức tự bấm, nên trạng thái phải
+   nằm ở chỗ mọi tab và mọi lần F5 đều đọc được — tức trong CSDL, không trong một
+   biến của tiến trình máy chủ (biến ấy chết theo mỗi lần deploy).
+
+   Bảng cố ý NGHÈO: đếm và một câu lỗi, không giữ log. Nó nằm cạnh dữ liệu khách
+   nên mọi cột thêm vào đây là một cột phải trả lời câu hỏi PDPL — không tên
+   khách, không token, không chuỗi kết nối. Cột boi là email nhân sự BTL, cùng
+   loại dữ liệu với crm_audit_events.actor_email đã có.
+
+   UNIQUE MỘT PHẦN LÀ CÁI KHOÁ, và đó là điểm của cả bảng: «một việc một lúc»
+   không được phép phụ thuộc vào việc mọi đường mở việc tương lai đều nhớ kiểm
+   trước. Chỉ mục đặt trên chính cột trạng thái với điều kiện chỉ nhìn hàng đang
+   chạy, nên nhiều nhất một hàng như thế tồn tại — hai tab bấm cùng một phần nghìn
+   giây thì một cú thắng, cú kia nhận 23505.
+   (Nhắc lại cảnh báo đầu khối D082: đây là chuỗi mẫu JS — KHÔNG dấu huyền trong
+   chú thích, kể cả để trích tên cột. Vừa dẫm phải đúng bẫy đó lần thứ ba.) */
+CREATE TABLE IF NOT EXISTS crm_nhan_dien_runs (
+  id          BIGSERIAL PRIMARY KEY,
+  trang_thai  TEXT NOT NULL DEFAULT 'chay' CHECK (trang_thai IN ('chay','xong','loi')),
+  /* 'tay' = bấm nút trên trang ảnh · 'nap-kho' = tự chạy sau một lượt nạp ảnh. */
+  nguon       TEXT NOT NULL DEFAULT 'tay' CHECK (nguon IN ('tay','nap-kho')),
+  boi         TEXT NOT NULL,
+  bat_dau     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  xong_luc    TIMESTAMPTZ,
+  so_mau      INTEGER,                   -- mẫu khoanh tay vừa tính được vector
+  so_tam      INTEGER,                   -- tấm chưa có hàng mặt, lượt này dò
+  so_goi_y    INTEGER,                   -- gợi ý sinh thêm (tấm mới + khớp lại)
+  loi         TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_nhan_dien_runs_dang_chay
+  ON crm_nhan_dien_runs (trang_thai) WHERE trang_thai = 'chay';
+
+/* ── E08-D126 · NHIỀU LUỒNG, TẠM DỪNG ĐƯỢC, THẤY TIẾN ĐỘ ─────────────────────
+   D124 dựng sổ việc cho MỘT việc chạy tới cùng. Tối 11/08 chạy thật 5 luồng thì
+   lộ ra ba chỗ bảng ấy không đỡ nổi, và cả ba đều là lược đồ chứ không phải giao
+   diện:
+
+     1 · Chia việc bằng OFFSET tính tay. Hàng đợi co lại trong lúc chạy nên hai
+         cửa sổ có thể chồng nhau, và crm_event_faces KHÔNG có ràng buộc chống
+         một tấm bị hai luồng soi. Nay chia việc bằng cách GIỮ ẢNH: một luồng
+         đóng dấu tên mình lên 25 tấm bằng FOR UPDATE SKIP LOCKED, nên hai luồng
+         không thể cầm cùng một tấm kể cả khi khởi động cùng giây.
+
+     2 · Hàng đợi cũ là «tấm chưa có hàng mặt», nên 1.217 tấm đã biết không có
+         mặt người nằm lại đầu hàng đợi và ăn 26 phút MỖI lượt. Nay hàng đợi là
+         soi_luc IS NULL — soi rồi thì đánh dấu, kể cả khi không thấy mặt nào.
+         Đây cũng là điều kiện để phần trăm tiến độ nói thật.
+
+     3 · Không có chỗ nào ghi «luồng số 3 đang sống hay đã chết». Nay mỗi luồng
+         một hàng, có nhịp (heartbeat); quá 3 phút không nhịp thì web đánh
+         mat-lien-lac và nhả ảnh nó đang giữ về hàng đợi.
+
+   Vẫn NGHÈO CÓ CHỦ Ý như D124: đếm, nhịp, một câu lỗi. Không tên khách, không
+   token, không chuỗi kết nối, không giữ log. Cột may là tên máy (hostname) —
+   để người vận hành biết luồng nào chạy ở đâu, không phải danh tính người.
+   (Nhắc lại: khối này là chuỗi mẫu JS — KHÔNG dấu huyền trong chú thích.) */
+
+/* Trạng thái nới ra hai nấc mới. tam-dung là «đang mở nhưng ngủ», huy là «người
+   bấm Dừng hẳn». Ràng buộc D124 do Postgres tự đặt tên; đặt tên mới cho cái của
+   mình rồi hỏi catalog, vì Postgres không có ADD CONSTRAINT IF NOT EXISTS. */
+DO $d126$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                  WHERE conrelid = 'crm_nhan_dien_runs'::regclass
+                    AND conname = 'ck_nhan_dien_runs_trang_thai') THEN
+    ALTER TABLE crm_nhan_dien_runs
+      DROP CONSTRAINT IF EXISTS crm_nhan_dien_runs_trang_thai_check;
+    ALTER TABLE crm_nhan_dien_runs
+      ADD CONSTRAINT ck_nhan_dien_runs_trang_thai
+      CHECK (trang_thai IN ('chay','xong','loi','tam-dung','huy'));
+  END IF;
+END $d126$;
+
+ALTER TABLE crm_nhan_dien_runs ADD COLUMN IF NOT EXISTS so_luong INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE crm_nhan_dien_runs ADD COLUMN IF NOT EXISTS nguong   REAL;
+
+/* Cái khoá đổi NGHĨA, không đổi vai: D124 chặn «một việc một lúc» bằng chỉ mục
+   trên chính cột trạng thái với điều kiện chay. Nay một đợt đang TẠM DỪNG vẫn là
+   một đợt đang mở — cho mở đợt thứ hai chồng lên là để hai đợt cùng tranh một
+   hàng đợi. Chỉ mục cũ không làm được việc ấy: chay và tam-dung là hai giá trị
+   khác nhau nên nó cho phép mỗi loại một hàng. Nên chỉ mục mới đặt trên một
+   BIỂU THỨC luôn đúng bên trong điều kiện lọc — nhiều nhất một hàng như thế tồn
+   tại, bất kể nó đang chạy hay đang ngủ. Hai tab bấm cùng lúc: một cú nhận 23505. */
+DROP INDEX IF EXISTS uq_nhan_dien_runs_dang_chay;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_nhan_dien_runs_dot_mo
+  ON crm_nhan_dien_runs ((trang_thai IN ('chay','tam-dung')))
+  WHERE trang_thai IN ('chay','tam-dung');
+
+/* Một hàng một LUỒNG. so là số thứ tự người nhìn thấy trên bảng (1..6), id là
+   thứ máy quét đóng dấu lên ảnh nó giữ.
+   so_loi đếm TẤM lỗi; loi giữ MỘT câu cho người đọc. Hai thứ khác nhau: con số
+   để bảng tô đỏ khi vượt 5%, câu để người biết vì sao luồng tự hãm. */
+CREATE TABLE IF NOT EXISTS crm_nhan_dien_luong (
+  id            BIGSERIAL PRIMARY KEY,
+  run_id        BIGINT NOT NULL REFERENCES crm_nhan_dien_runs(id) ON DELETE CASCADE,
+  so            INTEGER NOT NULL,
+  /* huy có mặt vì FR-4 nói huy là một CỜ web đặt được lên luồng, và vì một luồng
+     bị người bấm Dừng hẳn không phải là xong (nó chưa làm hết việc) cũng không
+     phải là loi (không có gì hỏng). Gắn nhãn sai ở đây là làm sổ nói dối đúng
+     chỗ người ta sẽ đọc để hiểu chuyện gì đã xảy ra. */
+  trang_thai    TEXT NOT NULL DEFAULT 'cho'
+                CHECK (trang_thai IN ('cho','chay','tam-dung','xong','loi','mat-lien-lac','huy')),
+  may           TEXT,                    -- hostname máy quét, KHÔNG phải người
+  nhip_cuoi     TIMESTAMPTZ,             -- lần cuối luồng còn thở
+  bat_dau       TIMESTAMPTZ,
+  xong_luc      TIMESTAMPTZ,
+  da_soi        INTEGER NOT NULL DEFAULT 0,
+  so_mat        INTEGER NOT NULL DEFAULT 0,
+  goi_y         INTEGER NOT NULL DEFAULT 0,
+  so_loi        INTEGER NOT NULL DEFAULT 0,
+  anh_hien_tai  TEXT,                    -- TÊN TỆP đang xử lý, không phải tên khách
+  loi           TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+/* Số thứ tự là duy nhất trong một đợt: hai luồng cùng mang số 3 thì mọi câu người
+   vận hành nói («tạm dừng luồng 3») mất nghĩa. */
+CREATE UNIQUE INDEX IF NOT EXISTS uq_nhan_dien_luong_so
+  ON crm_nhan_dien_luong (run_id, so);
+CREATE INDEX IF NOT EXISTS idx_nhan_dien_luong_song
+  ON crm_nhan_dien_luong (nhip_cuoi) WHERE trang_thai IN ('chay','tam-dung');
+
+/* ── Dấu ĐÃ SOI trên chính bảng ảnh ────────────────────────────────────────────
+   Bốn cột, hai vai khác nhau và cố ý không gộp:
+     soi_luc      — soi XONG lúc nào. Đây là hàng đợi mới (NULL = chưa soi).
+     soi_luong_id — luồng nào đang GIỮ tấm này. Chỉ có nghĩa khi soi_luc IS NULL;
+                    soi xong thì nhả về NULL, nên «đang giữ mà đã soi» là 0 hàng
+                    (AC-2 kiểm đúng câu ấy).
+     soi_giu_luc  — giữ từ lúc nào, để nhìn ra tấm bị kẹt.
+     soi_so_mat   — thấy mấy mặt. 0 là một câu trả lời, không phải thiếu dữ liệu.
+
+   KHÔNG khoá ngoại từ soi_luong_id sang crm_nhan_dien_luong: dấu giữ là thứ tạm,
+   sống ngắn hơn cả hàng luồng, và một khoá ngoại ở đây nghĩa là xoá sổ luồng cũ
+   phải đi sửa hàng triệu dòng ảnh. Nhịp dọn của web mới là thứ giữ hai bên khớp
+   nhau — nó nhả mọi tấm mà luồng giữ chúng không còn sống. */
+ALTER TABLE crm_event_photos ADD COLUMN IF NOT EXISTS soi_luc      TIMESTAMPTZ;
+ALTER TABLE crm_event_photos ADD COLUMN IF NOT EXISTS soi_luong_id BIGINT;
+ALTER TABLE crm_event_photos ADD COLUMN IF NOT EXISTS soi_giu_luc  TIMESTAMPTZ;
+ALTER TABLE crm_event_photos ADD COLUMN IF NOT EXISTS soi_so_mat   INTEGER;
+
+/* Chỉ mục của hàng đợi. Không có nó thì mỗi lượt xin 25 tấm là một lượt quét cả
+   bảng ảnh, mà một đợt 6 luồng xin vài trăm lượt. */
+CREATE INDEX IF NOT EXISTS idx_event_photos_hang_doi
+  ON crm_event_photos (id)
+  WHERE deleted_at IS NULL AND soi_luc IS NULL AND soi_luong_id IS NULL;
+/* Chỉ mục của nhịp dọn: tìm nhanh những tấm đang bị một luồng chết giữ. */
+CREATE INDEX IF NOT EXISTS idx_event_photos_dang_giu
+  ON crm_event_photos (soi_luong_id)
+  WHERE soi_luong_id IS NOT NULL AND soi_luc IS NULL;
+/* Tốc độ trên bảng là «bao nhiêu tấm trong một phút VỪA QUA», không phải trung
+   bình từ lúc bắt đầu — người vận hành tăng giảm số luồng để nhìn con số đổi, mà
+   trung bình tích luỹ thì mười phút sau mới nhúc nhích. Câu hỏi ấy chạy 3 giây
+   một lần nên nó cần chỉ mục; đổi lại là một lượt ghi chỉ mục cho mỗi tấm soi
+   xong, tức ~1 phần nghìn của thời gian dò một tấm. */
+CREATE INDEX IF NOT EXISTS idx_event_photos_soi_luc
+  ON crm_event_photos (soi_luc DESC) WHERE soi_luc IS NOT NULL;
+
 /* ── Nâng cấp cho CSDL ĐÃ CÓ ba bảng ────────────────────────────────────────
    CREATE TABLE IF NOT EXISTS chỉ dựng bảng khi chưa có — nó KHÔNG thêm cột,
    KHÔNG nới NOT NULL, KHÔNG thêm CHECK vào bảng đã tồn tại. Ba cột và hai ràng
@@ -476,6 +634,40 @@ async function migrateCrm() {
   if (gop.rows[0].dong) {
     console.log('[crm-db] D115: gộp ' + gop.rows[0].dong + ' dòng album trùng trên '
       + gop.rows[0].cap + ' cặp (tấm, khách) — xem sổ audit face_gop_doi');
+  }
+
+  /* ── E08-D126 · gieo dấu ĐÃ SOI cho những tấm đã soi từ trước ────────────────
+     Cột soi_luc ra đời sau 10.983 tấm, nên nếu để trống hết thì lần bấm Bắt đầu
+     đầu tiên sau khi lên sẽ soi lại CẢ KHO — mấy tiếng CPU và mấy nghìn lượt tải
+     ảnh cho một việc đã làm rồi.
+
+     Điều kiện lấy đúng hàng đợi CŨ của D077 («tấm chưa có hàng mặt nào còn
+     sống»), không rộng hơn: tấm có mặt nhưng mặt đã bị gỡ tay thì trước nay vẫn
+     nằm trong hàng đợi, và vé này không được lặng lẽ đẩy nó ra.
+
+     Mốc soi_luc lấy giờ của HÀNG MẶT đầu tiên chứ không phải now(): đó mới là
+     lúc tấm ấy thật sự được soi, và một ngày nào đó có người sẽ hỏi «kho này soi
+     xong hồi nào».
+
+     CHẠY LẠI ĐƯỢC: vế soi_luc IS NULL khiến lượt hai đụng 0 dòng. Những tấm chưa
+     ai soi vẫn nguyên NULL — chúng là hàng đợi thật.
+
+     Còn 1.217 tấm «đã soi mà không thấy mặt nào» thì lượt này KHÔNG gieo được:
+     trước D126 không có chỗ nào ghi lại việc đã soi chúng. Chúng sẽ bị soi lại
+     đúng MỘT lần nữa, rồi từ đó có dấu và biến mất khỏi hàng đợi vĩnh viễn — đó
+     chính là 26 phút mà AC-6 đo. */
+  const gieo = await pool.query(`
+    UPDATE crm_event_photos p
+       SET soi_luc    = coalesce(m.som_nhat, now()),
+           soi_so_mat = m.so_mat
+      FROM (SELECT f.event_photo_id AS pid, min(f.created_at) AS som_nhat,
+                   count(*)::int AS so_mat
+              FROM crm_event_faces f
+             WHERE f.deleted_at IS NULL
+             GROUP BY f.event_photo_id) m
+     WHERE p.id = m.pid AND p.soi_luc IS NULL`);
+  if (gieo.rowCount) {
+    console.log('[crm-db] D126: gieo dấu đã soi cho ' + gieo.rowCount + ' tấm đã có mặt trong sổ');
   }
 
   // ─────────── E08-D047 · di trú crm_check_ins sang khoá (guest_id, session) ───────────

@@ -9,6 +9,7 @@ const stats = require('./stats');
 const photos = require('./photos');
 const eventPhotos = require('./event-photos');
 const faceMatch = require('./face-match');
+const nhanDienRun = require('./nhan-dien-run');
 const albumLink = require('./album-link');
 const importer = require('./import');
 
@@ -130,6 +131,11 @@ function mount(app) {
   // là `btl`, cửa không có việc gì ở kho ảnh phóng sự.
   eventPhotos.mount(app, auth.requireCrmAuth, auth.requireRole);
   faceMatch.mount(app, auth.requireCrmAuth, auth.requireRole);
+  /* E08-D124 — nút Đồng bộ nhận diện. Cùng gác cổng `btl` như cả ngăn nhận diện;
+     KHÔNG nhận `requireDoorOrAuth`, vì mở việc là ra lệnh cho máy chủ chứ không
+     phải xem một con số. Tách khỏi face-match.js để phần sinh tiến trình con nằm
+     gọn một chỗ — đó là thứ duy nhất trong CRM đụng tới `child_process`. */
+  nhanDienRun.mount(app, auth.requireCrmAuth, auth.requireRole);
   /* E08-D120 — link album riêng của khách. KHÔNG nhận `requireDoorOrAuth`:
      tạo/đọc token là việc của `btl` có OTP, cửa mở (CRM_DOOR_OPEN) không đụng
      vào. Trang khách `/album/:token` nằm trong module này và cố ý KHÔNG có gác

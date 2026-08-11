@@ -642,6 +642,11 @@ var T = {
     ask_sync_lo:'Sẽ nạp theo từng lô khoảng {k} ảnh, chạy lần lượt — cứ để trang mở là được.',
     why_run:'Đang chạy — chờ đợt hiện tại xong đã. Đừng đóng tab.',
     t_done:'Đã nạp {x} ảnh ✓', t_err:'{e} ảnh lỗi — xem nhật ký bên dưới',
+    /* ── E08-D124 · nạp xong thì tự bảo máy đoán mặt ── */
+    nd_mo:'Đã bảo máy đoán mặt cho {x} tấm vừa nạp — xem tiến độ ở tab Phân loại.',
+    nd_dang:'Máy đang đoán mặt cho một lượt trước; những tấm vừa nạp sẽ được dò ở lượt sau. Xem ở tab Phân loại.',
+    nd_thieu:'Ảnh đã vào kho an toàn, nhưng máy chủ chưa có bộ nhận diện nên chưa đoán mặt được — nhờ kỹ thuật cài giúp.',
+    nd_hong:'Ảnh đã vào kho, nhưng không bảo được máy đoán mặt. Sang tab Phân loại bấm «Đồng bộ nhận diện» giúp em.',
     st_new:'đã nạp', st_dup:'đã có', st_bad:'lỗi', st_pass:'bỏ qua', heic:'HEIC — bỏ qua',
     sel_mode:'Chế độ chọn — chạm để tick, không cần giữ nữa.', sel_done:'Xong',
     zoom:'Xem ảnh lớn', lb_close:'Đóng', lb_prev:'Ảnh trước', lb_next:'Ảnh sau', lb_of:'{i}/{n}',
@@ -722,6 +727,11 @@ var T = {
     ask_sync_lo:'約{k}枚ずつのバッチに分けて順番に取り込みます。このページを開いたままにしてください。',
     why_run:'実行中 — 現在のバッチの完了をお待ちください。タブを閉じないでください。',
     t_done:'{x}枚を取り込みました ✓', t_err:'{e}枚が失敗 — 下のログをご確認ください',
+    /* ── E08-D124 ── */
+    nd_mo:'取り込んだ{x}枚の顔認識を開始しました — 進捗は「仕分け」タブでご確認ください。',
+    nd_dang:'前回の顔認識がまだ実行中です。今回の写真は次の実行で処理されます。「仕分け」タブでご確認ください。',
+    nd_thieu:'写真は保管庫に取り込まれましたが、サーバーに認識エンジンがないため顔認識を開始できません — 技術担当に設置を依頼してください。',
+    nd_hong:'写真は取り込まれましたが、顔認識を開始できませんでした。「仕分け」タブで「顔認識を同期」を押してください。',
     st_new:'取込済', st_dup:'既存', st_bad:'失敗', st_pass:'除外', heic:'HEIC — 除外',
     sel_mode:'選択モード — 長押し不要、タップで選べます。', sel_done:'完了',
     zoom:'拡大表示', lb_close:'閉じる', lb_prev:'前の写真', lb_next:'次の写真', lb_of:'{i}/{n}',
@@ -1856,6 +1866,30 @@ function veResume(){
   $('#btnTiepTuc').textContent = fmt('rs_tiep', { r: r });
   $('#btnBoDot').textContent = tt('rs_bo');
 }
+/* E08-D124 · NẠP XONG LÀ TỰ BẢO MÁY ĐOÁN MẶT.
+   Trước vé này, nạp ảnh xong là hết: ai đó phải nhớ sang tab Phân loại, và nếu
+   không ai nhớ thì kho có ảnh mới mà không ai đoán — đúng chỗ Sponsor nói «không
+   có chúng ta app vẫn phải chạy được». Nút bên tab Phân loại vẫn còn nguyên cho
+   lúc muốn chạy lại mà không nạp gì mới; đây chỉ là bỏ đi một bước phải nhớ.
+
+   Gọi CÙNG MỘT tuyến, không phải một đường riêng: hai đường mở việc là hai chỗ
+   phải nhớ giữ cùng luật «một việc một lúc», và một ngày nào đó chúng lệch nhau.
+   409 (đang có việc chạy) KHÔNG phải lỗi ở đây — nó là câu trả lời đúng, chỉ cần
+   nói cho người ta biết tấm vừa nạp sẽ được dò ở lượt sau.
+
+   Không chặn gì cả: ảnh đã nằm trong kho rồi. Mọi hỏng ở đây chỉ mất phần TỰ
+   ĐỘNG, và câu nhắc luôn chỉ đúng đường đi tiếp bằng tay. */
+async function goiNhanDien(soMoi){
+  try {
+    var r = await fetch('/crm/face-match/dong-bo', { method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ nguon: 'nap-kho' }) });
+    if (r.status === 202) ghiLog(fmt('nd_mo', { x: soMoi }));
+    else if (r.status === 409) ghiLog(tt('nd_dang'));
+    else if (r.status === 503){ ghiLog(tt('nd_thieu')); toast(tt('nd_thieu'), 'err'); }
+    else ghiLog(tt('nd_hong'));
+  } catch (e){ ghiLog(tt('nd_hong')); }
+}
 async function dongBo(tiepTuc){
   if (!EXIF_OK){ await appAlert(tt('no_exif')); return; }
   /* Tiếp tục chỉ lấy phần CHƯA xong: tấm đã vào kho hoặc đã có sẵn thì không
@@ -2055,6 +2089,14 @@ async function dongBo(tiepTuc){
   } else {
     toast(fmt('t_done', { x: xong }), 'ok');
   }
+  /* D124 · CHỈ khi có tấm MỚI vào kho. Chọn lại đúng thư mục cũ (trùng hết,
+     `xong === 0`) không đẻ ra việc nào — không có tấm nào chưa dò thì lượt chạy ấy
+     chỉ tốn một vòng quét kho để rồi không tìm thấy gì. Muốn chạy lại tay thì đã
+     có nút bên tab Phân loại.
+     Nhánh «đã dừng giữa chừng» thoát ở trên và cố ý KHÔNG gọi: người ta còn bấm
+     Tiếp tục, mà một việc mở sớm sẽ nuốt luôn lượt gọi của cú Tiếp tục ấy (409),
+     tức phần nạp sau cùng lại là phần không được dò. */
+  if (xong) await goiNhanDien(xong);
   taiKho();
 }
 

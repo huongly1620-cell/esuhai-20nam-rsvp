@@ -8,6 +8,8 @@
   "scripts": {
     "tai-model": "node tai-model.js",
     "batch": "node batch.js",
+    "truc": "node batch.js --truc",
+    "kiem-hang-doi": "node kiem-hang-doi.js",
     "don-han": "node don-han.js"
   },
   "dependencies": {

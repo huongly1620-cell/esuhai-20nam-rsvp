@@ -97,6 +97,16 @@
     align-items:center;justify-content:center;cursor:pointer}
   .tick input{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;margin:0}
   .anh-o.daChon{box-shadow:0 0 0 3px rgba(224,189,119,.5)}
+  /* E08-D105 · mức giống, góc phải trên. Tên riêng `.giong`, KHÔNG mượn `.dem` hay
+     `.hieu` — bài học N1: một class mang hai nghĩa thì lỗi hiện ra ở chỗ khác.
+     `.anh-o` đã là position:relative nên chip neo trong đúng tấm của nó. */
+  .giong{position:absolute;top:5px;right:5px;max-width:calc(100% - 42px);
+    border-radius:999px;font-size:var(--fs-micro);padding:2px 7px;
+    background:rgba(7,16,27,.78);border:1px solid var(--line2);color:var(--muted);
+    backdrop-filter:blur(3px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* Chỉ dải chắc nhất mới đổi màu. Tô ba màu khác nhau là dựng lại một thang điểm
+     bằng màu, mà thang ấy chính là thứ người chấm không nên bị neo vào. */
+  .giong.chac{color:var(--gold);border-color:var(--gold)}
   .mo-them{display:flex;align-items:center;justify-content:center;text-align:center;
     border:1px dashed var(--line2);border-radius:11px;background:transparent;
     color:var(--gold);font:inherit;font-size:var(--fs-small);cursor:pointer;padding:8px;
@@ -275,7 +285,7 @@ var T = {
     lk_cho:'Khách đang có ảnh chờ duyệt', lk_album:'Khách đã có ảnh trong album',
     lk_tat:'Tất cả khách',
     khoi_tom:'{n} khách · đang xem {c}',
-    khoi_chu:'Viền xanh, nhãn «Đã trong album» = ảnh đã được người xác nhận, sẽ gửi cho khách. Viền vàng, nhãn «Máy đoán, chờ duyệt» = máy đoán, CHƯA phải ảnh của khách cho tới khi có người bấm xác nhận.',
+    khoi_chu:'Viền xanh, nhãn «Đã trong album» = ảnh đã được người xác nhận, sẽ gửi cho khách. Viền vàng, nhãn «Máy đoán, chờ duyệt» = máy đoán, CHƯA phải ảnh của khách cho tới khi có người bấm xác nhận. Chữ ở góc phải trên (rất / khá / hơi giống) là mức máy tự tin — tham khảo thôi, mắt anh chị mới là thứ quyết định.',
     khoi_rong:'Không có khách nào trong mục này.',
     khoi_khong_anh:'Chưa có ảnh nào cho khách này.',
     khoi_them:'Xem thêm khách', het_khach:'Đã hết khách.',
@@ -321,7 +331,7 @@ var T = {
     lk_cho:'承認待ちの写真があるゲスト', lk_album:'アルバムに写真があるゲスト',
     lk_tat:'すべてのゲスト',
     khoi_tom:'{n}名 · 表示中{c}名',
-    khoi_chu:'緑の枠・「アルバム登録済み」＝担当者が確認した写真で、ゲストへ送る対象です。金色の枠・「自動候補、承認待ち」＝機械の推測で、担当者が確認するまでゲストの写真ではありません。',
+    khoi_chu:'緑の枠・「アルバム登録済み」＝担当者が確認した写真で、ゲストへ送る対象です。金色の枠・「自動候補、承認待ち」＝機械の推測で、担当者が確認するまでゲストの写真ではありません。右上の文字（よく／やや／少し似ています）は機械の確信度です — 参考であり、判断するのはご自身の目です。',
     khoi_rong:'この条件に該当するゲストはいません。',
     khoi_khong_anh:'このゲストの写真はまだありません。',
     khoi_them:'ゲストをもっと見る', het_khach:'これ以上のゲストはいません。',
@@ -545,9 +555,18 @@ function idsTick(pham){
 /* Một tấm trong khối. `cho` mới có ô tick; cả hai đều có viền RIÊNG và nhãn CHỮ. */
 function veTam(x){
   var la = x.trang_thai === 'xac-nhan';
+  /* E08-D105 · mức giống hiện ngay trên tấm CHỜ DUYỆT.
+     Người chấm trong khối đang nhìn thumb nhỏ và tick nhanh; không có mức giống
+     thì cú tick ấy là một đại lượng khác với thứ AC-5 D077 muốn đo. Tấm đã xác
+     nhận không cần — quyết định của nó xong rồi (FR-2).
+     Gọi ĐÚNG `chuGiong()` của trang xem ảnh, không chép lại ba mốc: hai bản sao
+     của cùng một ngưỡng là hai thứ sẽ lệch nhau vào lúc không ai để ý (AC-2). */
+  var giong = la ? '' : chuGiong(x.score);
   return '<div class="anh-o ' + (la ? 'alb' : 'cho') + '" data-cid="' + x.candidate_id
     + '" data-anh="' + x.event_photo_id + '">'
     + '<img loading="lazy" src="' + x.thumb_url + '" alt="' + esc(tt('anh_alt')) + '">'
+    + (giong ? '<span class="giong' + (x.score >= 0.55 ? ' chac' : '') + '">'
+        + esc(giong) + '</span>' : '')
     + '<span class="nhan">' + esc(tt(la ? 'nhan_alb' : 'nhan_cho')) + '</span>'
     + (la ? '' : '<label class="tick"><input type="checkbox"></label>')
     + '</div>';

@@ -30,6 +30,13 @@
   .btn:hover:not(:disabled){border-color:var(--gold)}
   .btn:disabled{opacity:.45;cursor:default}
   .btn.sm{padding:5px 10px;font-size:var(--fs-small)}
+  /* Nút chỉ có HÌNH. `min-width`/`min-height` 30px là ngưỡng chạm, không phải cỡ
+     hình: hình chỉ 14px, phần còn lại là vùng bấm. Không dùng `width` cứng — nút
+     này đứng trong hàng flex cùng ba nút chữ, `min-*` cho nó cao bằng hàng mà
+     không bóp hình khi trình duyệt phóng chữ to. */
+  .btn.ic-nut{padding:5px;min-width:30px;min-height:30px;
+    display:inline-flex;align-items:center;justify-content:center}
+  .btn.ic-nut .ic{display:block;width:14px;height:14px}
   .btn.ok{border-color:rgba(67,224,141,.5);color:var(--ok)}
   .btn.bad{border-color:rgba(224,90,90,.5);color:#ffb3b3}
   .spacer{flex:1}
@@ -152,12 +159,29 @@
      vốn là lối yếu nhất trong ba lối — không ai đọc được «đậm hơn» khi không có
      tấm kia nằm cạnh để so — mà lại là lối đắt nhất: chính nó biến thanh đáy
      thành cái biển. Hai lối còn lại đứng một mình vẫn đọc được, nên bỏ được.
-     `line-height` phải nói ra: thanh này cao bằng chữ cộng đệm, mà `normal` của
-     Be Vietnam Pro ~1.45 — đủ để thanh ăn quá phần ảnh mà vé này muốn trả lại. */
-  .nhan{position:absolute;left:0;right:0;bottom:0;line-height:1.35;
-    padding:2px 6px;text-align:center;border-top:1px solid transparent}
-  .anh-o.alb .nhan{border-top-color:rgba(67,224,141,.5)}
-  .anh-o.cho .nhan{border-top-color:rgba(224,189,119,.5)}
+     ── VÉ ICON · THANH ĐÁY → HUY HIỆU GÓC ────────────────────────────────────
+     Nhãn nay chỉ còn một hình bé. Giữ nguyên thanh CHẠY SUỐT bề ngang tấm để
+     đựng đúng một dấu tick thì lại dựng lại cái biển mà D122 vừa gỡ — lần này
+     còn tệ hơn, vì cả dải kính mờ ấy nay không chở chữ nghĩa gì. Nên thu về
+     huy hiệu góc dưới-trái, soi gương với ô `%` ở góc trên-phải: hai chấm nhỏ
+     cùng cỡ ở hai góc chéo đọc ra "chú thích của tấm", còn một dải ngang đọc ra
+     "chú thích ĐÈ LÊN tấm".
+     Góc dưới-TRÁI chứ không phải dưới-phải: ô tick nằm trên-trái, nên mép trái
+     đã là cột dành cho "thao tác/trạng thái của tấm này"; đẩy huy hiệu sang phải
+     là bắt mắt đi chéo qua ảnh mỗi lần đối chiếu tick với trạng thái.
+     MÀU trở lại làm một lối phân biệt (vàng chờ · xanh album) vì kênh CHỮ đã mất.
+     Nó KHÔNG đứng một mình: số nét tick (1 vs 2) và bề rộng huy hiệu mới là lối
+     chính, màu chỉ phụ hoạ — người mù màu vẫn đếm được nét. Màu lấy đúng cặp màu
+     viền tấm (`--ok`/`--gold`) nên huy hiệu và viền nói cùng một chuyện. */
+  .nhan{position:absolute;left:5px;bottom:5px;border-radius:7px;
+    padding:3px 5px;display:inline-flex;align-items:center;
+    border:1px solid rgba(224,189,119,.22)}
+  /* 11px chứ không 9: ở 9px nét tick mảnh 1.03px, và «một» với «hai» chỉ hơn nhau
+     mấy pixel bề ngang — người chấm nhìn lướt thumb thì hai thứ ấy như nhau. 11px
+     vẫn nhỏ hơn hẳn thanh chữ cũ, mà đếm được nét. */
+  .nhan .ic{display:block;height:11px;width:auto}
+  .anh-o.cho .nhan{color:rgba(232,199,137,.92);border-color:rgba(224,189,119,.34)}
+  .anh-o.alb .nhan{color:rgba(111,232,168,.92);border-color:rgba(67,224,141,.34)}
   /* Ô tick phải to và dễ chạm: đây là cử chỉ bắt buộc trước mọi lượt duyệt, làm
      nó bé là dồn người dùng đi tìm nút tắt — mà nút tắt là thứ vé này cấm. */
   .tick{position:absolute;top:5px;left:5px;width:26px;height:26px;border-radius:7px;
@@ -983,9 +1007,24 @@ function veBangTai(khoa, ids, coGoc){
   var n = ids.length;
   var mo = TAI_MO === khoa && n > 0;
   var bac = (TAI_BAC === 'goc' && coGoc) ? 'goc' : 'mobile';
+  /* Nút MỞ bộ chọn tải nay chỉ còn mũi tên xuống. `aria-label`/`title` giữ nguyên
+     câu «Tải về» vi/jp — nút không chữ mà không có nhãn phụ trợ là một nút câm
+     với người đọc màn hình.
+     `.btn.ic-nut` để nó thành ô vuông: `.btn.sm` có `padding:5px 10px` tính cho
+     chữ, bỏ chữ đi mà giữ nguyên đệm thì ra một nút dẹt lệch. Ô vuông ~30px cũng
+     là để còn CHẠM được — dưới 28px là mất ngưỡng ngón tay, mà nút này đứng ngay
+     cạnh ba nút duyệt nên bấm nhầm là quyết nhầm.
+     Nút CHẠY tải bên trong bộ chọn thì GIỮ chữ «Tải {n} tấm»: nó chở một CON SỐ
+     người dùng vừa tick, mà mũi tên thì không nói được "3 tấm". */
+  var cauTai = tt('tai_ve');
   var h = '<div class="tai' + (mo ? ' mo' : '') + '">'
-    + '<button class="btn sm" data-tai-mo="' + esc(khoa) + '" aria-expanded="' + mo + '"'
-    + (n ? '' : ' disabled') + '>⬇ ' + esc(tt('tai_ve')) + '</button>';
+    + '<button class="btn sm ic-nut" data-tai-mo="' + esc(khoa) + '" aria-expanded="' + mo + '"'
+    + ' aria-label="' + esc(cauTai) + '" title="' + esc(cauTai) + '"'
+    + (n ? '' : ' disabled') + '>'
+    + '<svg class="ic" viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor"'
+    + ' stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M7 2.2v7.6"/><path d="M3.4 6.4L7 10l3.6-3.6"/><path d="M2.4 12.2h9.2"/>'
+    + '</svg></button>';
   if (mo){
     var nhom = 'bac_' + khoa.replace(/[^A-Za-z0-9]/g, '_');
     h += '<div class="tai-bang">'
@@ -1038,7 +1077,51 @@ async function chayTai(ids, bac, oBao){
   if (oBao) oBao.textContent = fmt('tai_xong', { n: ids.length });
 }
 
-/* Một tấm trong khối. `cho` mới có ô tick; cả hai đều có viền RIÊNG và nhãn CHỮ. */
+/* ── Nhãn trạng thái trên tấm: MỘT DẤU TICK vs HAI DẤU TICK ──────────────────
+   Chờ duyệt = một tick (máy đã đoán, còn chờ người). Đã trong album = hai tick
+   (người đã duyệt). Cùng một hình vẽ nhân đôi, nên nghĩa "thêm một bước nữa"
+   đọc được mà không cần chú giải.
+
+   SVG chứ không phải ký tự ✓✓: hai ký tự ✓ cạnh nhau thì khoảng cách giữa chúng
+   do FONT quyết định, mà font ở đây là chuỗi fallback năm bậc — trên máy không
+   có Be Vietnam Pro, hai dấu tick dính hoặc rời tuỳ máy, và ở 10px thì "dính"
+   với "một dấu" nhìn như nhau. SVG thì toạ độ là của ta.
+   `stroke-width` 1.6 chứ không tô đặc: nét mảnh mới cùng họ với chữ 450 của
+   D122 — vẽ đặc là mang lại đúng cái sức nặng vé ấy vừa gỡ đi.
+
+   CẢNH BÁO cho người sửa sau: từ vé này nhãn KHÔNG còn kênh CHỮ. FR-2 dựng lên
+   ba lối phân biệt (chữ · viền · độ đậm) vì nhầm chiều nghĩa là khách B nhận
+   ảnh khách A; D122 bỏ độ đậm, vé này bỏ chữ, nên chỉ còn HÌNH + VIỀN. Bù lại
+   bằng `aria-label` mang đúng câu vi/jp cũ — đó là lý do hai khoá `nhan_cho`
+   `nhan_alb` vẫn phải sống trong cả hai bảng dịch, đừng dọn. Người đọc màn hình
+   và người rê chuột vẫn nghe/thấy nguyên câu; chỉ mắt nhìn nhanh là mất chữ. */
+function veIconNhan(la){
+  /* Hai viewBox RỘNG KHÁC NHAU, cùng chiều cao. Nếu dùng chung một khung thì dấu
+     tick đơn phải co lại hoặc lệch về một bên để lấp chỗ trống của dấu thứ hai —
+     hai dấu tick to bằng nhau mới đọc ra "một" với "hai"; hai dấu tick KHÁC CỠ
+     đọc ra "gần" với "xa". Khung ôm sát nét nên huy hiệu hai tick tự rộng hơn,
+     cộng thêm một lối phân biệt nữa mà không tốn gì. */
+  /* Hai dấu tick RỜI HẲN, không chồng nhau kiểu ứng dụng nhắn tin. Bản đầu vẽ
+     chồng — dấu thứ hai mượn nét xuống của dấu thứ nhất — và ở 9px nó đọc ra
+     «//», mất hẳn hình dấu tick. Kiểu chồng ấy chỉ sống được ở cỡ to hoặc ở nơi
+     người dùng đã thuộc lòng ký hiệu; đây là thumb 147px và người chấm nhìn
+     lướt, nên mỗi dấu phải tự đứng thành một dấu tick trọn vẹn. */
+  var net = 'l3 3.1 5.2-6.3';
+  var d = la
+    ? '<path d="M1.4 7.4' + net + '"/><path d="M10 7.4' + net + '"/>'
+    : '<path d="M1.4 7.4' + net + '"/>';
+  var w = la ? 19.6 : 11;
+  return '<svg class="ic" viewBox="0 0 ' + w + ' 14" aria-hidden="true"'
+    + ' fill="none" stroke="currentColor" stroke-width="1.6"'
+    + ' stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+}
+function veNhan(la){
+  var cau = tt(la ? 'nhan_alb' : 'nhan_cho');
+  return '<span class="nhan" role="img" aria-label="' + esc(cau) + '" title="' + esc(cau) + '">'
+    + veIconNhan(la) + '</span>';
+}
+
+/* Một tấm trong khối. `cho` mới có ô tick; cả hai đều có viền RIÊNG và nhãn HÌNH. */
 function veTam(x){
   var la = x.trang_thai === 'xac-nhan';
   /* E08-D105 → D118 · mức tự tin của máy hiện ngay trên tấm CHỜ DUYỆT, nay là số
@@ -1057,7 +1140,7 @@ function veTam(x){
     + '<img loading="lazy" src="' + x.thumb_url + '" alt="' + esc(tt('anh_alt')) + '">'
     + (pt ? '<span class="pt' + (x.score >= 0.55 ? ' chac' : '') + '">'
         + esc(pt) + '</span>' : '')
-    + '<span class="nhan">' + esc(tt(la ? 'nhan_alb' : 'nhan_cho')) + '</span>'
+    + veNhan(la)
     + (la ? '' : '<label class="tick"><input type="checkbox"></label>')
     + '</div>';
 }
@@ -1267,7 +1350,16 @@ function capNhatSauQuyet(cid, trangThai, kq){
       o.classList.remove('cho', 'daChon'); o.classList.add('alb');
       var tick = o.querySelector('.tick'); if (tick) tick.remove();
       var g = o.querySelector('.pt'); if (g) g.remove();      // % chỉ có nghĩa lúc còn chờ (AC-4)
-      var nh = o.querySelector('.nhan'); if (nh) nh.textContent = tt('nhan_alb');
+      /* Một tick → hai tick. Phải thay cả `aria-label`/`title` chứ không mỗi hình:
+         bỏ sót chúng là để lại tấm vẽ hai tick mà người đọc màn hình vẫn nghe
+         «Máy đoán, chờ duyệt» — mà từ vé icon-only thì `aria-label` LÀ kênh chữ
+         duy nhất còn lại, sai nó là sai hẳn chứ không phải lệch một chút. */
+      var nh = o.querySelector('.nhan');
+      if (nh){
+        nh.innerHTML = veIconNhan(true);
+        nh.setAttribute('aria-label', tt('nhan_alb'));
+        nh.setAttribute('title', tt('nhan_alb'));
+      }
       if (!daCo) doiSo(the, 'album', 1);
     } else {
       /* tu-choi / bo-qua: máy chủ loại nó khỏi cả hai truy vấn khối, nên lượt nạp

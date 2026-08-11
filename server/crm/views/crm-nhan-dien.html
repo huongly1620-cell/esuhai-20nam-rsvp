@@ -188,6 +188,31 @@
   .ta-ds div{padding:8px 11px;cursor:pointer;font-size:.85rem}
   .ta-ds div:hover{background:var(--panel)}
   .an{display:none}
+  /* ── E08-D110 · bộ chọn bậc khi tải ──────────────────────────────────────
+     Bảng chọn nằm TRONG luồng, không `position:absolute`. Ở 360px một lớp phủ tuyệt
+     đối rộng hơn nút mẹ là đúng cách làm trang tràn ngang mà trên máy để bàn không
+     ai thấy — mà AC-5 đo `scrollWidth ≤ clientWidth` với bảng ĐANG MỞ.
+     Đóng thì `.tai` chỉ là một nút, nằm cùng hàng với các nút khác; mở thì nó chiếm
+     trọn một hàng riêng (`.mo`), nên câu giải thích dài không phải chen với ai. */
+  .tai{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;min-width:0}
+  .tai.mo{flex:1 1 100%}
+  #taiXem{display:contents}
+  .tai-bang{flex:1 1 100%;min-width:0;display:flex;flex-direction:column;gap:10px;
+    border:1px solid var(--line2);border-radius:11px;padding:11px;background:var(--panel2)}
+  .tai-muc{display:flex;gap:9px;align-items:flex-start;cursor:pointer}
+  .tai-muc input{width:16px;height:16px;margin:3px 0 0;accent-color:var(--gold);flex:0 0 auto}
+  /* `min-width:0` cho cột chữ: thiếu nó thì cột flex không co xuống dưới nội dung,
+     và câu giải thích ảnh gốc — câu dài nhất trang — đẩy cả hàng tràn ngang. Đúng
+     bài AC-8 của D106, chỉ khác chỗ đứng. */
+  .tai-muc .noi{min-width:0;font-size:var(--fs-small);overflow-wrap:anywhere}
+  .tai-muc .noi b{font-size:.82rem;font-weight:700}
+  .tai-muc.tat{cursor:default}
+  .tai-muc.tat .noi b{color:var(--muted)}
+  /* Ô radio đã tắt được trình duyệt vẽ thành chấm xám ĐẶC — liếc nhanh trên điện
+     thoại rất dễ đọc thành «đang chọn», tức đúng kiểu hiểu nhầm mà vé này sinh ra
+     để dẹp. Làm mờ hẳn để trạng thái tắt không thể đọc thành trạng thái chọn. */
+  .tai-muc.tat input{opacity:.4}
+  .tai-day{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   /* Chế độ khoanh: con trỏ đổi để người dùng biết cú kéo tới sẽ vẽ khung chứ
      không phải cuộn trang — không có dấu hiệu này thì cú kéo đầu tiên luôn hỏng. */
   .anhto.khoanh{cursor:crosshair;touch-action:none}
@@ -243,6 +268,12 @@
   <div id="manXem" class="an">
     <div class="card top" style="margin-bottom:13px">
       <button class="btn sm" id="veLuoi">← <span data-i="ve_luoi">Lưới ảnh</span></button>
+      <!-- E08-D110 · nút Tải đứng cạnh nút quay lại: hàng này là hàng THAO TÁC,
+           còn `#xemTom` bên phải là hàng SỐ. Nội dung do JS vẽ vì nhãn nút phải in
+           số tấm thật. `display:contents` để cái vỏ này biến mất khỏi layout —
+           `.tai` phải là con trực tiếp của hàng flex, không thì `.mo` không xuống
+           được dòng riêng ở 360px. -->
+      <div id="taiXem"></div>
       <div class="spacer"></div>
       <span class="hint" id="xemTom"></span>
     </div>
@@ -368,6 +399,15 @@ var T = {
     lo_xac_nhan:'Xác nhận {n} tấm đã chọn', lo_tu_choi:'Không phải — {n} tấm',
     lo_bo_qua:'Để sau — {n} tấm',
     khong_khop:'Không có khách nào khớp. Ô này chỉ chọn từ danh sách mời, không tạo khách mới.',
+    /* ── E08-D110 · tải về ── */
+    tai_ve:'Tải về',
+    bac_mobile:'Tối ưu mobile',
+    bac_mobile_chu:'Bản 1024px trong kho — nhẹ, đủ nét để gửi Zalo.',
+    bac_goc:'Ảnh gốc',
+    goc_chua:'Ảnh gốc nằm trên Google Drive — hệ thống chưa giữ mã file nên chưa tự tải được.',
+    tai_chay:'Tải {n} tấm',
+    tai_dang:'Đang gửi {n} tấm về máy…',
+    tai_xong:'Đã gửi {n} tấm về máy. Xem trong thư mục Tải về.',
     loi_nap:'Không nạp được dữ liệu. Thử tải lại trang.' },
   jp:{ ve_crm:'CRMへ戻る', tieu_de:'📸 イベント写真',
     tab_kho:'保管庫', tab_anh:'仕分け', tab_khach:'ゲスト別',
@@ -420,6 +460,15 @@ var T = {
     lo_xac_nhan:'選択した{n}枚を確認', lo_tu_choi:'別人です — {n}枚',
     lo_bo_qua:'あとで — {n}枚',
     khong_khop:'該当するゲストがいません。ここでは招待者一覧からのみ選べます。',
+    /* ── E08-D110 ── */
+    tai_ve:'ダウンロード',
+    bac_mobile:'モバイル最適化',
+    bac_mobile_chu:'保管庫の1024px版 — 軽く、Zaloで送るのに十分な画質です。',
+    bac_goc:'オリジナル画像',
+    goc_chua:'オリジナル画像はGoogle Drive上にあります — システムがファイルIDを保持していないため、自動ではダウンロードできません。',
+    tai_chay:'{n}枚をダウンロード',
+    tai_dang:'{n}枚を保存しています…',
+    tai_xong:'{n}枚を保存しました。ダウンロードフォルダをご確認ください。',
     loi_nap:'データを読み込めませんでした。ページを再読み込みしてください。' }
 };
 /* E08-D106 · ngôn ngữ và theme là của NGƯỜI, không của trang. Ba tab giờ là MỘT
@@ -497,6 +546,9 @@ function dongKhoanh(){
 function hienMan(id){
   ['manAnh','manXem','manKhach','manMotKhach'].forEach(function(m){
     document.getElementById(m).classList.toggle('an', m !== id); });
+  /* E08-D110 · đổi màn thì đóng bảng chọn bậc. Một bảng đang mở thuộc về phạm vi
+     người dùng vừa rời — để nó mở là để một cú bấm nhắm vào chỗ khác. */
+  TAI_MO = '';
   /* Rời trang xem thì XOÁ nội dung của nó, không chỉ giấu đi. Hai lý do:
      ảnh preview cỡ lớn thôi nằm trong bộ nhớ; và chữ đã vẽ bằng ngôn ngữ cũ thôi
      nằm lại trong DOM — người dùng không thấy, nhưng mọi phép quét chuỗi (AC-7)
@@ -505,6 +557,7 @@ function hienMan(id){
     $('#anhTo').innerHTML = ''; $('#dsGoi').innerHTML = '';
     $('#xemTom').textContent = ''; $('#ganO').value = '';
     $('#baoXem').textContent = '';
+    $('#taiXem').innerHTML = '';
     dongKhoanh();
     /* E08-D112 · tập mặt đang chọn cũng phải chết cùng màn hình, đúng một lý do
        với hai dòng trên: `face_id` của tấm vừa rời không có nghĩa ở tấm sắp mở,
@@ -621,6 +674,11 @@ async function moAnh(id, tuDau){
      thì mảng đó không có tấm này. */
   var W = Number(j.anh && j.anh.width) || 0, H = Number(j.anh && j.anh.height) || 0;
   $('#xemTom').textContent = fmt('xem_tom', { m: mat.length, g: goi.length, a: alb.length });
+  /* E08-D110 · trường này CHƯA tồn tại trong phản hồi (D111 mới thêm cột). Đọc nó ở
+     đây thay vì đặt cứng `false` là để ngày ấy tới, mục «Ảnh gốc» sáng lên mà không
+     cần ai nhớ ra còn một chỗ nữa phải sửa. */
+  XEM_GOC = !!(j.anh && j.anh.drive_file_id);
+  veTaiXem();
 
   /* Khung vẽ theo TỈ LỆ so với ảnh gốc, không theo pixel: ảnh hiển thị đã co lại,
      mà toạ độ trong CSDL là của ảnh gốc. */
@@ -803,6 +861,112 @@ function idsTick(pham){
   return ra;
 }
 
+/* ══════════ E08-D110 · TẢI VỀ — hai bậc, MỘT bộ chọn ══════════
+   Bộ chọn này phục vụ hai chỗ (trang xem một ảnh, và khối / màn một khách) nhưng
+   chỉ có MỘT bản dựng. Hai bản sao của cùng bộ chọn là hai chỗ sẽ lệch nhau vào
+   lúc không ai để ý — đúng bài N1 mà Gate 2 D103 đã bắt một lần rồi.
+
+   `TAI_MO` giữ khoá của bảng ĐANG mở; đúng một bảng mở tại một thời điểm. Hai bảng
+   mở cùng lúc là hai bậc đang chọn khác nhau trên cùng màn hình, và cú bấm kế tiếp
+   không nói được nó theo bảng nào. */
+var TAI_MO = '', TAI_BAC = 'mobile', XEM_GOC = false;
+
+/* Ảnh gốc = file máy ảnh, và nó nằm trên Google Drive chứ không trong kho: chốt
+   D082 nói kho chỉ giữ ba bản 2048/1024/256, còn lượt nạp D091 không lưu mã file
+   Drive. Nên hôm nay KHÔNG tấm nào bật được mục này.
+   Đọc `drive_file_id` chứ không đặt cứng `disabled`: ngày D111 thêm cột ấy, mục tự
+   sáng mà không ai phải nhớ quay lại sửa chỗ này. Trả bản 2048 rồi gọi là «gốc» là
+   điều vé này cấm thẳng — 2048 là bản CHÍNH của kho, không phải ảnh gốc. */
+function gocDuoc(pham){
+  var o = document.querySelectorAll(pham + ' .anh-o[data-cid] input:checked');
+  if (!o.length) return false;
+  var het = true;
+  o.forEach(function(i){ if (!i.closest('.anh-o').hasAttribute('data-goc')) het = false; });
+  return het;
+}
+
+/* Danh sách ẢNH sẽ tải trong một phạm vi. Khác `idsTick` ở chỗ nó lấy `data-anh`
+   (tấm ảnh) chứ không `data-cid` (gợi ý đang chờ duyệt) — tải là việc với tấm ảnh.
+   Lọc trùng: người dùng đếm số TICK, nhưng thứ họ nhận là số FILE; hai con số phải
+   bằng nhau, nên nhãn nút in độ dài của chính danh sách này. */
+function idsAnh(pham){
+  var ra = [], thay = {};
+  document.querySelectorAll(pham + ' .anh-o[data-cid] input:checked').forEach(function(o){
+    var id = o.closest('.anh-o').getAttribute('data-anh');
+    if (id && !thay[id]){ thay[id] = 1; ra.push(id); }
+  });
+  return ra;
+}
+
+function mucTai(nhom, bac, ten, chu, bat, chon){
+  return '<label class="tai-muc' + (bat ? '' : ' tat') + '">'
+    + '<input type="radio" name="' + nhom + '" value="' + bac + '"'
+    + (chon ? ' checked' : '') + (bat ? '' : ' disabled') + '>'
+    + '<span class="noi"><b>' + esc(ten) + '</b>'
+    + (chu ? '<br><span class="hint">' + esc(chu) + '</span>' : '') + '</span></label>';
+}
+
+/* `khoa` vừa là danh tính của bảng vừa là bộ chọn CSS của phạm vi (trừ 'xem').
+   Tên nhóm radio suy từ nó nên hai khối trên cùng màn không cướp lựa chọn của nhau. */
+function veBangTai(khoa, ids, coGoc){
+  var n = ids.length;
+  var mo = TAI_MO === khoa && n > 0;
+  var bac = (TAI_BAC === 'goc' && coGoc) ? 'goc' : 'mobile';
+  var h = '<div class="tai' + (mo ? ' mo' : '') + '">'
+    + '<button class="btn sm" data-tai-mo="' + esc(khoa) + '" aria-expanded="' + mo + '"'
+    + (n ? '' : ' disabled') + '>⬇ ' + esc(tt('tai_ve')) + '</button>';
+  if (mo){
+    var nhom = 'bac_' + khoa.replace(/[^A-Za-z0-9]/g, '_');
+    h += '<div class="tai-bang">'
+      + mucTai(nhom, 'mobile', tt('bac_mobile'), tt('bac_mobile_chu'), true, bac === 'mobile')
+      /* Mục tắt vẫn PHẢI đọc được, và câu bên dưới nó phải nói lý do thật. Một mục
+         mờ đi không kèm lý do thì người dùng đọc ra "hỏng", rồi bấm lại năm lần. */
+      + mucTai(nhom, 'goc', tt('bac_goc'), coGoc ? '' : tt('goc_chua'), coGoc, bac === 'goc')
+      + '<div class="tai-day">'
+      +   '<button class="btn sm ok" data-tai-chay="' + esc(khoa) + '">'
+      +     esc(fmt('tai_chay', { n: n })) + '</button>'
+      +   '<span class="hint" data-tai-bao></span>'
+      + '</div></div>';
+  }
+  return h + '</div>';
+}
+
+function veTaiXem(){
+  var co = $('#manXem').classList.contains('an') ? false : !!ANH_DANG;
+  $('#taiXem').innerHTML = co ? veBangTai('xem', [String(ANH_DANG)], XEM_GOC) : '';
+}
+function veLaiTai(){
+  veTaiXem();
+  document.querySelectorAll('.khoi').forEach(capNhatThanh);
+  capNhatThanh($('#manMotKhach'));
+}
+
+/* Tải TỪNG tấm, không gói ZIP (CR-156): gói trên máy chủ là thêm một tiến trình
+   phải canh bộ nhớ và thời gian chạy; gói trên trình duyệt là kéo hết bytes vào RAM
+   điện thoại. Người phụ trách cần vài tấm gửi Zalo, không cần một cái kho.
+   Cách nhau 400ms: một chuỗi lượt tải liền nhau bị trình duyệt coi là cửa sổ bật lên
+   và chặn từ tấm thứ hai — chặn IM LẶNG, người dùng chỉ thấy thiếu file chứ không
+   thấy lời từ chối nào. */
+async function chayTai(ids, bac, oBao){
+  if (bac !== 'mobile'){ if (oBao) oBao.textContent = tt('goc_chua'); return; }
+  if (!ids.length) return;
+  if (oBao) oBao.textContent = fmt('tai_dang', { n: ids.length });
+  for (var i = 0; i < ids.length; i++){
+    var a = document.createElement('a');
+    a.href = '/crm/event-photos/' + ids[i] + '/preview?dl=1';
+    /* Thuộc tính `download` là lớp thứ hai: máy chủ đã gửi `Content-Disposition`
+       (tên chính xác hơn — nó biết tấm này có bản 1024 thật hay không), nhưng nếu
+       một proxy nào đó cắt mất header thì trình duyệt vẫn lưu file chứ không mở ảnh
+       ra tab. Tên dự phòng ở đây cố ý KHÔNG ghi «-mobile»: phía này không đủ cơ sở
+       để khẳng định bậc, chỉ máy chủ mới biết. */
+    a.download = 'photo-' + ids[i] + '.jpg';
+    a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    if (i < ids.length - 1) await new Promise(function(ok){ setTimeout(ok, 400); });
+  }
+  if (oBao) oBao.textContent = fmt('tai_xong', { n: ids.length });
+}
+
 /* Một tấm trong khối. `cho` mới có ô tick; cả hai đều có viền RIÊNG và nhãn CHỮ. */
 function veTam(x){
   var la = x.trang_thai === 'xac-nhan';
@@ -813,8 +977,10 @@ function veTam(x){
      Gọi ĐÚNG `chuGiong()` của trang xem ảnh, không chép lại ba mốc: hai bản sao
      của cùng một ngưỡng là hai thứ sẽ lệch nhau vào lúc không ai để ý (AC-2). */
   var giong = la ? '' : chuGiong(x.score);
+  /* E08-D110 · cùng cái móc forward như trang xem ảnh: có mã Drive thì đánh dấu,
+     và mục «Ảnh gốc» của bộ chọn tự sáng. Hôm nay không tấm nào có. */
   return '<div class="anh-o ' + (la ? 'alb' : 'cho') + '" data-cid="' + x.candidate_id
-    + '" data-anh="' + x.event_photo_id + '">'
+    + '" data-anh="' + x.event_photo_id + '"' + (x.drive_file_id ? ' data-goc="1"' : '') + '>'
     + '<img loading="lazy" src="' + x.thumb_url + '" alt="' + esc(tt('anh_alt')) + '">'
     + (giong ? '<span class="giong' + (x.score >= 0.55 ? ' chac' : '') + '">'
         + esc(giong) + '</span>' : '')
@@ -837,7 +1003,11 @@ function capNhatThanh(the){
   var pham = the.id ? '#' + the.id : '.khoi[data-gid="' + the.getAttribute('data-gid') + '"]';
   var n = demTick(pham);
   var thanh = the.querySelector('.thanhChon');
-  if (thanh) thanh.innerHTML = veThanh(n) + (the.getAttribute('data-gid')
+  /* E08-D110 · nút Tải đứng ngay trong thanh này, sau ba nút duyệt: trần của nó là
+     ĐÚNG số tick trên phạm vi đang thấy, cùng con số ba nút kia đang in. Dựng lại
+     cùng lúc với chúng nên hai con số không thể lệch nhau một nhịp. */
+  if (thanh) thanh.innerHTML = veThanh(n) + veBangTai(pham, idsAnh(pham), gocDuoc(pham))
+    + (the.getAttribute('data-gid')
     ? '<div class="spacer"></div><button class="btn sm" data-mo="'
       + the.getAttribute('data-gid') + '">' + esc(tt('xem_het')) + '</button>' : '');
   the.querySelectorAll('.anh-o[data-cid]').forEach(function(o){
@@ -1133,6 +1303,34 @@ document.addEventListener('input', function(e){
 });
 
 document.addEventListener('click', async function(e){
+  /* ── E08-D110 · tải về ──
+     Đặt TRƯỚC mọi nhánh khác: nút Tải trong khối nằm lồng trong `.card.khoi`, mà
+     `.card.khoi` không bắt cú bấm nào — nhưng bảng chọn thì có `<label>`, và một
+     label bọc radio sinh ra cú bấm thứ hai dội lên. Bắt sớm rồi `return` để cú dội
+     ấy không đi lạc vào nhánh mở ảnh. */
+  var tMo = e.target.closest && e.target.closest('[data-tai-mo]');
+  if (tMo){
+    var kMo = tMo.getAttribute('data-tai-mo');
+    TAI_MO = (TAI_MO === kMo) ? '' : kMo;
+    veLaiTai();
+    return;
+  }
+  if (e.target.closest && e.target.closest('.tai-muc')) return;
+
+  var tChay = e.target.closest && e.target.closest('[data-tai-chay]');
+  if (tChay){
+    var kCh = tChay.getAttribute('data-tai-chay');
+    var bang = tChay.closest('.tai');
+    var rd = bang.querySelector('input[type=radio]:checked');
+    /* Đọc bậc từ CHÍNH cái radio đang tick trong bảng này, không từ biến toàn cục:
+       biến kia là thứ ta ghi, còn cái radio là thứ người dùng thấy. Lệch nhau thì
+       tin cái người dùng thấy. */
+    var bacCh = rd ? rd.value : 'mobile';
+    var dsCh = kCh === 'xem' ? (ANH_DANG ? [String(ANH_DANG)] : []) : idsAnh(kCh);
+    await chayTai(dsCh, bacCh, bang.querySelector('[data-tai-bao]'));
+    return;
+  }
+
   var oAnh = e.target.closest && e.target.closest('button.o[data-anh]');
   if (oAnh){ await moAnh(oAnh.getAttribute('data-anh'), 'luoi'); return; }
 
@@ -1269,6 +1467,10 @@ document.addEventListener('click', async function(e){
    nên nó phải đổi ngay theo cú tick, không đợi tới lúc bấm. */
 document.addEventListener('change', function(e){
   var o = e.target;
+  /* E08-D110 · đổi bậc thì chỉ NHỚ, không vẽ lại: vẽ lại bảng ngay lúc này là cướp
+     con trỏ khỏi cái radio người dùng vừa bấm, và bàn phím mất chỗ đứng. Trình
+     duyệt tự lo phần hiển thị của một nhóm radio. */
+  if (o.type === 'radio' && o.name.indexOf('bac_') === 0){ TAI_BAC = o.value; return; }
   if (o.id === 'chonHetTrang'){
     /* «Chọn tất cả trên trang» — phạm vi là ĐÚNG các ô đang có trong DOM của trang
        này, mà DOM của trang này do máy chủ cắt ≤24. Không chạm tới trang khác,

@@ -208,52 +208,25 @@
     background:linear-gradient(105deg,rgba(217,178,74,.2) 0%,rgba(18,161,95,.09) 72%,#faf6ec);
     box-shadow:0 0 0 2px rgba(18,161,95,.34),0 4px 12px rgba(169,127,46,.14);
   }
-  /* VIP — chip GẮN TRÊN VIỀN, góc trên-phải thẻ (không còn nằm trong hàng badge
-     lẫn với NV/Bàn/Đã đến). Ý đồ: một huy hiệu ĐÍNH vào cạnh thẻ như huy hiệu
-     kim loại/xi mạ — ngay ngắn (không nghiêng), có viền ánh kim + một dải sáng
-     hắt phía trên (gloss) cho cảm giác bóng, và một quầng màu nền thẻ quanh chip
-     để nó nổi hẳn lên khỏi viền vàng bên dưới, đúng như "dán/gắn" chứ không chìm
-     vào viền. */
-  .vip-chip{
-    position:absolute;top:-9px;left:14px;z-index:3;   /* D089 · Sponsor: chip về BÊN TRÁI thẻ */
-    display:inline-flex;align-items:center;gap:3px;
-    padding:2px 9px;border-radius:4px;      /* 6→4px: góc gắt, bớt chất "mềm" */
-    /* FONT CỨNG (09/08 chiều) — trước đây chip không đặt font-family nên mượn
-       "Be Vietnam Pro" của body: thân tròn, bụng rộng, đọc ra "mềm" chứ không ra
-       huy hiệu dập. Tệ hơn: link Google Fonts (dòng 10) chỉ nạp Be Vietnam Pro
-       tới weight 700 mà chip đặt 800 ⇒ trình duyệt GIẢ LẬP nét đậm (faux bold),
-       nhoè viền chứ không phải nét dầy thật. Oswald là grotesque hẹp, thân thẳng,
-       có bộ Việt đầy đủ trên Google Fonts (không rơi glyph khi nhãn có dấu, vd
-       "VIP2 - HÀNG 3"), và 700 là nét THẬT nên đanh hẳn. */
+  /* E08-D104 · hạng VIP nói bằng WATERMARK NỀN, không còn huy hiệu góc thẻ.
+     Sponsor 11/08: chip vàng chiếm một góc thẻ và cạnh tranh với hàng badge; chữ VIP
+     lớn nằm chìm phía sau nói cùng một điều mà không lấy chỗ của ai.
+     Ba điều kiện của vé: cao ≥70% thân thẻ · mờ 0,08–0,14 · không bắt chuột.
+     Vì sao nằm BÊN PHẢI chứ không giữa thẻ: bên trái là ô ảnh ĐẶC (che mất
+     watermark), giữa là tên khách — thứ tuyệt đối không được có gì chạy phía sau.
+     Cột phải chỉ có mấy pill ngắn nên chữ đọc ra được mà không đè lên tên. */
+  .g.is-vip>*:not(.vip-wm){position:relative}   /* nội dung nổi trên watermark theo thứ tự DOM */
+  .vip-wm{
+    position:absolute;top:50%;right:13px;transform:translateY(-50%);
+    z-index:0;pointer-events:none;user-select:none;
+    /* Oswald đã nạp sẵn cho trang này (dòng 10) — thân hẹp nên chữ cao mà không
+       ngốn chiều ngang; ở hai trang cửa thì CỐ Ý dùng stack hệ thống, xem D088. */
     font-family:"Oswald","Arial Narrow",system-ui,sans-serif;
-    font-size:.52rem;                       /* .6→.52: nhỏ lại theo yêu cầu */
-    font-weight:700;                        /* nét THẬT của Oswald, không faux bold */
-    letter-spacing:.085em;                  /* hẹp + nhỏ thì phải nới, kẻo chữ bết */
-    white-space:nowrap;
-    color:#2a1c02;
-    background:linear-gradient(160deg,#fff7dd 0%,var(--gold) 42%,var(--gold-d) 100%);
-    border:1px solid var(--gold-b);
-    box-shadow:0 0 0 3px var(--card),0 3px 9px rgba(184,150,63,.42),
-      inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 3px rgba(110,74,10,.28);
+    font-weight:700;letter-spacing:.02em;line-height:.74;   /* ≈ chiều cao chữ hoa */
+    font-size:var(--vipwm,54px);
+    color:var(--gold);opacity:.12;
   }
-  /* ★ không có trong Oswald ⇒ trình duyệt tự lùi về font hệ thống. Ghim hẳn font
-     hệ thống + to hơn một nhịp (chữ đã nhỏ đi, sao giữ .92em sẽ teo theo). */
-  .vip-chip::before{content:"★";font-family:system-ui,"Apple Color Emoji",sans-serif;
-    font-size:1.02em;line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.5)}
-  /* dải sáng hắt lên nửa trên chip — chất "bóng bẩy" xi mạ, không phải chữ phẳng */
-  .vip-chip::after{
-    content:"";position:absolute;left:2px;right:2px;top:1px;height:48%;
-    border-radius:5px 5px 8px 8px/5px 5px 10px 10px;
-    background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,255,255,0));
-    pointer-events:none;
-  }
-  :root[data-theme=light] .vip-chip{
-    color:#3a2606;
-    background:linear-gradient(160deg,#fdf0c8 0%,#d9b24a 42%,#b8922e 100%);
-    border:1px solid #8a6414;
-    box-shadow:0 0 0 3px var(--card),0 3px 8px rgba(169,127,46,.36),
-      inset 0 1px 0 rgba(255,255,255,.8),inset 0 -2px 3px rgba(90,60,8,.22);
-  }
+  :root[data-theme=light] .vip-wm{color:#a97f2e;opacity:.14}
   /* Avatar — thêm viền khung ảnh + bóng trong nhẹ cho MỌI khách (trước chỉ VIP
      có viền nổi, khách thường trơn phẳng khiến hàng VIP bị tách rời hẳn khỏi
      ngôn ngữ chung của thẻ). Viền mảnh này là "khung ảnh", VIP chồng thêm màu
@@ -295,8 +268,8 @@
      và nền ivory cần độ tương phản khác nhau. */
   .tag{font-size:.58rem;font-weight:600;padding:3px 7px;border-radius:4px;white-space:nowrap;letter-spacing:.045em}
   /* VIP không còn là pill trong hàng badge (dữ liệu thật không chỉ 4 mức, xem
-     lịch sử ở comment cũ đã gỡ) — giờ là `.vip-chip` gắn trên viền thẻ, xem
-     khối CSS cạnh `.g.is-vip` phía trên. */
+     lịch sử ở comment cũ đã gỡ), và từ E08-D104 cũng không còn là chip gắn viền
+     thẻ — giờ là watermark nền, xem `.vip-wm` cạnh `.g.is-vip` phía trên. */
   .tag.tbl{color:var(--gold-b);border:1px solid var(--line2)}.tag.rsvp{color:var(--green-b);border:1px solid rgba(95,228,166,.36)}
   /* "Đã đến" dark: bỏ nền xanh ĐẶC (chữ gần đen trên nền sáng chói, chọi hẳn với
      phần còn lại của hàng badge vốn là chữ màu trên nền trong). Chuyển sang đúng
@@ -932,6 +905,23 @@ async function addShrunk(fd,file){
      openGuest(id);loadAll();
    }catch(e){if(el){el.disabled=false;el.value=el.getAttribute("data-cur")||"";}
      toast(tt("att_fail"),"err");}}
+ /* E08-D104 · cỡ chữ watermark phải ĐI THEO chiều cao thẻ, không đặt cứng bằng px.
+    Đo thật trên máy 11/08: thẻ cao 108–139px tuỳ tên song ngữ dài/ngắn và số badge,
+    nên một cỡ cố định cho tỉ lệ chữ/thẻ 0,39–0,47 — dưới ngưỡng ≥70% mà vé đòi.
+    Đọc TẤT CẢ chiều cao trước rồi mới ghi, không xen kẽ đọc/ghi: mỗi lần xen kẽ là
+    một lần buộc trình duyệt tính lại layout, mà cửa có gần 400 dòng.
+    `line-height:.74` trong CSS ≈ chiều cao chữ hoa, nên khung phần tử bám sát nét mực
+    thật — đo kiểu nào (khung hay nét chữ) cũng ra cùng một tỉ lệ. */
+ function fitVipWm(){
+   var ws=document.querySelectorAll("#list .vip-wm");
+   if(!ws.length)return;
+   var hs=[],i;
+   for(i=0;i<ws.length;i++)hs.push(ws[i].parentNode.getBoundingClientRect().height);
+   for(i=0;i<ws.length;i++)if(hs[i])ws[i].style.fontSize=Math.round(hs[i]*1.1)+"px";
+ }
+ /* Quay ngang máy hoặc đổi bề rộng cửa sổ thì tên gói dòng khác đi ⇒ thẻ cao khác ⇒
+    phải đo lại, nếu không watermark giữ cỡ cũ và tỉ lệ trôi khỏi ngưỡng của vé. */
+ addEventListener("resize",function(){clearTimeout(fitVipWm._t);fitVipWm._t=setTimeout(fitVipWm,150);});
  function vipLbl(g){var v=vipOf(g);return /^v?vip/i.test(v)?v.toUpperCase():v;}
  /* Polish 09/08 — trước strip HẾT chữ không phải số rồi ghép lại: tag thật
     "VIP2 - Hàng 3" ra "23" (số "3" của "Hàng 3" dính vào), sort "VIP trước"
@@ -1388,11 +1378,13 @@ function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
    $("#list").innerHTML=rows.map(function(g){
      var vip=vipLbl(g),den=daDenBuoi(g);
      return '<div class="g'+(vip?" is-vip":"")+(den?" done":"")+'" data-id="'+g.id+'">'
-      /* VIP — chip huy hiệu GẮN TRÊN VIỀN góc trên-phải thẻ (không còn là pill
-         trong hàng badge, xem `.vip-chip`). Đặt là con TRỰC TIẾP của `.g` (không
-         phải `.rb`) vì nó định vị `position:absolute` theo cả thẻ, không theo
-         cột phải. */
-      +(vip?'<div class="vip-chip">'+esc(vip)+'</div>':'')
+      /* VIP — watermark chữ nền (E08-D104, thay chip huy hiệu cũ). Con TRỰC TIẾP
+         của `.g` vì nó định vị theo cả thẻ, không theo cột phải. aria-hidden:
+         trình đọc màn hình đã đọc tên khách, không cần nghe "VIP" thêm một lần
+         từ một lớp trang trí. Chữ ghim "VIP" chứ không in `vip` — mã hạng, không
+         dịch, và đo trên prod 11/08 thì cả 48 thẻ đều chỉ mang tag `vip`/`VIP`
+         nên không có nhãn nào bị mất chữ khi bỏ chip. */
+      +(vip?'<div class="vip-wm" aria-hidden="true">VIP</div>':'')
       /* E08-D055 AC-7c — CHÚ THÍCH CŨ ĐÃ SAI, sửa tại chỗ vì nó vừa suýt cắt mất
          một AC. Bản cũ viết «ảnh là object GỐC (293 MB tổng…)»: đúng với thời
          TRƯỚC D029, nhưng từ D029 `photo_url` do máy chủ trả là
@@ -1419,6 +1411,7 @@ function bgHien(v){return laChuTrangThai(v)?"":(v||"");}
        +(den?'<span class="tag in">● '+tt("arrived")+(lechNgaySuKien(g.checked_in_at,NGAY_SK)?' '+tt("arr_bs"):'<b>'+hhmm(g.checked_in_at)+'</b>')+'</span>':'')
       +'</div>'+(ptOf(g)?'<span class="pt">'+esc(ptOf(g))+'</span>':'')+'</div></div>';
    }).join("");
+   fitVipWm();   /* E08-D104 · vẽ xong mới đo được chiều cao thẻ */
  }
  /* ---- hồ sơ khách (giữ nguyên endpoint) — SĐT ẩn khi hiển thị ---- */
  // E08-D063 — cảnh báo «form còn ghim» thuộc về THAO TÁC vừa làm trên ĐÚNG thẻ

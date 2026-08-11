@@ -180,13 +180,11 @@
  .list{padding:4px 14px 40px;display:flex;flex-direction:column;gap:8px}
  .gc{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px 11px;cursor:pointer}
  .gc.done{border-color:rgba(67,224,141,.4);background:rgba(67,224,141,.06)}
- /* ── E08-D088 · VIP theo đúng khuôn /crm (SoT: crm-app-v2.html .g.is-vip/.vip-chip) ──
-    Hình dạng và vị trí đồng bộ; DÁNG CHỮ thì cố ý KHÔNG.
-    CRM đặt chip bằng Oswald nạp từ Google Fonts. Hai trang cửa cố ý không nạp
-    webfont nào — wifi hội trường không đáng tin, và chính repo này đã gỡ hai
-    webfont "khai mà chưa bao giờ nạp" ở một vé trước. Nên chip ở đây dùng stack
-    hệ thống. Hệ quả đã lường và đã ghi vào phiếu: chữ chip ở cửa KHÁC ở CRM —
-    đó là kết quả đúng của ràng buộc, không phải lỗi thi công. */
+ /* ── E08-D088 · VIP theo đúng khuôn /crm (SoT: crm-app-v2.html `.g.is-vip`) ──
+    Viền + wash vàng của thẻ VIP đồng bộ với CRM và GIỮ NGUYÊN qua E08-D104.
+    Phần chip huy hiệu mà comment này từng nói tới đã được D104 thay bằng
+    watermark nền — xem khối `.vip-wm` phía dưới, nơi ghi lại lý do vẫn cố ý
+    không dùng cùng dáng chữ với CRM. */
  .gc{position:relative}
  .gc.is-vip{
    border:1.5px solid var(--gold);
@@ -206,26 +204,23 @@
  .gc.is-vip.done{border-color:var(--gold);
    background:linear-gradient(105deg,rgba(216,184,118,.13) 0%,rgba(67,224,141,.085) 60%);
    box-shadow:0 0 0 1px rgba(216,184,118,.14),0 0 0 3px rgba(67,224,141,.5),0 4px 16px rgba(184,150,63,.2)}
- .vip-chip{
-   position:absolute;top:-9px;left:14px;z-index:3;   /* D089 · Sponsor: chip về BÊN TRÁI thẻ */
-   display:inline-flex;align-items:center;gap:3px;
-   padding:2px 9px;border-radius:4px;
-   font-family:"Arial Narrow",system-ui,sans-serif;   /* CỐ Ý không Oswald */
-   font-size:.52rem;font-weight:700;letter-spacing:.085em;white-space:nowrap;
-   color:#2a1c02;
-   background:linear-gradient(160deg,#fff7dd 0%,var(--gold) 42%,#b8922e 100%);
-   border:1px solid var(--gold-b);
-   box-shadow:0 0 0 3px var(--bg2),0 3px 9px rgba(184,150,63,.42);
- }
- /* ★ port nguyên si từ CRM: ở đó ghim system-ui vì Oswald không có glyph sao.
-    Ở cửa thì thừa (vốn đã là font hệ thống), giữ để hai bên đọc giống nhau. */
- .vip-chip::before{content:"★";font-family:system-ui,"Apple Color Emoji",sans-serif;
-   font-size:1.02em;line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.5)}
- .vip-chip::after{
-   content:"";position:absolute;left:2px;right:2px;top:1px;height:48%;
-   border-radius:5px 5px 8px 8px/5px 5px 10px 10px;
-   background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,255,255,0));
-   pointer-events:none;
+ /* ── E08-D104 · hạng VIP: WATERMARK NỀN thay chip huy hiệu ──────────────────
+    Sponsor 11/08 chốt scope (B): CRM và hai cửa cùng đổi, giữ đồng bộ hình như
+    D088 / CR-149. Chữ VIP lớn nằm chìm sau nội dung: nhận ra hạng khi liếc mà
+    không lấy chỗ của tên / đơn vị / trạng thái.
+    Nằm BÊN PHẢI vì bên trái là ô ảnh đặc (che mất) và giữa là tên khách.
+    DÁNG CHỮ vẫn cố ý KHÁC CRM: CRM có Oswald nạp từ Google Fonts, hai trang cửa
+    không nạp webfont nào (wifi hội trường không đáng tin) nên dùng stack hệ thống.
+    Đây là kết quả đúng của ràng buộc, không phải lỗi thi công — đúng bài D088,
+    và phiếu D104 ghi rõ Gate 2 không so dáng chữ giữa hai bên. */
+ .gc.is-vip>*:not(.vip-wm){position:relative}   /* nội dung nổi trên watermark theo thứ tự DOM */
+ .vip-wm{
+   position:absolute;top:50%;right:12px;transform:translateY(-50%);
+   z-index:0;pointer-events:none;user-select:none;
+   font-family:"Arial Narrow",system-ui,sans-serif;   /* CỐ Ý không webfont */
+   font-weight:700;letter-spacing:.02em;line-height:.74;   /* ≈ chiều cao chữ hoa */
+   font-size:var(--vipwm,50px);
+   color:var(--gold);opacity:.13;
  }
 
  .sd{width:9px;height:9px;border-radius:50%;flex:none;background:var(--amber)}.sd.came{background:var(--green-ok)}
@@ -762,6 +757,23 @@ function sxDong(a,b){
      || cmpO(bgHien(a.ghe),bgHien(b.ghe))
      || cmpChu(String(a.name||""),String(b.name||""));
 }
+/* E08-D104 · cỡ chữ watermark phải ĐI THEO chiều cao thẻ, không đặt cứng bằng px.
+   Đo thật trên máy 11/08: thẻ cao 108–139px tuỳ tên song ngữ dài/ngắn và số badge,
+   nên một cỡ cố định cho tỉ lệ chữ/thẻ 0,39–0,47 — dưới ngưỡng ≥70% mà vé đòi.
+   Đọc TẤT CẢ chiều cao trước rồi mới ghi, không xen kẽ đọc/ghi: mỗi lần xen kẽ là
+   một lần buộc trình duyệt tính lại layout, mà cửa có gần 400 dòng.
+   `line-height:.74` trong CSS ≈ chiều cao chữ hoa, nên khung phần tử bám sát nét mực
+   thật — đo kiểu nào (khung hay nét chữ) cũng ra cùng một tỉ lệ. */
+function fitVipWm(){
+  var ws=document.querySelectorAll("#list .vip-wm");
+  if(!ws.length)return;
+  var hs=[],i;
+  for(i=0;i<ws.length;i++)hs.push(ws[i].parentNode.getBoundingClientRect().height);
+  for(i=0;i<ws.length;i++)if(hs[i])ws[i].style.fontSize=Math.round(hs[i]*1.1)+"px";
+}
+/* Quay ngang máy hoặc đổi bề rộng cửa sổ thì tên gói dòng khác đi ⇒ thẻ cao khác ⇒
+   phải đo lại, nếu không watermark giữ cỡ cũ và tỉ lệ trôi khỏi ngưỡng của vé. */
+addEventListener("resize",function(){clearTimeout(fitVipWm._t);fitVipWm._t=setTimeout(fitVipWm,150);});
 function renderList(){
   /* Tính trên G — TOÀN BỘ roster của buổi này, KHÔNG phải rows đã lọc bên
      dưới. Lọc rồi mới tính thì đáp án đổi mỗi lần gõ tìm kiếm. Mỗi cửa tính
@@ -776,7 +788,11 @@ function renderList(){
      dễ đọc vừa gỡ một chỗ đọc nhầm được. `.attd` GIỮ NGUYÊN, đó là trục khác. */
   var hangVip=hangOf(g);
   return '<div class="gc'+(cm?" done":"")+(hangVip?" is-vip":"")+'" data-id="'+esc(g.id)+'">'
-    +(hangVip?'<span class="vip-chip">'+esc(hangVip)+'</span>':'')
+    /* E08-D104 · watermark nền thay chip. Ghim chữ "VIP" (mã hạng, không dịch)
+       thay vì in `hangVip`: đo prod 11/08 cả 48 thẻ VIP chỉ mang tag `vip`/`VIP`
+       nên không nhãn nào bị mất chữ. aria-hidden: lớp trang trí, trình đọc màn
+       hình đã có tên khách rồi. */
+    +(hangVip?'<span class="vip-wm" aria-hidden="true">VIP</span>':'')
    /* E08-D064 §2.1 — `.n2` trước đây là `title||org`: có chức vụ thì NUỐT đơn vị.
       Ly 00:47 — list cửa phải đọc được như CRM. Chép đúng khuôn v2 (:911):
       ghép cả hai bằng " · ", thiếu phía nào thì còn phía kia. KHÁC v2 một điểm
@@ -816,7 +832,8 @@ function renderList(){
         đây là thứ duy nhất đóng được AC-6b. «Chưa đến» vẫn đọc được: không có
         huy hiệu xanh nghĩa là chưa đến — đúng quy ước D033 dùng cho nhóm đông. */
      +(cm?'<span class="ci-y">O '+t("btn_came")+nhanDaDen(cm,NGAY_SK_CUA)+'</span>':'')
-   +'</div></div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
+   +'</div></div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';
+ fitVipWm();   /* E08-D104 · vẽ xong mới đo được chiều cao thẻ */}
 
 /* E08-D028 AC-C — chụp ảnh khách tại cửa → kệ MinIO.
    AC-C2 (Sponsor chốt): ĐIỂM DANH và ẢNH độc lập. Ảnh fail → báo đỏ, KHÔNG

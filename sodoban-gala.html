@@ -257,6 +257,13 @@ a{color:inherit}
 .panel .albsk a:hover{border-color:var(--acc);transform:translateY(-1px)}
 .panel .albsk a:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .panel .albsk img{width:100%;height:100%;object-fit:cover;display:block}
+/* Bản nhỏ không tải được (tệp mất khỏi kho): dấu mờ + nhãn nói rõ, không để lại
+   ô trống trơn — ô trống trông như ảnh nền trắng chứ không như một lỗi. */
+.panel .albsk a.mat{display:grid;place-items:center;background:rgba(255,255,255,.04)}
+.panel .albsk a.mat img{display:none}
+/* Dấu vẽ bằng CSS chứ không dùng ký tự "▢" — ký tự ấy rơi vào font emoji ở một
+   số máy và ra màu lệch hẳn bảng màu của trang. */
+.panel .albsk a.mat::after{content:"";width:14px;height:14px;border:1.5px solid var(--muted2);border-radius:4px}
 /* Ô cuối «còn N tấm»: panel này rộng 380px và còn phải chứa Bàn/Ghế, check-in,
    hai nút cửa. Nhồi 124 ô vào đây là lấy mất đúng những dòng người ta mở panel để
    xem. Ô này dẫn sang hồ sơ CRM — nơi xem hết — và nói thẳng còn bao nhiêu. */
@@ -485,6 +492,7 @@ var TSD={
    p_banghe:"Bàn / Ghế",p_nv:"Nhân viên",p_id:"Mã thẻ",p_door:"Mở ở cửa Gala",p_crm:"Mở CRM",
    p_album:"Ảnh sự kiện",p_album_xem:"Mở tấm này ở màn nhận diện ảnh",
    p_album_them:"Xem tất cả ảnh sự kiện của khách ở hồ sơ CRM",
+   p_album_mat:"Không tải được bản nhỏ — bấm để mở tấm gốc",
    fab:"↑ Đầu trang",fab_t:"Về đầu trang",
    f_nodata:"Chưa có DL",f_trong:"Trống",f_perfect:"✓ Đủ khách",f_full:"Đủ ghế",
    s_free:"Ghế trống · Bàn",s_ghe:"· Ghế",s_unassigned:"· chưa xếp khách",
@@ -524,6 +532,7 @@ var TSD={
    p_banghe:"テーブル / お席",p_nv:"スタッフ",p_id:"ゲストID",p_door:"ガラ受付で開く",p_crm:"CRMを開く",
    p_album:"イベント写真",p_album_xem:"この写真を顔認識画面で開く",
    p_album_them:"このゲストのイベント写真をすべてCRMで表示",
+   p_album_mat:"サムネイルを読み込めません — タップで元の写真を開く",
    fab:"↑ 先頭へ",fab_t:"先頭へ戻る",
    f_nodata:"データなし",f_trong:"空席",f_perfect:"✓ 満席",f_full:"満席",
    s_free:"空席 · テーブル",s_ghe:"· お席",s_unassigned:"· 未配席",
@@ -1126,16 +1135,30 @@ async function napAlbumPanel(gid){
     var it=(j&&j.items)||[];
     if(!it.length) return;
     if(!sel||String(sel.id)!==String(gid)) return;
-    var gq=encodeURIComponent(String(gid)),hien=albPanelHien(it.length);
-    box.innerHTML=it.slice(0,hien).map(function(x){
+    /* MỘT TẤM = MỘT Ô: `album/:id` trả theo dòng khớp mặt, một tấm có thể có hai
+       mặt cùng được xác nhận cho một khách ⇒ hai dòng, vẫn một tấm ảnh. Không gộp
+       thì panel hiện trùng ô và số trên ô «+N» đếm phồng. */
+    var thay={},ds=[];
+    it.forEach(function(x){var k=String(x.event_photo_id);
+      if(thay[k])return; thay[k]=1; ds.push(x);});
+    var gq=encodeURIComponent(String(gid)),hien=albPanelHien(ds.length);
+    box.innerHTML=ds.slice(0,hien).map(function(x){
       var pid=encodeURIComponent(String(x.event_photo_id));
       // `khach=` để «Về CRM» bên màn nhận diện trả về đúng hồ sơ khách này.
       return '<a href="/crm/nhan-dien?anh='+pid+'&khach='+gq+'" target="_blank" rel="noopener" data-ilb="p_album_xem">'
         +'<img loading="lazy" decoding="async" src="/crm/event-photos/'+pid+'/thumb" alt=""></a>';
     }).join("")
-    +(it.length>hien
+    +(ds.length>hien
       ? '<a class="them" href="/crm?guest='+gq+'" target="_blank" rel="noopener" data-ilb="p_album_them">+'
-        +(it.length-hien)+'</a>' : '');
+        +(ds.length-hien)+'</a>' : '');
+    // Ảnh 404/502 ⇒ đánh dấu đúng ô ấy. Gắn bằng JS, không viết onerror trong chuỗi.
+    box.querySelectorAll("a img").forEach(function(im){
+      im.addEventListener("error",function(){
+        var a=im.closest("a"); if(!a)return;
+        // Đổi KHOÁ nhãn chứ không xoá data-ilb: đổi ngôn ngữ thì câu này cũng phải
+        // đổi theo, y như mọi nhãn khác trong trang.
+        a.classList.add("mat"); a.setAttribute("data-ilb","p_album_mat");
+        a.setAttribute("title",tsd("p_album_mat")); a.setAttribute("aria-label",tsd("p_album_mat")); });});
     // Nhãn title/aria đi qua data-ilb như mọi nhãn khác ⇒ đổi ngôn ngữ là nó đổi theo.
     box.querySelectorAll("[data-ilb]").forEach(function(el){
       var v=tsd(el.getAttribute("data-ilb")); el.setAttribute("title",v); el.setAttribute("aria-label",v); });

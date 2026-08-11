@@ -52,11 +52,19 @@
   button.o:hover{border-color:var(--gold)}
   /* Hai dấu trên ô lưới. Chữ nghĩa của chúng nằm ở dòng chú giải phía trên lưới,
      không nhét vào `title`: chuỗi trong title không đổi theo ngôn ngữ nếu quên
-     dịch, và AC-7 quét đúng chỗ đó. */
-  .co{position:absolute;top:6px;border-radius:999px;font-size:var(--fs-micro);
+     dịch, và AC-7 quét đúng chỗ đó.
+
+     Tên `.hieu` chứ KHÔNG phải `.co` (Gate 2 D103 · N1). Bản D102 đặt tên nó là
+     `.co`, trùng với `.co` vốn đã là bổ nghĩa MÀU của `.dem` ở trên. Hệ quả: mọi
+     `<span class="dem co">` — số «trong album» của khối, và dấu ✓ trong trang xem
+     ảnh — nuốt luôn `position:absolute; top:6px`. Không có tổ tiên nào được định
+     vị nên chúng neo theo TRANG: chồng lên nhau ở góc trên, đè nút «← Về CRM», và
+     biến mất khỏi hàng số của khối. Một tên class dùng cho hai nghĩa thì lỗi không
+     nằm ở chỗ ta sửa mà ở chỗ khác — nên đổi tên, không vá bằng position:relative. */
+  .hieu{position:absolute;top:6px;border-radius:999px;font-size:var(--fs-micro);
     padding:2px 7px;border:1px solid;backdrop-filter:blur(3px)}
-  .co.cho{right:6px;background:rgba(224,189,119,.82);border-color:var(--gold);color:#231a06}
-  .co.alb{left:6px;background:rgba(67,224,141,.82);border-color:var(--ok);color:#04240f}
+  .hieu.cho{right:6px;background:rgba(224,189,119,.82);border-color:var(--gold);color:#231a06}
+  .hieu.alb{left:6px;background:rgba(67,224,141,.82);border-color:var(--ok);color:#04240f}
   .chip{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:999px;
     padding:6px 13px;font:inherit;font-size:var(--fs-small);cursor:pointer}
   .chip[aria-pressed=true]{background:rgba(224,189,119,.18);border-color:var(--gold);color:var(--gold)}
@@ -418,8 +426,8 @@ async function veLuoi(noiTiep){
   $('#luoiAnh').innerHTML = ANH.map(function(a){
     return '<button class="o" data-anh="' + a.id + '">'
       + '<img loading="lazy" src="' + a.thumb_url + '" alt="' + esc(tt('anh_alt')) + '">'
-      + (a.so_cho ? '<span class="co cho">' + a.so_cho + '</span>' : '')
-      + (a.so_album ? '<span class="co alb">✓</span>' : '')
+      + (a.so_cho ? '<span class="hieu cho">' + a.so_cho + '</span>' : '')
+      + (a.so_album ? '<span class="hieu alb">✓</span>' : '')
       + '</button>';
   }).join('');
   var het = ANH.length >= TONG;

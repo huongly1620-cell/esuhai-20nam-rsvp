@@ -256,6 +256,47 @@
   .anhto.khoanh{cursor:crosshair;touch-action:none}
   .anhto.khoanh img{user-select:none;-webkit-user-drag:none}
   .khung.moi{border-color:var(--ok);border-style:dashed}
+  /* ── E08-D126 · bảng điều khiển máy quét ────────────────────────────────────
+     Cả khối phải lọt màn 390px mà không cần cuộn (AC-1), nên mọi thứ ở đây cố ý
+     mỏng: thanh tiến độ 7px, chữ cỡ nhỏ, một dòng một luồng. Số dùng
+     tabular-nums vì chúng đổi 3 giây một lần — chữ số không cùng bề rộng thì cả
+     hàng nhảy qua nhảy lại dưới mắt người đang nhìn. */
+  .qtien{height:7px;border-radius:999px;background:var(--panel2);
+    border:1px solid var(--line);overflow:hidden;margin:10px 0 6px}
+  .qtien i{display:block;height:100%;width:0;
+    background:linear-gradient(90deg,var(--gold),var(--ok));transition:width .5s ease}
+  .qso{display:flex;gap:13px;flex-wrap:wrap;font-size:var(--fs-small);color:var(--muted)}
+  .qso b{color:var(--text);font-variant-numeric:tabular-nums;font-weight:700}
+  .qluong{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+    padding:7px 0;border-top:1px solid var(--line);font-size:var(--fs-small)}
+  .qluong .qmuc{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+  .qluong .qmuc b{color:var(--text)}
+  /* Đèn trạng thái: MÀU không phải thứ duy nhất mang tin — cạnh nó luôn có chữ
+     (đang chạy / tạm dừng / mất liên lạc), vì một cái chấm màu không đọc được
+     bằng máy đọc màn hình và không phân biệt được với mắt loạn màu. */
+  .qden{width:9px;height:9px;border-radius:999px;background:var(--muted);flex:0 0 auto}
+  .qden.chay{background:var(--ok);box-shadow:0 0 0 3px rgba(67,224,141,.16)}
+  .qden.tam-dung{background:var(--gold)}
+  .qden.loi,.qden.mat-lien-lac{background:var(--bad)}
+  .qden.xong{background:var(--ok);opacity:.5}
+  .qsl{font-weight:700;min-width:1.2em;font-variant-numeric:tabular-nums}
+  .qanh{flex:1 1 120px;min-width:0;color:var(--muted);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  /* Viết đủ `.qluong .qmuc.qxau`, không phải `.qxau` trơn: `.qluong .qmuc` là hai
+     lớp nên nó ĐẶC HIỆU HƠN một lớp, và màu đỏ sẽ thua màu xám mà không báo gì —
+     tỉ lệ lỗi 100% hiện ra y như tỉ lệ lỗi 0%. Đo được ở lab trước khi sửa. */
+  .qluong .qmuc.qxau,.qluong .qmuc.qxau b{color:var(--bad)}
+  /* Cùng bẫy độ đặc hiệu ở dòng toàn kho: `.qso b` là (0,1,1) nên nó thắng một
+     lớp `.qxau` trơn, và con số đậm lại không đỏ trong khi chữ quanh nó thì đỏ. */
+  .qso .qxau,.qso .qxau b{color:var(--bad)}
+  .qcanh{color:var(--gold);font-size:var(--fs-micro);flex:1 1 100%;margin:2px 0 0}
+  .qchon{display:flex;gap:6px;align-items:center;font-size:var(--fs-small);color:var(--muted)}
+  .qchon select{background:var(--panel2);color:var(--text);border:1px solid var(--line2);
+    border-radius:8px;padding:4px 7px;font:inherit;font-size:var(--fs-small)}
+  /* `.an` khai báo TRƯỚC khối này, nên ở cùng độ đặc hiệu một quy tắc display ở
+     đây sẽ THẮNG nó — và nút ẩn lại hiện ra. Nhắc lại `.an` cho đúng những lớp
+     mới có display riêng, chứ không đụng vào quy tắc chung của cả trang. */
+  .qchon.an,.qluong.an{display:none}
 </style>
 </head>
 <body>
@@ -295,12 +336,50 @@
        (một hai chữ, liếc là biết), `#dbChu` là CÂU GIẢI THÍCH (giờ giấc, con số,
        câu lỗi). Gộp làm một thì lúc bình thường nó dài dòng, còn lúc hỏng thì câu
        lỗi lại bị nhét vào một chỗ chỉ đủ chứa hai chữ. -->
+  <!-- ══ E08-D126 · …VÀ NHÌN THẤY NÓ ĐANG LÀM GÌ ══
+       MỞ RỘNG khối D124 ở trên, không dựng khối thứ hai cạnh nó: hai thẻ nói về
+       cùng một máy quét thì người dùng phải tự ghép hai nửa lại, và lúc chúng nói
+       khác nhau (một thẻ đang hỏi lại, thẻ kia chưa) thì không biết tin thẻ nào.
+
+       Ba tầng, từ thô tới mịn, đúng thứ tự người ta hỏi:
+         · một dòng TOÀN KHO — soi được bao nhiêu trên tổng bao nhiêu, còn bao lâu;
+         · một dòng MỖI LUỒNG — luồng nào chạy, luồng nào đứng, luồng nào lỗi;
+         · nút chung ở cuối — vì nút phải nằm SAU thứ nó tác động lên.
+
+       Không tên khách, không ảnh mẫu, không điểm khớp của ai ở đây (ràng buộc
+       security của spec). Chỉ con số và tên TỆP ảnh đang xử lý. -->
   <div class="card" id="theDongBo">
     <div class="top" style="margin:0">
       <button class="btn ok" id="nutDongBo" data-i="db_nut">🤖 Đồng bộ nhận diện</button>
+      <label class="qchon" id="qChonO">
+        <span data-i="q_so_luong">Số luồng</span>
+        <select id="qSoLuong">
+          <option>1</option><option>2</option><option selected>3</option>
+          <option>4</option><option>5</option><option>6</option>
+        </select>
+      </label>
       <div class="spacer"></div>
       <span class="hint" id="dbTom"></span>
     </div>
+
+    <!-- FR-9 · số luồng là con số ĐO ĐƯỢC, không phải con số chọn bừa. Nên cạnh
+         ô chọn luôn có câu nhắc rằng mỗi luồng là một đường mạng riêng, và trong
+         lúc chạy thì dòng toàn kho hiện tỉ lệ lỗi của đợt — người vận hành nhìn
+         hai thứ ấy mà tăng giảm, chứ không đoán. -->
+    <p class="hint" id="qNhac" style="margin:7px 0 0"></p>
+
+    <div id="qKhoi" class="an">
+      <div class="qtien"><i id="qThanh"></i></div>
+      <div class="qso" id="qSo"></div>
+      <div id="qDs"></div>
+      <div class="top" id="qNut" style="margin:10px 0 0">
+        <button class="btn sm" id="qTamDungHet" data-i="q_dung_het">⏸ Tạm dừng tất cả</button>
+        <button class="btn sm ok" id="qTiepHet" data-i="q_tiep_het">▶ Tiếp tục tất cả</button>
+        <div class="spacer"></div>
+        <button class="btn sm bad" id="qDungHan" data-i="q_dung_han">⏹ Dừng hẳn đợt</button>
+      </div>
+    </div>
+
     <p class="hint" id="dbChu" style="margin:8px 0 0"></p>
   </div>
 
@@ -481,6 +560,38 @@ var T = {
     db_thieu:'Máy chủ chưa có bộ nhận diện nên nút này chưa chạy được — nhờ anh Kha / kỹ thuật cài giúp.',
     db_mo:'Đã bắt đầu — máy đang đoán.',
     db_hong:'Không mở được việc. Thử lại, hoặc báo kỹ thuật.',
+    /* ── E08-D126 · bảng điều khiển máy quét ── */
+    q_so_luong:'Số luồng',
+    q_kho:'Kho',
+    q_da_soi:'Đã soi',
+    q_con_lai:'Còn lại',
+    q_toc_do:'Tốc độ',
+    q_toc_do_dv:'{n} tấm/phút',
+    q_con_bao_lau:'Còn khoảng',
+    q_mat:'Mặt tìm được',
+    q_goi_y:'Gợi ý chờ duyệt',
+    q_luong:'Luồng {n}',
+    q_tt_cho:'chờ máy quét',
+    q_tt_chay:'đang chạy',
+    q_tt_tam_dung:'tạm dừng',
+    q_tt_xong:'xong',
+    q_tt_loi:'lỗi',
+    q_tt_mat_lien_lac:'mất liên lạc',
+    q_tt_huy:'đã dừng',
+    q_tam_dung:'⏸ Tạm dừng',
+    q_tiep:'▶ Tiếp tục',
+    q_dung_het:'⏸ Tạm dừng tất cả',
+    q_tiep_het:'▶ Tiếp tục tất cả',
+    q_dung_han:'⏹ Dừng hẳn đợt',
+    q_loi_tam:'{n} tấm lỗi',
+    q_ti_le_loi:'Tỉ lệ lỗi',
+    q_nhip:'nhịp {n}s trước',
+    q_khong_truc:'Chưa có máy quét nào đang trực. Việc vẫn được xếp sẵn — máy quét bật lên là nhận. Bật bằng: node tools/nhan-dien/batch.js --truc',
+    q_hoi_khong_truc:'Chưa có máy quét nào đang trực trong 3 phút qua.\n\nViệc vẫn được xếp sẵn và máy quét bật lên sẽ nhận, nhưng sẽ KHÔNG có gì chạy cho tới lúc đó.\n\nVẫn mở đợt {n} luồng?',
+    q_hoi_dung:'Dừng hẳn đợt này? Những tấm đang soi dở sẽ quay lại hàng đợi — không mất gì, nhưng đợt sẽ đóng.',
+    q_nhac_luong:'Mỗi luồng là một đường mạng riêng đi ra internet. Thêm luồng mà tỉ lệ lỗi tăng thì bớt lại.',
+    q_da_dung:'Đã dừng đợt · {n} tấm quay lại hàng đợi.',
+    q_hong:'Không đổi được trạng thái. Thử lại, hoặc tải lại trang.',
     loi_nap:'Không nạp được dữ liệu. Thử tải lại trang.' },
   jp:{ ve_crm:'CRMへ戻る', tieu_de:'📸 イベント写真',
     tab_kho:'保管庫', tab_anh:'仕分け', tab_khach:'ゲスト別',
@@ -555,6 +666,38 @@ var T = {
     db_thieu:'サーバーに認識エンジンがまだ入っていないため、このボタンは実行できません — 技術担当に設置を依頼してください。',
     db_mo:'開始しました — 判定中です。',
     db_hong:'処理を開始できませんでした。もう一度お試しいただくか、技術担当にご連絡ください。',
+    /* ── E08-D126 ── */
+    q_so_luong:'並列数',
+    q_kho:'全体',
+    q_da_soi:'処理済み',
+    q_con_lai:'残り',
+    q_toc_do:'速度',
+    q_toc_do_dv:'{n}枚/分',
+    q_con_bao_lau:'残り約',
+    q_mat:'検出した顔',
+    q_goi_y:'承認待ちの候補',
+    q_luong:'並列 {n}',
+    q_tt_cho:'待機中',
+    q_tt_chay:'実行中',
+    q_tt_tam_dung:'一時停止',
+    q_tt_xong:'完了',
+    q_tt_loi:'エラー',
+    q_tt_mat_lien_lac:'応答なし',
+    q_tt_huy:'停止済み',
+    q_tam_dung:'⏸ 一時停止',
+    q_tiep:'▶ 再開',
+    q_dung_het:'⏸ すべて一時停止',
+    q_tiep_het:'▶ すべて再開',
+    q_dung_han:'⏹ この実行を停止',
+    q_loi_tam:'エラー{n}枚',
+    q_ti_le_loi:'エラー率',
+    q_nhip:'{n}秒前',
+    q_khong_truc:'稼働中のスキャナーがありません。作業は登録済みで、スキャナーを起動すれば引き継がれます。起動： node tools/nhan-dien/batch.js --truc',
+    q_hoi_khong_truc:'この3分間、稼働中のスキャナーが確認できません。\n\n作業は登録され、スキャナーを起動すれば引き継がれますが、それまで何も実行されません。\n\n並列{n}で開始しますか？',
+    q_hoi_dung:'この実行を停止しますか？処理中の写真は待ち行列に戻ります — 失われるものはありませんが、実行は終了します。',
+    q_nhac_luong:'並列ごとにインターネットへの接続が1本増えます。エラー率が上がるようなら並列数を減らしてください。',
+    q_da_dung:'実行を停止しました · {n}枚が待ち行列に戻りました。',
+    q_hong:'状態を変更できませんでした。もう一度お試しいただくか、ページを再読み込みしてください。',
     loi_nap:'データを読み込めませんでした。ページを再読み込みしてください。' }
 };
 /* E08-D106 · ngôn ngữ và theme là của NGƯỜI, không của trang. Ba tab giờ là MỘT
@@ -1642,7 +1785,13 @@ $('#themeBtn').onclick = function(){
 
 apDungTheme(nhoCu('crm_theme', 'nd_theme') === 'light' ? 'light' : '');
 setLang(LANG);
-jget('/crm/me').then(function(j){ $('#meRole').textContent = (j.role||'') + ' · ' + (j.email||''); }).catch(function(){});
+jget('/crm/me').then(function(j){
+  $('#meRole').textContent = (j.role||'') + ' · ' + (j.email||'');
+  /* D126 · AC-1 — bảng điều khiển máy quét chỉ dành cho `btl`. Mọi tuyến của nó
+     đã gác vai ở máy chủ (403), nên đây KHÔNG phải hàng rào an ninh; nó là phép
+     lịch sự: đừng bày trước mắt người ta một cái nút mà bấm vào chỉ nhận lỗi. */
+  if (j.role !== 'btl'){ $('#theDongBo').classList.add('an'); DB_TAT = true; }
+}).catch(function(){});
 
 /* ══════════════════════════════════════════════════════════════════════════════
    E08-D124 · ĐỒNG BỘ NHẬN DIỆN — bấm một nút, máy đoán
@@ -1655,66 +1804,266 @@ jget('/crm/me').then(function(j){ $('#meRole').textContent = (j.role||'') + ' ·
    tốn yêu cầu mà không sớm biết thêm điều gì; thưa hơn thì lúc việc vừa xong người
    ta ngồi nhìn chữ «đang chạy» đã hết đúng. Chỉ hẹn khi ĐANG chạy — trang mở suốt
    buổi không được biến thành một cái đồng hồ gõ mãi vào máy chủ. */
-var DB_NHIP = 4000;
-var DB_HEN = null, DB_CUOI = null, DB_TRUOC = '';
+/* E08-D126 · hai nhịp, không một.
+   3 giây khi có đợt đang mở: đó là lúc người ta ĐỨNG NHÌN, và một con số đứng
+   im 4 giây trong lúc mình vừa bấm Tạm dừng thì cái nút coi như không ăn.
+   15 giây khi không: trang này mở suốt buổi trên máy của BTL. D124 chỉ hỏi lại
+   khi đang chạy, tức một đợt do TAB KHÁC hoặc do lượt nạp kho mở ra thì tab này
+   không bao giờ thấy — và người ta bấm Bắt đầu rồi nhận 409 không hiểu vì sao. */
+var DB_NHIP = 3000, DB_NHIP_NGHI = 15000;
+var DB_HEN = null, DB_CUOI = null, DB_TRUOC = '', DB_TAT = false;
+/* Tốc độ TỪNG LUỒNG tính ở đây chứ không ở máy chủ: máy chủ chỉ giữ con số cộng
+   dồn, mà thứ người vận hành cần là «luồng này đang chạy nhanh chậm ra sao NGAY
+   BÂY GIỜ» để quyết định thêm hay bớt luồng. Hai nhịp đọc liên tiếp là đủ. */
+var DB_MOC = {};
 function dbGio(t){
   if (!t) return '—';
   try { return new Date(t).toLocaleTimeString(LANG === 'jp' ? 'ja-JP' : 'vi-VN',
     { hour: '2-digit', minute: '2-digit' }); } catch (e){ return '—'; }
 }
+/* «còn khoảng 12 phút» dễ đọc hơn «còn 731 giây». Trên một giờ thì nói giờ. */
+function dbLau(giay){
+  if (giay == null || !isFinite(giay) || giay < 0) return '—';
+  if (giay < 90) return Math.round(giay) + 's';
+  if (giay < 3600) return Math.round(giay / 60) + ' phút';
+  return (giay / 3600).toFixed(1) + ' giờ';
+}
+function dbSo(n){ return (n == null ? 0 : n).toLocaleString(LANG === 'jp' ? 'ja-JP' : 'vi-VN'); }
+
+/* Một dòng một luồng. Trả về phần tử, không nối chuỗi HTML: `anh_hien_tai` là
+   tên tệp do người dùng đặt khi nạp ảnh, và nhét nó vào innerHTML là mở một cửa
+   cho một tên tệp chứa thẻ. textContent thì không có cửa nào. */
+function veMotLuong(l){
+  var d = document.createElement('div'); d.className = 'qluong';
+  var den = document.createElement('span'); den.className = 'qden ' + l.trang_thai;
+  d.appendChild(den);
+
+  var ten = document.createElement('span'); ten.className = 'qsl';
+  ten.textContent = fmt('q_luong', { n: l.so });
+  d.appendChild(ten);
+
+  var tt2 = document.createElement('span'); tt2.className = 'qmuc';
+  tt2.textContent = tt('q_tt_' + l.trang_thai.replace(/-/g, '_')) || l.trang_thai;
+  d.appendChild(tt2);
+
+  /* Có NHÃN, không phải con số trần. Trên một dòng đã có «104» và «203 tấm/phút»
+     cạnh nhau, một con số không tên buộc người đọc phải đoán nó là cái gì — và
+     đoán sai thì họ tăng giảm luồng theo một con số khác thứ họ tưởng. */
+  var soi = document.createElement('span'); soi.className = 'qmuc';
+  soi.appendChild(document.createTextNode(tt('q_da_soi') + ' '));
+  var bs = document.createElement('b'); bs.textContent = dbSo(l.da_soi);
+  soi.appendChild(bs);
+  d.appendChild(soi);
+
+  /* Tấm lỗi tô đỏ khi vượt 5% — con số ấy là thứ người vận hành nhìn để tăng hay
+     bớt luồng (FR-9). Ẩn hẳn khi bằng 0: một số 0 màu đỏ vẫn đọc thành «có lỗi». */
+  if (l.loi > 0){
+    var xau = document.createElement('span');
+    var mau = l.da_soi + l.loi;
+    xau.className = 'qmuc' + (mau && l.loi / mau > 0.05 ? ' qxau' : '');
+    xau.textContent = fmt('q_loi_tam', { n: dbSo(l.loi) });
+    d.appendChild(xau);
+  }
+
+  /* Tốc độ chỉ hiện khi ĐANG chạy: một luồng đã dừng mà vẫn khoe «47 tấm/phút»
+     là nói về quá khứ bằng thì hiện tại. */
+  var moc = DB_MOC[l.id], nay = Date.now();
+  if (l.trang_thai === 'chay' && moc && nay > moc.t && l.da_soi >= moc.n){
+    var tren = Math.round((l.da_soi - moc.n) / ((nay - moc.t) / 60000));
+    if (isFinite(tren)){
+      var tdo = document.createElement('span'); tdo.className = 'qmuc';
+      tdo.textContent = fmt('q_toc_do_dv', { n: dbSo(tren) });
+      d.appendChild(tdo);
+    }
+  }
+  if (l.trang_thai === 'chay' || l.trang_thai === 'tam-dung') DB_MOC[l.id] = { t: nay, n: l.da_soi };
+  else delete DB_MOC[l.id];
+
+  if (l.nhip_cuoi_giay != null){
+    var nh = document.createElement('span'); nh.className = 'qmuc';
+    nh.textContent = fmt('q_nhip', { n: dbSo(l.nhip_cuoi_giay) });
+    d.appendChild(nh);
+  }
+
+  var anh = document.createElement('span'); anh.className = 'qanh';
+  anh.textContent = (l.trang_thai === 'chay' && l.anh_hien_tai) ? l.anh_hien_tai : '';
+  d.appendChild(anh);
+
+  /* Nút chỉ tồn tại khi có cái để bấm (bài học D095: «Dừng chỉ tồn tại khi có cái
+     để dừng»). Luồng đã xong / lỗi / mất liên lạc thì không có nút nào — hiện một
+     nút Tạm dừng cho thứ đã dừng là mời người ta bấm vào chỗ trống. */
+  if (l.trang_thai === 'cho' || l.trang_thai === 'chay'){
+    d.appendChild(nutLuong('q_tam_dung', 'tam-dung', l.id));
+  } else if (l.trang_thai === 'tam-dung'){
+    d.appendChild(nutLuong('q_tiep', 'tiep-tuc', l.id));
+  }
+
+  /* Câu lỗi xuống DÒNG RIÊNG: nó là câu tiếng người («tự tạm dừng vì 24/100 tấm
+     lỗi»), dài hơn hẳn mọi thứ khác trên dòng, và nhét nó vào hàng ngang thì cả
+     hàng vỡ ra thành ba dòng lệch nhau. */
+  if (l.cau_loi){
+    var c = document.createElement('div'); c.className = 'qcanh';
+    c.textContent = l.cau_loi;
+    d.appendChild(c);
+  }
+  return d;
+}
+function nutLuong(nhan, viec, id){
+  var b = document.createElement('button');
+  b.className = 'btn sm' + (viec === 'tiep-tuc' ? ' ok' : '');
+  b.textContent = tt(nhan);
+  b.onclick = function(){ doiCo(viec, { luong_id: Number(id) }, b); };
+  return b;
+}
+
+async function doiCo(viec, than, nut){
+  if (nut) nut.disabled = true;
+  try {
+    var r = await fetch('/crm/face-match/dong-bo/' + viec, { method: 'POST',
+      headers: { 'content-type': 'application/json' }, body: JSON.stringify(than) });
+    if (!r.ok) $('#dbChu').textContent = tt('q_hong');
+  } catch (e){ $('#dbChu').textContent = tt('q_hong'); }
+  /* Hỏi lại NGAY, đừng đợi hết nhịp 3 giây: cú bấm phải thấy kết quả của chính
+     nó, và máy chủ mới là nơi biết sự thật. */
+  hoiDongBo();
+}
+
+function veBangQuet(j){
+  var luong = j.luong || [], mo = !!j.dot_mo;
+  var khoi = $('#qKhoi');
+  /* Chưa có đợt nào từng chạy ⇒ không có gì để vẽ. Đừng hiện một bảng rỗng toàn
+     số 0: nó trông y hệt một bảng hỏng. */
+  if (!luong.length){ khoi.classList.add('an'); return; }
+  khoi.classList.remove('an');
+
+  var pt = j.kho ? Math.round(j.da_soi / j.kho * 100) : 0;
+  $('#qThanh').style.width = pt + '%';
+
+  var so = $('#qSo'); so.textContent = '';
+  var muc = [
+    ['q_kho', dbSo(j.kho)],
+    ['q_da_soi', dbSo(j.da_soi) + ' · ' + pt + '%'],
+    ['q_con_lai', dbSo(j.con_lai)],
+    ['q_mat', dbSo(j.so_mat)],
+    ['q_goi_y', dbSo(j.goi_y_cho)],
+  ];
+  if (mo) muc.push(['q_toc_do', fmt('q_toc_do_dv', { n: dbSo(j.toc_do_phut) })]);
+  if (mo && j.du_kien_giay != null) muc.push(['q_con_bao_lau', dbLau(j.du_kien_giay)]);
+
+  /* FR-9 · TỈ LỆ LỖI CỦA CẢ ĐỢT, không chỉ của từng luồng. Đây là con số người
+     vận hành nhìn để quyết định thêm hay bớt luồng — và cũng là con số AC-9 dùng
+     để nói một lượt chạy có được tính là «nhanh hơn» hay không (lỗi ≤ 1%). */
+  var dLoi = 0, dSoi = 0;
+  luong.forEach(function(l){ dLoi += l.loi || 0; dSoi += l.da_soi || 0; });
+  var tiLe = (dSoi + dLoi) ? dLoi / (dSoi + dLoi) : 0;
+
+  muc.forEach(function(m){
+    var s = document.createElement('span');
+    s.appendChild(document.createTextNode(tt(m[0]) + ' '));
+    var b = document.createElement('b'); b.textContent = m[1]; s.appendChild(b);
+    so.appendChild(s);
+  });
+  if (dLoi > 0){
+    var sl = document.createElement('span');
+    sl.className = tiLe > 0.05 ? 'qxau' : '';
+    sl.appendChild(document.createTextNode(tt('q_ti_le_loi') + ' '));
+    var bl = document.createElement('b');
+    /* toFixed cho ra dấu chấm thập phân — cả trang này viết số theo lối Việt
+       (3.014 là ba nghìn, 31,8 là ba mươi mốt phẩy tám). Một dấu chấm ở đây đọc
+       thành «ba trăm mười tám phần trăm». */
+    bl.textContent = (tiLe * 100).toLocaleString(LANG === 'jp' ? 'ja-JP' : 'vi-VN',
+      { maximumFractionDigits: 1 }) + '% · ' + fmt('q_loi_tam', { n: dbSo(dLoi) });
+    sl.appendChild(bl);
+    so.appendChild(sl);
+  }
+
+  var ds = $('#qDs'); ds.textContent = '';
+  luong.forEach(function(l){ ds.appendChild(veMotLuong(l)); });
+
+  /* Nút chung theo đúng luật của nút riêng: chỉ hiện khi có cái để làm. */
+  var coChay = luong.some(function(l){ return l.trang_thai === 'cho' || l.trang_thai === 'chay'; });
+  var coNgu  = luong.some(function(l){ return l.trang_thai === 'tam-dung'; });
+  $('#qNut').classList.toggle('an', !mo);
+  $('#qTamDungHet').classList.toggle('an', !coChay);
+  $('#qTiepHet').classList.toggle('an', !coNgu);
+  $('#qDungHan').classList.toggle('an', !mo);
+}
+
 function veDongBo(j){
-  if (!j) return;
+  if (!j || DB_TAT) return;
   DB_CUOI = j;
   var v = j.viec, tt2 = '', chu = '';
+  var mo = !!j.dot_mo;
   var dangChay = !!(v && v.trang_thai === 'chay');
   if (!v){ chu = tt('db_chua') + ' ' + tt('db_giai'); }
-  else if (dangChay){
-    tt2 = tt('db_dang');
+  else if (dangChay || v.trang_thai === 'tam-dung'){
+    tt2 = tt(v.trang_thai === 'tam-dung' ? 'q_tt_tam_dung' : 'db_dang');
     chu = fmt('db_dang_ct', { t: dbGio(v.bat_dau), b: v.boi || '' });
   } else if (v.trang_thai === 'xong'){
     tt2 = tt('db_xong');
+    chu = fmt('db_xong_ct', { t: dbGio(v.xong), m: v.so_mau == null ? 0 : v.so_mau,
+      a: v.so_tam == null ? 0 : v.so_tam, g: v.so_goi_y == null ? 0 : v.so_goi_y });
+  } else if (v.trang_thai === 'huy'){
+    tt2 = tt('q_tt_huy');
     chu = fmt('db_xong_ct', { t: dbGio(v.xong), m: v.so_mau == null ? 0 : v.so_mau,
       a: v.so_tam == null ? 0 : v.so_tam, g: v.so_goi_y == null ? 0 : v.so_goi_y });
   } else {
     tt2 = tt('db_loi');
     chu = fmt('db_loi_ct', { t: dbGio(v.xong || v.bat_dau), e: v.loi || '' });
   }
-  /* Thiếu bộ nhận diện thì nói NGAY, đừng bắt người ta bấm mới biết. Nút vẫn bấm
-     được: một nút xám không giải thích được vì sao nó xám, mà cú bấm là thứ để
-     lại dòng trong sổ cho người kỹ thuật đọc. */
-  if (j.san_sang === false) chu = tt('db_thieu') + (chu ? ' · ' + chu : '');
+  /* FR-10 · KHÔNG có máy quét nào trực thì phải nói, và nói TRƯỚC câu khác. Một
+     đợt đang mở mà không ai nhận là thứ trông giống «đang chạy» nhất, và im lặng
+     ở đây là để người ta ngồi đợi một cái không bao giờ nhúc nhích. */
+  if (mo && j.co_may_truc === false) chu = tt('q_khong_truc') + (chu ? ' · ' + chu : '');
+  /* Thiếu bộ nhận diện TẠI MÁY CHỦ chỉ có nghĩa «máy chủ không tự chạy được» —
+     đường chính là máy quét trực ở máy khác. Nên câu này chỉ nói khi cũng KHÔNG
+     có máy quét nào trực; nói cả hai lúc mọi thứ đang chạy tốt là gây hoang mang. */
+  else if (j.san_sang === false && !j.co_may_truc && !mo) chu = tt('db_thieu') + (chu ? ' · ' + chu : '');
+
   $('#dbTom').textContent = tt2;
   $('#dbChu').textContent = chu;
-  $('#nutDongBo').disabled = dangChay;
+  $('#nutDongBo').disabled = mo;
+  $('#qChonO').classList.toggle('an', mo);   // đang chạy thì không đổi số luồng
+  /* Câu nhắc đi CÙNG ô chọn, và biến mất khi ô chọn biến mất: nó nói về cú bấm
+     sắp tới, không phải về đợt đang chạy. Trong lúc chạy thì thứ thay chỗ nó là
+     tỉ lệ lỗi thật ở dòng toàn kho — số đo, không phải lời khuyên. */
+  $('#qNhac').textContent = mo ? '' : tt('q_nhac_luong');
+  veBangQuet(j);
 
   if (DB_HEN){ clearTimeout(DB_HEN); DB_HEN = null; }
-  if (dangChay) DB_HEN = setTimeout(hoiDongBo, DB_NHIP);
-  /* Vừa CHUYỂN từ đang-chạy sang xong ⇒ lưới đang hiện những con số đã cũ: gợi ý
+  DB_HEN = setTimeout(hoiDongBo, mo ? DB_NHIP : DB_NHIP_NGHI);
+  /* Vừa CHUYỂN từ đang-mở sang đóng ⇒ lưới đang hiện những con số đã cũ: gợi ý
      mới vừa được đẻ ra mà ô nào cũng còn ghi số của mấy phút trước. Chỉ vẽ lại khi
      đúng cú chuyển ấy và đúng màn lưới đang mở — vẽ lại theo mỗi nhịp hỏi thì cứ
-     4 giây một lần trang lại giật dưới tay người đang duyệt. */
-  var nay = v ? v.trang_thai : '';
-  if (DB_TRUOC === 'chay' && nay === 'xong' && !$('#manAnh').classList.contains('an')) veLuoi();
+     3 giây một lần trang lại giật dưới tay người đang duyệt. */
+  var nay = mo ? 'mo' : 'dong';
+  if (DB_TRUOC === 'mo' && nay === 'dong' && !$('#manAnh').classList.contains('an')) veLuoi();
   DB_TRUOC = nay;
 }
 async function hoiDongBo(){
+  if (DB_TAT) return;
+  if (DB_HEN){ clearTimeout(DB_HEN); DB_HEN = null; }
   try { veDongBo(await jget('/crm/face-match/dong-bo')); }
   catch (e){ /* mạng chớp một nhịp không phải lý do để xoá trạng thái đang hiện */
-    if (DB_CUOI && DB_CUOI.viec && DB_CUOI.viec.trang_thai === 'chay')
-      DB_HEN = setTimeout(hoiDongBo, DB_NHIP); }
+    DB_HEN = setTimeout(hoiDongBo, DB_NHIP_NGHI); }
 }
 $('#nutDongBo').onclick = async function(){
+  var n = Number($('#qSoLuong').value) || 1;
+  /* FR-10 · cảnh báo TRƯỚC khi tạo, không sau. Vẫn cho tạo: việc được xếp sẵn và
+     máy quét bật lên là nhận — nhưng người bấm phải biết mình đang xếp hàng chứ
+     không phải đang khởi động cái gì. */
+  if (DB_CUOI && DB_CUOI.co_may_truc === false && !confirm(fmt('q_hoi_khong_truc', { n: n }))) return;
   $('#nutDongBo').disabled = true;
   $('#dbTom').textContent = '';
   try {
-    /* Không dùng `jpost`: nó ném ở mọi mã ≠ 2xx nên nuốt mất THÂN của 409 và 503,
-       mà thân ấy chính là câu cần hiện («đang chạy rồi», «chưa có bộ nhận diện»).
-       Ở đây mã trạng thái là dữ liệu, không phải ngoại lệ. */
+    /* Không dùng `jpost`: nó ném ở mọi mã ≠ 2xx nên nuốt mất THÂN của 409 và 400,
+       mà thân ấy chính là câu cần hiện («đang có đợt mở»). Ở đây mã trạng thái là
+       dữ liệu, không phải ngoại lệ. */
     var r = await fetch('/crm/face-match/dong-bo', { method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ nguon: 'tay' }) });
+      body: JSON.stringify({ nguon: 'tay', so_luong: n }) });
     var j = null; try { j = await r.json(); } catch (e){ j = null; }
-    if (r.status === 202) $('#dbChu').textContent = tt('db_mo');
+    if (r.status === 202) $('#dbChu').textContent = tt('db_mo') + ' ' + tt('q_nhac_luong');
     else if (r.status === 409) $('#dbChu').textContent = tt('db_dang_roi');
     else if (r.status === 503) $('#dbChu').textContent = tt('db_thieu')
       + ((j && j.thieu && j.thieu.length) ? ' (' + j.thieu.join(', ') + ')' : '');
@@ -1722,6 +2071,21 @@ $('#nutDongBo').onclick = async function(){
   } catch (e){ $('#dbChu').textContent = tt('db_hong'); }
   /* Dù nhánh nào cũng hỏi lại trạng thái: máy chủ mới là nơi biết sự thật, và
      chính lượt hỏi này bật/tắt lại cái nút cho đúng. */
+  hoiDongBo();
+};
+$('#qTamDungHet').onclick = function(){ doiCo('tam-dung', { tat_ca: true }, this); };
+$('#qTiepHet').onclick = function(){ doiCo('tiep-tuc', { tat_ca: true }, this); };
+$('#qDungHan').onclick = async function(){
+  if (!DB_CUOI || !DB_CUOI.dot_mo) return;
+  if (!confirm(tt('q_hoi_dung'))) return;
+  this.disabled = true;
+  try {
+    var r = await fetch('/crm/face-match/dong-bo/dung', { method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ run_id: Number(DB_CUOI.dot_mo) }) });
+    var j = await r.json().catch(function(){ return null; });
+    $('#dbChu').textContent = (r.ok && j) ? fmt('q_da_dung', { n: j.da_nha }) : tt('q_hong');
+  } catch (e){ $('#dbChu').textContent = tt('q_hong'); }
   hoiDongBo();
 };
 hoiDongBo();

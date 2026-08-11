@@ -944,7 +944,15 @@ document.addEventListener('change', function(e){
   else if (o.closest('#manMotKhach')) capNhatThanh($('#manMotKhach'));
 });
 
-$('#veCrm').onclick = function(){ location.href = '/crm'; };
+/* E08-D107 · hai tham số của lối vào sâu. Chỉ nhận chuỗi toàn số — cả hai đều đi
+   thẳng vào đường dẫn/URL, nên rác phải chết ngay ở đây. */
+function qSo(ten){ try{ var v = new URLSearchParams(location.search).get(ten);
+  return v && /^\d+$/.test(v) ? v : ''; }catch(e){ return ''; } }
+var qAnh = qSo('anh'), qKhach = qSo('khach');
+/* Đi từ hồ sơ một khách sang đây thì «Về CRM» phải trả về ĐÚNG hồ sơ ấy, không
+   phải danh sách trần: xem một tấm mà mất chỗ đang đứng thì lần sau người ta
+   không bấm nữa — đúng cái vòng lặp mà vé này sinh ra để cắt. */
+$('#veCrm').onclick = function(){ location.href = qKhach ? ('/crm?guest=' + qKhach) : '/crm'; };
 /* AC-6 · nút quay lại trả về ĐÚNG chỗ vừa rời: khối, màn một khách, hay lưới ảnh. */
 $('#veLuoi').onclick = function(){
   if (TU_DAU === 'khach' && KHACH_DANG){ moMotKhach(KHACH_DANG, KHACH_OFFSET); return; }
@@ -970,13 +978,14 @@ apDungTheme(nhoCu('crm_theme', 'nd_theme') === 'light' ? 'light' : '');
 setLang(LANG);
 jget('/crm/me').then(function(j){ $('#meRole').textContent = (j.role||'') + ' · ' + (j.email||''); }).catch(function(){});
 
-/* Tab mở đầu do URL quyết định, không phải một mặc định cứng: `/crm/anh-su-kien`
-   là Phân loại (thứ tự D102 — ảnh trước, tên gắn sau), `…/theo-khach` là khối theo
-   khách. replaceState để mục lịch sử đầu tiên cũng mang `state.tab`, nếu không thì
-   cú Back đầu tiên trả về một mục không có state và popstate không biết vẽ gì. */
+/* Tab mở đầu do URL quyết định (D106). `?anh=` mở thẳng tấm (D107) — sau khi
+   lưới đã nạp, vì nút «Về lưới ảnh» cần chỗ quay về. */
 history.replaceState({ tab: tabTuUrl() }, '', location.pathname + location.search);
-if (tabTuUrl() === 'khach'){ TU_DAU = 'khoi'; hienMan('manKhach'); veKhoi(); }
-else veLuoi().catch(function(){ $('#anhTom').textContent = tt('loi_nap'); });
+if (tabTuUrl() === 'khach' && !qAnh){ TU_DAU = 'khoi'; hienMan('manKhach'); veKhoi(); }
+else veLuoi()
+  .catch(function(){ $('#anhTom').textContent = tt('loi_nap'); })
+  .then(function(){ if (qAnh) return moAnh(qAnh, 'luoi'); })
+  .catch(function(){ hienMan('manAnh'); $('#anhTom').textContent = tt('loi_nap'); });
 </script>
 </body>
 </html>

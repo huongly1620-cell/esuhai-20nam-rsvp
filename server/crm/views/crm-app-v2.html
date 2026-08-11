@@ -402,6 +402,44 @@
   :root[data-theme=light] .attd{border-color:rgba(10,92,56,.28);box-shadow:0 0 0 1px rgba(18,161,95,.12)}
   .attsel{width:100%;font:inherit;font-size:.92rem;color:var(--cream,#eee);background:rgba(5,13,24,.5);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:6px}
   .thumbs{display:flex;gap:8px;flex-wrap:wrap}.thumbs img{width:70px;height:70px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+  /* E08-D107 · dải ảnh sự kiện. CỐ Ý không mượn `.thumbs .th1`: lớp ấy có luật
+     bấm riêng (mở lightbox chân dung) và hai nút ghim/xoá — dải này chỉ là lối đi
+     sang màn nhận diện.
+     LƯỚI chứ không phải flex-wrap: hàng cuối của flex bỏ lại một mẩu thừa lệch
+     phải, mà khối này kẹp giữa hai khối đã thẳng lề (#thumbs ở trên, «Ghi tương
+     tác» ở dưới) — lệch một mình nó thì mắt bắt ngay. auto-fill+1fr để các ô tự
+     chia đều bề ngang, không phụ thuộc màn rộng bao nhiêu (AC-8). */
+  .albsk{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:7px}
+  /* `.albsk0` = ô của KHUNG CHỜ: cùng hộp, nhưng KHÔNG con trỏ bàn tay và không
+     nhấc lên khi rê chuột. Ô chưa có gì mà mời bấm là hứa suông. */
+  .albsk1,.albsk0{display:block;position:relative;aspect-ratio:1;border-radius:10px;
+    overflow:hidden;border:1px solid var(--line);background:var(--inp)}
+  .albsk1{cursor:pointer;transition:.15s}
+  .albsk1:hover{border-color:var(--line2);transform:translateY(-1px)}
+  /* Bản nhỏ không tải được (tệp mất khỏi kho) — KHÔNG để lại ô trống trơn: ô trống
+     nhìn như ảnh nền trắng, người xem tưởng ảnh hỏng chứ không biết là chưa tải
+     được. Dấu mờ + nhãn nói rõ, và đường dẫn vẫn còn: mở tấm gốc bên kia vẫn được. */
+  .albsk1.mat{display:grid;place-items:center;background:var(--panel2)}
+  .albsk1.mat img{display:none}
+  /* Dấu vẽ bằng CSS, không dùng ký tự: "▢" rơi vào font emoji ở một số máy (đo
+     được: ra ô xanh lệch hẳn bảng màu). Hình vuông viền mờ thì ở đâu cũng đúng. */
+  .albsk1.mat::after{content:"";width:15px;height:15px;border:1.5px solid var(--muted2);border-radius:4px}
+  /* Bàn phím phải thấy mình đang ở đâu — dải này là một hàng ô giống hệt nhau,
+     mất vòng nét là mất luôn chỗ đứng. Dùng `:focus-visible` nên chuột không dính. */
+  .albsk1:focus-visible{outline:none;border-color:var(--gold-b);box-shadow:0 0 0 3px var(--gold-soft)}
+  .albsk1 img{width:100%;height:100%;object-fit:cover;display:block}
+  /* Khung chờ: giữ ĐÚNG chỗ mà ảnh sắp chiếm, để hồ sơ không giật một nhịp khi
+     ảnh về. Xem chú thích napAlbumSuKien về lý do KHÔNG hiện câu «chưa có ảnh»
+     trong lúc còn đang hỏi. */
+  .albsk.dang .albsk0{animation:albpul 1.1s ease-in-out infinite}
+  @keyframes albpul{50%{opacity:.4}}
+  .albmore{margin-top:8px;width:100%;border:1px solid var(--line);background:transparent;
+    color:var(--muted);border-radius:9px;padding:9px 10px;font:inherit;font-size:.76rem;
+    font-weight:600;cursor:pointer;transition:.15s}
+  .albmore:hover{border-color:var(--line2);color:var(--text)}
+  @media (prefers-reduced-motion:reduce){
+    .albsk1{transition:none}.albsk1:hover{transform:none}
+    .albsk.dang .albsk0{animation:none;opacity:.5}}
   /* E08-D028 L-01: dải ảnh hồ sơ trộn ảnh mặt khách với ảnh QUÀ chụp tại quầy
      mà không có gì phân biệt. BTL mở màn này ra để đối chiếu người thật — nhìn
      một dải ảnh lẫn lộn thì không biết tấm nào là khách. Viền hổ phách + nhãn
@@ -694,8 +732,8 @@
  function loadCfg(){try{return Object.assign({},CFG_DEF,JSON.parse(localStorage.getItem("crm_event_cfg")||"{}"));}catch(e){return Object.assign({},CFG_DEF);}}
  function saveCfg(c){localStorage.setItem("crm_event_cfg",JSON.stringify(c));CFG=c;}
  var CFG=loadCfg();
- var T={vn:{cap_data:"Dữ liệu",cap_sys:"Hệ thống",add:"＋ Thêm khách",import:"⬆ Nhập CSV/Excel",exp_csv:"⬇ Xuất CSV",exp_xls:"⬇ Xuất Excel",cfg:"⚙ Cài đặt sự kiện",audit:"☰ Nhật ký",anh_su_kien:"📸 Ảnh sự kiện",logout:"⏻ Đăng xuất",arrived:"Đã đến",arr_bs:"(bổ sung)",toa_s:"Tọa đàm",gala_s:"Gala",ov_h:"Tổng quan & chuẩn bị",toa_full:"TỌA ĐÀM CHUYÊN ĐỀ",gala_full:"GALA TRI ÂN",venue_lbl:"Địa điểm:",edit:"Sửa",buoi_h:"Buổi tham dự (theo số khách)",prep_h:"Việc cần chuẩn bị",ph_task:"Thêm việc cần làm…",ph_search:"Tìm tên / SĐT / đơn vị…",tab_all:"Tất cả",tab_toa:"Tọa đàm",tab_gal:"Gala",only_wait:"◔ Chưa đến",s_name:"Theo tên",s_vip:"VIP trước",s_tbl:"Theo bàn",s_st:"Chưa đến trước",notfound:"Không tìm thấy khách phù hợp.",done_w:"xong",ban:"Bàn",ghe:"Ghế",hang:"Hạng",buoi:"Buổi",phutrach:"Phụ trách",gioitinh:"Giới tính",contact:"Liên hệ",toa:"Tọa đàm chuyên đề",gal:"Gala Lễ kỷ niệm",ci_btn:"◯ Điểm danh — Khách đã đến",ci_on:"Đã điểm danh ·",ci_at_door:"Điểm danh tại cửa — mở «Cửa Tọa đàm» hoặc «Cửa Gala» ở đầu màn",sdt_mo:"Xem số",sdt_hoi:"Nhập mật khẩu để xem số điện thoại:",sdt_ok:"Đã mở khoá số điện thoại (30 phút) ✓",sdt_sai:"Mật khẩu không đúng",pl_h:"Phân loại khách",pl_none:"— chưa phân loại —",pl_fail:"Máy chủ từ chối — CHƯA đổi được",pl_nv:"NHÂN VIÊN",av_dat:"Đặt làm đại diện",av_dang:"✓ Đại diện",av_ok:"Đã đổi ảnh đại diện ✓",av_fail:"Máy chủ từ chối — CHƯA đổi được",anh_xoa:"Xoá ảnh",anh_xoa_hoi:"Xoá ảnh này khỏi hồ sơ khách?\n\nTệp ảnh vẫn nằm trong kho, khôi phục được từ nhật ký — nhưng trên màn thì không có nút hoàn tác.",anh_xoa_ok:"Đã xoá ảnh ✓",anh_xoa_fail:"Máy chủ từ chối — CHƯA xoá được",undo:"Huỷ check-in",undo_ing:"Đang huỷ…",undo_ask:"Huỷ check-in khách này?\n\nGiờ đến sẽ bị xoá. Check-in lại sẽ ghi giờ mới.",undo_ok:"Đã huỷ check-in ✓",undo_fail:"Máy chủ từ chối — CHƯA huỷ được",undo_net:"Mất mạng — CHƯA huỷ được",undo_role:"Chỉ ban tổ chức mới huỷ được check-in",inter_h:"Ghi tương tác",kind_call:"gọi",kind_meet:"gặp",kind_photo:"gửi ảnh",kind_other:"khác",edit_h:"Sửa thông tin",save:"Lưu",photo_h:"Ảnh khách",photo_up:"📷 Chụp / tải ảnh lên",album_sk:"Ảnh sự kiện",album_sk_empty:"Chưa có ảnh sự kiện gắn với khách này.",att_h:"Trạng thái tham dự",att_du:"Có tham dự",att_khong:"Không tham dự",att_cho:"Chưa xác nhận",att_sec:"Tham dự sự kiện",att_manual:"đã sửa tay",att_set:"Đổi trạng thái",att_ok:"Đã cập nhật ✓",att_fail:"Không đổi được",att_ask:"Xác nhận khách KHÔNG tham dự?\n\nĐây là số báo cáo, KHÔNG phải «chưa đến».",qua_anh:"Ảnh quà / ghi nhận tại quầy",no_photo:"Chưa có ảnh.",del:"Xoá khách này",showing:"Hiển thị",of:"trên",arr2:"đã đến",done_toast:"Đã điểm danh ✓",saved:"Đã lưu ✓",exported:"Đã xuất file ✓",cfg_saved:"Đã lưu cài đặt ✓",days:"ngày",over:"Đã diễn ra",cfg_h:"Cài đặt sự kiện",cfg_venue:"Địa điểm",cfg_toa:"Giờ Tọa đàm",cfg_gala:"Giờ Gala",cfg_venue_toa:"Địa điểm Tọa đàm",cfg_venue_gala:"Địa điểm Gala",venue_edit:"✎ Sửa địa điểm & giờ",only_dup:"⚠ Trùng",imp_btn:"⬆ Import",exp_btn:"⬇ Xuất",exp_choose:"Xuất danh sách khách",nav_toa:"Cửa Tọa đàm",nav_gala:"Cửa Gala",nav_sodo:"Sơ đồ bàn",dup_warn:"Có khách khác TRÙNG TÊN — vui lòng kiểm tra!",b_list:"Theo danh sách mời",b_form:"Theo bản đăng ký",b_none:"Chưa rõ buổi",b_none_d:"chưa có trên danh sách và chưa nối được đăng ký",b_sum:"Cộng ba nhóm =",b_only_gala:"chỉ Gala",b_both:"cả hai buổi",b_only_toa:"chỉ Tọa đàm",b_unspec:"chưa nêu buổi",b_wait:"Chưa tải được số buổi — thử lại sau.",b_du:"Dự"},
-   jp:{cap_data:"データ",cap_sys:"システム",add:"＋ ゲスト追加",import:"⬆ CSV/Excel取込",exp_csv:"⬇ CSV出力",exp_xls:"⬇ Excel出力",cfg:"⚙ イベント設定",audit:"☰ 監査ログ",anh_su_kien:"📸 イベント写真",logout:"⏻ ログアウト",arrived:"受付済",arr_bs:"（後日追加）",toa_s:"座談会",gala_s:"ガラ",ov_h:"概要と準備",toa_full:"座談会",gala_full:"ガラ晩餐会",venue_lbl:"会場:",edit:"編集",buoi_h:"ご出席セッション(人数)",prep_h:"開催前の準備事項",ph_task:"作業を追加…",ph_search:"氏名/電話/所属で検索…",tab_all:"すべて",tab_toa:"座談会",tab_gal:"ガラ",only_wait:"◔ 未受付",s_name:"氏名順",s_vip:"VIP優先",s_tbl:"テーブル順",s_st:"未受付優先",notfound:"該当するゲストが見つかりません。",done_w:"完了",ban:"テーブル",ghe:"お席",hang:"ランク",buoi:"セッション",phutrach:"ご担当",gioitinh:"性別",contact:"ご連絡先",toa:"座談会",gal:"ガラ晩餐会",ci_btn:"◯ 受付 — ご来場",ci_on:"受付済 ·",ci_at_door:"受付は入口ページで行います — 上部の「受付 座談会 / ガラ」から",sdt_mo:"番号を表示",sdt_hoi:"電話番号を表示するにはパスワードを入力してください：",sdt_ok:"電話番号のロックを解除しました（30分）✓",sdt_sai:"パスワードが違います",pl_h:"ゲスト区分",pl_none:"— 未設定 —",pl_fail:"サーバーが拒否 — 変更できません",pl_nv:"スタッフ",av_dat:"プロフィール写真にする",av_dang:"✓ プロフィール写真",av_ok:"プロフィール写真を変更しました ✓",av_fail:"サーバーが拒否 — 変更できません",anh_xoa:"写真を削除",anh_xoa_hoi:"この写真をゲスト情報から削除しますか？\n\nファイルはストレージに残り復元できますが、画面上に取り消しはありません。",anh_xoa_ok:"写真を削除しました ✓",anh_xoa_fail:"サーバーが拒否 — 削除できません",undo:"チェックイン取消",undo_ing:"取消中…",undo_ask:"チェックインを取り消しますか？\n\n受付時刻は削除されます。再受付すると新しい時刻になります。",undo_ok:"チェックインを取り消しました ✓",undo_fail:"サーバーが拒否 — 取り消せません",undo_net:"通信エラー — 取り消せません",undo_role:"取消は主催者のみ可能です",inter_h:"応対記録",kind_call:"電話",kind_meet:"面談",kind_photo:"写真送付",kind_other:"その他",edit_h:"情報を編集",save:"保存",photo_h:"ゲスト写真",photo_up:"📷 写真を撮影/アップロード",album_sk:"イベント写真",album_sk_empty:"このゲストに紐づくイベント写真はまだありません。",att_h:"ご出欠",att_du:"出席",att_khong:"欠席",att_cho:"未確認",att_sec:"ご出欠",att_manual:"手動変更",att_set:"変更",att_ok:"更新しました ✓",att_fail:"更新できません",att_ask:"このゲストを欠席にしますか？\n\n受付状況（来場済）とは別の項目です。",qua_anh:"贈り物・受付記録の写真",no_photo:"写真なし。",del:"このゲストを削除",showing:"表示",of:"／",arr2:"受付済",done_toast:"受付完了 ✓",saved:"保存しました ✓",exported:"ファイルを出力 ✓",cfg_saved:"設定を保存 ✓",days:"日",over:"開催済み",cfg_h:"イベント設定",cfg_venue:"会場",cfg_toa:"座談会 開始",cfg_gala:"ガラ 開始",cfg_venue_toa:"座談会 会場",cfg_venue_gala:"ガラ 会場",venue_edit:"✎ 会場・時刻を編集",only_dup:"⚠ 重複",imp_btn:"⬆ 取込",exp_btn:"⬇ 出力",exp_choose:"ゲスト一覧を出力",nav_toa:"受付 座談会",nav_gala:"受付 ガラ",nav_sodo:"座席図",dup_warn:"同姓同名のゲストがいます — ご確認ください！",b_list:"招待リスト基準",b_form:"申込フォーム基準",b_none:"セッション不明",b_none_d:"リストにも申込にも未紐付け",b_sum:"3グループ合計 =",b_only_gala:"ガラのみ",b_both:"両セッション",b_only_toa:"座談会のみ",b_unspec:"セッション未記入",b_wait:"セッション数を取得できません。後ほど再試行してください。",b_du:"出席"}};
+ var T={vn:{cap_data:"Dữ liệu",cap_sys:"Hệ thống",add:"＋ Thêm khách",import:"⬆ Nhập CSV/Excel",exp_csv:"⬇ Xuất CSV",exp_xls:"⬇ Xuất Excel",cfg:"⚙ Cài đặt sự kiện",audit:"☰ Nhật ký",anh_su_kien:"📸 Ảnh sự kiện",logout:"⏻ Đăng xuất",arrived:"Đã đến",arr_bs:"(bổ sung)",toa_s:"Tọa đàm",gala_s:"Gala",ov_h:"Tổng quan & chuẩn bị",toa_full:"TỌA ĐÀM CHUYÊN ĐỀ",gala_full:"GALA TRI ÂN",venue_lbl:"Địa điểm:",edit:"Sửa",buoi_h:"Buổi tham dự (theo số khách)",prep_h:"Việc cần chuẩn bị",ph_task:"Thêm việc cần làm…",ph_search:"Tìm tên / SĐT / đơn vị…",tab_all:"Tất cả",tab_toa:"Tọa đàm",tab_gal:"Gala",only_wait:"◔ Chưa đến",s_name:"Theo tên",s_vip:"VIP trước",s_tbl:"Theo bàn",s_st:"Chưa đến trước",notfound:"Không tìm thấy khách phù hợp.",done_w:"xong",ban:"Bàn",ghe:"Ghế",hang:"Hạng",buoi:"Buổi",phutrach:"Phụ trách",gioitinh:"Giới tính",contact:"Liên hệ",toa:"Tọa đàm chuyên đề",gal:"Gala Lễ kỷ niệm",ci_btn:"◯ Điểm danh — Khách đã đến",ci_on:"Đã điểm danh ·",ci_at_door:"Điểm danh tại cửa — mở «Cửa Tọa đàm» hoặc «Cửa Gala» ở đầu màn",sdt_mo:"Xem số",sdt_hoi:"Nhập mật khẩu để xem số điện thoại:",sdt_ok:"Đã mở khoá số điện thoại (30 phút) ✓",sdt_sai:"Mật khẩu không đúng",pl_h:"Phân loại khách",pl_none:"— chưa phân loại —",pl_fail:"Máy chủ từ chối — CHƯA đổi được",pl_nv:"NHÂN VIÊN",av_dat:"Đặt làm đại diện",av_dang:"✓ Đại diện",av_ok:"Đã đổi ảnh đại diện ✓",av_fail:"Máy chủ từ chối — CHƯA đổi được",anh_xoa:"Xoá ảnh",anh_xoa_hoi:"Xoá ảnh này khỏi hồ sơ khách?\n\nTệp ảnh vẫn nằm trong kho, khôi phục được từ nhật ký — nhưng trên màn thì không có nút hoàn tác.",anh_xoa_ok:"Đã xoá ảnh ✓",anh_xoa_fail:"Máy chủ từ chối — CHƯA xoá được",undo:"Huỷ check-in",undo_ing:"Đang huỷ…",undo_ask:"Huỷ check-in khách này?\n\nGiờ đến sẽ bị xoá. Check-in lại sẽ ghi giờ mới.",undo_ok:"Đã huỷ check-in ✓",undo_fail:"Máy chủ từ chối — CHƯA huỷ được",undo_net:"Mất mạng — CHƯA huỷ được",undo_role:"Chỉ ban tổ chức mới huỷ được check-in",inter_h:"Ghi tương tác",kind_call:"gọi",kind_meet:"gặp",kind_photo:"gửi ảnh",kind_other:"khác",edit_h:"Sửa thông tin",save:"Lưu",photo_h:"Ảnh khách",photo_up:"📷 Chụp / tải ảnh lên",album_sk:"Ảnh sự kiện",album_sk_empty:"Chưa có ảnh sự kiện gắn với khách này.",album_sk_xem:"Mở tấm này ở màn nhận diện ảnh",album_sk_aria:"Ảnh sự kiện %i trên %n — mở ở màn nhận diện",album_sk_all:"Xem tất cả %n tấm",album_sk_thu:"Thu gọn",album_sk_mat:"Không tải được bản nhỏ — bấm để mở tấm gốc",album_sk_loi:"Chưa tải được ảnh sự kiện — thử mở lại hồ sơ.",att_h:"Trạng thái tham dự",att_du:"Có tham dự",att_khong:"Không tham dự",att_cho:"Chưa xác nhận",att_sec:"Tham dự sự kiện",att_manual:"đã sửa tay",att_set:"Đổi trạng thái",att_ok:"Đã cập nhật ✓",att_fail:"Không đổi được",att_ask:"Xác nhận khách KHÔNG tham dự?\n\nĐây là số báo cáo, KHÔNG phải «chưa đến».",qua_anh:"Ảnh quà / ghi nhận tại quầy",no_photo:"Chưa có ảnh.",del:"Xoá khách này",showing:"Hiển thị",of:"trên",arr2:"đã đến",done_toast:"Đã điểm danh ✓",saved:"Đã lưu ✓",exported:"Đã xuất file ✓",cfg_saved:"Đã lưu cài đặt ✓",days:"ngày",over:"Đã diễn ra",cfg_h:"Cài đặt sự kiện",cfg_venue:"Địa điểm",cfg_toa:"Giờ Tọa đàm",cfg_gala:"Giờ Gala",cfg_venue_toa:"Địa điểm Tọa đàm",cfg_venue_gala:"Địa điểm Gala",venue_edit:"✎ Sửa địa điểm & giờ",only_dup:"⚠ Trùng",imp_btn:"⬆ Import",exp_btn:"⬇ Xuất",exp_choose:"Xuất danh sách khách",nav_toa:"Cửa Tọa đàm",nav_gala:"Cửa Gala",nav_sodo:"Sơ đồ bàn",dup_warn:"Có khách khác TRÙNG TÊN — vui lòng kiểm tra!",b_list:"Theo danh sách mời",b_form:"Theo bản đăng ký",b_none:"Chưa rõ buổi",b_none_d:"chưa có trên danh sách và chưa nối được đăng ký",b_sum:"Cộng ba nhóm =",b_only_gala:"chỉ Gala",b_both:"cả hai buổi",b_only_toa:"chỉ Tọa đàm",b_unspec:"chưa nêu buổi",b_wait:"Chưa tải được số buổi — thử lại sau.",b_du:"Dự"},
+   jp:{cap_data:"データ",cap_sys:"システム",add:"＋ ゲスト追加",import:"⬆ CSV/Excel取込",exp_csv:"⬇ CSV出力",exp_xls:"⬇ Excel出力",cfg:"⚙ イベント設定",audit:"☰ 監査ログ",anh_su_kien:"📸 イベント写真",logout:"⏻ ログアウト",arrived:"受付済",arr_bs:"（後日追加）",toa_s:"座談会",gala_s:"ガラ",ov_h:"概要と準備",toa_full:"座談会",gala_full:"ガラ晩餐会",venue_lbl:"会場:",edit:"編集",buoi_h:"ご出席セッション(人数)",prep_h:"開催前の準備事項",ph_task:"作業を追加…",ph_search:"氏名/電話/所属で検索…",tab_all:"すべて",tab_toa:"座談会",tab_gal:"ガラ",only_wait:"◔ 未受付",s_name:"氏名順",s_vip:"VIP優先",s_tbl:"テーブル順",s_st:"未受付優先",notfound:"該当するゲストが見つかりません。",done_w:"完了",ban:"テーブル",ghe:"お席",hang:"ランク",buoi:"セッション",phutrach:"ご担当",gioitinh:"性別",contact:"ご連絡先",toa:"座談会",gal:"ガラ晩餐会",ci_btn:"◯ 受付 — ご来場",ci_on:"受付済 ·",ci_at_door:"受付は入口ページで行います — 上部の「受付 座談会 / ガラ」から",sdt_mo:"番号を表示",sdt_hoi:"電話番号を表示するにはパスワードを入力してください：",sdt_ok:"電話番号のロックを解除しました（30分）✓",sdt_sai:"パスワードが違います",pl_h:"ゲスト区分",pl_none:"— 未設定 —",pl_fail:"サーバーが拒否 — 変更できません",pl_nv:"スタッフ",av_dat:"プロフィール写真にする",av_dang:"✓ プロフィール写真",av_ok:"プロフィール写真を変更しました ✓",av_fail:"サーバーが拒否 — 変更できません",anh_xoa:"写真を削除",anh_xoa_hoi:"この写真をゲスト情報から削除しますか？\n\nファイルはストレージに残り復元できますが、画面上に取り消しはありません。",anh_xoa_ok:"写真を削除しました ✓",anh_xoa_fail:"サーバーが拒否 — 削除できません",undo:"チェックイン取消",undo_ing:"取消中…",undo_ask:"チェックインを取り消しますか？\n\n受付時刻は削除されます。再受付すると新しい時刻になります。",undo_ok:"チェックインを取り消しました ✓",undo_fail:"サーバーが拒否 — 取り消せません",undo_net:"通信エラー — 取り消せません",undo_role:"取消は主催者のみ可能です",inter_h:"応対記録",kind_call:"電話",kind_meet:"面談",kind_photo:"写真送付",kind_other:"その他",edit_h:"情報を編集",save:"保存",photo_h:"ゲスト写真",photo_up:"📷 写真を撮影/アップロード",album_sk:"イベント写真",album_sk_empty:"このゲストに紐づくイベント写真はまだありません。",album_sk_xem:"この写真を顔認識画面で開く",album_sk_aria:"イベント写真 %i/%n — 顔認識画面で開く",album_sk_all:"%n枚をすべて表示",album_sk_thu:"折りたたむ",album_sk_mat:"サムネイルを読み込めません — タップで元の写真を開く",album_sk_loi:"イベント写真を読み込めませんでした。開き直してください。",att_h:"ご出欠",att_du:"出席",att_khong:"欠席",att_cho:"未確認",att_sec:"ご出欠",att_manual:"手動変更",att_set:"変更",att_ok:"更新しました ✓",att_fail:"更新できません",att_ask:"このゲストを欠席にしますか？\n\n受付状況（来場済）とは別の項目です。",qua_anh:"贈り物・受付記録の写真",no_photo:"写真なし。",del:"このゲストを削除",showing:"表示",of:"／",arr2:"受付済",done_toast:"受付完了 ✓",saved:"保存しました ✓",exported:"ファイルを出力 ✓",cfg_saved:"設定を保存 ✓",days:"日",over:"開催済み",cfg_h:"イベント設定",cfg_venue:"会場",cfg_toa:"座談会 開始",cfg_gala:"ガラ 開始",cfg_venue_toa:"座談会 会場",cfg_venue_gala:"ガラ 会場",venue_edit:"✎ 会場・時刻を編集",only_dup:"⚠ 重複",imp_btn:"⬆ 取込",exp_btn:"⬇ 出力",exp_choose:"ゲスト一覧を出力",nav_toa:"受付 座談会",nav_gala:"受付 ガラ",nav_sodo:"座席図",dup_warn:"同姓同名のゲストがいます — ご確認ください！",b_list:"招待リスト基準",b_form:"申込フォーム基準",b_none:"セッション不明",b_none_d:"リストにも申込にも未紐付け",b_sum:"3グループ合計 =",b_only_gala:"ガラのみ",b_both:"両セッション",b_only_toa:"座談会のみ",b_unspec:"セッション未記入",b_wait:"セッション数を取得できません。後ほど再試行してください。",b_du:"出席"}};
  var LANG=(function(){/* E08 09/08 — MỘT khoá ngôn ngữ CHUNG cho mọi trang.
    Sponsor: "trang trước là ngôn ngữ gì thì qua trang khác cũng phải vậy, cho
    trôi mạch tư duy, không bị ngắt nhịp đi tìm nút chuyển ngôn ngữ".
@@ -1511,6 +1549,99 @@ document.addEventListener("keydown",function(e){
 /* Ảnh của hồ sơ ĐANG mở. Giữ ở đây thay vì đọc lại DOM: dải thumb bị vẽ lại mỗi
    lần lưu một ô, còn mảng này thì không. */
 var PF_ANH=[],PF_GHIM="";
+/* E08-D107 · lấp chỗ trống D087 bằng ảnh sự kiện ĐÃ XÁC NHẬN của đúng khách này.
+   · Chỉ `xac-nhan` — tuyến `album/:id` đã lọc sẵn. Gợi ý `cho` KHÔNG lên hồ sơ:
+     hồ sơ khách là chỗ nói điều đã chắc, còn «máy đoán» thuộc màn nhận diện, nơi
+     có nút xác nhận / từ chối để làm gì đó với phỏng đoán ấy (AC-6).
+   · Ba kết cục, ba câu KHÁC nhau, vì chúng là ba sự thật khác nhau:
+       đang hỏi  → khung chờ (chưa biết gì thì chưa khẳng định gì)
+       0 tấm     → ĐÚNG câu rỗng D087, nguyên văn (AC-4)
+       403/lỗi   → «chưa tải được», KHÔNG mượn câu «chưa có ảnh» của ca 0 tấm.
+   · Hỏi SAU khi hồ sơ đã hiện, không chặn nó: một lượt gọi mạng nữa không được
+     giữ tên và bàn của khách lại.
+   · `curId` kiểm lại trước khi vẽ — mạng treo rồi người ta bấm sang khách khác thì
+     ảnh khách cũ không được rơi vào hồ sơ khách mới. Cũng vì thế phải hỏi lại
+     `$("#albumSuKien")`: renderGuest thay nguyên innerHTML nên nút cũ đã chết. */
+ var ALB_MAX=12;   // 3 hàng ở màn 360 — đủ để biết "có ảnh và đại khái là ảnh gì"
+ function albRong(){return '<p class="hint" style="margin:0">'+tt("album_sk_empty")+'</p>';}
+ function albLoi(){return '<p class="hint" style="margin:0">'+tt("album_sk_loi")+'</p>';}
+ /* Vẽ dải. `heto` = người dùng đã bấm «xem tất cả».
+    Vì sao cắt ở 12: prod có khách 124 tấm (Ông Ngỡi). Đổ hết vào sheet là đẩy
+    «Ghi tương tác», «Phân loại», «Sửa thông tin» xuống dưới ~11 màn cuộn — tức
+    lấy mất chỗ của những việc người ta MỞ hồ sơ để làm. Cắt mà NÓI RÕ còn bao
+    nhiêu, và mở hết bằng một cú bấm ngay tại chỗ (không rời hồ sơ, không gọi
+    mạng lần nữa — dữ liệu đã ở trong tay) thì không giấu gì cả. */
+ /* MỘT TẤM = MỘT Ô. `album/:id` trả theo DÒNG khớp mặt, mà một tấm có thể có hai
+    khuôn mặt cùng được xác nhận là một khách (ảnh có gương, hoặc máy tách nhầm
+    một người thành hai) — ràng buộc unique của bảng là (face_id, guest_id) nên
+    hai dòng ấy hợp lệ. Không gộp thì hồ sơ hiện cùng một tấm hai lần VÀ con số
+    trên nút «xem tất cả» đếm phồng: cả hai đều là nói sai về kho ảnh. */
+ function albLoc(it){
+   var thay={},ra=[];
+   (it||[]).forEach(function(x){var k=String(x.event_photo_id);
+     if(thay[k])return; thay[k]=1; ra.push(x);});
+   return ra;
+ }
+ /* Ảnh 404/502 (tệp mất khỏi kho): đánh dấu ô ấy và nói rõ, đừng để lại hộp trống.
+    Gắn bằng JS chứ không viết onerror="…" trong chuỗi HTML — cùng lý do đã ghi ở
+    sơ đồ bàn: handler dạng chữ chạy ở scope global, không thấy hàm trong IIFE. */
+ function albHong(box){
+   Array.prototype.forEach.call(box.querySelectorAll("a.albsk1 img"),function(im){
+     im.addEventListener("error",function(){
+       var a=im.closest("a.albsk1"); if(!a)return;
+       a.classList.add("mat");
+       a.setAttribute("title",tt("album_sk_mat"));
+       a.setAttribute("aria-label",tt("album_sk_mat"));
+     });
+   });
+ }
+ function albVe(box,it,gid,heto){
+   var n=it.length,hien=heto?n:Math.min(n,ALB_MAX);
+   var html='<div class="albsk">'+it.slice(0,hien).map(function(x,i){
+     var pid=encodeURIComponent(String(x.event_photo_id));
+     /* Sang thẳng màn nhận diện ở ĐÚNG tấm ấy — đó là nơi xem to, thấy khung mặt
+        và gỡ/gán được. Không mở lightbox chân dung: hai loại ảnh này cố ý tách
+        nhau (xem chú thích D087 bên dưới), và `.th1` là lớp của dải chân dung.
+        `khach=` để nút «Về CRM» bên ấy trả người xem về ĐÚNG hồ sơ này.
+        alt rỗng + aria-label trên thẻ <a>: trình đọc màn hình đọc MỘT lần và đọc
+        thứ có ích ("ảnh 3 trên 124"), thay vì 124 lần cùng một chữ «Ảnh sự kiện». */
+     return '<a class="albsk1" href="/crm/anh-su-kien?anh='+pid+'&khach='+encodeURIComponent(String(gid))+'"'
+       +' title="'+esc(tt("album_sk_xem"))+'"'
+       +' aria-label="'+esc(tt("album_sk_aria").replace("%i",i+1).replace("%n",n))+'">'
+       +'<img loading="lazy" decoding="async" src="/crm/event-photos/'+pid+'/thumb" alt=""></a>';
+   }).join("")+'</div>';
+   /* Nút là CÔNG TẮC HAI CHIỀU. Mở hết 124 tấm rồi mà không có đường thu lại thì
+      người ta phải đóng hồ sơ mở lại mới thấy được «Ghi tương tác» — mở ra dễ mà
+      dọn đi không được là một cửa một chiều, dù nhỏ. */
+   if(n>ALB_MAX)html+='<button class="albmore" type="button" id="albMore">'
+     +esc(heto?tt("album_sk_thu"):tt("album_sk_all").replace("%n",n))+'</button>';
+   box.innerHTML=html;
+   albHong(box);
+   var b=box.querySelector("#albMore");
+   if(b)b.addEventListener("click",function(){
+     var box2=$("#albumSuKien");if(box2)albVe(box2,it,gid,!heto);});
+ }
+ function napAlbumSuKien(gid){
+   var box=$("#albumSuKien");if(!box)return;
+   /* KHUNG CHỜ, không phải câu «chưa có ảnh sự kiện». Câu ấy là một KHẲNG ĐỊNH;
+      lúc còn đang hỏi máy chủ thì ta chưa biết gì để khẳng định, và với khách CÓ
+      124 tấm thì nó đang nói sai — chỉ vì mạng chưa về. Sai trong 200ms vẫn là sai:
+      đúng lớp lỗi mà D087 dựng chỗ trống này ra để tránh. */
+   box.innerHTML='<div class="albsk dang" aria-hidden="true"><i class="albsk0"></i><i class="albsk0"></i><i class="albsk0"></i></div>';
+   jget("/crm/face-match/album/"+encodeURIComponent(gid)).then(function(j){
+     if(String(curId)!==String(gid))return;
+     var box2=$("#albumSuKien");if(!box2)return;
+     /* 403/500 KHÁC 0 tấm. Máy chủ từ chối mà màn nói «chưa có ảnh» là bịa ra một
+        sự thật về dữ liệu từ một sự cố về đường truyền. */
+     if(!j||!j.ok){box2.innerHTML=albLoi();return;}
+     var it=albLoc(j.items);
+     if(!it.length){box2.innerHTML=albRong();return;}
+     albVe(box2,it,gid,false);
+   }).catch(function(){
+     if(String(curId)!==String(gid))return;
+     var box2=$("#albumSuKien");if(box2)box2.innerHTML=albLoi();
+   });
+ }
  function renderGuest(j){
    var g=j.guest;var canDel=(me.role==="btl");
    /* E08-D047: checkIns[] theo buổi; fallback checkIn cũ. */
@@ -1651,6 +1782,7 @@ var PF_ANH=[],PF_GHIM="";
         +'<div class="hint" style="font-size:.74rem;margin:-4px 0 8px">'+esc(tt("jp_note"))+'</div>':'')
       +'<button class="btn gold block" id="eSave">'+tt("save")+'</button>'
     +(canDel?'<button class="btn danger block" id="delBtn" style="margin-top:8px">'+tt("del")+'</button>':'')+'<div class="msg" id="gMsg"></div>';
+   napAlbumSuKien(g.id);   // E08-D107 — lấp #albumSuKien vừa dựng ở trên
    /* Ca bắt sự kiện #ciBtn cũ đã gỡ: id="ciBtn" không tồn tại trong tệp này
       (CRM không có nút check-in — điểm danh làm ở cửa), nên nó là mã chết được
       `if(ciBtn)` che, để lại chỉ khiến người sau tưởng CRM có nút ấy. */
@@ -2100,9 +2232,20 @@ LANG=l;localStorage.setItem("esuhai_lang",l);document.body.classList.toggle("jp"
  /* ---- init ---- */
  if(localStorage.getItem("crm_theme")==="light"){document.documentElement.setAttribute("data-theme","light");$("#themeBtn").innerHTML="&#9788;";}
  setLang(LANG);tickCd();setInterval(tickCd,1000);
+ /* E08-D107 · `/crm?guest=<id>` — sơ đồ bàn (và mọi lối vào sau này) chỉ đúng khách
+    ấy, không đổ người xem vào danh sách 300 thẻ rồi bắt tự tìm lại.
+    · CHỈ nhận chuỗi toàn số: openGuest nối thẳng id vào đường dẫn, nên «guest=../x»
+      phải chết ở đây chứ không phải ở máy chủ.
+    · Mở SAU khi /crm/me trả lời, không mở ngay lúc tải: renderGuest vẽ theo
+      `me.role`, mà mặc định của nó là "staff" ⇒ mở sớm là hồ sơ thiếu hẳn các ô
+      chỉ-btl (Đổi trạng thái, Buổi, Họ tên…) cho tới lần vẽ sau.
+    · Id lạ / đã xoá: openGuest nuốt lỗi sẵn ⇒ danh sách như thường, không sập. */
+ var qGuest=(function(){try{var v=new URLSearchParams(location.search).get("guest");
+   return v&&/^\d+$/.test(v)?v:"";}catch(e){return "";}})();
  jget("/crm/me").then(function(j){me.email=j.email;me.role=j.role;$("#roleTag").textContent=j.role;if(j.role==="btl"){$("#addBtn").style.display="";$("#importBtn").style.display="";$("#auditBtn").style.display="";$("#cfgBtn").style.display="";$("#anhSuKienBtn").style.display="";$("#venueEdit").style.display="";$("#impBtn2").style.display="";}
    loadStats();   // toàn cục — không gọi lại theo tab/bộ lọc (AC-9)
- }).catch(function(){});
+   if(qGuest)openGuest(qGuest);
+ }).catch(function(){if(qGuest)openGuest(qGuest);});
  loadPL().then(loadAll);
 })();
 </script>

@@ -241,6 +241,39 @@ a{color:inherit}
 .panel .k{color:var(--muted)}.panel .v{font-weight:700;text-align:right}
 .panel .close{position:absolute;left:14px;top:max(14px,env(safe-area-inset-top))}
 .panel .actions{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap}
+/* E08-D107 · dải ảnh sự kiện ĐÃ XÁC NHẬN của khách đang mở. Lưới auto-fill để các
+   ô tự chia đều bề ngang panel (min(380px,100%)) — ở màn 360 không đẻ thanh cuộn
+   ngang (AC-8), và hàng không bị hụt một mẩu lệch phải như flex-wrap.
+   Nhãn dùng đúng chữ pháp của các nhãn nhỏ khác trong trang: hoa nhỏ, giãn chữ,
+   màu mờ — thêm một kiểu chữ mới chỉ để nói «Ảnh sự kiện» là làm rối bảng chữ. */
+.panel .albh{margin-top:18px;font-size:.66rem;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted)}
+/* NĂM cột chốt cứng, không auto-fill: dải này tối đa 5 ô (xem ALB_PANEL) nên cột
+   cố định cho MỘT hàng ở mọi bề ngang — auto-fill thì số cột đổi theo panel và
+   ô thứ năm rơi xuống hàng hai ở đúng màn 360 (đo được). Ô co giãn theo 1fr. */
+.panel .albsk{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:7px}
+.panel .albsk a{display:block;position:relative;aspect-ratio:1;border-radius:9px;overflow:hidden;
+  border:1px solid var(--line);transition:border-color .15s,transform .15s}
+.panel .albsk a:hover{border-color:var(--acc);transform:translateY(-1px)}
+.panel .albsk a:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.panel .albsk img{width:100%;height:100%;object-fit:cover;display:block}
+/* Bản nhỏ không tải được (tệp mất khỏi kho): dấu mờ + nhãn nói rõ, không để lại
+   ô trống trơn — ô trống trông như ảnh nền trắng chứ không như một lỗi. */
+.panel .albsk a.mat{display:grid;place-items:center;background:rgba(255,255,255,.04)}
+.panel .albsk a.mat img{display:none}
+/* Dấu vẽ bằng CSS chứ không dùng ký tự "▢" — ký tự ấy rơi vào font emoji ở một
+   số máy và ra màu lệch hẳn bảng màu của trang. */
+.panel .albsk a.mat::after{content:"";width:14px;height:14px;border:1.5px solid var(--muted2);border-radius:4px}
+/* Ô cuối «còn N tấm»: panel này rộng 380px và còn phải chứa Bàn/Ghế, check-in,
+   hai nút cửa. Nhồi 124 ô vào đây là lấy mất đúng những dòng người ta mở panel để
+   xem. Ô này dẫn sang hồ sơ CRM — nơi xem hết — và nói thẳng còn bao nhiêu. */
+.panel .albsk a.them,.panel .albsk button.them{display:grid;place-items:center;
+  background:rgba(255,255,255,.05);color:var(--cream);font-size:.76rem;font-weight:800;
+  text-decoration:none;letter-spacing:.01em;font-family:inherit;cursor:pointer;
+  border:1px solid var(--line);border-radius:9px;aspect-ratio:1;padding:0}
+.panel .albsk a.them:hover,.panel .albsk button.them:hover{background:rgba(255,255,255,.09)}
+.panel .albsk button.them:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.panel .albsk a{transition:none}.panel .albsk a:hover{transform:none}}
 .panel .dupwarn{margin-top:12px;padding:9px 11px;border-radius:9px;background:rgba(255,138,61,.12);
   border:1px solid rgba(255,138,61,.4);color:#ffcba3;font-size:.72rem}
 
@@ -411,6 +444,14 @@ a{color:inherit}
       <a class="btn acc" id="pDoor" href="#" data-i="p_door">Mở ở cửa Gala</a>
       <a class="btn only-btl" id="pCrm" href="/crm" target="_blank" rel="noopener" style="display:none" data-i="p_crm">Mở CRM</a>
     </p>
+    <!-- E08-D107 · ảnh sự kiện đã xác nhận của ĐÚNG khách này. CHỈ `btl`: tuyến
+         `/crm/face-match/album/:id` là tuyến btl, và D071/CR-127 cấm lộ album gửi
+         khách cho PG — nên khối này không chỉ ẩn, mà KHÔNG gọi API khi phiên không
+         phải btl (ẩn bằng CSS mà vẫn hỏi máy chủ thì vẫn là lộ). -->
+    <div id="pAlbumWrap" style="display:none">
+      <div class="albh" data-i="p_album">Ảnh sự kiện</div>
+      <div class="albsk" id="pAlbum"></div>
+    </div>
   </div>
   <!-- E08-D100 · mode «table»: cùng #panel + #scrim với hồ sơ khách, chỉ đổi khối
        hiện ra. Nội dung do renderTablePanel() sinh nên đổi ngôn ngữ / poll 25s
@@ -452,6 +493,10 @@ var TSD={
    note_diff:"«Trống» ≠ «Chưa đến»: Trống là ghế chưa có ai được xếp; Chưa đến là khách đã có tên nhưng chưa tới cửa.",
    q_ph:"Tìm bàn hoặc tên khách…",loading:"Đang tải sơ đồ…",loading2:"Đang tải sơ đồ Pollux…",stage:"🎤 Phía sân khấu",close:"Đóng",
    p_banghe:"Bàn / Ghế",p_nv:"Nhân viên",p_id:"Mã thẻ",p_door:"Mở ở cửa Gala",p_crm:"Mở CRM",
+   p_album:"Ảnh sự kiện",p_album_xem:"Mở tấm này ở màn nhận diện ảnh",
+   p_album_them:"Xem tất cả ảnh sự kiện của khách ở hồ sơ CRM",
+   p_album_mat:"Không tải được bản nhỏ — bấm để mở tấm gốc",
+   p_album_het:"Xem hết ảnh sự kiện của khách này",
    fab:"↑ Đầu trang",fab_t:"Về đầu trang",
    f_nodata:"Chưa có DL",f_trong:"Trống",f_perfect:"✓ Đủ khách",f_full:"Đủ ghế",
    s_free:"Ghế trống · Bàn",s_ghe:"· Ghế",s_unassigned:"· chưa xếp khách",
@@ -489,6 +534,10 @@ var TSD={
    note_diff:"「空席」と「未来場」は別です:空席＝まだ誰も配席されていない席。未来場＝お名前はあるが、まだご到着でない方。",
    q_ph:"テーブル名・お名前で検索…",loading:"座席図を読み込み中…",loading2:"Pollux 座席図を読み込み中…",stage:"🎤 ステージ側",close:"閉じる",
    p_banghe:"テーブル / お席",p_nv:"スタッフ",p_id:"ゲストID",p_door:"ガラ受付で開く",p_crm:"CRMを開く",
+   p_album:"イベント写真",p_album_xem:"この写真を顔認識画面で開く",
+   p_album_them:"このゲストのイベント写真をすべてCRMで表示",
+   p_album_mat:"サムネイルを読み込めません — タップで元の写真を開く",
+   p_album_het:"このゲストのイベント写真をすべて表示",
    fab:"↑ 先頭へ",fab_t:"先頭へ戻る",
    f_nodata:"データなし",f_trong:"空席",f_perfect:"✓ 満席",f_full:"満席",
    s_free:"空席 · テーブル",s_ghe:"· お席",s_unassigned:"· 未配席",
@@ -591,13 +640,27 @@ function initials(name){
 // can't issue them a code. Ask /crm/me directly (bypasses the shared api() helper,
 // which would otherwise force a login redirect on 401 for perfectly normal PG use)
 // and only reveal the buttons once we've confirmed the viewer really is btl.
+// E08-D107 — cùng câu trả lời ấy còn quyết hai việc nữa, và chúng KHÁC nhau:
+//   IS_BTL   → nút «Mở CRM» (D071: /crm chặn staff, hiện nút là hứa suông).
+//   CO_PHIEN → dải ảnh sự kiện. Sponsor 11/08 10:3x nới cho phụ trách XEM ảnh đã
+//              duyệt, nên điều kiện ở đây là CÓ PHIÊN OTP THẬT, không phải là btl.
+// Vì sao `r.ok` chứ không phải role: /crm/me đi qua requireCrmAuth, nên làn cửa mở
+// (CRM_DOOR_OPEN=1 trên prod, phiên door@ vô danh) nhận 401 ở đúng chỗ này — tức
+// người chưa OTP không hỏi album, y như máy chủ sẽ trả lời cho họ.
+var IS_BTL=false, CO_PHIEN=false;
 async function refreshRoleUI(){
   var isBtl=false;
+  var coPhien=false;
   try{
     var r=await fetch("/crm/me",{credentials:"same-origin"});
-    if(r.ok){ var j=await r.json().catch(function(){return {};}); isBtl = j.role==="btl"; }
+    if(r.ok){ coPhien=true; var j=await r.json().catch(function(){return {};}); isBtl = j.role==="btl"; }
   }catch(e){ /* no session / offline — treat as non-btl, buttons stay hidden */ }
+  IS_BTL=isBtl; CO_PHIEN=coPhien;
   document.querySelectorAll(".only-btl").forEach(function(el){ el.style.display = isBtl ? "" : "none"; });
+  // Mạng chậm: người ta bấm ghế TRƯỚC khi /crm/me trả lời ⇒ lúc mở panel cờ còn
+  // tắt, dải ảnh không bao giờ hiện cho tới khi đóng rồi mở lại — hỏng im lặng.
+  // Biết role rồi thì lấp nốt cho panel đang mở.
+  if(CO_PHIEN && sel && panelMode==="guest") napAlbumPanel(sel.id);
 }
 
 async function api(url, opts){
@@ -1061,6 +1124,74 @@ function refreshGuestPanelText(){
   else { dw.style.display="none"; }
 }
 
+/* E08-D107 · dải ảnh sự kiện của đúng khách đang mở.
+   · Cần PHIÊN OTP (staff hoặc btl) — không phiên / door@ thì không sinh một
+     request `face-match/album` nào. Nới cho phụ trách xem là quyết định của
+     Sponsor 10:3x; làn cửa mở vô danh thì vẫn không (AC-12).
+   · Kiểm `sel` lại TRƯỚC khi vẽ: bấm nhanh sang ghế khác trong lúc mạng còn treo
+     thì ảnh của khách cũ không được rơi vào hồ sơ khách mới.
+   · Hỏng mạng / 403 ⇒ khối ở nguyên trạng ẩn. Panel không có ảnh vẫn dùng được;
+     dựng một khối rỗng ra chỉ để nói "không có gì" thì tốn đúng chỗ đang thiếu. */
+/* Một hàng năm ô. Đúng 5 tấm trở xuống thì hiện hết — bày «4 ảnh + (+1)» cho
+   khách có 5 tấm là làm phiền để không được gì. Trên 5 thì 4 ảnh + ô «+N». */
+var ALB_PANEL=5, ALB_HET_PANEL=false;
+function albPanelHien(n){ return (ALB_HET_PANEL || n<=ALB_PANEL) ? n : ALB_PANEL-1; }
+async function napAlbumPanel(gid){
+  var wrap=$("#pAlbumWrap"), box=$("#pAlbum");
+  wrap.style.display="none"; box.innerHTML="";
+  if(!CO_PHIEN) return;
+  try{
+    var r=await fetch("/crm/face-match/album/"+encodeURIComponent(gid),{credentials:"same-origin"});
+    if(!r.ok) return;
+    var j=await r.json().catch(function(){return {};});
+    var it=(j&&j.items)||[];
+    if(!it.length) return;
+    if(!sel||String(sel.id)!==String(gid)) return;
+    /* MỘT TẤM = MỘT Ô: `album/:id` trả theo dòng khớp mặt, một tấm có thể có hai
+       mặt cùng được xác nhận cho một khách ⇒ hai dòng, vẫn một tấm ảnh. Không gộp
+       thì panel hiện trùng ô và số trên ô «+N» đếm phồng. */
+    var thay={},ds=[];
+    it.forEach(function(x){var k=String(x.event_photo_id);
+      if(thay[k])return; thay[k]=1; ds.push(x);});
+    var gq=encodeURIComponent(String(gid)),hien=albPanelHien(ds.length);
+    /* Đích của một cú bấm PHẢI mở được bằng chính phiên đang bấm — nút dẫn tới
+       403 còn tệ hơn không có nút:
+         btl   → màn nhận diện đúng tấm, kèm `khach=` để «Về CRM» quay lại hồ sơ.
+         staff → bản `preview` cùng quyền (D107 nới thumb/preview theo tấm đã
+                 duyệt). KHÔNG đẩy sang /crm/nhan-dien: shell ấy là btl-only. */
+    box.innerHTML=ds.slice(0,hien).map(function(x){
+      var pid=encodeURIComponent(String(x.event_photo_id));
+      var dich=IS_BTL ? ("/crm/anh-su-kien?anh="+pid+"&khach="+gq)
+                      : ("/crm/event-photos/"+pid+"/preview");
+      return '<a href="'+dich+'" target="_blank" rel="noopener" data-ilb="p_album_xem">'
+        +'<img loading="lazy" decoding="async" src="/crm/event-photos/'+pid+'/thumb" alt=""></a>';
+    }).join("")
+    /* Ô «+N»: btl sang hồ sơ CRM xem hết; staff KHÔNG mở được /crm nên ô ấy là
+       nút mở rộng ngay tại panel — cùng một ý «xem hết», khác đường đi. */
+    +(ds.length>hien
+      ? (IS_BTL
+         ? '<a class="them" href="/crm?guest='+gq+'" target="_blank" rel="noopener" data-ilb="p_album_them">+'
+           +(ds.length-hien)+'</a>'
+         : '<button class="them" type="button" id="pAlbHet" data-ilb="p_album_het">+'
+           +(ds.length-hien)+'</button>')
+      : '');
+    var het=document.getElementById("pAlbHet");
+    if(het)het.addEventListener("click",function(){ALB_HET_PANEL=true;napAlbumPanel(gid);});
+    // Ảnh 404/502 ⇒ đánh dấu đúng ô ấy. Gắn bằng JS, không viết onerror trong chuỗi.
+    box.querySelectorAll("a img").forEach(function(im){
+      im.addEventListener("error",function(){
+        var a=im.closest("a"); if(!a)return;
+        // Đổi KHOÁ nhãn chứ không xoá data-ilb: đổi ngôn ngữ thì câu này cũng phải
+        // đổi theo, y như mọi nhãn khác trong trang.
+        a.classList.add("mat"); a.setAttribute("data-ilb","p_album_mat");
+        a.setAttribute("title",tsd("p_album_mat")); a.setAttribute("aria-label",tsd("p_album_mat")); });});
+    // Nhãn title/aria đi qua data-ilb như mọi nhãn khác ⇒ đổi ngôn ngữ là nó đổi theo.
+    box.querySelectorAll("[data-ilb]").forEach(function(el){
+      var v=tsd(el.getAttribute("data-ilb")); el.setAttribute("title",v); el.setAttribute("aria-label",v); });
+    wrap.style.display="";
+  }catch(e){ /* mất mạng: khối im lặng, phần chính của panel còn nguyên */ }
+}
+
 function openPanel(g, ban, ghe){
   setPanelMode("guest");
   selTable="";
@@ -1091,15 +1222,21 @@ function openPanel(g, ban, ghe){
   $("#pId").textContent="#"+g.id;
   refreshGuestPanelText();
   $("#pDoor").href="/checkin-gala.html";
-  $("#pCrm").href="/crm";
+  /* E08-D107 · «Mở CRM» mở ĐÚNG hồ sơ khách đang xem, không phải danh sách 300
+     người rồi tự tìm lại. Nút vẫn chỉ hiện với btl (`.only-btl`, D071). */
+  $("#pCrm").href="/crm?guest="+encodeURIComponent(g.id);
   $("#panel").classList.add("show");
   $("#scrim").classList.add("show");
+  ALB_HET_PANEL=false;   // khách mới thì dải thu về mặc định
+  napAlbumPanel(g.id);
   render();
 }
 
 function closePanel(){
   $("#panel").classList.remove("show");
   $("#scrim").classList.remove("show");
+  // Dọn dải ảnh: mở khách kế tiếp không được thấy ảnh của khách vừa đóng nhấp nháy.
+  $("#pAlbumWrap").style.display="none"; $("#pAlbum").innerHTML="";
   sel=null; selTable=""; panelMode="guest"; render();
 }
 

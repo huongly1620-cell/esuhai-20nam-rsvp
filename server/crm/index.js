@@ -92,7 +92,10 @@ function mount(app) {
      D077/D082 — không được chết. 302 chứ không 301: 301 bị trình duyệt nhớ vĩnh
      viễn, mà nếu vòng sau phải đổi lại lối vào thì không gỡ ra khỏi máy ai được. */
   app.get('/crm/kho-anh', (req, res) => res.redirect(302, '/crm/anh-su-kien/kho'));
-  app.get('/crm/nhan-dien', (req, res) => res.redirect(302, '/crm/anh-su-kien'));
+  app.get('/crm/nhan-dien', (req, res) => {
+    const q = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+    res.redirect(302, '/crm/anh-su-kien' + q);
+  });
 
   /* Ảnh mẫu cờ xoay EXIF cho phép dò AC-9. Thư mục `views/` KHÔNG nằm trong
      express.static, nên phải có tuyến riêng — và tuyến này đi cùng gác cổng với

@@ -197,23 +197,28 @@
  .gc.is-vip.done{border-color:var(--gold);
    background:linear-gradient(105deg,rgba(216,184,118,.13) 0%,rgba(67,224,141,.085) 60%);
    box-shadow:0 0 0 1px rgba(216,184,118,.14),0 0 0 3px rgba(67,224,141,.5),0 4px 16px rgba(184,150,63,.2)}
- /* ── E08-D104 · hạng VIP: WATERMARK NỀN thay chip huy hiệu ──────────────────
-    Sponsor 11/08 chốt scope (B): CRM và hai cửa cùng đổi, giữ đồng bộ hình như
-    D088 / CR-149. Chữ VIP lớn nằm chìm sau nội dung: nhận ra hạng khi liếc mà
-    không lấy chỗ của tên / đơn vị / trạng thái.
-    Nằm BÊN PHẢI vì bên trái là ô ảnh đặc (che mất) và giữa là tên khách.
-    DÁNG CHỮ vẫn cố ý KHÁC CRM: CRM có Oswald nạp từ Google Fonts, hai trang cửa
-    không nạp webfont nào (wifi hội trường không đáng tin) nên dùng stack hệ thống.
-    Đây là kết quả đúng của ràng buộc, không phải lỗi thi công — đúng bài D088,
-    và phiếu D104 ghi rõ Gate 2 không so dáng chữ giữa hai bên. */
  .gc.is-vip>*:not(.vip-wm){position:relative}   /* nội dung nổi trên watermark theo thứ tự DOM */
+ /* E08-D104 (Sponsor 11/08, vòng 2) · CON DẤU nhỏ ở GÓC TRÁI TRÊN, không còn là
+    chữ lớn chạy nền. Sponsor: nét dầy hơn · thu còn ~1/4 · nằm gọn trong ô vuông
+    góc trái trên · nhũ vàng.
+    Cỡ CỐ ĐỊNH 30px: bản trước phải đo chiều cao từng thẻ bằng JS chỉ để đạt
+    ngưỡng "≥70% chiều cao thẻ"; con dấu góc thì không cần bám theo thẻ nữa, nên
+    JS đo đạc đã gỡ hẳn — ít mảnh động, ít thứ hỏng.
+    NÉT DẦY: font hệ thống ở 900, KHÔNG phải Oswald. Trang này chỉ nạp Oswald
+    600;700 (dòng 10) — đặt 900 lên nó là trình duyệt GIẢ LẬP nét đậm, nhoè viền
+    chứ không dầy thật, đúng bẫy đã ghi ở D089. Dùng stack hệ thống thì 900 là nét
+    THẬT, không tốn thêm byte font nào, và hai cửa vẫn giữ đúng luật 0 webfont.
+    NHŨ VÀNG: chuyển sắc cắt theo hình chữ (background-clip:text) — vàng sáng ở
+    góc trên trái xuống vàng sậm, cho ra chất kim loại thay vì một màu phẳng. */
  .vip-wm{
-   position:absolute;top:50%;right:12px;transform:translateY(-50%);
+   position:absolute;top:6px;left:12px;
    z-index:0;pointer-events:none;user-select:none;
-   font-family:"Arial Narrow",system-ui,sans-serif;   /* CỐ Ý không webfont */
-   font-weight:700;letter-spacing:.02em;line-height:.74;   /* ≈ chiều cao chữ hoa */
-   font-size:var(--vipwm,50px);
-   color:var(--gold);opacity:.13;
+   font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+   font-weight:900;font-size:30px;line-height:.74;letter-spacing:.03em;
+   background:linear-gradient(135deg,#fff6da 0%,#e0bd77 38%,#b8963f 66%,#f6e6bd 100%);
+   -webkit-background-clip:text;background-clip:text;
+   color:transparent;-webkit-text-fill-color:transparent;
+   opacity:.16;
  }
 
  .sd{width:9px;height:9px;border-radius:50%;flex:none;background:var(--amber)}.sd.came{background:var(--green-ok)}
@@ -755,23 +760,6 @@ function sxDong(a,b){
      || cmpO(bgHien(a.ghe),bgHien(b.ghe))
      || cmpChu(String(a.name||""),String(b.name||""));
 }
-/* E08-D104 · cỡ chữ watermark phải ĐI THEO chiều cao thẻ, không đặt cứng bằng px.
-   Đo thật trên máy 11/08: thẻ cao 108–139px tuỳ tên song ngữ dài/ngắn và số badge,
-   nên một cỡ cố định cho tỉ lệ chữ/thẻ 0,39–0,47 — dưới ngưỡng ≥70% mà vé đòi.
-   Đọc TẤT CẢ chiều cao trước rồi mới ghi, không xen kẽ đọc/ghi: mỗi lần xen kẽ là
-   một lần buộc trình duyệt tính lại layout, mà cửa có gần 400 dòng.
-   `line-height:.74` trong CSS ≈ chiều cao chữ hoa, nên khung phần tử bám sát nét mực
-   thật — đo kiểu nào (khung hay nét chữ) cũng ra cùng một tỉ lệ. */
-function fitVipWm(){
-  var ws=document.querySelectorAll("#list .vip-wm");
-  if(!ws.length)return;
-  var hs=[],i;
-  for(i=0;i<ws.length;i++)hs.push(ws[i].parentNode.getBoundingClientRect().height);
-  for(i=0;i<ws.length;i++)if(hs[i])ws[i].style.fontSize=Math.round(hs[i]*1.1)+"px";
-}
-/* Quay ngang máy hoặc đổi bề rộng cửa sổ thì tên gói dòng khác đi ⇒ thẻ cao khác ⇒
-   phải đo lại, nếu không watermark giữ cỡ cũ và tỉ lệ trôi khỏi ngưỡng của vé. */
-addEventListener("resize",function(){clearTimeout(fitVipWm._t);fitVipWm._t=setTimeout(fitVipWm,150);});
 function renderList(){
   /* Tính trên G — TOÀN BỘ roster của buổi này, KHÔNG phải rows đã lọc bên
      dưới. Lọc rồi mới tính thì đáp án đổi mỗi lần gõ tìm kiếm. Mỗi cửa tính
@@ -830,8 +818,7 @@ function renderList(){
         đây là thứ duy nhất đóng được AC-6b. «Chưa đến» vẫn đọc được: không có
         huy hiệu xanh nghĩa là chưa đến — đúng quy ước D033 dùng cho nhóm đông. */
      +(cm?'<span class="ci-y">O '+t("btn_came")+nhanDaDen(cm,NGAY_SK_CUA)+'</span>':'')
-   +'</div></div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';
- fitVipWm();   /* E08-D104 · vẽ xong mới đo được chiều cao thẻ */}
+   +'</div></div>';}).join("")||'<div class="hint">'+t("notfound")+'</div>';}
 
 /* E08-D028 AC-C — chụp ảnh khách tại cửa → kệ MinIO.
    AC-C2 (Sponsor chốt): ĐIỂM DANH và ẢNH độc lập. Ảnh fail → báo đỏ, KHÔNG

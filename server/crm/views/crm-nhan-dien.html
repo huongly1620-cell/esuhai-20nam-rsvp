@@ -61,10 +61,31 @@
      vị nên chúng neo theo TRANG: chồng lên nhau ở góc trên, đè nút «← Về CRM», và
      biến mất khỏi hàng số của khối. Một tên class dùng cho hai nghĩa thì lỗi không
      nằm ở chỗ ta sửa mà ở chỗ khác — nên đổi tên, không vá bằng position:relative. */
-  .hieu{position:absolute;top:6px;border-radius:999px;font-size:var(--fs-micro);
-    padding:2px 7px;border:1px solid;backdrop-filter:blur(3px)}
-  .hieu.cho{right:6px;background:rgba(224,189,119,.82);border-color:var(--gold);color:#231a06}
-  .hieu.alb{left:6px;background:rgba(67,224,141,.82);border-color:var(--ok);color:#04240f}
+  /* ── E08-D118 · MỘT HỌ NỀN MỜ cho mọi nhãn ĐÈ LÊN ẢNH ──────────────────────
+     Ba nhãn ngồi trên tấm hình — số gợi ý trên lưới (`.hieu`), thanh đáy trong
+     khối (`.nhan`), ô phần trăm góc phải (`.pt`) — dùng CHUNG một nền: kính mờ
+     tối, chữ sáng. Trước D118 mỗi cái một nền ĐẶC vàng hoặc xanh; đứng cạnh nhau
+     trên cùng một trang chúng đọc như ba viên thuốc dán lên ảnh, mà tấm ảnh mới
+     là thứ người ta mở trang để xem.
+     Vì sao scrim TỐI + chữ SÁNG chứ không ngược lại: nền của ba nhãn này là ẢNH,
+     không phải mặt giấy của trang. Ảnh hội trường phần lớn sáng, nên một nền
+     trong suốt sáng mang chữ đen sẽ chìm ngay vào chỗ sáng của ảnh; nền tối cộng
+     `text-shadow` thì đọc được trên cả tấm sáng lẫn tấm tối.
+     Cũng vì nền là ẢNH nên ba nhãn này KHÔNG theo `data-theme`: màu chữ ở đây là
+     số cố định, không `var(--gold)` — biến ấy đổi sang vàng sẫm #a97f2e ở giao
+     diện sáng, và vàng sẫm trên scrim tối là chữ không đọc được.
+     `-webkit-backdrop-filter` phải nói riêng: Safari trên iPhone — máy của người
+     ngồi duyệt — chưa nhận tên không tiền tố. Trình duyệt nào không có
+     `backdrop-filter` thì vẫn còn .56 độ đục đỡ nền, chữ không rơi thẳng lên ảnh. */
+  .hieu,.nhan,.pt{background:rgba(7,16,27,.56);
+    -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
+    color:#eef3f9;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+  /* Bo NHẸ, không `999px`: cùng lý do bỏ viên thuốc ở thanh đáy — hình tròn lẳn
+     nằm trên ảnh là một vật thể lạ, hình chữ nhật bo nhẹ là một lớp phủ. */
+  .hieu{position:absolute;top:6px;border-radius:7px;font-size:var(--fs-micro);
+    padding:2px 7px;border:1px solid var(--line2)}
+  .hieu.cho{right:6px;color:#e8c789;border-color:rgba(224,189,119,.5)}
+  .hieu.alb{left:6px;color:#6fe8a8;border-color:rgba(67,224,141,.5)}
   .chip{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:999px;
     padding:6px 13px;font:inherit;font-size:var(--fs-small);cursor:pointer}
   /* E08-D106 · chip tab Kho là <a>, không phải <button>: nó rời tài liệu này. Mặc
@@ -100,10 +121,18 @@
   .anh-o img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:4/3}
   .anh-o.alb{border-color:var(--ok)}
   .anh-o.cho{border-color:var(--gold)}
+  /* E08-D118 · thanh đáy: nền mờ họ chung (khai báo cùng `.hieu`/`.pt` ở trên),
+     SÁT ba mép ảnh nên `border-radius` của chính nó là 0 — hai góc dưới đã được
+     `overflow:hidden` của `.anh-o` cắt theo bo 11px của tấm. Không dựng lại bo
+     riêng cho thanh: bo trong bo thì thừa ra một vành ảnh mỏng dưới thanh, nhìn
+     như thanh bị lệch.
+     Hai trạng thái vẫn phân biệt được KHÔNG CẦN màu (FR-2 · AC-4): chữ đã khác
+     nhau («Đã trong album» ≠ «Máy đoán, chờ duyệt»), thêm độ đậm khác nhau và một
+     vạch viền trên khác màu. Người mù màu đọc được cả hai lối còn lại. */
   .nhan{position:absolute;left:0;right:0;bottom:0;font-size:var(--fs-micro);
-    padding:3px 6px;text-align:center;font-weight:600}
-  .anh-o.alb .nhan{background:rgba(67,224,141,.86);color:#04240f}
-  .anh-o.cho .nhan{background:rgba(224,189,119,.86);color:#231a06}
+    padding:3px 6px;text-align:center;font-weight:600;border-top:1px solid transparent}
+  .anh-o.alb .nhan{font-weight:700;border-top-color:rgba(67,224,141,.6)}
+  .anh-o.cho .nhan{border-top-color:rgba(224,189,119,.6)}
   /* Ô tick phải to và dễ chạm: đây là cử chỉ bắt buộc trước mọi lượt duyệt, làm
      nó bé là dồn người dùng đi tìm nút tắt — mà nút tắt là thứ vé này cấm. */
   .tick{position:absolute;top:5px;left:5px;width:26px;height:26px;border-radius:7px;
@@ -111,16 +140,22 @@
     align-items:center;justify-content:center;cursor:pointer}
   .tick input{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;margin:0}
   .anh-o.daChon{box-shadow:0 0 0 3px rgba(224,189,119,.5)}
-  /* E08-D105 · mức giống, góc phải trên. Tên riêng `.giong`, KHÔNG mượn `.dem` hay
-     `.hieu` — bài học N1: một class mang hai nghĩa thì lỗi hiện ra ở chỗ khác.
-     `.anh-o` đã là position:relative nên chip neo trong đúng tấm của nó. */
-  .giong{position:absolute;top:5px;right:5px;max-width:calc(100% - 42px);
-    border-radius:999px;font-size:var(--fs-micro);padding:2px 7px;
-    background:rgba(7,16,27,.78);border:1px solid var(--line2);color:var(--muted);
-    backdrop-filter:blur(3px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* E08-D105 → D118 · góc phải trên tấm chờ duyệt. D105 để BA CHỮ ở đây và đặt
+     tên class là `.giong`; D118 đổi nội dung thành SỐ PHẦN TRĂM nên đổi luôn tên
+     thành `.pt`. Đổi tên chứ không giữ `.giong` cho một ô chỉ còn con số: đúng bài
+     học N1 của Gate 2 D103 — một cái tên nói sai nội dung của nó là cái bẫy đặt
+     sẵn cho người sửa sau. Vẫn KHÔNG mượn `.dem` hay `.hieu`.
+     `.anh-o` đã là position:relative nên ô neo trong đúng tấm của nó.
+     `max-width` giữ lại làm chốt chặn @360 dù `100%` chỉ dài bốn ký tự: 42px là
+     chỗ của ô tick góc trái trên, ô % không được bò sang đè nó (AC-6).
+     `tabular-nums`: cả cột thumb có số rộng bằng nhau, không nhảy trái phải giữa
+     «9%» và «71%». */
+  .pt{position:absolute;top:5px;right:5px;max-width:calc(100% - 42px);
+    border-radius:7px;font-size:var(--fs-micro);padding:2px 6px;font-weight:700;
+    border:1px solid var(--line2);font-variant-numeric:tabular-nums;white-space:nowrap}
   /* Chỉ dải chắc nhất mới đổi màu. Tô ba màu khác nhau là dựng lại một thang điểm
      bằng màu, mà thang ấy chính là thứ người chấm không nên bị neo vào. */
-  .giong.chac{color:var(--gold);border-color:var(--gold)}
+  .pt.chac{color:#e8c789;border-color:rgba(224,189,119,.55)}
   .mo-them{display:flex;align-items:center;justify-content:center;text-align:center;
     border:1px dashed var(--line2);border-radius:11px;background:transparent;
     color:var(--gold);font:inherit;font-size:var(--fs-small);cursor:pointer;padding:8px;
@@ -180,7 +215,10 @@
   .goi.da{flex-wrap:nowrap;align-items:flex-start}
   .goi.da .ten{flex:1 1 auto;min-width:0}
   .goi.da .dem{flex:0 0 auto;margin-left:auto}
-  .diem{font-size:var(--fs-small);color:var(--gold)}
+  /* Hàng gợi ý màn xem lớn. Ô này KHÔNG nằm trên ảnh nên không vào họ nền mờ — nó
+     đứng trên mặt giấy của trang, và ở đó `var(--gold)` là màu đúng cho cả hai
+     giao diện. Chỉ con số bên trong là chung với ô `.pt` trên tấm (AC-3). */
+  .diem{font-size:var(--fs-small);color:var(--gold);font-variant-numeric:tabular-nums}
   .diem.vua{color:var(--muted)}
   .ta{position:relative}
   .ta-ds{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--panel2);
@@ -335,7 +373,9 @@ var T = {
     pick_n:'Đang chọn {n} khuôn mặt — bên dưới chỉ còn gợi ý của những mặt đó. Bấm nền ảnh để xem lại cả tấm.',
     pick_trong:'Mặt đang chọn chưa có gợi ý nào. Anh chị gắn tên ở ô bên dưới.',
     dau_chon:'Mặt đang chọn',
-    rat_giong:'rất giống', kha_giong:'khá giống', hoi_giong:'hơi giống',
+    /* E08-D118 · `rat_giong` / `kha_giong` / `hoi_giong` gỡ hẳn khỏi cả hai bảng
+       chữ. Để lại ba khoá không ai gọi là để sẵn ba câu «rất giống» cho một lượt
+       sửa sau vô tình dựng lại thứ vé này vừa bỏ (AC-2 · AC-5). */
     xac_nhan:'Đúng người này', tu_choi:'Không phải', bo_qua:'Để sau',
     gan_tay:'Gắn tên khách vào ảnh này', gan_ph:'Gõ tên / đơn vị (≥2 ký tự)',
     da_trong:'Ảnh này đã có tên khách đó rồi.',
@@ -351,7 +391,7 @@ var T = {
     lk_cho:'Khách đang có ảnh chờ duyệt', lk_album:'Khách đã có ảnh trong album',
     lk_tat:'Tất cả khách',
     khoi_tom:'{n} khách · đang xem {c}',
-    khoi_chu:'Viền xanh, nhãn «Đã trong album» = ảnh đã được người xác nhận, sẽ gửi cho khách. Viền vàng, nhãn «Máy đoán, chờ duyệt» = máy đoán, CHƯA phải ảnh của khách cho tới khi có người bấm xác nhận. Chữ ở góc phải trên (rất / khá / hơi giống) là mức máy tự tin — tham khảo thôi, mắt anh chị mới là thứ quyết định.',
+    khoi_chu:'Viền xanh, nhãn «Đã trong album» = ảnh đã được người xác nhận, sẽ gửi cho khách. Viền vàng, nhãn «Máy đoán, chờ duyệt» = máy đoán, CHƯA phải ảnh của khách cho tới khi có người bấm xác nhận. Số phần trăm ở góc phải trên là mức máy tự tin — tham khảo thôi, mắt anh chị mới là thứ quyết định. Ảnh đã vào album không hiện số nữa vì đã có người quyết rồi.',
     khoi_rong:'Không có khách nào trong mục này.',
     khoi_khong_anh:'Chưa có ảnh nào cho khách này.',
     khoi_them:'Xem thêm khách', het_khach:'Đã hết khách.',
@@ -387,7 +427,6 @@ var T = {
     pick_n:'顔を{n}件選択中 — 下にはそれらの顔の候補のみを表示しています。写真の背景を押すと全体に戻ります。',
     pick_trong:'選択中の顔には候補がありません。下の欄で名前を登録してください。',
     dau_chon:'選択中の顔',
-    rat_giong:'よく似ています', kha_giong:'やや似ています', hoi_giong:'少し似ています',
     xac_nhan:'この人で正しい', tu_choi:'別人です', bo_qua:'あとで',
     gan_tay:'この写真にゲスト名を登録', gan_ph:'氏名／所属（2文字以上）',
     da_trong:'この写真にはすでにそのゲストが登録されています。',
@@ -403,7 +442,7 @@ var T = {
     lk_cho:'承認待ちの写真があるゲスト', lk_album:'アルバムに写真があるゲスト',
     lk_tat:'すべてのゲスト',
     khoi_tom:'{n}名 · 表示中{c}名',
-    khoi_chu:'緑の枠・「アルバム登録済み」＝担当者が確認した写真で、ゲストへ送る対象です。金色の枠・「自動候補、承認待ち」＝機械の推測で、担当者が確認するまでゲストの写真ではありません。右上の文字（よく／やや／少し似ています）は機械の確信度です — 参考であり、判断するのはご自身の目です。',
+    khoi_chu:'緑の枠・「アルバム登録済み」＝担当者が確認した写真で、ゲストへ送る対象です。金色の枠・「自動候補、承認待ち」＝機械の推測で、担当者が確認するまでゲストの写真ではありません。右上のパーセント表示は機械の確信度です — 参考であり、判断するのはご自身の目です。アルバム登録済みの写真は確認が済んでいるため数値を表示しません。',
     khoi_rong:'この条件に該当するゲストはいません。',
     khoi_khong_anh:'このゲストの写真はまだありません。',
     khoi_them:'ゲストをもっと見る', het_khach:'これ以上のゲストはいません。',
@@ -581,13 +620,20 @@ async function veLuoi(noiTiep){
 }
 
 /* ══════════ XEM MỘT ẢNH (FR-H2 / H3 / H6) ══════════ */
-/* Điểm giống nhau hiện bằng CHỮ chứ không phải số thập phân. Người ngồi duyệt cần
-   biết "có nên tin không", không cần biết 0.512; và FR-H5 cấm chữ kỹ thuật trên
-   giao diện. Ba mốc lấy đúng từ phân bố thật của kho: ≥0,55 là vùng chắc (473/853
-   gợi ý), 0,50–0,55 vùng giữa, dưới đó là sát ngưỡng 0,45. */
-function chuGiong(s){
+/* E08-D118 · mức tự tin của máy hiện bằng PHẦN TRĂM. D105 khoá nó thành ba chữ
+   («rất / khá / hơi giống») dựng từ hai mốc 0,55 và 0,50; anh mở lại khoá ấy —
+   con số nhỏ ở góc nói được "chắc cỡ nào" mà không chiếm chỗ bằng ba chữ.
+   Làm tròn về số nguyên, không hiện 0.512: một chữ số thập phân là mời người ta so
+   hai gợi ý hơn kém nhau 0,3% — thứ mà chính máy cũng không phân biệt nổi.
+   Hàm này chỉ ĐỌC RA. Ngưỡng nhận 0,45 của máy và việc người chấm đúng/sai không
+   dính gì tới đây (Luật 5).
+   MỘT hàm cho cả ô góc tấm lẫn hàng gợi ý màn xem lớn (AC-3): hai bản sao của cùng
+   một phép làm tròn là hai thứ sẽ lệch nhau vào lúc không ai để ý.
+   Không đi qua `tt()`: chữ số Ả Rập và dấu `%` đọc y hệt nhau ở vi lẫn jp, nên
+   không có gì để dịch — và không có gì để quên dịch (AC-5). */
+function phanTram(s){
   if (s == null) return '';
-  return s >= 0.55 ? tt('rat_giong') : (s >= 0.5 ? tt('kha_giong') : tt('hoi_giong'));
+  return Math.round(s * 100) + '%';
 }
 function tenKh(x){ return (LANG==='jp' && x.name_jp ? x.name_jp : x.full_name) || ''; }
 
@@ -755,7 +801,7 @@ function veDsGoi(){
       return '<div class="goi" data-cid="' + c.id + '"' + dfa(c) + '>'
         + '<b>' + esc(tenKh(c)) + '</b>'
         + (c.org ? ' <span class="hint">' + esc(c.org) + '</span>' : '')
-        + '<span class="diem' + (m ? '' : ' vua') + '">' + esc(chuGiong(c.score)) + '</span>'
+        + '<span class="diem' + (m ? '' : ' vua') + '">' + esc(phanTram(c.score)) + '</span>'
         + '<div class="spacer"></div>'
         + '<button class="btn sm ok" data-do="confirm">' + esc(tt('xac_nhan')) + '</button>'
         + '<button class="btn sm bad" data-do="reject">' + esc(tt('tu_choi')) + '</button>'
@@ -806,18 +852,20 @@ function idsTick(pham){
 /* Một tấm trong khối. `cho` mới có ô tick; cả hai đều có viền RIÊNG và nhãn CHỮ. */
 function veTam(x){
   var la = x.trang_thai === 'xac-nhan';
-  /* E08-D105 · mức giống hiện ngay trên tấm CHỜ DUYỆT.
-     Người chấm trong khối đang nhìn thumb nhỏ và tick nhanh; không có mức giống
-     thì cú tick ấy là một đại lượng khác với thứ AC-5 D077 muốn đo. Tấm đã xác
-     nhận không cần — quyết định của nó xong rồi (FR-2).
-     Gọi ĐÚNG `chuGiong()` của trang xem ảnh, không chép lại ba mốc: hai bản sao
-     của cùng một ngưỡng là hai thứ sẽ lệch nhau vào lúc không ai để ý (AC-2). */
-  var giong = la ? '' : chuGiong(x.score);
+  /* E08-D105 → D118 · mức tự tin của máy hiện ngay trên tấm CHỜ DUYỆT, nay là số
+     phần trăm thay cho ba chữ.
+     Người chấm trong khối đang nhìn thumb nhỏ và tick nhanh; không có mức ấy thì
+     cú tick là một đại lượng khác với thứ AC-5 D077 muốn đo. Tấm ĐÃ VÀO ALBUM
+     không hiện gì (AC-4): quyết định của nó xong rồi, treo một con số lên đó là
+     mời người ta xét lại thứ đã chốt (FR-2).
+     Gọi ĐÚNG `phanTram()` của trang xem ảnh, không chép lại phép làm tròn: hai bản
+     sao của cùng một phép tính là hai thứ sẽ lệch nhau vào lúc không ai để ý (AC-3). */
+  var pt = la ? '' : phanTram(x.score);
   return '<div class="anh-o ' + (la ? 'alb' : 'cho') + '" data-cid="' + x.candidate_id
     + '" data-anh="' + x.event_photo_id + '">'
     + '<img loading="lazy" src="' + x.thumb_url + '" alt="' + esc(tt('anh_alt')) + '">'
-    + (giong ? '<span class="giong' + (x.score >= 0.55 ? ' chac' : '') + '">'
-        + esc(giong) + '</span>' : '')
+    + (pt ? '<span class="pt' + (x.score >= 0.55 ? ' chac' : '') + '">'
+        + esc(pt) + '</span>' : '')
     + '<span class="nhan">' + esc(tt(la ? 'nhan_alb' : 'nhan_cho')) + '</span>'
     + (la ? '' : '<label class="tick"><input type="checkbox"></label>')
     + '</div>';
@@ -1023,7 +1071,7 @@ function capNhatSauQuyet(cid, trangThai, kq){
     if (trangThai === 'xac-nhan'){
       o.classList.remove('cho', 'daChon'); o.classList.add('alb');
       var tick = o.querySelector('.tick'); if (tick) tick.remove();
-      var g = o.querySelector('.giong'); if (g) g.remove();   // mức giống chỉ có nghĩa lúc còn chờ
+      var g = o.querySelector('.pt'); if (g) g.remove();      // % chỉ có nghĩa lúc còn chờ (AC-4)
       var nh = o.querySelector('.nhan'); if (nh) nh.textContent = tt('nhan_alb');
       if (!daCo) doiSo(the, 'album', 1);
     } else {

@@ -137,6 +137,33 @@
   .khung{position:absolute;border:2px solid var(--gold);border-radius:3px;pointer-events:none}
   .khung.chon{border-color:var(--ok);box-shadow:0 0 0 2px rgba(67,224,141,.35)}
   .khung.tron{border-color:rgba(255,255,255,.34);border-style:dashed}
+  /* ── E08-D112 · khung mặt là thứ BẤM ĐƯỢC (FR-1) ──────────────────────────
+     Chỉ khung mang `data-face` mới nhận cú chạm. Khung đang kéo (`.khung.moi`)
+     vẫn là hình vẽ thuần — nó chưa là mặt của ai. Và khi đang ở chế độ khoanh
+     mẫu thì cả lớp khung phải trả cú kéo lại cho ảnh: không thì cú kéo bắt đầu
+     trên một khuôn mặt bị khung nuốt, người dùng khoanh mãi không ra khung nào,
+     tức tính năng ảnh mẫu của D077 chết vì vé này. */
+  .khung[data-face]{pointer-events:auto;cursor:pointer}
+  .anhto.khoanh .khung[data-face]{pointer-events:none;cursor:inherit}
+  /* Mặt đang chọn: viền VÀNG ĐẶC 3px. Phải thắng cả `.chon` (xanh, đã gắn tên)
+     lẫn `.tron` (nét đứt, máy không có gợi ý) — hai lớp ấy cùng độ đặc hiệu với
+     lớp này, nên thứ quyết định là THỨ TỰ, và phải nói lại cả ba thuộc tính viền
+     chứ không riêng màu: chỉ đổi màu thì khung `.tron` được chọn vẫn nét đứt. */
+  .khung.pick{border:3px solid var(--gold);box-shadow:0 0 0 2px rgba(7,16,27,.55)}
+  /* Dấu ✓ nằm HẲN trên mép khung (`bottom:100%`), không phủ lên mặt. Đặt nó ở góc
+     trong khung — hay lấn vào khung vài pixel — thì với khuôn mặt nhỏ nhất trong
+     kho (~15px ở 360px) huy hiệu che gần hết chính khuôn mặt người ta đang nhìn để
+     nhận ra là ai. `bottom:100%` không phụ thuộc cỡ khung nên nó đúng cho cả mặt
+     to lẫn mặt bé, không cần đo trong JS.
+     Lệch phải 3px thôi (không 9px): mặt sát mép phải ảnh mà huy hiệu thò ra xa là
+     trang tràn ngang ở 360px. Thò lên trên thì an toàn — chỗ ấy là khe giữa hai
+     thẻ, không đè lên nội dung nào.
+     `+5px` chứ không `+2px`: gốc của `bottom:100%` là HỘP PADDING của khung, tức
+     mép TRONG của viền. Viền lúc đang chọn dày 3px, nên 2px hụt đúng 3px và huy
+     hiệu vẫn liếm lên viền — 3px viền + 2px khe. */
+  .khung .dau{position:absolute;bottom:calc(100% + 5px);right:-3px;background:var(--gold);
+    color:#231a06;border-radius:999px;font-size:10px;line-height:1;font-weight:700;
+    padding:3px 5px;pointer-events:auto}
   .anhto{position:relative;display:inline-block;max-width:100%}
   .anhto img{max-width:100%;display:block;border-radius:11px}
   .goi{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -334,6 +361,11 @@ var T = {
     may_goi:'Máy gợi ý — bấm để chốt',
     da_gan:'Đã gắn tên trong ảnh này',
     chua_goi:'Máy không có gợi ý nào cho ảnh này. Anh chị nhìn và gắn tên bên dưới.',
+    /* ── E08-D112 · chọn mặt trên ảnh ── */
+    pick_1:'Đang chọn 1 khuôn mặt — bên dưới chỉ còn gợi ý của mặt đó. Bấm lại vào mặt, hoặc bấm nền ảnh, để xem lại cả tấm.',
+    pick_n:'Đang chọn {n} khuôn mặt — bên dưới chỉ còn gợi ý của những mặt đó. Bấm nền ảnh để xem lại cả tấm.',
+    pick_trong:'Mặt đang chọn chưa có gợi ý nào. Anh chị gắn tên ở ô bên dưới.',
+    dau_chon:'Mặt đang chọn',
     rat_giong:'rất giống', kha_giong:'khá giống', hoi_giong:'hơi giống',
     xac_nhan:'Đúng người này', tu_choi:'Không phải', bo_qua:'Để sau',
     gan_tay:'Gắn tên khách vào ảnh này', gan_ph:'Gõ tên / đơn vị (≥2 ký tự)',
@@ -361,6 +393,7 @@ var T = {
     ve_khoi:'Khối theo khách',
     khach_tom:'{a} ảnh trong album · {c} ảnh chờ duyệt',
     chon_het:'Chọn cả {n} ảnh chờ duyệt trên trang này (mỗi trang tối đa {m} tấm)',
+    chon_het_khoi:'Chọn cả {n} tấm chờ duyệt đang hiện trong khối này',
     trang_truoc:'← Trang trước', trang_sau:'Trang sau →',
     trang_may:'Trang {t}/{n} · {s} tấm trên trang này',
     lo_xac_nhan:'Xác nhận {n} tấm đã chọn', lo_tu_choi:'Không phải — {n} tấm',
@@ -389,6 +422,11 @@ var T = {
     may_goi:'自動候補 — 押して確定',
     da_gan:'この写真で登録済みのゲスト',
     chua_goi:'この写真には自動候補がありません。ご覧のうえ、下で名前を登録してください。',
+    /* ── E08-D112 ── */
+    pick_1:'顔を1件選択中 — 下にはその顔の候補のみを表示しています。もう一度その顔を押すか、写真の背景を押すと全体に戻ります。',
+    pick_n:'顔を{n}件選択中 — 下にはそれらの顔の候補のみを表示しています。写真の背景を押すと全体に戻ります。',
+    pick_trong:'選択中の顔には候補がありません。下の欄で名前を登録してください。',
+    dau_chon:'選択中の顔',
     rat_giong:'よく似ています', kha_giong:'やや似ています', hoi_giong:'少し似ています',
     xac_nhan:'この人で正しい', tu_choi:'別人です', bo_qua:'あとで',
     gan_tay:'この写真にゲスト名を登録', gan_ph:'氏名／所属（2文字以上）',
@@ -416,6 +454,7 @@ var T = {
     ve_khoi:'ゲスト別ブロック',
     khach_tom:'アルバム{a}枚 · 承認待ち{c}枚',
     chon_het:'このページの承認待ち{n}枚をすべて選択（1ページ最大{m}枚）',
+    chon_het_khoi:'このブロックに表示中の承認待ち{n}枚をすべて選択',
     trang_truoc:'← 前のページ', trang_sau:'次のページ →',
     trang_may:'{t}/{n}ページ · このページ{s}枚',
     lo_xac_nhan:'選択した{n}枚を確認', lo_tu_choi:'別人です — {n}枚',
@@ -456,6 +495,18 @@ function setLang(l){
   /* Vẽ lại đúng màn đang mở. Không gọi hết mọi hàm vẽ: màn đang ẩn mà vẫn nạp lại
      là mỗi lần đổi ngôn ngữ lại bắn ba yêu cầu mạng không ai nhìn. */
   if (!DA_NAP) return;
+  /* E08-D109 · đổi ngôn ngữ làm HỎNG mọi DOM đang được giữ lại. Bốn dòng dưới chỉ
+     vẽ lại màn ĐANG HIỆN; từ vé này, `#dsKhoi` và `#manMotKhach` còn sống cả khi bị
+     giấu, nên chữ vẽ bằng ngôn ngữ cũ nằm lại trong đó — bấm 日本語 ở màn một khách
+     rồi «Khối theo khách» là thấy cả list tiếng Việt. Cùng đúng lý do `hienMan` xoá
+     ruột màn xem (:449): người dùng không thấy chữ cũ, nhưng nó vẫn ở đó và mọi
+     phép quét ngôn ngữ đều vấp phải. Đánh dấu cũ = lượt «về» tới sẽ nạp lại đúng
+     ngôn ngữ, đổi lấy việc mất chỗ cuộn — đúng thứ tự ưu tiên: đọc được trước, tiện
+     sau. Không tự gọi vẽ lại ở đây: màn đang giấu mà nạp lại là bắn yêu cầu mạng
+     không ai nhìn, đúng điều chú thích ngay dưới đã cấm. */
+  KHOI_CU = true;
+  $('#manMotKhach').removeAttribute('data-gid');
+  $('#manMotKhach').removeAttribute('data-offset');
   if (!$('#manAnh').classList.contains('an')) veLuoi();
   else if (!$('#manXem').classList.contains('an')) moAnh(ANH_DANG);
   else if (!$('#manKhach').classList.contains('an')) veKhoi();
@@ -508,6 +559,11 @@ function hienMan(id){
     $('#baoXem').textContent = '';
     $('#taiXem').innerHTML = '';
     dongKhoanh();
+    /* E08-D112 · tập mặt đang chọn cũng phải chết cùng màn hình, đúng một lý do
+       với hai dòng trên: `face_id` của tấm vừa rời không có nghĩa ở tấm sắp mở,
+       mà nếu nó sống sót thì lượt vẽ sau lại lọc danh sách theo một khuôn mặt
+       không còn trên màn — cùng bài học với `dataset.box` của D077. */
+    PICK = []; XEM = { goi: [], alb: [] };
   }
   /* Trang xem một ảnh không phải một tab — nó là màn con của tab mà người dùng ĐI
      TỪ ĐÓ vào. D103 gán cứng nó cho tab Phân loại; từ D106 URL cũng nói tab đang
@@ -540,6 +596,19 @@ var LOC = 'tat-ca', ANH = [], TONG = 0, ANH_DANG = null;
 /* Nhớ lối vào để nút quay lại trả người dùng về đúng chỗ họ vừa rời: mở ảnh từ
    album của một khách rồi bị đẩy ra lưới 3 479 tấm là mất chỗ đang soát. */
 var TU_DAU = 'luoi';
+/* ══ E08-D109 · «về đúng chỗ vừa rời» cần ba mẩu, không chỉ một cái nhãn nút ══
+   Nhãn nút đã đúng từ D103, nhưng cú bấm thì gọi `veKhoi()` — hỏi lại máy chủ và
+   thay sạch `#dsKhoi`. Người dùng mất HAI thứ trong một cú: chỗ đang cuộn (về 0)
+   và mọi ô đã tick (checkbox mới dựng thì không có cái nào `checked`). Người đang
+   soát khối thứ chín, tick sáu tấm, mở một tấm ra xem cho chắc — quay về là mất
+   cả sáu cú tick lẫn chỗ đứng. `hienMan` vốn chỉ GIẤU `#manKhach` chứ không xoá,
+   nên DOM cũ còn nguyên: thứ phá nó là chính lời gọi vẽ lại, không phải việc đổi
+   màn. Nhớ chỗ cuộn + khối vừa mở, rồi hiện lại đúng DOM ấy.
+   `KHOI_CU` là lối thoát trung thực cho trường hợp KHÔNG vá được bằng một ô: gắn
+   tên tay trên màn xem tạo một dòng album cho khách có thể đang nằm trong list —
+   không có `data-cid` nào trên màn khối để sửa. Đánh dấu cũ rồi nạp lại lúc về
+   còn hơn hiện một con số biết chắc là sai. */
+var SCROLL_KHOI = 0, SCROLL_KHACH = 0, GID_TU_TAM = null, KHOI_CU = false;
 /* Chưa nạp lần nào thì setLang không được vẽ lại — nếu không, mỗi lần khởi động
    trang bắn hai lượt yêu cầu y hệt nhau, một từ setLang một từ dòng gọi cuối file. */
 var DA_NAP = false;
@@ -577,7 +646,20 @@ function tenKh(x){ return (LANG==='jp' && x.name_jp ? x.name_jp : x.full_name) |
 
 async function moAnh(id, tuDau){
   if (!id) return;
+  /* E08-D112 · sang tấm KHÁC thì tập mặt đang chọn phải chết theo: một `face_id`
+     của tấm này không có nghĩa gì ở tấm kia. Còn vẽ lại CHÍNH tấm đang mở — sau
+     mỗi cú duyệt gợi ý, hay khi đổi ngôn ngữ — thì giữ nguyên tập ấy: mất chỗ
+     đang chọn sau mỗi lượt chốt là bắt người ta bấm lại mặt từ đầu, mà đúng cái
+     lặp đó là thứ vé này sinh ra để cắt. */
+  var doiTam = String(ANH_DANG == null ? '' : ANH_DANG) !== String(id);
   ANH_DANG = id;
+  /* Ghi chỗ cuộn TRƯỚC khi đổi màn, và chỉ khi đây là một lượt MỞ thật (có
+     `tuDau`). `moAnh(ANH_DANG)` không tham số còn được gọi để vẽ lại chính tấm
+     đang mở — lúc ấy `scrollY` là của màn xem, ghi đè vào đây là ghi nhầm chỗ
+     đứng của màn kia. */
+  if (tuDau === 'khoi') SCROLL_KHOI = window.scrollY;
+  else if (tuDau === 'khach') SCROLL_KHACH = window.scrollY;
+  if (doiTam) PICK = [];
   if (tuDau) TU_DAU = tuDau;
   hienMan('manXem');
   /* Đổi ảnh (hoặc vẽ lại chính tấm này) = `#anhTo` bị dựng lại → khung đang vẽ
@@ -602,7 +684,11 @@ async function moAnh(id, tuDau){
      mà toạ độ trong CSDL là của ảnh gốc. */
   function oKhung(f, lop){
     if (!f.box_w || !W || !H) return '';
-    return '<i class="khung ' + lop + '" style="left:' + (f.box_x/W*100).toFixed(2) + '%;top:'
+    /* `data-face` là thứ duy nhất nối khung trên ảnh với dòng gợi ý bên dưới —
+       trước D112 khung không mang id nào, nên không có cách nào hỏi "gợi ý này
+       của mặt nào". */
+    return '<i class="khung ' + lop + '" data-face="' + Number(f.id)
+      + '" style="left:' + (f.box_x/W*100).toFixed(2) + '%;top:'
       + (f.box_y/H*100).toFixed(2) + '%;width:' + (f.box_w/W*100).toFixed(2) + '%;height:'
       + (f.box_h/H*100).toFixed(2) + '%"></i>';
   }
@@ -617,14 +703,106 @@ async function moAnh(id, tuDau){
   $('#theAnh').setAttribute('data-w', W);
   $('#theAnh').setAttribute('data-h', H);
 
+  /* Mặt có thể biến mất giữa hai lượt vẽ (kho chạy lại nhận diện). Lọc PICK theo
+     đúng những khung VỪA vẽ: giữ một face_id không còn khung nào là lọc danh sách
+     gợi ý xuống rỗng trong khi trên ảnh không còn gì đang sáng để bấm bỏ — người
+     dùng bị nhốt trong một bộ lọc vô hình. */
+  var coMat = {}; mat.forEach(function(f){ coMat[String(f.id)] = 1; });
+  PICK = PICK.filter(function(x){ return coMat[x]; });
+  XEM = { goi: goi, alb: alb };
+  apDungPick(false);
+}
+
+/* ══════════ E08-D112 · chọn khuôn mặt trên ảnh lớn (FR-1…FR-5) ══════════
+
+   LUẬT CHỌN — một luật, viết ra đây để người sau và người chấm đọc cùng một chỗ:
+     · bấm trong một khung          = cộng mặt đó vào tập đang chọn
+     · bấm lại đúng khung đang chọn = bỏ mặt đó ra
+     · bấm nền ảnh, ngoài mọi khung = bỏ hết
+   KHÔNG dùng phím phụ (Ctrl/Cmd) để chọn nhiều. Trang này chạy trên điện thoại ở
+   cửa sự kiện, nơi không ai có bàn phím — một luật cần phím phụ là luật mà phân
+   nửa người dùng không thực hiện được, và họ sẽ không biết vì sao mình không làm
+   được. Cộng-dồn-bằng-cú-bấm chạy giống nhau trên cả chuột lẫn ngón tay.
+
+   Tập chọn giữ trong biến, KHÔNG đọc lại từ URL hay localStorage: nó là chỗ đứng
+   trong một lượt soát, không phải một tuỳ chọn của người dùng. */
+var PICK = [], XEM = { goi: [], alb: [] };
+
+/* FR-5 · hit-slop. Khung vẽ đúng bằng khuôn mặt máy tìm thấy, mà trong ảnh đám
+   đông ở 360px khuôn mặt chỉ còn ~20px — nhỏ hơn đầu ngón tay. Nới VÙNG CHẠM cho
+   đủ 44px; không nới khung vẽ, vì khung vẽ đang nói "máy thấy mặt ở đúng đây".
+   Làm bằng JS chứ không bằng một pseudo-element phủ rộng: vùng nới của mặt này
+   chồng lên khung THẬT của mặt bên cạnh, mà trong CSS cái vẽ sau luôn thắng — nới
+   bằng CSS là cướp mất cú bấm chính xác của hàng xóm. Ở đây cú bấm trúng khung
+   thật đã được xử trước khi gọi hàm này; xuống tới đây chỉ còn những cú bấm trượt
+   ra nền, và ta trả về khung có tâm gần nhất. */
+function matGanDiem(el, ev){
+  var x = ev.clientX, y = ev.clientY, gan = null, xa = Infinity;
+  /* Cú `.click()` tổng hợp không có toạ độ (0,0). Không có toạ độ thì không có cú
+     bấm trượt để cứu — đừng đo từ góc màn hình, vì góc ấy có thể lọt vào vùng nới
+     của một khuôn mặt trên cùng và biến "bấm nền" thành "chọn mặt". */
+  if (!x && !y) return null;
+  el.querySelectorAll('.khung[data-face]').forEach(function(k){
+    var r = k.getBoundingClientRect();
+    var nx = Math.max(0, (44 - r.width) / 2), ny = Math.max(0, (44 - r.height) / 2);
+    if (x < r.left - nx || x > r.right + nx || y < r.top - ny || y > r.bottom + ny) return;
+    var d = Math.abs(x - (r.left + r.right) / 2) + Math.abs(y - (r.top + r.bottom) / 2);
+    if (d < xa){ xa = d; gan = k; }
+  });
+  return gan;
+}
+
+function doiPick(fid){
+  var i = PICK.indexOf(fid);
+  if (i > -1) PICK.splice(i, 1); else PICK.push(fid);
+  apDungPick(true);
+}
+function boPick(){ if (!PICK.length) return; PICK = []; apDungPick(false); }
+
+/* Một đường duy nhất để trạng thái chọn hiện ra: viền + dấu ✓ trên ảnh, và danh
+   sách bên dưới. Hai nơi ấy phải đổi CÙNG một nhịp — lệch nhau là người dùng thấy
+   một mặt đang sáng mà danh sách nói chuyện của mặt khác. */
+function apDungPick(cuon){
+  document.querySelectorAll('#anhTo .khung[data-face]').forEach(function(k){
+    var co = PICK.indexOf(k.getAttribute('data-face')) > -1;
+    k.classList.toggle('pick', co);
+    var d = k.querySelector('.dau');
+    if (co && !d){
+      d = document.createElement('b'); d.className = 'dau'; d.textContent = '✓';
+      /* Nhãn cho trình đọc màn hình đi qua tt(): dấu ✓ không mang chữ nào, nhưng
+         cái nhãn thì có — để nguyên tiếng Việt là bỏ quên nó ở bản 日本語. */
+      d.setAttribute('aria-label', tt('dau_chon'));
+      k.appendChild(d);
+    } else if (!co && d) d.remove();
+  });
+  veDsGoi();
+  /* FR-3 · cuộn tới danh sách sau khi CHỌN. Không cuộn khi bỏ chọn hay khi vẽ lại
+     ảnh: lúc ấy người dùng đang nhìn ảnh, giật trang xuống là cướp chỗ họ đang nhìn. */
+  if (cuon && PICK.length) $('#dsGoi').scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+/* FR-3 · danh sách dưới ảnh. 0 mặt đang chọn = cả tấm, đúng như trước D112.
+   Có mặt đang chọn = CHỈ những dòng thuộc các mặt ấy. Dòng gắn tay không có
+   `face_id` (API cho phép NULL) nên khi đang lọc nó không thuộc mặt nào — đúng,
+   vì nó gắn vào TẤM ẢNH chứ không vào một khuôn mặt. */
+function veDsGoi(){
+  var loc = PICK.length;
+  function cuaPick(c){
+    return !loc || PICK.indexOf(String(c.face_id == null ? '' : c.face_id)) > -1; }
+  function dfa(c){ return c.face_id ? ' data-face="' + Number(c.face_id) + '"' : ''; }
+  var alb = XEM.alb.filter(cuaPick), goi = XEM.goi.filter(cuaPick);
   var html = '';
+  /* Danh sách ngắn lại mà không nói vì sao thì người dùng đọc đó là "gợi ý biến
+     mất", không phải "đang lọc" — và cách thoát cũng phải nằm ngay trong câu ấy. */
+  if (loc) html += '<p class="hint" id="chuPick" style="margin:11px 0 0">'
+    + esc(loc === 1 ? tt('pick_1') : fmt('pick_n', { n: loc })) + '</p>';
   if (alb.length){
     html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('da_gan')) + '</p>';
-    /* AC-11 · tên + đơn vị nằm trong MỘT cột co được, ✓ là con thứ hai của hàng.
-       Bản trước dùng `<div class="spacer">` đẩy ✓ sang phải — spacer là phần tử
-       thứ ba, và ở 360px chính nó là chỗ hàng gãy. */
+    /* AC-11 (D106) · tên + đơn vị nằm trong MỘT cột co được, ✓ là con thứ hai của
+       hàng. Bản trước dùng `<div class="spacer">` đẩy ✓ sang phải — spacer là phần
+       tử thứ ba, và ở 360px chính nó là chỗ hàng gãy. */
     html += alb.map(function(c){
-      return '<div class="goi da"><span class="ten"><b>' + esc(tenKh(c)) + '</b>'
+      return '<div class="goi da"' + dfa(c) + '><span class="ten"><b>' + esc(tenKh(c)) + '</b>'
         + (c.org ? ' <span class="hint">' + esc(c.org) + '</span>' : '')
         + '</span><span class="dem co">✓</span></div>'; }).join('');
   }
@@ -632,7 +810,7 @@ async function moAnh(id, tuDau){
     html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('may_goi')) + '</p>';
     html += goi.map(function(c){
       var m = c.score != null && c.score >= 0.55;
-      return '<div class="goi" data-cid="' + c.id + '">'
+      return '<div class="goi" data-cid="' + c.id + '"' + dfa(c) + '>'
         + '<b>' + esc(tenKh(c)) + '</b>'
         + (c.org ? ' <span class="hint">' + esc(c.org) + '</span>' : '')
         + '<span class="diem' + (m ? '' : ' vua') + '">' + esc(chuGiong(c.score)) + '</span>'
@@ -641,8 +819,13 @@ async function moAnh(id, tuDau){
         + '<button class="btn sm bad" data-do="reject">' + esc(tt('tu_choi')) + '</button>'
         + '<button class="btn sm" data-do="skip">' + esc(tt('bo_qua')) + '</button></div>';
     }).join('');
-  } else {
+  } else if (!loc){
     html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('chua_goi')) + '</p>';
+  } else if (!alb.length){
+    /* Mặt đang chọn không có gợi ý NÀO và cũng chưa mang tên: lối đi tiếp là ô gắn
+       tay ngay bên dưới, nên chỉ tới đó. Mặt đã có tên thì dòng tên ở trên đã trả
+       lời rồi, không cần thêm câu nào. */
+    html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('pick_trong')) + '</p>';
   }
   $('#dsGoi').innerHTML = html;
 }
@@ -829,6 +1012,25 @@ function capNhatThanh(the){
       + the.getAttribute('data-gid') + '">' + esc(tt('xem_het')) + '</button>' : '');
   the.querySelectorAll('.anh-o[data-cid]').forEach(function(o){
     o.classList.toggle('daChon', !!o.querySelector('input:checked')); });
+  /* E08-D109 FR-4 · ô «chọn hết» của ĐÚNG phạm vi này — mỗi khối một ô, màn một
+     khách giữ `#chonHetTrang` cũ. Trần của nó là số ô tick ĐANG có trong phạm vi
+     (`cho` mới có ô tick; ảnh trong album không có), nên nó không thể với tới tấm
+     của khách khác hay tấm chưa tải. Nhãn in N thật, cùng luật với nhãn nút duyệt.
+     Đồng bộ ở đây chứ không phải chỉ lúc bấm: tick tay từng tấm cho đủ cả khối thì
+     ô này phải tự đầy, và bỏ một tấm thì nó phải tự nhả — nếu không, ô nói "đã
+     chọn hết" trong khi có tấm không được chọn. */
+  var oHet = the.querySelector('.chonHetKhoi') || (the.id === 'manMotKhach' ? $('#chonHetTrang') : null);
+  if (oHet){
+    var tong = the.querySelectorAll('.anh-o[data-cid] input').length;
+    oHet.checked = tong > 0 && n === tong;
+    oHet.indeterminate = n > 0 && n < tong;
+    oHet.disabled = tong === 0;
+    var nhan = the.querySelector('.nhanChonKhoi');
+    if (nhan){
+      nhan.textContent = fmt('chon_het_khoi', { n: tong });
+      oHet.closest('.chonHet').classList.toggle('an', tong === 0);
+    }
+  }
 }
 
 async function veKhoi(noiTiep){
@@ -855,15 +1057,22 @@ async function veKhoi(noiTiep){
       +   (dv ? '<span class="hint">' + esc(dv) + '</span>' : '')
       + '</div>'
       + '<div class="khoi-so">'
-      +   '<span class="cap"><span class="dem' + (k.so_album ? ' co' : '') + '">' + k.so_album
+      +   '<span class="cap"><span class="dem' + (k.so_album ? ' co' : '') + '" data-so="album">' + k.so_album
       +     '</span><span class="hint">' + esc(tt('n_album')) + '</span></span>'
-      +   '<span class="cap"><span class="dem' + (k.so_cho ? ' cho' : '') + '">' + k.so_cho
+      +   '<span class="cap"><span class="dem' + (k.so_cho ? ' cho' : '') + '" data-so="cho">' + k.so_cho
       +     '</span><span class="hint">' + esc(tt('n_cho')) + '</span></span>'
       + '</div>'
       /* Khách không có mẫu thì máy KHÔNG đoán được — nói thẳng, vì đó là lý do khối
          của họ rỗng, không phải vì chưa ai duyệt (giữ bài học AC-6 của D077). */
       + (k.so_mau ? '' : '<p class="canh" style="margin:0 0 8px">' + esc(tt('khong_mau')) + '</p>')
-      + (anh ? '<div class="luoi">' + anh + '</div>'
+      /* E08-D109 FR-4 · ô chọn hết nằm TRONG card, ngay trên lưới của card — không
+         phải một ô chung trên đầu list. Một ô chung sẽ phủ mọi khách đã tải, tức
+         duyệt hộ những tấm người dùng chưa cuộn tới: đúng cái cửa hậu D103 sinh ra
+         để đóng. Đặt ngoài `.thanhChon` vì `capNhatThanh` dựng lại phần đó sau MỖI
+         cú tick — nhốt ô chọn hết vào đó là nó tự bỏ dấu ngay khi vừa bấm. */
+      + '<label class="chonHet"><input type="checkbox" class="chonHetKhoi">'
+      +   '<span class="nhanChonKhoi"></span></label>'
+      + (anh ? '<div class="luoi" style="margin-top:9px">' + anh + '</div>'
              : '<p class="hint">' + esc(tt('khoi_khong_anh')) + '</p>')
       + '<div class="thanhChon"></div></div>';
   }).join('');
@@ -872,13 +1081,28 @@ async function veKhoi(noiTiep){
   $('#khoiThem').disabled = het;
   $('#khoiThem').textContent = het ? tt('het_khach') : tt('khoi_them');
   DA_NAP = true;
+  /* Vừa dựng lại từ dữ liệu mới, đúng ngôn ngữ hiện tại ⇒ hết cũ. Gỡ dấu ở ĐÂY chứ
+     không phải lúc gọi: nhánh `catch` phía trên thoát sớm mà không đụng `#dsKhoi`,
+     nên DOM cũ vẫn còn cũ — gỡ dấu trước khi biết có vẽ được hay không là tự nhận
+     một list lỗi thời là list mới. */
+  KHOI_CU = false;
 }
 
 /* ── Màn MỘT khách (FR-4) — chỗ đóng lỗ hổng «124 tấm không có lối vào» ── */
 async function moMotKhach(gid, offset){
   if (!gid) return;
+  /* Chỉ ghi chỗ cuộn khi ta đang thật sự RỜI list khối (nó đang hiện). Hàm này
+     còn được gọi để đổi trang, để vẽ lại sau một lượt duyệt, và từ `#veLuoi` lúc
+     quay về — mọi lần đó `scrollY` là của màn một khách, ghi vào đây là làm hỏng
+     đúng con số mà `#veKhoi` sắp dùng. */
+  if (!$('#manKhach').classList.contains('an')) SCROLL_KHOI = window.scrollY;
   KHACH_DANG = gid;
   KHACH_OFFSET = Math.max(0, offset || 0);
+  /* Gỡ dấu TRƯỚC khi nạp: nếu lượt nạp này hỏng, `#anhMotKhach` còn nội dung của
+     trang cũ — không có dấu thì lượt «về» sau đó sẽ tưởng DOM ấy là của trang này
+     và hiện lại nguyên một trang sai. Không dấu = phải nạp lại, đó là phía an toàn. */
+  $('#manMotKhach').removeAttribute('data-gid');
+  $('#manMotKhach').removeAttribute('data-offset');
   hienMan('manMotKhach');
   var j;
   try {
@@ -903,6 +1127,101 @@ async function moMotKhach(gid, offset){
   $('#chonHetTrang').checked = false;
   $('#chonHetTrang').disabled = soCho === 0;
   capNhatThanh($('#manMotKhach'));
+  /* Đóng dấu «DOM đang hiện là đúng khách này, đúng trang này». Lượt «về» từ màn
+     xem đọc hai dấu này để biết được phép hiện lại DOM cũ hay phải nạp mới —
+     khác khách hoặc khác offset thì bắt buộc nạp, vì giữ lại là giữ nhầm trang. */
+  $('#manMotKhach').setAttribute('data-gid', String(gid));
+  $('#manMotKhach').setAttribute('data-offset', String(KHACH_OFFSET));
+}
+
+/* ══════════ E08-D109 · quay về đúng chỗ, giữ nguyên việc đang làm ══════════ */
+function khoiPhucCuon(y, sel){
+  window.scrollTo(0, y);
+  if (!sel) return;
+  var el = document.querySelector(sel);
+  if (!el) return;
+  /* Lưới đầy ảnh `loading="lazy"`, nhưng `.anh-o img` có `aspect-ratio` nên chiều
+     cao đã biết trước khi tệp về — khôi phục `scrollY` là đủ và khớp tới từng pixel.
+     Cú `scrollIntoView` bên dưới CHỈ chạy khi phép khôi phục kia trượt (DOM đã đổi
+     chiều cao, hoặc trang ngắn hơn lúc rời đi nên trình duyệt kẹp giá trị); để nó
+     chạy vô điều kiện là tự phá con số vừa khôi phục. */
+  var r = el.getBoundingClientRect();
+  if (r.bottom <= 0 || r.top >= (window.innerHeight || 0)) el.scrollIntoView({ block: 'nearest' });
+}
+
+/* Về list khối. `veKhoi()` chỉ chạy khi list TRỐNG THẬT hoặc đã bị đánh dấu cũ —
+   còn khối trên màn thì hiện lại chính DOM ấy: đó là chỗ giữ cả tick lẫn chỗ cuộn. */
+function veManKhoi(gidNhin){
+  var conKhoi = !KHOI_CU && !!$('#dsKhoi').querySelector('.khoi');
+  hienMan('manKhach');
+  if (!conKhoi){ veKhoi(); return; }
+  khoiPhucCuon(SCROLL_KHOI, gidNhin ? '.khoi[data-gid="' + gidNhin + '"]' : null);
+}
+
+/* Về màn một khách. Cùng khách + cùng trang + DOM còn tấm ⇒ hiện lại, không nạp:
+   một lượt `innerHTML` mới là mọi checkbox mới, tức mất sạch tick dù dữ liệu y hệt. */
+function veManMotKhach(){
+  var mk = $('#manMotKhach');
+  var conTrang = mk.getAttribute('data-gid') === String(KHACH_DANG)
+    && mk.getAttribute('data-offset') === String(KHACH_OFFSET)
+    && !!$('#anhMotKhach').querySelector('.anh-o');
+  if (!conTrang){ moMotKhach(KHACH_DANG, KHACH_OFFSET); return; }
+  hienMan('manMotKhach');
+  khoiPhucCuon(SCROLL_KHACH, null);
+}
+
+/* FR-3 · sau một cú quyết trên màn xem, sửa ĐÚNG ô của tấm ấy trên DOM đang giấu.
+   Không `veKhoi()` cả list: cái giá của nó là mọi tick của mọi tấm khác. `data-cid`
+   trên hàng gợi ý (`.goi`) và trên ô khối (`.anh-o`) là CÙNG một `crm_face_candidates.id`
+   (face-match.js:200 và :371) — nên đây là phép sửa đúng một dòng, không phải đoán.
+   Sửa cả con số của khối luôn: khối tự nói «9 chờ duyệt» mà đếm được 8 tấm chờ thì
+   con số và thứ nhìn thấy nói hai điều khác nhau — đúng thứ khối này sinh ra để bỏ. */
+function capNhatSauQuyet(cid, trangThai, kq){
+  /* E08-D115 · `da_trong_album` = tấm ấy đã nằm trong album của khách TRƯỚC cú
+     bấm này, nên album không dày thêm và con số không được +1.
+     Nhưng bỏ +1 thôi thì chưa đủ: con số đang hiện có thể đã cũ từ trước (đường
+     gắn tên tay cố ý không sửa số, nó đánh dấu list cũ rồi nạp lại). Cộng thêm
+     một cú "không +1" nữa là để lại một con số THIẾU mà không có ai sửa. Nên ở
+     đây đánh dấu list cũ: lượt về khối sẽ hỏi lại máy chủ. Đoán số bằng số học
+     tại chỗ chỉ đúng khi ta biết chắc mình vừa làm album dày thêm đúng một tấm —
+     ngoài trường hợp ấy thì đi hỏi, đừng đoán. */
+  var daCo = !!(kq && kq.da_trong_album);
+  if (daCo) KHOI_CU = true;
+  document.querySelectorAll('.anh-o[data-cid="' + cid + '"]').forEach(function(o){
+    if (!o.classList.contains('cho')) return;      // đã quyết rồi thì không đếm lần hai
+    var the = o.closest('.khoi') || o.closest('#manMotKhach');
+    if (trangThai === 'xac-nhan'){
+      o.classList.remove('cho', 'daChon'); o.classList.add('alb');
+      var tick = o.querySelector('.tick'); if (tick) tick.remove();
+      var g = o.querySelector('.giong'); if (g) g.remove();   // mức giống chỉ có nghĩa lúc còn chờ
+      var nh = o.querySelector('.nhan'); if (nh) nh.textContent = tt('nhan_alb');
+      if (!daCo) doiSo(the, 'album', 1);
+    } else {
+      /* tu-choi / bo-qua: máy chủ loại nó khỏi cả hai truy vấn khối, nên lượt nạp
+         tới sẽ không có tấm này. Giữ nó lại là hiện một thứ vừa bị bỏ — và còn
+         tick được, tức gửi lại được trong lô sau. Gỡ khỏi DOM. */
+      o.remove();
+    }
+    doiSo(the, 'cho', -1);
+    if (the) capNhatThanh(the);
+  });
+}
+/* Cộng trừ đúng một đơn vị trên con số của phạm vi — không hỏi lại máy chủ, vì
+   phép đổi ở đây là số học chắc chắn: một dòng rời `cho` sang `xac-nhan`. */
+function doiSo(the, loai, d){
+  if (!the) return;
+  if (the.id === 'manMotKhach'){
+    if (!KHACH_DL) return;
+    var k = loai === 'album' ? 'so_album' : 'so_cho';
+    KHACH_DL[k] = Math.max(0, (Number(KHACH_DL[k]) || 0) + d);
+    $('#tomMotKhach').textContent = fmt('khach_tom', { a: KHACH_DL.so_album, c: KHACH_DL.so_cho });
+    return;
+  }
+  var em = the.querySelector('.dem[data-so="' + loai + '"]');
+  if (!em) return;
+  var v = Math.max(0, (Number(em.textContent) || 0) + d);
+  em.textContent = v;
+  em.classList.toggle(loai === 'album' ? 'co' : 'cho', v > 0);
 }
 
 /* Một lượt duyệt nhiều. Gửi ĐÚNG các id đang tick trong phạm vi đó — không suy ra
@@ -1025,6 +1344,19 @@ document.addEventListener('click', async function(e){
   var oAnh = e.target.closest && e.target.closest('button.o[data-anh]');
   if (oAnh){ await moAnh(oAnh.getAttribute('data-anh'), 'luoi'); return; }
 
+  /* ── E08-D112 · chọn mặt trên ảnh lớn (FR-1) ──
+     Cả vùng `#anhTo` được xử ở ĐÂY và dừng lại ở đây: bấm trúng khung thì chọn,
+     bấm trượt ra nền thì bỏ hết. Không để cú bấm rơi tiếp xuống các nhánh dưới. */
+  var trongAnh = e.target.closest && e.target.closest('#anhTo');
+  if (trongAnh){
+    /* Đang khoanh mẫu thì cú bấm này là phần đuôi của một cú KÉO, không phải một
+       cú chọn mặt. Trả nó về cho chế độ khoanh, đừng vừa vẽ khung vừa đổi tập chọn. */
+    if (trongAnh.classList.contains('khoanh')) return;
+    var kh = e.target.closest('.khung[data-face]') || matGanDiem(trongAnh, e);
+    if (kh) doiPick(kh.getAttribute('data-face')); else boPick();
+    return;
+  }
+
   /* ── E08-D103 · thao tác trong khối ── */
   /* Chạm ô tick thì CHỈ tick. Không có dòng này thì mỗi lần chọn một tấm lại nhảy
      sang trang xem ảnh, và chọn nhiều tấm thành bất khả thi. */
@@ -1034,6 +1366,11 @@ document.addEventListener('click', async function(e){
   if (oTam){
     /* FR-6 · mở đúng trang xem ảnh của D102, không dựng lối thứ hai. Nhớ mình đến
        từ khối hay từ màn một khách để nút quay lại trả về đúng chỗ vừa rời (AC-6). */
+    /* E08-D109 · nhớ luôn KHỐI chứa tấm này. `scrollY` là phép khôi phục chính,
+       cái này là lưới an toàn: nếu chiều cao list đổi giữa chừng thì con số cũ trỏ
+       vào chỗ khác, mà thứ người dùng cần thấy lại là khối họ đang soát dở. */
+    var tuKhoi = oTam.closest('.khoi');
+    if (tuKhoi) GID_TU_TAM = tuKhoi.getAttribute('data-gid');
     await moAnh(oTam.getAttribute('data-anh'),
       oTam.closest('#manMotKhach') ? 'khach' : 'khoi');
     return;
@@ -1056,7 +1393,10 @@ document.addEventListener('click', async function(e){
     var pham = khoiCha ? '.khoi[data-gid="' + khoiCha.getAttribute('data-gid') + '"]' : '#manMotKhach';
     await duyetLo(pham, nutLo.getAttribute('data-lo'), async function(){
       if (khoiCha) await veKhoi();
-      else await moMotKhach(KHACH_DANG, KHACH_OFFSET);
+      /* Duyệt cả lô trên màn một khách đổi số của chính khách ấy trong list khối
+         đang giấu — nhiều dòng một lượt, không vá bằng một ô được. Đánh dấu cũ để
+         lượt «Khối theo khách» sau đó nạp lại thay vì hiện số đã lỗi thời. */
+      else { KHOI_CU = true; await moMotKhach(KHACH_DANG, KHACH_OFFSET); }
     });
     return;
   }
@@ -1106,6 +1446,10 @@ document.addEventListener('click', async function(e){
       guest_id: Number(g.getAttribute('data-gid')) });
     g.closest('.ta-ds').classList.add('an');
     $('#ganO').value = '';
+    /* Gắn tên tay tạo một dòng album MỚI cho một khách bất kỳ — có thể là khách
+       đang nằm trong list khối, mà không có `data-cid` nào trên list để sửa. Đây
+       là chỗ duy nhất phải nhượng bộ: đánh dấu list cũ, nạp lại lúc quay về. */
+    KHOI_CU = true;
     await lamMoiAnhDang();
     /* Báo SAU khi vẽ lại, không phải trước. Bản trước ghi câu này vào `#xemTom`
        rồi mới gọi vẽ lại — mà vẽ lại đặt đúng `#xemTom` thành dòng đếm, nên lời
@@ -1117,7 +1461,13 @@ document.addEventListener('click', async function(e){
   var b = e.target.closest && e.target.closest('button[data-do]');
   if (b){
     var dong = b.closest('.goi');
-    await jpost('/crm/face-match/' + b.getAttribute('data-do'), { id: Number(dong.getAttribute('data-cid')) });
+    var cid = Number(dong.getAttribute('data-cid'));
+    var viec = b.getAttribute('data-do');
+    var kqQuyet = await jpost('/crm/face-match/' + viec, { id: cid });
+    /* FR-3 · vá đúng một ô trên DOM đang giấu thay vì nạp lại cả list. Tên đường
+       (`confirm`/`reject`/`skip`) và tên trạng thái trong CSDL (`xac-nhan`/…) là
+       hai bảng chữ khác nhau — đổi ở đúng một chỗ, không rải `if` khắp nơi. */
+    capNhatSauQuyet(cid, { confirm: 'xac-nhan', reject: 'tu-choi', skip: 'bo-qua' }[viec], kqQuyet);
     await lamMoiAnhDang();
     return;
   }
@@ -1140,6 +1490,16 @@ document.addEventListener('change', function(e){
     capNhatThanh($('#manMotKhach'));
     return;
   }
+  /* E08-D109 FR-4 · «chọn hết» của MỘT khối. Phạm vi là `.khoi` chứa chính ô này,
+     không phải `document` — nên nó không thể với sang khách bên cạnh. Và chỉ tấm
+     `cho` mới có `input`, nên «hết» ở đây đúng nghĩa «hết tấm chờ đang hiện». */
+  if (o.classList.contains('chonHetKhoi')){
+    var theK = o.closest('.khoi');
+    if (!theK) return;
+    theK.querySelectorAll('.anh-o[data-cid] input').forEach(function(i){ i.checked = o.checked; });
+    capNhatThanh(theK);
+    return;
+  }
   if (o.type !== 'checkbox' || !o.closest('.anh-o')) return;
   var khoiCha = o.closest('.khoi');
   if (khoiCha) capNhatThanh(khoiCha);
@@ -1155,12 +1515,16 @@ var qAnh = qSo('anh'), qKhach = qSo('khach');
    phải danh sách trần: xem một tấm mà mất chỗ đang đứng thì lần sau người ta
    không bấm nữa — đúng cái vòng lặp mà vé này sinh ra để cắt. */
 $('#veCrm').onclick = function(){ location.href = qKhach ? ('/crm?guest=' + qKhach) : '/crm'; };
-/* AC-6 · nút quay lại trả về ĐÚNG chỗ vừa rời: khối, màn một khách, hay lưới ảnh. */
+/* AC-6 · nút quay lại trả về ĐÚNG chỗ vừa rời: khối, màn một khách, hay lưới ảnh.
+   E08-D109 · «đúng chỗ» gồm cả chỗ CUỘN và các ô ĐÃ TICK, không chỉ đúng màn.
+   Lưới ảnh vẫn nạp lại: nó không mang tick nào, và con số trên mỗi ô lưới là số
+   gợi ý chờ — thứ vừa đổi bởi chính cú quyết ở màn xem. */
 $('#veLuoi').onclick = function(){
-  if (TU_DAU === 'khach' && KHACH_DANG){ moMotKhach(KHACH_DANG, KHACH_OFFSET); return; }
-  if (TU_DAU === 'khoi'){ hienMan('manKhach'); veKhoi(); return; }
+  if (TU_DAU === 'khach' && KHACH_DANG){ veManMotKhach(); return; }
+  if (TU_DAU === 'khoi'){ veManKhoi(GID_TU_TAM); return; }
   hienMan('manAnh'); veLuoi(); };
-$('#veKhoi').onclick = function(){ KHACH_DANG = null; hienMan('manKhach'); veKhoi(); };
+$('#veKhoi').onclick = function(){
+  var gid = KHACH_DANG; KHACH_DANG = null; veManKhoi(gid); };
 /* G1 (Gate 2 D102) giữ nguyên tinh thần: dữ liệu tab Theo khách chỉ nạp khi người
    ta MỞ tab ấy, không nạp lại sau mỗi cú bấm bên lưới ảnh. */
 $('#tabAnh').onclick = function(){ moTab('anh', true); };

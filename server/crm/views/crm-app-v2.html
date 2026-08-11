@@ -484,7 +484,9 @@
     max-width:96vw;max-height:82vh;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
   .lbx button{position:absolute;border:1px solid var(--line2);background:rgba(9,18,32,.85);
     color:#e9e2d2;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
-  .lbx .lbx-x{top:14px;right:14px;padding:9px 15px;font-size:.82rem}
+  /* E08-D113 · mặt nút = ✕, chữ «Đóng» chuyển hết sang aria-label/title. Ô bấm ép
+     44×44 (AC-7) chứ không phóng glyph — nút nằm đè lên ảnh, glyph to là che ảnh. */
+  .lbx .lbx-x{top:14px;right:14px;width:44px;height:44px;padding:0;font-size:1.05rem;line-height:1}
   .lbx .lbx-p,.lbx .lbx-n{top:50%;transform:translateY(-50%);width:46px;height:64px;font-size:1.7rem;line-height:1}
   .lbx .lbx-p{left:8px} .lbx .lbx-n{right:8px}
   .lbx .lbx-c{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);color:var(--muted);
@@ -1552,7 +1554,7 @@ function lbDung(){
  if(lbEl())return;
  var d=document.createElement("div");d.id="lbx";d.className="lbx";
  d.innerHTML='<div class="lbx-bd"></div><div class="lbx-q" id="lbxQ"></div><img id="lbxImg" alt="">'
-  +'<button class="lbx-x" id="lbxX"></button>'
+  +'<button class="lbx-x" id="lbxX">✕</button>'
   +'<button class="lbx-p" id="lbxP" aria-label="prev">&#8249;</button>'
   +'<button class="lbx-n" id="lbxN" aria-label="next">&#8250;</button><div class="lbx-c" id="lbxC"></div>';
  document.body.appendChild(d);
@@ -1570,16 +1572,24 @@ function lbDung(){
   if(lbX0===null)return;var dx=e.changedTouches[0].clientX-lbX0;lbX0=null;
   if(Math.abs(dx)>40)lbGo(dx<0?1:-1);},{passive:true});
 }
+/* E08-D113 · nhãn trợ năng của nút ✕. Trang này KHÔNG có sweep [data-ilb] như hai
+   cửa, nên phải gọi tay ở hai chỗ: mỗi lần vẽ ảnh, và mỗi lần đổi ngôn ngữ. */
+function lbxNhanDong(){
+ var b=document.getElementById("lbxX");if(!b)return;
+ b.setAttribute("aria-label",tt("close")); b.setAttribute("title",tt("close"));
+}
 function lbVe(){
  var p=lbList[lbIdx];if(!p)return;
  /* AC-6 — chỉ đặt src của TẤM ĐANG XEM. Nạp sẵn cả album là ~157 KB/tấm nhân
     số ảnh, đúng lớp bệnh D029 đã dẹp. */
  document.getElementById("lbxImg").src=p.view_url||p.url;
  document.getElementById("lbxC").textContent=(lbIdx+1)+" / "+lbList.length;
- /* Chữ đặt Ở ĐÂY chứ không lúc dựng: lbDung() chỉ chạy MỘT lần (`if(lbEl())
-    return`), nên nhúng cứng tt("close") vào innerHTML là nút đóng băng theo
-    ngôn ngữ của lần mở ĐẦU TIÊN. Đúng lỗi đã phải vá ở cửa. */
- document.getElementById("lbxX").textContent=tt("close");
+ /* E08-D113 · glyph ✕ nhúng cứng lúc dựng là ĐÚNG — nó không phải chữ, không dịch.
+    Cái phải dịch là nhãn trợ năng, và nó đặt Ở ĐÂY chứ không lúc dựng: lbDung()
+    chỉ chạy MỘT lần (`if(lbEl()) return`), nên nhúng cứng tt("close") vào
+    innerHTML là nhãn đóng băng theo ngôn ngữ của lần mở ĐẦU TIÊN. Đúng lỗi đã
+    phải vá ở cửa. Đổi ngôn ngữ lúc lightbox đang mở: setLang() vá thêm ở dưới. */
+ lbxNhanDong();
  var q=document.getElementById("lbxQ");
  q.textContent=p.interaction_id?tt("lb_qua"):(String(p.id)===String(lbGhim||"")?tt("lb_ghim"):"");
 }
@@ -2228,7 +2238,7 @@ function lechNgaySuKien(iso, ngaySK){
   return k!==ngaySK;
 }
  function setLang(l){
-LANG=l;localStorage.setItem("esuhai_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";document.querySelectorAll("[data-i]").forEach(function(el){var v=tt(el.getAttribute("data-i"));if(v)el.innerHTML=v;});document.querySelectorAll("[data-iph]").forEach(function(el){el.placeholder=tt(el.getAttribute("data-iph"));});$("#langBtn").textContent=(l==="jp"?"\uD83C\uDF10 Tiếng Việt":"\uD83C\uDF10 日本語");/* 🌐 — cùng ký hiệu với hai cửa, để nút ngôn ngữ ở MỌI trang nhìn giống nhau */renderDash();renderList();tickCd();if(curId)openGuest(curId);}
+LANG=l;localStorage.setItem("esuhai_lang",l);document.body.classList.toggle("jp",l==="jp");document.documentElement.lang=l==="jp"?"ja":"vi";document.querySelectorAll("[data-i]").forEach(function(el){var v=tt(el.getAttribute("data-i"));if(v)el.innerHTML=v;});document.querySelectorAll("[data-iph]").forEach(function(el){el.placeholder=tt(el.getAttribute("data-iph"));});$("#langBtn").textContent=(l==="jp"?"\uD83C\uDF10 Tiếng Việt":"\uD83C\uDF10 日本語");/* 🌐 — cùng ký hiệu với hai cửa, để nút ngôn ngữ ở MỌI trang nhìn giống nhau */lbxNhanDong();/* E08-D113 · lightbox có thể đang mở lúc đổi ngôn ngữ — glyph ✕ giữ nguyên, nhãn trợ năng phải đổi theo */renderDash();renderList();tickCd();if(curId)openGuest(curId);}
  function cdParts(target){var t=new Date(target.replace(" ","T"))-new Date();if(isNaN(t))return null;if(t<0)return {over:true};var d=Math.floor(t/864e5),h=Math.floor(t/36e5)%24,m=Math.floor(t/6e4)%60,s=Math.floor(t/1e3)%60;return {d:d,h:h,m:m,s:s};}
  function P(x){return String(x).padStart(2,"0");}
  function cdText(p,full){if(!p)return "—";if(p.over)return tt("over");var base=p.d+" "+tt("days")+" "+P(p.h)+":"+P(p.m)+(full?":"+P(p.s):"");return base;}

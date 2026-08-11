@@ -20,6 +20,31 @@ function ghiAudit(client, req, loai, targetType, targetId, meta){
     [req.actor.email, loai, targetType, String(targetId), JSON.stringify(meta), hashIp(ipOf(req))]);
 }
 
+/* ══ E08-D115 · ALBUM ĐẾM THEO TẤM, KHÔNG THEO DÒNG ═════════════════════════
+   Một khách có thể mang nhiều DÒNG candidate cho cùng một TẤM (một dòng do máy
+   gợi ý theo khuôn mặt, một dòng do người gắn tay). Album là tập ẢNH của khách,
+   nên đơn vị đếm phải là `event_photo_id`. Unique mới ở crm-db.js chặn đường đẻ
+   ra dòng trùng từ nay; hai hàm dưới đây là vế còn lại — chúng làm con số ĐÚNG
+   kể cả trên dữ liệu chưa gộp, để không có một cửa sổ nào mà bất biến chưa kịp
+   ra đời còn màn hình thì đã nói sai.
+
+   `khach` là mảnh SQL do CHÍNH mã này truyền vào (`g.id` hoặc `$1`) — không phải
+   thứ người dùng gõ. Đừng nối chuỗi từ req vào đây.
+
+   `demCho`: một tấm rơi vào ĐÚNG MỘT ngăn, 'xac-nhan' thắng 'cho'. Nếu không có
+   vế NOT EXISTS thì tấm vừa vào album mà vẫn còn một gợi ý 'cho' của khuôn mặt
+   thứ hai sẽ được đếm ở cả hai ngăn, và `so_album + so_cho` lại phồng đúng bằng
+   cái vé này vừa bịt — chỉ là phồng ở chỗ khác. */
+const demAlbum = (khach) => `(SELECT count(DISTINCT c.event_photo_id)::int
+       FROM crm_face_candidates c
+      WHERE c.guest_id = ${khach} AND c.deleted_at IS NULL AND c.trang_thai = 'xac-nhan')`;
+const demCho = (khach) => `(SELECT count(DISTINCT c.event_photo_id)::int
+       FROM crm_face_candidates c
+      WHERE c.guest_id = ${khach} AND c.deleted_at IS NULL AND c.trang_thai = 'cho'
+        AND NOT EXISTS (SELECT 1 FROM crm_face_candidates a
+                         WHERE a.guest_id = c.guest_id AND a.event_photo_id = c.event_photo_id
+                           AND a.deleted_at IS NULL AND a.trang_thai = 'xac-nhan'))`;
+
 /* N2 · CHỦ NGỮ của hạn 7 ngày.
    Một lệnh dọn nằm trong tools/ chỉ chạy khi có người gõ nó, và "có người nhớ gõ"
    không phải là một cơ chế — nó là một hy vọng. Cron thì phải dựng hạ tầng và vẫn
@@ -74,10 +99,8 @@ function mount(app, requireCrmAuth, requireRole) {
         loc = `AND (g.full_name ILIKE $1 OR g.org ILIKE $1 OR g.name_jp ILIKE $1 OR g.org_jp ILIKE $1)`; }
       const r = await pool.query(`
         SELECT g.id, g.full_name, g.name_jp, g.org, g.org_jp,
-          (SELECT count(*)::int FROM crm_face_candidates c
-             WHERE c.guest_id = g.id AND c.deleted_at IS NULL AND c.trang_thai = 'xac-nhan') AS so_album,
-          (SELECT count(*)::int FROM crm_face_candidates c
-             WHERE c.guest_id = g.id AND c.deleted_at IS NULL AND c.trang_thai = 'cho') AS so_cho,
+          ${demAlbum('g.id')} AS so_album,
+          ${demCho('g.id')} AS so_cho,
           (SELECT count(*)::int FROM crm_face_samples s
              WHERE s.guest_id = g.id AND s.deleted_at IS NULL AND s.vec IS NOT NULL) AS so_mau
         FROM crm_guests g
@@ -117,7 +140,9 @@ function mount(app, requireCrmAuth, requireRole) {
         SELECT e.id, e.orig_name, e.width, e.height,
           (SELECT count(*)::int FROM crm_face_candidates c
              WHERE c.event_photo_id = e.id AND c.deleted_at IS NULL AND c.trang_thai = 'cho') AS so_cho,
-          (SELECT count(*)::int FROM crm_face_candidates c
+          /* D115 · con số này đứng trên một TẤM nên nó đếm KHÁCH, không đếm ảnh:
+             DISTINCT ở đây là guest_id — dán nhầm event_photo_id vào là luôn 1. */
+          (SELECT count(DISTINCT c.guest_id)::int FROM crm_face_candidates c
              WHERE c.event_photo_id = e.id AND c.deleted_at IS NULL AND c.trang_thai = 'xac-nhan') AS so_album,
           (SELECT count(*)::int FROM crm_event_faces f
              WHERE f.event_photo_id = e.id AND f.deleted_at IS NULL) AS so_mat
@@ -143,6 +168,13 @@ function mount(app, requireCrmAuth, requireRole) {
      KHÔNG trả `vec`, không trả toạ độ mặt: khối chỉ cần thumb + trạng thái. */
   const SAP_XEP_ANH = `CASE c.trang_thai WHEN 'xac-nhan' THEN 0 ELSE 1 END,
                        c.score DESC NULLS LAST, c.id`;
+  /* D115 · CÙNG thứ tự ấy, nhưng trên bảng đã gộp một-dòng-một-tấm (bí danh `m`).
+     Lưới cũng phải theo TẤM: một tấm mang hai dòng của cùng khách thì bản cũ vẽ
+     hai thumb giống hệt nhau cạnh nhau — người duyệt tưởng khách có hai ảnh.
+     Gộp bằng DISTINCT ON, và vì SAP_XEP_ANH cho 'xac-nhan' đứng trước nên dòng
+     sống lại đúng là dòng đã vào album (khớp luật N2 ở demCho). */
+  const SAP_XEP_ANH_M = `CASE m.trang_thai WHEN 'xac-nhan' THEN 0 ELSE 1 END,
+                         m.score DESC NULLS LAST, m.candidate_id`;
   const K_MOI_KHOI = 12;                    // trần ảnh mỗi khối trên màn danh sách
 
   function locKhoi(loc){
@@ -172,10 +204,8 @@ function mount(app, requireCrmAuth, requireRole) {
       const nen = `
         WITH k AS (
           SELECT g.id, g.full_name, g.name_jp, g.org, g.org_jp,
-            (SELECT count(*)::int FROM crm_face_candidates c
-               WHERE c.guest_id = g.id AND c.deleted_at IS NULL AND c.trang_thai = 'xac-nhan') AS so_album,
-            (SELECT count(*)::int FROM crm_face_candidates c
-               WHERE c.guest_id = g.id AND c.deleted_at IS NULL AND c.trang_thai = 'cho') AS so_cho,
+            ${demAlbum('g.id')} AS so_album,
+            ${demCho('g.id')} AS so_cho,
             (SELECT count(*)::int FROM crm_face_samples s
                WHERE s.guest_id = g.id AND s.deleted_at IS NULL AND s.vec IS NOT NULL) AS so_mau
           FROM crm_guests g WHERE g.deleted_at IS NULL
@@ -195,12 +225,16 @@ function mount(app, requireCrmAuth, requireRole) {
         const ids = r.rows.map(x => x.id);
         const a = await pool.query(`
           SELECT * FROM (
-            SELECT c.guest_id, c.id AS candidate_id, c.event_photo_id, c.trang_thai, c.score,
-                   row_number() OVER (PARTITION BY c.guest_id ORDER BY ${SAP_XEP_ANH}) AS rn
-            FROM crm_face_candidates c
-            JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
-            WHERE c.guest_id = ANY($1::bigint[]) AND c.deleted_at IS NULL
-              AND c.trang_thai IN ('cho','xac-nhan')
+            SELECT m.*, row_number() OVER (PARTITION BY m.guest_id ORDER BY ${SAP_XEP_ANH_M}) AS rn
+            FROM (
+              SELECT DISTINCT ON (c.guest_id, c.event_photo_id)
+                     c.guest_id, c.id AS candidate_id, c.event_photo_id, c.trang_thai, c.score
+              FROM crm_face_candidates c
+              JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
+              WHERE c.guest_id = ANY($1::bigint[]) AND c.deleted_at IS NULL
+                AND c.trang_thai IN ('cho','xac-nhan')
+              ORDER BY c.guest_id, c.event_photo_id, ${SAP_XEP_ANH}
+            ) m
           ) t WHERE t.rn <= $2`, [ids, K_MOI_KHOI]);
         a.rows.forEach(x => {
           const g = String(x.guest_id);
@@ -236,19 +270,25 @@ function mount(app, requireCrmAuth, requireRole) {
         `SELECT id, full_name, name_jp, org, org_jp FROM crm_guests
           WHERE id = $1 AND deleted_at IS NULL`, [req.params.guestId]);
       if (!g.rows[0]) return res.status(404).json({ ok: false, error: 'không thấy' });
+      /* D115 · MỘT nguồn cho cả trang lẫn hai con số: gộp về một dòng mỗi TẤM
+         trước, rồi mới phân trang và đếm trên đúng tập ấy. Hai câu đi từ hai
+         định nghĩa khác nhau là chuyện đã xảy ra ở màn này rồi — «24 tấm» ở
+         nhãn mà lưới chỉ vẽ 23 ô, không ai giải thích được con số nào đúng. */
+      const MOT_DONG_MOI_TAM = `
+        SELECT DISTINCT ON (c.event_photo_id)
+               c.id AS candidate_id, c.event_photo_id, c.trang_thai, c.score
+          FROM crm_face_candidates c
+          JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
+         WHERE c.guest_id = $1 AND c.deleted_at IS NULL AND c.trang_thai IN ('cho','xac-nhan')
+         ORDER BY c.event_photo_id, ${SAP_XEP_ANH}`;
       const r = await pool.query(`
-        SELECT c.id AS candidate_id, c.event_photo_id, c.trang_thai, c.score
-        FROM crm_face_candidates c
-        JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
-        WHERE c.guest_id = $1 AND c.deleted_at IS NULL AND c.trang_thai IN ('cho','xac-nhan')
-        ORDER BY ${SAP_XEP_ANH}
+        SELECT * FROM (${MOT_DONG_MOI_TAM}) m
+        ORDER BY ${SAP_XEP_ANH_M}
         LIMIT $2 OFFSET $3`, [req.params.guestId, limit, offset]);
       const d = await pool.query(`
-        SELECT count(*) FILTER (WHERE c.trang_thai = 'xac-nhan')::int so_album,
-               count(*) FILTER (WHERE c.trang_thai = 'cho')::int so_cho
-        FROM crm_face_candidates c
-        JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
-        WHERE c.guest_id = $1 AND c.deleted_at IS NULL`, [req.params.guestId]);
+        SELECT count(*) FILTER (WHERE m.trang_thai = 'xac-nhan')::int so_album,
+               count(*) FILTER (WHERE m.trang_thai = 'cho')::int so_cho
+        FROM (${MOT_DONG_MOI_TAM}) m`, [req.params.guestId]);
       res.json({ ok: true, khach: g.rows[0], offset, limit,
         so_album: d.rows[0].so_album, so_cho: d.rows[0].so_cho,
         tong: d.rows[0].so_album + d.rows[0].so_cho,
@@ -280,16 +320,35 @@ function mount(app, requireCrmAuth, requireRole) {
     const c = await pool.connect();
     try {
       await c.query('BEGIN');
-      const r = await c.query(`UPDATE crm_face_candidates
-        SET trang_thai = $1, decided_by = $2, decided_at = now()
-        WHERE id = ANY($3::bigint[]) AND deleted_at IS NULL
-        RETURNING id, guest_id, event_photo_id`, [trang_thai, req.actor.email, so]);
+      let dong = [], daDoi = 0, daGop = 0;
+      if (trang_thai === 'xac-nhan'){
+        /* D115 · một lô có thể chứa hai dòng của CÙNG một (tấm, khách) — hai
+           khuôn mặt của một người trong một khung hình, tick cả hai rồi bấm một
+           lượt. Bản trước đẻ hai dòng album; nay `xacNhanCoGop` gộp trong chính
+           transaction này, nên lô KHÔNG còn ROLLBACK vì đụng unique. */
+        const co = await c.query(`SELECT id, guest_id, event_photo_id
+          FROM crm_face_candidates WHERE id = ANY($1::bigint[]) AND deleted_at IS NULL`, [so]);
+        const kq = await xacNhanCoGop(c, so, req);
+        dong = co.rows;
+        daGop = kq.gop.length;
+        /* «Đã duyệt N» đếm những dòng người ta tick mà nay đã nằm trong album —
+           kể cả dòng được gộp vào một dòng có sẵn: tấm ấy vẫn vào album, chỉ là
+           không cần thêm một dòng nữa. Đếm cách khác thì nhãn báo ít hơn số ô
+           vừa đổi màu trên màn. */
+        daDoi = co.rows.filter(x => kq.song.has(String(x.id)) || kq.bo.has(String(x.id))).length;
+      } else {
+        const r = await c.query(`UPDATE crm_face_candidates
+          SET trang_thai = $1, decided_by = $2, decided_at = now()
+          WHERE id = ANY($3::bigint[]) AND deleted_at IS NULL
+          RETURNING id, guest_id, event_photo_id`, [trang_thai, req.actor.email, so]);
+        dong = r.rows; daDoi = r.rowCount;
+      }
       await ghiAudit(c, req, 'face_' + trang_thai + '_nhieu', 'face_candidate',
-        r.rows.length ? r.rows[0].id : 0,
-        { so_dong: r.rowCount, ids: r.rows.map(x => String(x.id)),
-          guest_ids: [...new Set(r.rows.map(x => String(x.guest_id)))] });
+        dong.length ? dong[0].id : 0,
+        { so_dong: daDoi, da_gop: daGop, ids: dong.map(x => String(x.id)),
+          guest_ids: [...new Set(dong.map(x => String(x.guest_id)))] });
       await c.query('COMMIT');
-      res.json({ ok: true, da_doi: r.rowCount });
+      res.json({ ok: true, da_doi: daDoi, da_gop: daGop });
     } catch (e) { await c.query('ROLLBACK');
       console.error('[face-match] quyet-nhieu:', e.message);
       res.status(500).json({ ok: false, error: 'loi' }); }
@@ -319,14 +378,22 @@ function mount(app, requireCrmAuth, requireRole) {
     const gid = Number(req.params.guestId);
     if (!Number.isInteger(gid) || gid <= 0) return res.status(400).json({ ok: false, error: 'thiếu id' });
     try {
+      /* D115 · MỘT tấm một lần. Đây là tuyến người phụ trách dùng để tải ảnh gửi
+         cho khách, nên trả hai dòng của cùng một tấm không chỉ là con số xấu —
+         nó là gửi trùng cho người thật. Dòng sống ưu tiên dòng CÓ face_id, cùng
+         luật N1 với khối gộp ở crm-db.js: dòng ấy mang khung mặt, tức mang
+         `canh_px`/`do_net` mà cột dưới đang đọc. */
       const r = await pool.query(`
-        SELECT c.id, c.event_photo_id, c.score, c.nguon, c.decided_by, c.decided_at,
-               e.orig_name, f.canh_px, f.do_net
-        FROM crm_face_candidates c
-        JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
-        LEFT JOIN crm_event_faces f ON f.id = c.face_id
-        WHERE c.guest_id = $1 AND c.deleted_at IS NULL AND c.trang_thai = 'xac-nhan'
-        ORDER BY c.decided_at DESC NULLS LAST, c.id DESC`, [gid]);
+        SELECT * FROM (
+          SELECT DISTINCT ON (c.event_photo_id)
+                 c.id, c.event_photo_id, c.score, c.nguon, c.decided_by, c.decided_at,
+                 e.orig_name, f.canh_px, f.do_net
+          FROM crm_face_candidates c
+          JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
+          LEFT JOIN crm_event_faces f ON f.id = c.face_id
+          WHERE c.guest_id = $1 AND c.deleted_at IS NULL AND c.trang_thai = 'xac-nhan'
+          ORDER BY c.event_photo_id, (c.face_id IS NULL), c.id
+        ) a ORDER BY a.decided_at DESC NULLS LAST, a.id DESC`, [gid]);
       /* Ghi sổ TRƯỚC khi trả lời, và `await`: ghi kiểu bắn-rồi-quên thì lượt đọc
          cuối cùng trước khi tiến trình chết là lượt không có trong sổ — mà đó
          đúng là lượt người ta cần tra. Sổ hỏng thì thà 500 còn hơn trả ảnh ra
@@ -407,19 +474,118 @@ function mount(app, requireCrmAuth, requireRole) {
     } catch (e) { console.error('[face-match] faces:', e.message); res.status(500).json({ ok: false, error: 'loi' }); }
   });
 
+  /* ══ E08-D115 · ĐỔI SANG 'xac-nhan' TỪ NAY PHẢI BIẾT GỘP ═══════════════════
+     Trước vé này, xác nhận là một câu UPDATE và không có gì để đụng. Từ khi
+     unique (event_photo_id, guest_id) WHERE trang_thai='xac-nhan' ra đời thì
+     CHÍNH câu UPDATE ấy có thể va vào một dòng đã nằm sẵn trong album của cùng
+     khách trên cùng tấm — và va là 500. Với `quyet-nhieu` còn nặng hơn: cả lô
+     200 dòng nằm trong một transaction, một cặp trùng làm ROLLBACK sạch, người
+     duyệt bấm «xác nhận cả trang» và không có gì xảy ra cả.
+
+     Nên đường xác nhận phải tự gộp, chứ không phải tự tránh:
+       · gom mọi dòng liên quan (dòng được yêu cầu + dòng album đang giữ cùng
+         cặp) và KHOÁ chúng — hai người cùng duyệt một tấm là chuyện có thật;
+       · mỗi cặp (tấm, khách) chọn MỘT dòng sống theo luật N1 — dòng có face_id,
+         hoà thì id nhỏ nhất — y hệt luật của khối gộp trong crm-db.js. Hai chỗ
+         lệch luật thì migrate và runtime giữ lại hai dòng khác nhau: không nổ ở
+         đâu cả, chỉ âm thầm khác nhau;
+       · XOÁ MỀM dòng thua TRƯỚC rồi mới nâng dòng sống. Đảo hai bước này là tự
+         đâm vào đúng cái unique vừa dựng, vì trong một khoảnh khắc cả hai dòng
+         cùng mang 'xac-nhan'.
+     Trả về hai tập id (`song`, `bo`) để tuyến gọi biết dòng người dùng vừa bấm
+     đã vào album hay đã được gộp vào một dòng có sẵn. */
+  async function xacNhanCoGop(cli, ids, req){
+    const r = await cli.query(`
+      SELECT c.id, c.event_photo_id, c.guest_id, c.face_id, c.trang_thai
+        FROM crm_face_candidates c
+       WHERE c.deleted_at IS NULL
+         AND (c.id = ANY($1::bigint[])
+              OR (c.trang_thai = 'xac-nhan'
+                  AND (c.event_photo_id, c.guest_id) IN (
+                        SELECT d.event_photo_id, d.guest_id
+                          FROM crm_face_candidates d
+                         WHERE d.id = ANY($1::bigint[]) AND d.deleted_at IS NULL)))
+       ORDER BY c.id
+       FOR UPDATE`, [ids]);
+
+    const nhom = new Map();
+    for (const x of r.rows){
+      const khoa = x.event_photo_id + '|' + x.guest_id;
+      if (!nhom.has(khoa)) nhom.set(khoa, []);
+      nhom.get(khoa).push(x);
+    }
+    const song = [], bo = [], gop = [], tamDaCo = new Set();
+    for (const dong of nhom.values()){
+      /* Tấm này đã nằm trong album của khách ấy TRƯỚC cú bấm chưa? Câu hỏi này
+         không trùng với «dòng vừa bấm có thắng không»: người gắn tay tấm P cho
+         khách G rồi mới bấm ✓ trên gợi ý máy của đúng tấm ấy thì dòng vừa bấm
+         THẮNG (nó mang face_id) — nhưng album không hề có thêm tấm nào. Trả về
+         cờ tính theo dòng-vừa-bấm là màn hình cộng thêm 1 cho một tấm đã đếm.
+         Đo được ở lab trình duyệt, không suy ra được từ mã. */
+      if (dong.some(x => x.trang_thai === 'xac-nhan')) dong.forEach(x => tamDaCo.add(String(x.id)));
+      dong.sort((a, b) => (a.face_id ? 0 : 1) - (b.face_id ? 0 : 1) || Number(a.id) - Number(b.id));
+      const nhat = dong[0];
+      if (nhat.trang_thai !== 'xac-nhan') song.push(nhat.id);
+      for (const t of dong.slice(1)){
+        bo.push(t.id);
+        gop.push({ anh: t.event_photo_id, khach: t.guest_id, id_song: nhat.id, id_bo: t.id });
+      }
+    }
+    if (bo.length){
+      await cli.query('UPDATE crm_face_candidates SET deleted_at = now() WHERE id = ANY($1::bigint[])', [bo]);
+      for (const g of gop){
+        await ghiAudit(cli, req, 'face_gop_doi', 'event_photo', g.anh,
+          { ve: 'E08-D115', guest_id: String(g.khach), id_song: String(g.id_song),
+            id_bo: String(g.id_bo), nguon: 'xac-nhan' });
+      }
+    }
+    if (song.length){
+      await cli.query(`UPDATE crm_face_candidates
+        SET trang_thai = 'xac-nhan', decided_by = $1, decided_at = now()
+        WHERE id = ANY($2::bigint[]) AND deleted_at IS NULL`, [req.actor.email, song]);
+    }
+    return { song: new Set(song.map(String)), bo: new Set(bo.map(String)), gop, tamDaCo };
+  }
+
   const quyet = (trangThai) => async (req, res) => {
+    const id = Number(req.body && req.body.id);
+    if (!id) return res.status(400).json({ ok: false, error: 'thiếu id' });
+    /* `tu-choi` / `bo-qua` đưa dòng RA khỏi album nên không đụng bất biến nào —
+       giữ nguyên một câu UPDATE, đừng bắt chúng trả giá transaction của D115. */
+    if (trangThai !== 'xac-nhan'){
+      try {
+        const r = await pool.query(`UPDATE crm_face_candidates
+          SET trang_thai = $1, decided_by = $2, decided_at = now()
+          WHERE id = $3 AND deleted_at IS NULL RETURNING id, guest_id, event_photo_id`,
+          [trangThai, req.actor.email, id]);
+        if (!r.rowCount) return res.status(404).json({ ok: false, error: 'không thấy' });
+        await ghiAudit(pool, req, 'face_' + trangThai, 'face_candidate', id,
+          { guest_id: r.rows[0].guest_id, event_photo_id: r.rows[0].event_photo_id });
+        return res.json({ ok: true, id });
+      } catch (e) { console.error('[face-match] quyet:', e.message);
+        return res.status(500).json({ ok: false, error: 'loi' }); }
+    }
+    const cli = await pool.connect();
     try {
-      const id = Number(req.body && req.body.id);
-      if (!id) return res.status(400).json({ ok: false, error: 'thiếu id' });
-      const r = await pool.query(`UPDATE crm_face_candidates
-        SET trang_thai = $1, decided_by = $2, decided_at = now()
-        WHERE id = $3 AND deleted_at IS NULL RETURNING id, guest_id, event_photo_id`,
-        [trangThai, req.actor.email, id]);
-      if (!r.rowCount) return res.status(404).json({ ok: false, error: 'không thấy' });
-      await ghiAudit(pool, req, 'face_' + trangThai, 'face_candidate', id,
-        { guest_id: r.rows[0].guest_id, event_photo_id: r.rows[0].event_photo_id });
-      res.json({ ok: true, id });
-    } catch (e) { console.error('[face-match] quyet:', e.message); res.status(500).json({ ok: false, error: 'loi' }); }
+      await cli.query('BEGIN');
+      const co = await cli.query(`SELECT id, guest_id, event_photo_id FROM crm_face_candidates
+        WHERE id = $1 AND deleted_at IS NULL`, [id]);
+      if (!co.rowCount){ await cli.query('ROLLBACK');
+        return res.status(404).json({ ok: false, error: 'không thấy' }); }
+      const kq = await xacNhanCoGop(cli, [id], req);
+      await ghiAudit(cli, req, 'face_xac-nhan', 'face_candidate', id,
+        { guest_id: co.rows[0].guest_id, event_photo_id: co.rows[0].event_photo_id,
+          da_gop: kq.gop.length });
+      await cli.query('COMMIT');
+      /* `da_trong_album` = TẤM ấy đã nằm trong album của khách trước cú bấm này
+         (dù qua dòng nào). Màn hình cộng con số album tại chỗ, nên nó cần biết
+         album có thật sự dày thêm một tấm hay không — không thì nó lại hiện «2»
+         cho một tấm, tức bịt ở máy chủ rồi phá lại ở trình duyệt. */
+      res.json({ ok: true, id, da_gop: kq.gop.length, da_trong_album: kq.tamDaCo.has(String(id)) });
+    } catch (e) { await cli.query('ROLLBACK').catch(() => {});
+      console.error('[face-match] quyet:', e.message);
+      res.status(500).json({ ok: false, error: 'loi' }); }
+    finally { cli.release(); }
   };
   app.post('/crm/face-match/confirm', ...btl, quyet('xac-nhan'));
   app.post('/crm/face-match/reject',  ...btl, quyet('tu-choi'));

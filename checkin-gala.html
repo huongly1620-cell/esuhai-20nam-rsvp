@@ -28,6 +28,11 @@
  .ttl{font-weight:800;letter-spacing:.08em;font-size:.72rem;text-transform:uppercase;color:var(--acc)}
  .lang{margin-left:auto;border:1px solid var(--acc);background:transparent;color:var(--acc);border-radius:8px;padding:6px 11px;font:inherit;font-size:.72rem;font-weight:700;cursor:pointer}
  .lich{border:1px solid var(--line);background:rgba(5,13,24,.5);color:var(--cream);border-radius:8px;padding:6px 11px;font:inherit;font-size:.72rem;font-weight:600;cursor:pointer}
+ /* E08-D113 · nút chỉ mang ký hiệu ✕: chữ «Đóng» đã dời xuống aria-label/title.
+    Ô bấm ép 44×44 (AC-7) — ở cửa người ta bấm bằng ngón cái, glyph nhỏ mà vùng
+    chạm nhỏ theo thì trượt ra scrim và đóng nhầm cả hồ sơ đang mở. */
+ .xg{width:44px;height:44px;padding:0;display:inline-flex;align-items:center;
+   justify-content:center;font-size:1.05rem;line-height:1}
  @media(max-width:520px){
    #lichBtn,a.lich[href="/sodoban-gala.html"]{order:10;flex:1;justify-content:center;text-align:center}
    a.lich[href="/sodoban-gala.html"]{font-size:.7rem;padding:7px 8px}
@@ -121,7 +126,7 @@
    max-width:96vw;max-height:82vh;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
  .lb button{position:absolute;border:1px solid var(--line2);background:rgba(9,18,32,.85);
    color:#e9e2d2;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
- .lb .lb-x{top:14px;right:14px;padding:9px 15px;font-size:.82rem}
+ .lb .lb-x{top:14px;right:14px;width:44px;height:44px;padding:0;font-size:1.05rem;line-height:1}
  .lb .lb-p,.lb .lb-n{top:50%;transform:translateY(-50%);width:46px;height:64px;font-size:1.7rem;line-height:1}
  .lb .lb-p{left:8px} .lb .lb-n{right:8px}
  .lb .lb-c{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);color:var(--muted);
@@ -387,7 +392,7 @@
 </div>
 <div class="hint" id="hint"></div><main class="list" id="list"></main>
 <section class="pf" id="pf"><div class="pf-bar"><button class="pf-back" id="pfBack">&#8592;</button><span data-i="pf" style="color:var(--acc);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase">Hồ sơ khách</span></div><div class="pf-b" id="pfBody"></div></section>
-<div class="sheet" id="sheet"><div class="sheet-in"><h3 data-i="sch_h3">Gala · 08.08.2026</h3><div class="sub" data-i="sch_loc">Tầng 3 · Sảnh POLLUX · GEM Center</div><div class="si"><div class="tm">17:00</div><div class="d"><div class="n" data-i="sch_t1">Đón tiếp &amp; tham quan</div><div class="s" data-i="sch_t1s">Tầng 3 · Sảnh POLLUX</div></div></div><div class="si"><div class="tm">18:00</div><div class="d"><div class="n" data-i="sch_t2">Khai mạc &amp; Lễ tri ân</div></div></div><div class="si"><div class="tm">20:00</div><div class="d"><div class="n" data-i="sch_t3">Tầm nhìn 20 năm</div></div></div><div class="si"><div class="tm">20:30</div><div class="d"><div class="n" data-i="sch_t4">Chụp ảnh lưu niệm</div></div></div><div style="text-align:center;margin-top:14px"><button class="lich" id="schClose" data-i="close">Đóng</button></div></div></div>
+<div class="sheet" id="sheet"><div class="sheet-in"><h3 data-i="sch_h3">Gala · 08.08.2026</h3><div class="sub" data-i="sch_loc">Tầng 3 · Sảnh POLLUX · GEM Center</div><div class="si"><div class="tm">17:00</div><div class="d"><div class="n" data-i="sch_t1">Đón tiếp &amp; tham quan</div><div class="s" data-i="sch_t1s">Tầng 3 · Sảnh POLLUX</div></div></div><div class="si"><div class="tm">18:00</div><div class="d"><div class="n" data-i="sch_t2">Khai mạc &amp; Lễ tri ân</div></div></div><div class="si"><div class="tm">20:00</div><div class="d"><div class="n" data-i="sch_t3">Tầm nhìn 20 năm</div></div></div><div class="si"><div class="tm">20:30</div><div class="d"><div class="n" data-i="sch_t4">Chụp ảnh lưu niệm</div></div></div><div style="text-align:center;margin-top:14px"><button class="lich xg" id="schClose" data-ilb="close" title="Đóng" aria-label="Đóng">✕</button></div></div></div>
 <input type="file" id="cam" accept="image/*" capture="environment">
 <!-- C1b: máy không có camera, hoặc ảnh đã chụp sẵn trong máy -->
 <input type="file" id="pick" accept="image/*">
@@ -1036,7 +1041,7 @@ function lbDung(){
  if(lbEl())return;
  var d=document.createElement("div");d.id="lb";d.className="lb";
  d.innerHTML='<div class="lb-bd"></div><div class="lb-q" id="lbQ"></div><img id="lbImg" alt="">'
-  +'<button class="lb-x" id="lbX">'+esc(t("close"))+'</button>'
+  +'<button class="lb-x" id="lbX" data-ilb="close" title="'+esc(t("close"))+'" aria-label="'+esc(t("close"))+'">✕</button>'
   +'<button class="lb-p" id="lbP" aria-label="prev">&#8249;</button>'
   +'<button class="lb-n" id="lbN" aria-label="next">&#8250;</button><div class="lb-c" id="lbC"></div>';
  document.body.appendChild(d);
@@ -1058,11 +1063,13 @@ function lbVe(){
  var p=lbList[lbIdx];if(!p)return;
  document.getElementById("lbImg").src=p.view_url||p.url;   /* bản 1024, có đường lùi về gốc */
  document.getElementById("lbC").textContent=(lbIdx+1)+" / "+lbList.length;
- /* Chữ nút đặt Ở ĐÂY chứ không lúc dựng: lbDung() chỉ chạy MỘT lần (`if(lbEl())
-    return`), nên nhúng cứng esc(t("close")) vào innerHTML là nút đóng băng theo
-    ngôn ngữ của lần mở ĐẦU TIÊN — đổi sang 日本語 thì nhãn 🎁/✓ ngay bên cạnh
-    đổi đúng còn nút vẫn «Đóng», lệch ngay trong một khung hình trước mặt khách Nhật. */
- document.getElementById("lbX").textContent=t("close");
+ /* E08-D113 · mặt nút là glyph ✕ cố định, KHÔNG dịch. Cái phải dịch là nhãn trợ
+    năng, và nó đặt Ở ĐÂY chứ không chỉ lúc dựng: lbDung() chỉ chạy MỘT lần
+    (`if(lbEl()) return`), nên nhúng cứng t("close") vào innerHTML là nhãn đóng
+    băng theo ngôn ngữ của lần mở ĐẦU TIÊN. (`data-ilb` lo tiếp nước đổi ngôn ngữ
+    khi lightbox đang mở — sweep của setLang chạm tới cả nút này.) */
+ var _lbx=document.getElementById("lbX");
+ _lbx.setAttribute("aria-label",t("close")); _lbx.setAttribute("title",t("close"));
  var q=document.getElementById("lbQ");
  q.textContent=p.interaction_id?t("lb_qua"):(String(p.id)===String(lbGhim||"")?t("lb_ghim"):"");
 }

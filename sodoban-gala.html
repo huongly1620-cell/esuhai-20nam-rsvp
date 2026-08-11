@@ -239,7 +239,14 @@ a{color:inherit}
 .panel .badge.nv{background:rgba(240,217,153,.16);color:var(--nv);border:1px solid rgba(240,217,153,.4)}
 .panel .row{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:.8rem}
 .panel .k{color:var(--muted)}.panel .v{font-weight:700;text-align:right}
-.panel .close{position:absolute;left:14px;top:max(14px,env(safe-area-inset-top))}
+/* E08-D113 · hai ký hiệu, hai nghĩa, hai góc: ← (về một tầng) bên trái, ✕ (tắt
+   overlay) bên phải — đọc từ trái sang đúng thứ tự «lùi lại» rồi «đi hẳn». Ô bấm
+   ép 44×44 (AC-7) chứ không phóng to glyph: ngón tay ở cửa cần diện tích, mắt thì
+   không cần chữ ✕ to bằng tên khách. */
+.panel .close{position:absolute;right:14px;top:max(14px,env(safe-area-inset-top))}
+.panel .back{position:absolute;left:14px;top:max(14px,env(safe-area-inset-top))}
+.panel .close,.panel .back{width:44px;height:44px;padding:0;justify-content:center;
+  font-size:1.05rem;line-height:1}
 .panel .actions{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap}
 /* E08-D107 · dải ảnh sự kiện ĐÃ XÁC NHẬN của khách đang mở. Lưới auto-fill để các
    ô tự chia đều bề ngang panel (min(380px,100%)) — ở màn 360 không đẻ thanh cuộn
@@ -429,8 +436,15 @@ a{color:inherit}
 
 <div class="scrim" id="scrim"></div>
 <aside class="panel" id="panel">
-  <button class="btn close" type="button" id="pClose" data-i="close">Đóng</button>
-  <div style="margin-top:40px" id="pGuest">
+  <!-- E08-D113 · mặt nút là GLYPH, nhãn nằm ở aria-label/title qua `data-ilb` —
+       trình đọc màn hình vẫn nghe «Đóng» / 「閉じる」 đúng theo LANG. Không dùng
+       `data-i` nữa: sweep [data-i] của setLang ghi đè textContent, sẽ trả chữ
+       «Đóng» lên mặt nút ngay lần đổi ngôn ngữ đầu tiên. -->
+  <button class="btn back" type="button" id="pBack" data-ilb="p_back"
+          title="Về danh sách bàn" aria-label="Về danh sách bàn" style="display:none">←</button>
+  <button class="btn close" type="button" id="pClose" data-ilb="close"
+          title="Đóng" aria-label="Đóng">✕</button>
+  <div style="margin-top:56px" id="pGuest">
     <div class="avatar" id="pAv" style="background:var(--gold-b)">—</div>
     <h2 id="pName">—</h2>
     <div class="sub" id="pSub"></div>
@@ -456,7 +470,7 @@ a{color:inherit}
   <!-- E08-D100 · mode «table»: cùng #panel + #scrim với hồ sơ khách, chỉ đổi khối
        hiện ra. Nội dung do renderTablePanel() sinh nên đổi ngôn ngữ / poll 25s
        đều vẽ lại được mà không cần đóng panel. -->
-  <div style="margin-top:40px;display:none" id="pTable">
+  <div style="margin-top:56px;display:none" id="pTable">
     <h2 id="ptName">—</h2>
     <div class="sub" id="ptSub"></div>
     <div class="tstate" id="ptState" data-s="none">—</div>
@@ -492,6 +506,7 @@ var TSD={
    lg_p1:"🟢 Viền bàn sáng xanh =",lg_p2:"đủ khách hoàn hảo",lg_p3:"(hết ghế trống, tất cả đã check-in)",
    note_diff:"«Trống» ≠ «Chưa đến»: Trống là ghế chưa có ai được xếp; Chưa đến là khách đã có tên nhưng chưa tới cửa.",
    q_ph:"Tìm bàn hoặc tên khách…",loading:"Đang tải sơ đồ…",loading2:"Đang tải sơ đồ Pollux…",stage:"🎤 Phía sân khấu",close:"Đóng",
+   p_back:"Về danh sách bàn",
    p_banghe:"Bàn / Ghế",p_nv:"Nhân viên",p_id:"Mã thẻ",p_door:"Mở ở cửa Gala",p_crm:"Mở CRM",
    p_album:"Ảnh sự kiện",p_album_xem:"Mở tấm này ở màn nhận diện ảnh",
    p_album_them:"Xem tất cả ảnh sự kiện của khách ở hồ sơ CRM",
@@ -533,6 +548,7 @@ var TSD={
    lg_p1:"🟢 緑に光る枠 =",lg_p2:"満席完了",lg_p3:"(空席なし・全員受付済み)",
    note_diff:"「空席」と「未来場」は別です:空席＝まだ誰も配席されていない席。未来場＝お名前はあるが、まだご到着でない方。",
    q_ph:"テーブル名・お名前で検索…",loading:"座席図を読み込み中…",loading2:"Pollux 座席図を読み込み中…",stage:"🎤 ステージ側",close:"閉じる",
+   p_back:"テーブル一覧へ戻る",
    p_banghe:"テーブル / お席",p_nv:"スタッフ",p_id:"ゲストID",p_door:"ガラ受付で開く",p_crm:"CRMを開く",
    p_album:"イベント写真",p_album_xem:"この写真を顔認識画面で開く",
    p_album_them:"このゲストのイベント写真をすべてCRMで表示",
@@ -596,6 +612,11 @@ var META=null, G=[], byKey={}, pollBusy=false, sel=null;
 // panelMode: "guest" (hồ sơ khách, mặc định cũ) | "table" (E08-D100). selTable = số bàn
 // đang mở ở mode table — giữ lại để poll 25s và nút đổi ngôn ngữ vẽ lại được panel.
 var panelMode="guest", selTable="";
+/* E08-D113 · MỘT tầng «về», không phải ngăn xếp: chỉ nhớ bàn nguồn khi hồ sơ khách
+   được mở TỪ danh sách thành viên bàn. Mở từ ghế trên bản đồ (hoặc đang đứng ở
+   chính danh sách bàn) thì không có chỗ nào để lùi về ⇒ không hiện ←, để người ở
+   cửa không phải đoán mũi tên đó sẽ ném mình đi đâu. */
+var backTable="";
 var scale=(function(){ var z=document.getElementById("z");
   return (parseInt(z&&z.value,10)||100)/100; })();
 var prevArrived={}; // id -> bool, to detect fresh check-ins between polls
@@ -976,6 +997,13 @@ function setPanelMode(m){
   panelMode=m;
   $("#pGuest").style.display = m==="guest" ? "" : "none";
   $("#pTable").style.display = m==="table" ? "" : "none";
+  setBackBtn();
+}
+
+// E08-D113 · ← chỉ tồn tại đúng một trường hợp: đang xem hồ sơ khách VÀ hồ sơ đó
+// đến từ danh sách một bàn cụ thể.
+function setBackBtn(){
+  $("#pBack").style.display = (panelMode==="guest" && backTable) ? "" : "none";
 }
 
 function tableLabel(ban){
@@ -1090,6 +1118,7 @@ function openTablePanel(ban){
   if(!((META&&META.tables)||{})[ban]) return;
   sel=null; // panel bàn không ghim ghế nào — bỏ vòng sáng trắng của khách trước đó
   selTable=String(ban);
+  backTable=""; // đã đứng trên list rồi thì không còn tầng nào phía sau (AC-4)
   setPanelMode("table");
   renderTablePanel(selTable);
   $("#panel").scrollTop=0;
@@ -1192,7 +1221,10 @@ async function napAlbumPanel(gid){
   }catch(e){ /* mất mạng: khối im lặng, phần chính của panel còn nguyên */ }
 }
 
-function openPanel(g, ban, ghe){
+// `tuBan` = bàn nguồn khi hồ sơ được mở từ danh sách thành viên bàn (E08-D113).
+// Bỏ trống ⇒ mở thẳng từ bản đồ ⇒ không có ←.
+function openPanel(g, ban, ghe, tuBan){
+  backTable = tuBan ? String(tuBan) : "";
   setPanelMode("guest");
   selTable="";
   sel={ban:String(ban), ghe:String(ghe), id:String(g.id)};
@@ -1237,7 +1269,9 @@ function closePanel(){
   $("#scrim").classList.remove("show");
   // Dọn dải ảnh: mở khách kế tiếp không được thấy ảnh của khách vừa đóng nhấp nháy.
   $("#pAlbumWrap").style.display="none"; $("#pAlbum").innerHTML="";
-  sel=null; selTable=""; panelMode="guest"; render();
+  // ✕ / Esc / scrim = rời hẳn overlay ⇒ dọn luôn tầng «về», nếu không lần mở kế
+  // tiếp từ bản đồ sẽ thừa hưởng bàn nguồn cũ và mọc ra một mũi tên vô nghĩa.
+  sel=null; selTable=""; backTable=""; panelMode="guest"; setBackBtn(); render();
 }
 
 function focusTable(ban){
@@ -1334,8 +1368,11 @@ $("#ptList").addEventListener("click", function(e){
   var id=r.getAttribute("data-id");
   var g=G.filter(function(x){return String(x.id)===String(id);})[0];
   if(!g) return;
-  openPanel(g, r.getAttribute("data-ban"), r.getAttribute("data-ghe"));
+  // Tham số thứ 4 = bàn nguồn ⇒ hồ sơ này có đường lùi về đúng list vừa rời (AC-1).
+  openPanel(g, r.getAttribute("data-ban"), r.getAttribute("data-ghe"), r.getAttribute("data-ban"));
 });
+// ← = về ĐÚNG một tầng (list bàn nguồn), overlay vẫn mở. ✕ = tắt hết.
+$("#pBack").addEventListener("click", function(){ if(backTable) openTablePanel(backTable); });
 $("#pClose").addEventListener("click", closePanel);
 $("#scrim").addEventListener("click", closePanel);
 // Esc: panel phủ gần hết màn hẹp và scrim che cả thanh trên, nên khi mở panel thì bàn

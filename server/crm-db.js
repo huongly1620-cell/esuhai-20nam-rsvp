@@ -323,6 +323,62 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_face_candidates_mat_khach
 CREATE UNIQUE INDEX IF NOT EXISTS uq_face_candidates_gan_tay
   ON crm_face_candidates (event_photo_id, guest_id)
   WHERE deleted_at IS NULL AND face_id IS NULL;
+
+/* ── E08-D115 · MỘT TẤM ĐẾM MỘT LẦN ────────────────────────────────────────────
+   Hai unique trên đây mỗi cái đúng phần của nó, nhưng cộng lại vẫn hở đúng ở
+   giữa: (P, F, G) rơi vào cái thứ nhất, (P, NULL, G) rơi vào cái thứ hai, không
+   cái nào thấy cái kia. Ai duyệt gợi ý máy rồi lại gắn tên tay cho cùng tấm ấy
+   thì tấm đó nằm HAI dòng trong album của cùng một khách — lưới hiện hai lần,
+   con số phồng, và người gửi ảnh cho khách không biết mình gửi trùng.
+   Bất biến đúng phải nói về (TẤM, KHÁCH) chứ không về mặt: một khách chỉ có một
+   dòng album cho một tấm, dù dòng ấy sinh ra từ máy hay từ tay.
+
+   Hai unique cũ GIỮ NGUYÊN — chúng chặn lớp lỗi khác (chạy lại đợt nhận diện đẻ
+   bản sao gợi ý khi trạng thái còn 'cho'), mà unique mới không phủ vì nó chỉ
+   nhìn dòng đã 'xac-nhan'.
+
+   THỨ TỰ Ở ĐÂY LÀ MỘT PHẦN CỦA VÉ: khối gộp phải đứng TRƯỚC lệnh tạo unique.
+   CSDL nào đang mang sẵn dòng trùng (prod đang mang) thì tạo index trước là
+   lỗi, mà server/index.js bắt lỗi migrate rồi VẪN cho app lên — tức bất biến im
+   lặng không ra đời còn app thì chạy tiếp. Cả CREATE_SQL đi trong MỘT câu simple
+   query nên nằm chung một transaction ngầm: hoặc gộp xong rồi có unique, hoặc
+   không có gì đổi. */
+DO $gopdoi$
+DECLARE so_dong INT; so_cap INT;
+BEGIN
+  /* Dòng nào sống: dòng CÓ face_id (nó mang khung mặt — bỏ nó là mất chỗ đã
+     khoanh), hoà thì id nhỏ nhất. Dòng thua mang deleted_at, KHÔNG DELETE: gộp
+     nhầm còn lần ngược được, và mọi câu đọc đều đã lọc deleted_at IS NULL. */
+  WITH xep AS (
+    SELECT id,
+           first_value(id) OVER (PARTITION BY event_photo_id, guest_id
+                                 ORDER BY (face_id IS NULL), id) AS id_song
+      FROM crm_face_candidates
+     WHERE deleted_at IS NULL AND trang_thai = 'xac-nhan'
+  ), thua AS (
+    SELECT id, id_song FROM xep WHERE id <> id_song
+  ), da_go AS (
+    UPDATE crm_face_candidates c SET deleted_at = now()
+      FROM thua t WHERE c.id = t.id
+      RETURNING c.id, c.event_photo_id, c.guest_id, t.id_song
+  ), ghi AS (
+    INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta)
+    SELECT 'he-thong', 'face_gop_doi', 'event_photo', d.event_photo_id::text,
+           jsonb_build_object('ve', 'E08-D115', 'guest_id', d.guest_id,
+                              'id_song', d.id_song, 'id_bo', d.id, 'nguon', 'migrate')
+      FROM da_go d
+    RETURNING target_id, meta
+  )
+  SELECT count(*), count(DISTINCT (target_id, meta ->> 'guest_id'))
+    INTO so_dong, so_cap FROM ghi;
+  IF so_dong > 0 THEN
+    RAISE NOTICE 'D115: gop % dong album trung tren % cap (tam, khach)', so_dong, so_cap;
+  END IF;
+END $gopdoi$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_face_candidates_album_tam
+  ON crm_face_candidates (event_photo_id, guest_id)
+  WHERE deleted_at IS NULL AND trang_thai = 'xac-nhan';
 CREATE INDEX IF NOT EXISTS idx_face_candidates_cho
   ON crm_face_candidates (score DESC) WHERE deleted_at IS NULL AND trang_thai = 'cho';
 /* Album của một khách = đúng những dòng đã xác nhận (FR-7). */
@@ -365,7 +421,25 @@ END $nangcap$;
 `;
 
 async function migrateCrm() {
+  /* E08-D115 · mốc sổ audit TRƯỚC khi lược đồ chạy. RAISE NOTICE trong khối gộp
+     không đi ra log máy chủ (node-postgres không gắn bộ nghe 'notice' cho pool),
+     nên số dòng đã gộp của ĐÚNG lần boot này phải đọc lại từ sổ. Bảng chưa tồn
+     tại = CSDL mới tinh: không có gì để gộp, mốc 0. */
+  let mocAudit = 0;
+  try {
+    const m = await pool.query('SELECT coalesce(max(id), 0)::bigint AS id FROM crm_audit_events');
+    mocAudit = m.rows[0].id;
+  } catch (e) { mocAudit = 0; }
+
   await pool.query(CREATE_SQL);
+
+  const gop = await pool.query(`SELECT count(*)::int AS dong,
+      count(DISTINCT (target_id, meta ->> 'guest_id'))::int AS cap
+      FROM crm_audit_events WHERE event_type = 'face_gop_doi' AND id > $1`, [mocAudit]);
+  if (gop.rows[0].dong) {
+    console.log('[crm-db] D115: gộp ' + gop.rows[0].dong + ' dòng album trùng trên '
+      + gop.rows[0].cap + ' cặp (tấm, khách) — xem sổ audit face_gop_doi');
+  }
 
   // ─────────── E08-D047 · di trú crm_check_ins sang khoá (guest_id, session) ───────────
   // HAI ĐIỀU KIỆN Sponsor chốt trước khi deploy (06/08):

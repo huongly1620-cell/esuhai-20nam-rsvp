@@ -901,7 +901,18 @@ $('#themeBtn').onclick = function(){
 apDungTheme(localStorage.getItem('nd_theme') === 'light' ? 'light' : '');
 setLang(LANG);
 jget('/crm/me').then(function(j){ $('#meRole').textContent = (j.role||'') + ' · ' + (j.email||''); }).catch(function(){});
-veLuoi().catch(function(){ $('#anhTom').textContent = tt('loi_nap'); });
+/* E08-D107 · `?anh=<id>` — mở THẲNG đúng tấm ấy. Đây là đầu kia của dải ảnh sự
+   kiện trên hồ sơ CRM và trên panel sơ đồ: bấm một tấm nhỏ thì phải tới chính tấm
+   đó, chứ không phải đổ người xem vào lưới 15.000 ảnh để tự tìm lại.
+   Lưới vẫn nạp trước, vì nút «Về lưới ảnh» cần có chỗ để quay về.
+   Chỉ nhận chuỗi toàn số; id lạ / ảnh đã xoá ⇒ ở lại lưới kèm một câu, không để
+   lại màn xem trống (moAnh đã chuyển màn TRƯỚC khi hỏi máy chủ). */
+var qAnh = (function(){ try{ var v = new URLSearchParams(location.search).get('anh');
+  return v && /^\d+$/.test(v) ? v : ''; }catch(e){ return ''; } })();
+veLuoi()
+  .catch(function(){ $('#anhTom').textContent = tt('loi_nap'); })
+  .then(function(){ if (qAnh) return moAnh(qAnh, 'luoi'); })
+  .catch(function(){ hienMan('manAnh'); $('#anhTom').textContent = tt('loi_nap'); });
 </script>
 </body>
 </html>

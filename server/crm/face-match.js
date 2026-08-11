@@ -135,6 +135,167 @@ function mount(app, requireCrmAuth, requireRole) {
     } catch (e) { console.error('[face-match] photos:', e.message); res.status(500).json({ ok: false, error: 'loi' }); }
   });
 
+  /* ══ E08-D103 (CR-160) · KHỐI ẢNH THEO TỪNG KHÁCH ══
+     Vì sao phải có route riêng thay vì ghép ở trình duyệt: màn khối hiện nhiều
+     khách cùng lúc, ghép từ `album/:id` + `queue?guest_id=` là 2 lượt gọi mỗi
+     khách — 20 khách một trang thành 40 lượt, và vẫn không phân trang đúng được
+     vì hai nguồn đếm riêng. Một câu hỏi, một câu trả lời.
+     KHÔNG trả `vec`, không trả toạ độ mặt: khối chỉ cần thumb + trạng thái. */
+  const SAP_XEP_ANH = `CASE c.trang_thai WHEN 'xac-nhan' THEN 0 ELSE 1 END,
+                       c.score DESC NULLS LAST, c.id`;
+  const K_MOI_KHOI = 12;                    // trần ảnh mỗi khối trên màn danh sách
+
+  function locKhoi(loc){
+    if (loc === 'co-album') return 'AND k.so_album > 0';
+    if (loc === 'tat-ca')   return '';
+    return 'AND k.so_cho > 0';              // mặc định: khách đang có gợi ý chờ (FR-5)
+  }
+
+  app.get('/crm/face-match/khoi', ...btl, async (req, res) => {
+    try {
+      const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+      const offset = Math.max(0, Number(req.query.offset) || 0);
+      const q = String(req.query.q || '').trim();
+      const args = [limit, offset];
+      /* Hai câu dùng chung điều kiện tìm nhưng KHÁC số thứ tự tham số: câu lấy
+         trang có $1=limit $2=offset nên chuỗi tìm là $3, còn câu đếm không có hai
+         cái đó nên phải là $1. Dùng lại nguyên chuỗi cho cả hai là lỗi «bind
+         message supplies 1 parameters» chỉ nổ khi có người gõ vào ô tìm. */
+      let tim = '', timDem = '';
+      if (q) { args.push('%' + q + '%');
+        const dk = (n) => `AND (k.full_name ILIKE $${n} OR k.org ILIKE $${n}`
+          + ` OR k.name_jp ILIKE $${n} OR k.org_jp ILIKE $${n})`;
+        tim = dk(3); timDem = dk(1); }
+      /* `so_mau` đi cùng vì khách KHÔNG có mẫu thì máy không đoán được — khối rỗng
+         của họ có nguyên nhân khác hẳn khối rỗng của người đã có mẫu. D077 đã học
+         bài này một lần (AC-6 của nó), đừng để màn mới đánh mất lời giải thích. */
+      const nen = `
+        WITH k AS (
+          SELECT g.id, g.full_name, g.name_jp, g.org, g.org_jp,
+            (SELECT count(*)::int FROM crm_face_candidates c
+               WHERE c.guest_id = g.id AND c.deleted_at IS NULL AND c.trang_thai = 'xac-nhan') AS so_album,
+            (SELECT count(*)::int FROM crm_face_candidates c
+               WHERE c.guest_id = g.id AND c.deleted_at IS NULL AND c.trang_thai = 'cho') AS so_cho,
+            (SELECT count(*)::int FROM crm_face_samples s
+               WHERE s.guest_id = g.id AND s.deleted_at IS NULL AND s.vec IS NOT NULL) AS so_mau
+          FROM crm_guests g WHERE g.deleted_at IS NULL
+        )`;
+      const loc = locKhoi(req.query.loc);
+      /* Nhiều gợi ý chờ nhất lên trước (FR-5): người duyệt vào chỗ đông nhất, không
+         phải cuộn theo bảng chữ cái để tìm việc. */
+      const r = await pool.query(`${nen}
+        SELECT * FROM k WHERE true ${loc} ${tim}
+        ORDER BY k.so_cho DESC, k.so_album DESC, k.full_name
+        LIMIT $1 OFFSET $2`, args);
+      const tong = await pool.query(`${nen}
+        SELECT count(*)::int n FROM k WHERE true ${loc} ${timDem}`, args.slice(2));
+
+      let anhTheoKhach = new Map();
+      if (r.rows.length){
+        const ids = r.rows.map(x => x.id);
+        const a = await pool.query(`
+          SELECT * FROM (
+            SELECT c.guest_id, c.id AS candidate_id, c.event_photo_id, c.trang_thai, c.score,
+                   row_number() OVER (PARTITION BY c.guest_id ORDER BY ${SAP_XEP_ANH}) AS rn
+            FROM crm_face_candidates c
+            JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
+            WHERE c.guest_id = ANY($1::bigint[]) AND c.deleted_at IS NULL
+              AND c.trang_thai IN ('cho','xac-nhan')
+          ) t WHERE t.rn <= $2`, [ids, K_MOI_KHOI]);
+        a.rows.forEach(x => {
+          const g = String(x.guest_id);
+          if (!anhTheoKhach.has(g)) anhTheoKhach.set(g, []);
+          anhTheoKhach.get(g).push({
+            candidate_id: String(x.candidate_id), event_photo_id: String(x.event_photo_id),
+            trang_thai: x.trang_thai, score: x.score,
+            thumb_url: '/crm/event-photos/' + x.event_photo_id + '/thumb' });
+        });
+      }
+      res.json({ ok: true, tong: tong.rows[0].n, offset, moi_khoi: K_MOI_KHOI,
+        items: r.rows.map(x => {
+          const anh = anhTheoKhach.get(String(x.id)) || [];
+          return { guest_id: String(x.id), full_name: x.full_name, name_jp: x.name_jp,
+            org: x.org, org_jp: x.org_jp, so_album: x.so_album, so_cho: x.so_cho,
+            so_mau: x.so_mau, anh,
+            /* `con_lai` tính từ tổng thật, không từ độ dài mảng đã cắt — nhãn «còn N
+               tấm nữa» phải là N thật, cùng nguyên tắc với nhãn nút xác nhận. */
+            con_lai: Math.max(0, (x.so_album + x.so_cho) - anh.length) };
+        }) });
+    } catch (e) { console.error('[face-match] khoi:', e.message); res.status(500).json({ ok: false, error: 'loi' }); }
+  });
+
+  /* Màn MỘT khách (FR-4) — chỗ đóng lỗ hổng «124 tấm không có lối vào».
+     Phân trang ở tầng máy chủ, vì «đang hiện» của ràng buộc precision được định
+     nghĩa là ĐÚNG trang này: nếu trình duyệt tự cắt từ một mảng lớn hơn thì
+     «chọn tất cả trên trang» lại phủ thứ người dùng chưa nhìn. */
+  app.get('/crm/face-match/khoi/:guestId', ...btl, async (req, res) => {
+    try {
+      const limit = Math.min(24, Math.max(1, Number(req.query.limit) || 24));
+      const offset = Math.max(0, Number(req.query.offset) || 0);
+      const g = await pool.query(
+        `SELECT id, full_name, name_jp, org, org_jp FROM crm_guests
+          WHERE id = $1 AND deleted_at IS NULL`, [req.params.guestId]);
+      if (!g.rows[0]) return res.status(404).json({ ok: false, error: 'không thấy' });
+      const r = await pool.query(`
+        SELECT c.id AS candidate_id, c.event_photo_id, c.trang_thai, c.score
+        FROM crm_face_candidates c
+        JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
+        WHERE c.guest_id = $1 AND c.deleted_at IS NULL AND c.trang_thai IN ('cho','xac-nhan')
+        ORDER BY ${SAP_XEP_ANH}
+        LIMIT $2 OFFSET $3`, [req.params.guestId, limit, offset]);
+      const d = await pool.query(`
+        SELECT count(*) FILTER (WHERE c.trang_thai = 'xac-nhan')::int so_album,
+               count(*) FILTER (WHERE c.trang_thai = 'cho')::int so_cho
+        FROM crm_face_candidates c
+        JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
+        WHERE c.guest_id = $1 AND c.deleted_at IS NULL`, [req.params.guestId]);
+      res.json({ ok: true, khach: g.rows[0], offset, limit,
+        so_album: d.rows[0].so_album, so_cho: d.rows[0].so_cho,
+        tong: d.rows[0].so_album + d.rows[0].so_cho,
+        items: r.rows.map(x => ({ candidate_id: String(x.candidate_id),
+          event_photo_id: String(x.event_photo_id), trang_thai: x.trang_thai, score: x.score,
+          thumb_url: '/crm/event-photos/' + x.event_photo_id + '/thumb' })) });
+    } catch (e) { console.error('[face-match] khoi mot khach:', e.message); res.status(500).json({ ok: false, error: 'loi' }); }
+  });
+
+  /* Duyệt nhiều dòng trong MỘT lượt (D103).
+     Ràng buộc precision không nằm ở đây mà ở giao diện — route này không biết
+     người dùng đã nhìn tấm nào. Nên nó làm hai việc chống đỡ được ở tầng của mình:
+     chặn trần 200, và ghi ĐÚNG MỘT dòng audit kèm đủ danh sách id. Dòng audit ấy
+     là thứ duy nhất trả lời được «ai đã duyệt cái gì, lúc nào» khi có người hỏi vì
+     sao khách B nhận ảnh khách A. */
+  const TRAN_LO = 200;
+  const TRANG_THAI_HOP_LE = ['xac-nhan', 'tu-choi', 'bo-qua'];
+  app.post('/crm/face-match/quyet-nhieu', ...btl, async (req, res) => {
+    const { ids, trang_thai } = req.body || {};
+    if (TRANG_THAI_HOP_LE.indexOf(trang_thai) < 0)
+      return res.status(400).json({ ok: false, error: 'trạng thái không hợp lệ' });
+    if (!Array.isArray(ids) || !ids.length)
+      return res.status(400).json({ ok: false, error: 'thiếu danh sách' });
+    if (ids.length > TRAN_LO)
+      return res.status(400).json({ ok: false, error: 'quá ' + TRAN_LO + ' dòng một lượt' });
+    const so = ids.map(Number).filter(x => Number.isFinite(x) && x > 0);
+    if (so.length !== ids.length)
+      return res.status(400).json({ ok: false, error: 'danh sách có phần tử không hợp lệ' });
+    const c = await pool.connect();
+    try {
+      await c.query('BEGIN');
+      const r = await c.query(`UPDATE crm_face_candidates
+        SET trang_thai = $1, decided_by = $2, decided_at = now()
+        WHERE id = ANY($3::bigint[]) AND deleted_at IS NULL
+        RETURNING id, guest_id, event_photo_id`, [trang_thai, req.actor.email, so]);
+      await ghiAudit(c, req, 'face_' + trang_thai + '_nhieu', 'face_candidate',
+        r.rows.length ? r.rows[0].id : 0,
+        { so_dong: r.rowCount, ids: r.rows.map(x => String(x.id)),
+          guest_ids: [...new Set(r.rows.map(x => String(x.guest_id)))] });
+      await c.query('COMMIT');
+      res.json({ ok: true, da_doi: r.rowCount });
+    } catch (e) { await c.query('ROLLBACK');
+      console.error('[face-match] quyet-nhieu:', e.message);
+      res.status(500).json({ ok: false, error: 'loi' }); }
+    finally { c.release(); }
+  });
+
   /* Album của một khách = ĐÚNG những dòng đã xác nhận (FR-7 / AC-7). */
   app.get('/crm/face-match/album/:guestId', ...btl, async (req, res) => {
     try {

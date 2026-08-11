@@ -177,10 +177,13 @@ function mount(app, requireCrmAuth, requireRole) {
                          m.score DESC NULLS LAST, m.candidate_id`;
   const K_MOI_KHOI = 12;                    // trần ảnh mỗi khối trên màn danh sách
 
-  function locKhoi(loc){
-    if (loc === 'co-album') return 'AND k.so_album > 0';
-    if (loc === 'tat-ca')   return '';
-    return 'AND k.so_cho > 0';              // mặc định: khách đang có gợi ý chờ (FR-5)
+  /* D121 · trả về ĐIỀU KIỆN TRẦN (không có `AND` dẫn đầu) vì lát cắt giờ được dùng
+     ở hai chỗ: lọc trang, và `count(*) FILTER (...)` để đếm riêng phần trong lát.
+     Nhét sẵn `AND` vào chuỗi thì vế FILTER không dùng lại được. */
+  function dkKhoi(loc){
+    if (loc === 'co-album') return 'k.so_album > 0';
+    if (loc === 'tat-ca')   return 'true';
+    return 'k.so_cho > 0';                  // mặc định của route: khách có gợi ý chờ (FR-5)
   }
 
   app.get('/crm/face-match/khoi', ...btl, async (req, res) => {
@@ -195,30 +198,41 @@ function mount(app, requireCrmAuth, requireRole) {
          message supplies 1 parameters» chỉ nổ khi có người gõ vào ô tìm. */
       let tim = '', timDem = '';
       if (q) { args.push('%' + q + '%');
-        const dk = (n) => `AND (k.full_name ILIKE $${n} OR k.org ILIKE $${n}`
-          + ` OR k.name_jp ILIKE $${n} OR k.org_jp ILIKE $${n})`;
+        /* D121 · CÙNG năm cột với `/crm/guests?q=` (guests.js) — kể cả `phone_norm`.
+           Ô tìm ở tab Theo khách và ô gắn tên trên một tấm ảnh phải ra cùng một
+           người cho cùng một chuỗi (AC-3); hai danh sách cột khác nhau là hai cái
+           sổ khác nhau đội lốt một. `phone_norm` chỉ dùng để SO, không đi ra ngoài
+           trong `items` bên dưới — chỗ này không mở khoá SĐT cho ai. */
+        const dk = (n) => `AND (k.full_name ILIKE $${n} OR k.phone_norm ILIKE $${n}`
+          + ` OR k.org ILIKE $${n} OR k.name_jp ILIKE $${n} OR k.org_jp ILIKE $${n})`;
         tim = dk(3); timDem = dk(1); }
       /* `so_mau` đi cùng vì khách KHÔNG có mẫu thì máy không đoán được — khối rỗng
          của họ có nguyên nhân khác hẳn khối rỗng của người đã có mẫu. D077 đã học
          bài này một lần (AC-6 của nó), đừng để màn mới đánh mất lời giải thích. */
       const nen = `
         WITH k AS (
-          SELECT g.id, g.full_name, g.name_jp, g.org, g.org_jp,
+          SELECT g.id, g.full_name, g.name_jp, g.org, g.org_jp, g.phone_norm,
             ${demAlbum('g.id')} AS so_album,
             ${demCho('g.id')} AS so_cho,
             (SELECT count(*)::int FROM crm_face_samples s
                WHERE s.guest_id = g.id AND s.deleted_at IS NULL AND s.vec IS NOT NULL) AS so_mau
           FROM crm_guests g WHERE g.deleted_at IS NULL
         )`;
-      const loc = locKhoi(req.query.loc);
+      const loc = dkKhoi(req.query.loc);
       /* Nhiều gợi ý chờ nhất lên trước (FR-5): người duyệt vào chỗ đông nhất, không
          phải cuộn theo bảng chữ cái để tìm việc. */
       const r = await pool.query(`${nen}
-        SELECT * FROM k WHERE true ${loc} ${tim}
+        SELECT * FROM k WHERE ${loc} ${tim}
         ORDER BY k.so_cho DESC, k.so_album DESC, k.full_name
         LIMIT $1 OFFSET $2`, args);
+      /* D121 · MỘT lượt đếm, hai con số. `tong_so` = khớp chuỗi tìm trên CẢ sổ còn
+         sống; `tong` = phần nằm trong lát cắt đang chọn. Chênh nhau ⇒ có người ở
+         trong sổ mà lát cắt đang giấu, và màn hình phải nói ra thay vì trả một danh
+         sách trống im (luật 4). Tách thành hai câu SELECT thì quét nền hai lượt, và
+         hai câu ấy có thể lệch định nghĩa khi ai đó sửa một bên quên bên kia. */
       const tong = await pool.query(`${nen}
-        SELECT count(*)::int n FROM k WHERE true ${loc} ${timDem}`, args.slice(2));
+        SELECT count(*)::int n_so, count(*) FILTER (WHERE ${loc})::int n
+        FROM k WHERE true ${timDem}`, args.slice(2));
 
       let anhTheoKhach = new Map();
       if (r.rows.length){
@@ -245,7 +259,8 @@ function mount(app, requireCrmAuth, requireRole) {
             thumb_url: '/crm/event-photos/' + x.event_photo_id + '/thumb' });
         });
       }
-      res.json({ ok: true, tong: tong.rows[0].n, offset, moi_khoi: K_MOI_KHOI,
+      res.json({ ok: true, tong: tong.rows[0].n, tong_so: tong.rows[0].n_so,
+        offset, moi_khoi: K_MOI_KHOI,
         items: r.rows.map(x => {
           const anh = anhTheoKhach.get(String(x.id)) || [];
           return { guest_id: String(x.id), full_name: x.full_name, name_jp: x.name_jp,

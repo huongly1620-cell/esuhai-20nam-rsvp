@@ -222,7 +222,10 @@
   .diem.vua{color:var(--muted)}
   .ta{position:relative}
   .ta-ds{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--panel2);
-    border:1px solid var(--line2);border-radius:10px;max-height:220px;overflow:auto}
+    /* E08-D121 · 220 → 340px. Trần gợi ý lên 20 dòng thì khung cũ chỉ hở ~6 dòng,
+       và một khung cuộn ngắn nằm đè lên trang rất dễ bị đọc là «hết danh sách».
+       Vẫn giữ trần chiều cao: bỏ hẳn là khung 20 dòng phủ kín màn điện thoại. */
+    border:1px solid var(--line2);border-radius:10px;max-height:340px;overflow:auto}
   .ta-ds div{padding:8px 11px;cursor:pointer;font-size:.85rem}
   .ta-ds div:hover{background:var(--panel)}
   .an{display:none}
@@ -341,13 +344,21 @@
        hai trạng thái cạnh nhau nên con số và thứ nhìn thấy luôn nói cùng một điều. -->
   <div id="manKhach" class="an">
     <div class="card">
+      <!-- E08-D121 · «Tất cả khách» đứng ĐẦU và là lát cắt mở màn. Tab này không
+           chỉ để duyệt gợi ý máy: người ta còn vào đây tìm một người CHƯA có mẫu,
+           chưa có tấm nào, để gắn tay hoặc khoanh mặt dạy máy. Mặc định cũ («đang
+           có ảnh chờ duyệt») giấu đúng những người ấy, nên gõ tên một khách có
+           thật lại ra danh sách trống — và không có gì trên màn nói vì sao. -->
       <div class="hang-loc">
-        <button class="chip lock" data-lock="co-goi-y" aria-pressed="true" data-i="lk_cho">Khách đang có ảnh chờ duyệt</button>
+        <button class="chip lock" data-lock="tat-ca" aria-pressed="true" data-i="lk_tat">Tất cả khách</button>
+        <button class="chip lock" data-lock="co-goi-y" aria-pressed="false" data-i="lk_cho">Khách đang có ảnh chờ duyệt</button>
         <button class="chip lock" data-lock="co-album" aria-pressed="false" data-i="lk_album">Khách đã có ảnh trong album</button>
-        <button class="chip lock" data-lock="tat-ca" aria-pressed="false" data-i="lk_tat">Tất cả khách</button>
       </div>
       <input type="search" id="timKhach">
       <p class="hint" id="khoiTom" style="margin:9px 0 0"></p>
+      <!-- Câu của luật 4: đứng NGAY dưới dòng tóm tắt, trên phần chú giải dài, vì
+           nó nói về đúng chuỗi người dùng vừa gõ. -->
+      <p class="canh" id="khoiLoc" style="margin:6px 0 0"></p>
       <p class="hint" id="khoiChu" style="margin:6px 0 0"></p>
     </div>
     <div id="dsKhoi"></div>
@@ -416,8 +427,11 @@ var T = {
     khoanh_nho:'Khung quá nhỏ — kéo rộng hơn quanh khuôn mặt.',
     khoanh_chon:'Khung đã vẽ. Chọn khách để lưu làm ảnh mẫu:',
     mau_xong:'Đã ghi khung. Lượt chạy tới sẽ học khuôn mặt này rồi tìm thêm ảnh của khách đó.',
-    tim_ph:'Tìm tên / đơn vị (cả tiếng Nhật)…',
+    tim_ph:'Tìm tên / đơn vị / số điện thoại (cả tiếng Nhật)…',
     khong_mau:'Khách này chưa có ảnh mẫu — máy không đoán được ảnh nào cho họ.',
+    /* E08-D121 · câu của luật 4. Nói ba điều theo đúng thứ tự người đang lo:
+       họ CÓ trong sổ · đang bị lát cắt giấu · bấm vào đâu để thấy. */
+    khoi_bi_loc:'Còn {n} khách khớp «{q}» đang nằm trong sổ nhưng bị lát cắt này giấu. Bấm chip «Tất cả khách» ở trên để thấy họ.',
     /* ── E08-D103 · khối theo khách ── */
     lk_cho:'Khách đang có ảnh chờ duyệt', lk_album:'Khách đã có ảnh trong album',
     lk_tat:'Tất cả khách',
@@ -476,8 +490,10 @@ var T = {
     khoanh_nho:'範囲が小さすぎます — 顔を囲むように広げてください。',
     khoanh_chon:'範囲を保存しました。参照写真にするゲストを選んでください：',
     mau_xong:'範囲を保存しました。次回の処理でこの顔を学習し、他の写真を探します。',
-    tim_ph:'氏名／所属で検索（日本語も可）…',
+    tim_ph:'氏名／所属／電話番号で検索（日本語も可）…',
     khong_mau:'このゲストには参照写真がありません — 自動判定ができません。',
+    /* E08-D121 */
+    khoi_bi_loc:'「{q}」に一致するゲストが他に{n}名、名簿にありますが、この絞り込みで隠れています。上の「すべてのゲスト」を押すと表示されます。',
     /* ── E08-D103 ── */
     lk_cho:'承認待ちの写真があるゲスト', lk_album:'アルバムに写真があるゲスト',
     lk_tat:'すべてのゲスト',
@@ -882,7 +898,9 @@ function veDsGoi(){
 async function lamMoiAnhDang(){ await moAnh(ANH_DANG); }
 
 /* ══════════ TAB THEO KHÁCH = KHỐI ẢNH (E08-D103) ══════════ */
-var LOC_KHOI = 'co-goi-y', KHOI = [], KHOI_TONG = 0, KHACH_DANG = null;
+/* E08-D121 · phải KHỚP chip đang `aria-pressed=true` trong HTML ở trên. Lệch nhau
+   thì màn mở ra vẽ một lát cắt mà hàng chip lại chỉ vào lát khác. */
+var LOC_KHOI = 'tat-ca', KHOI = [], KHOI_TONG = 0, KHACH_DANG = null;
 /* Màn một khách: cỡ trang do MÁY CHỦ cắt, không phải trình duyệt. «Đang hiện» của
    ràng buộc precision được khoá ở Gate 1 nghĩa là ĐÚNG trang này — nếu ta tự cắt
    từ một mảng lớn hơn đã tải sẵn thì «chọn tất cả trên trang» lại phủ cả thứ người
@@ -1093,6 +1111,14 @@ async function veKhoi(noiTiep){
   KHOI_TONG = j.tong || 0;
   $('#khoiTom').textContent = KHOI.length
     ? fmt('khoi_tom', { n: KHOI_TONG, c: KHOI.length }) : tt('khoi_rong');
+  /* E08-D121 · luật 4 — lát cắt hẹp không được im lặng.
+     Máy chủ trả về hai con số cho cùng chuỗi tìm: `tong` trong lát cắt, `tong_so`
+     trên cả sổ. Chênh nhau nghĩa là có người khớp mà lát cắt đang giấu; nói ra bao
+     nhiêu người và bấm đâu để thấy. So bằng `tong_so > tong` chứ không phải
+     «danh sách rỗng» vì trường hợp khó chịu hơn là ra ĐƯỢC vài người — người dùng
+     tưởng đó là tất cả rồi thôi tìm, trong khi người họ cần vẫn đang bị giấu. */
+  var duoi = Math.max(0, (j.tong_so == null ? KHOI_TONG : j.tong_so) - KHOI_TONG);
+  $('#khoiLoc').textContent = (q && duoi) ? fmt('khoi_bi_loc', { n: duoi, q: q }) : '';
   $('#khoiChu').textContent = tt('khoi_chu');
   $('#dsKhoi').innerHTML = KHOI.map(function(k){
     var dv = LANG === 'jp' && k.org_jp ? k.org_jp : (k.org || '');
@@ -1340,6 +1366,11 @@ document.addEventListener('touchmove', keoKhoanh, { passive: false });
 document.addEventListener('touchend', thaKhoanh);
 
 /* ══════════ Typeahead FR-4b — dùng ĐÚNG /crm/guests?q= sẵn có ══════════ */
+/* E08-D121 · trần 8 → 20. Ở sổ này một họ phổ biến (Nguyễn, Trần…) trả về hơn 8
+   người rất dễ, và bản cũ cắt ở 8 KHÔNG nói gì — người cần gắn tên nằm ở dòng
+   thứ 9 thì với người dùng, họ đơn giản là không có trong sổ. Hai chỗ phải cùng
+   một số: `limit` gửi lên và `slice` cắt lại; lệch nhau là lại cắt lặng lẽ. */
+var TRAN_GOI_Y = 20;
 var henTim = null;
 document.addEventListener('input', function(e){
   if (!e.target.classList.contains('ganO')) return;
@@ -1349,8 +1380,8 @@ document.addEventListener('input', function(e){
   if (q.length < 2){ ds.classList.add('an'); return; }
   henTim = setTimeout(async function(){
     try {
-      var j = await jget('/crm/guests?q=' + encodeURIComponent(q) + '&limit=8');
-      var it = (j.items || j.rows || []).slice(0, 8);
+      var j = await jget('/crm/guests?q=' + encodeURIComponent(q) + '&limit=' + TRAN_GOI_Y);
+      var it = (j.items || j.rows || []).slice(0, TRAN_GOI_Y);
       ds.innerHTML = it.length ? it.map(function(g){
         return '<div data-gid="'+g.id+'">'+esc(tenKh(g))
           +(g.org?' <span class="hint">'+esc(g.org)+'</span>':'')+'</div>';

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Nhận diện ảnh khách · ESUHAI 20 năm</title>
+<title>Ảnh sự kiện · ESUHAI 20 năm</title>
 <style>
   :root{
     --bg1:#050b14;--bg2:#071019;--panel:rgba(255,255,255,.05);--panel2:rgba(7,16,27,.66);
@@ -67,8 +67,22 @@
   .hieu.alb{left:6px;background:rgba(67,224,141,.82);border-color:var(--ok);color:#04240f}
   .chip{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:999px;
     padding:6px 13px;font:inherit;font-size:var(--fs-small);cursor:pointer}
-  .chip[aria-pressed=true]{background:rgba(224,189,119,.18);border-color:var(--gold);color:var(--gold)}
+  /* E08-D106 · chip tab Kho là <a>, không phải <button>: nó rời tài liệu này. Mặc
+     định của trình duyệt cho <a> khác <button> ở ba chỗ (gạch chân, màu link,
+     line-height) nên phải nói lại cả ba, không thì ba chip cùng hàng cao thấp
+     khác nhau. `aria-current` chứ không `aria-pressed`: link không có trạng thái
+     nhấn, nó có trạng thái "đang ở đây". */
+  a.chip{text-decoration:none;display:inline-flex;align-items:center;line-height:1.45}
+  .chip[aria-pressed=true],.chip[aria-current=page]{background:rgba(224,189,119,.18);
+    border-color:var(--gold);color:var(--gold)}
+  /* `.tab` = THANH BA TAB của trang, đúng một chỗ trên trang này. Hàng chip lọc bên
+     trong mỗi tab mang tên riêng `.hang-loc` (E08-D106). Bản D102 cho cả hai đeo
+     chung tên `.tab`: đọc thì thấy ba hàng chip giống nhau, mà chỉ một hàng đổi
+     TAB còn hai hàng kia đổi BỘ LỌC trong tab. Đúng bài N1 của Gate 2 D103 — một
+     tên mang hai nghĩa thì phép quét DOM (AC-2b) không phân biệt được «tab» với
+     «bộ lọc», và người sửa sau cũng vậy. */
   .tab{display:flex;gap:8px;margin-bottom:13px;flex-wrap:wrap}
+  .hang-loc{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
   /* ── E08-D103 · khối theo khách ──────────────────────────────────────────
      Hai trạng thái phải phân biệt được BẰNG MẮT và BẰNG CHỮ (FR-2). Chỉ đổi màu
      là chưa đủ: người mù màu đọc viền vàng thành viền xanh, mà nhầm chiều này
@@ -127,6 +141,18 @@
   .anhto img{max-width:100%;display:block;border-radius:11px}
   .goi{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
   .goi b{word-break:break-word}
+  /* E08-D106 · AC-11 (G6, QC D103 v2 ghi sổ) — hàng «Đã gắn tên trong ảnh này».
+     Dấu ✓ thuộc về CÁI TÊN, không phải về hàng. Bản trước để tên, đơn vị và ✓ là
+     ba con rời của một hàng `flex-wrap:wrap`: ở 360px một tên dài + đơn vị dài đẩy
+     ✓ rơi xuống dòng riêng, nơi nó nằm ngay trên tên của người KẾ TIẾP — người đọc
+     thấy một dấu xác nhận không rõ đang xác nhận ai.
+     Không dùng `white-space:nowrap` cho cả hàng: tên vẫn PHẢI được ngắt dòng trong
+     cột của nó, chỉ có ✓ là không được rời khỏi hàng. Nên: hàng nowrap, cột tên co
+     được (`min-width:0` — thiếu nó thì cột flex không co dưới nội dung và hàng
+     tràn ngang, hỏng AC-8), ✓ cố định bên phải. */
+  .goi.da{flex-wrap:nowrap;align-items:flex-start}
+  .goi.da .ten{flex:1 1 auto;min-width:0}
+  .goi.da .dem{flex:0 0 auto;margin-left:auto}
   .diem{font-size:var(--fs-small);color:var(--gold)}
   .diem.vua{color:var(--muted)}
   .ta{position:relative}
@@ -146,25 +172,33 @@
 <div class="wrap">
   <div class="top">
     <button class="btn sm" id="veCrm">← <span data-i="ve_crm">Về CRM</span></button>
-    <h1 data-i="tieu_de">🧑‍🤝‍🧑 Nhận diện ảnh khách</h1>
+    <h1 data-i="tieu_de">📸 Ảnh sự kiện</h1>
     <span class="hint" id="meRole"></span>
     <div class="spacer"></div>
     <button class="btn sm" id="langBtn">日本語</button>
     <button class="btn sm" id="themeBtn">☽</button>
   </div>
 
-  <!-- E08-D102 (CR-159) · Hai lối vào. Ảnh đứng trước: người làm việc ở đây nhìn
-       một khung hình rồi nói "đây là ai", chứ không mở sổ tên rồi đi tìm ảnh.
-       Lối theo khách vẫn còn nguyên cho việc ngược lại — soát album của một người. -->
+  <!-- E08-D102 (CR-159) · Ảnh đứng trước: người làm việc ở đây nhìn một khung hình
+       rồi nói "đây là ai", chứ không mở sổ tên rồi đi tìm ảnh. Lối theo khách vẫn
+       còn nguyên cho việc ngược lại — soát album của một người.
+
+       E08-D106 · thêm tab KHO vào cùng thanh này. Kho là một tài liệu khác nên chip
+       của nó là <a> — điều hướng thật, có địa chỉ thật, mở tab mới được bằng chuột
+       giữa. Hai chip còn lại là <button> vì chúng đổi màn TRONG tài liệu này.
+       Nhãn của chip Phân loại KHÔNG còn là «Ảnh sự kiện»: chữ đó giờ là tên của cả
+       trang (h1). Một chữ mang hai nghĩa thì người đọc phải đoán nghĩa nào — cùng
+       bài học N1 của D103, lần đó là tên class, lần này là nhãn UI. -->
   <div class="tab" id="thanhTab">
-    <button class="chip" id="tabAnh" aria-pressed="true" data-i="tab_anh">Ảnh sự kiện</button>
+    <a class="chip" id="tabKho" href="/crm/anh-su-kien/kho" data-i="tab_kho">Kho</a>
+    <button class="chip" id="tabAnh" aria-pressed="true" data-i="tab_anh">Phân loại</button>
     <button class="chip" id="tabKhach" aria-pressed="false" data-i="tab_khach">Theo khách</button>
   </div>
 
   <!-- ══ HOME: LƯỚI ẢNH ══ -->
   <div id="manAnh">
     <div class="card">
-      <div class="tab" style="margin-bottom:10px">
+      <div class="hang-loc">
         <button class="chip loc" data-loc="tat-ca" aria-pressed="true" data-i="loc_tat">Tất cả</button>
         <button class="chip loc" data-loc="co-goi-y" aria-pressed="false" data-i="loc_goi">Máy có gợi ý chờ duyệt</button>
         <button class="chip loc" data-loc="chua-album" aria-pressed="false" data-i="loc_chua">Chưa gắn tên ai</button>
@@ -211,7 +245,7 @@
        hai trạng thái cạnh nhau nên con số và thứ nhìn thấy luôn nói cùng một điều. -->
   <div id="manKhach" class="an">
     <div class="card">
-      <div class="tab" style="margin-bottom:10px">
+      <div class="hang-loc">
         <button class="chip lock" data-lock="co-goi-y" aria-pressed="true" data-i="lk_cho">Khách đang có ảnh chờ duyệt</button>
         <button class="chip lock" data-lock="co-album" aria-pressed="false" data-i="lk_album">Khách đã có ảnh trong album</button>
         <button class="chip lock" data-lock="tat-ca" aria-pressed="false" data-i="lk_tat">Tất cả khách</button>
@@ -256,8 +290,8 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 
 var T = {
-  vn:{ ve_crm:'Về CRM', tieu_de:'🧑‍🤝‍🧑 Nhận diện ảnh khách',
-    tab_anh:'Ảnh sự kiện', tab_khach:'Theo khách',
+  vn:{ ve_crm:'Về CRM', tieu_de:'📸 Ảnh sự kiện',
+    tab_kho:'Kho', tab_anh:'Phân loại', tab_khach:'Theo khách',
     loc_tat:'Tất cả', loc_goi:'Máy có gợi ý chờ duyệt', loc_chua:'Chưa gắn tên ai',
     anh_tom:'{n} ảnh · đang xem {c}',
     chu_giai:'Số vàng góc phải = số gợi ý máy đang chờ người duyệt. Dấu xanh góc trái = ảnh đã được gắn tên ít nhất một khách.',
@@ -302,8 +336,8 @@ var T = {
     lo_bo_qua:'Để sau — {n} tấm',
     khong_khop:'Không có khách nào khớp. Ô này chỉ chọn từ danh sách mời, không tạo khách mới.',
     loi_nap:'Không nạp được dữ liệu. Thử tải lại trang.' },
-  jp:{ ve_crm:'CRMへ戻る', tieu_de:'🧑‍🤝‍🧑 ゲスト写真の顔認識',
-    tab_anh:'イベント写真', tab_khach:'ゲスト別',
+  jp:{ ve_crm:'CRMへ戻る', tieu_de:'📸 イベント写真',
+    tab_kho:'保管庫', tab_anh:'仕分け', tab_khach:'ゲスト別',
     loc_tat:'すべて', loc_goi:'承認待ちの候補あり', loc_chua:'名前未登録',
     anh_tom:'{n}枚 · 表示中{c}枚',
     chu_giai:'右上の金色の数字＝承認待ちの候補数。左上の緑の印＝すでにゲスト名が登録された写真。',
@@ -349,11 +383,20 @@ var T = {
     khong_khop:'該当するゲストがいません。ここでは招待者一覧からのみ選べます。',
     loi_nap:'データを読み込めませんでした。ページを再読み込みしてください。' }
 };
-var LANG = localStorage.getItem('nd_lang') === 'jp' ? 'jp' : 'vn';
+/* E08-D106 · ngôn ngữ và theme là của NGƯỜI, không của trang. Ba tab giờ là MỘT
+   trang trước mắt người dùng, nhưng vẫn là hai tài liệu HTML: mỗi tài liệu giữ một
+   khoá riêng thì bật 日本語 ở tab Phân loại, sang tab Kho lại thấy tiếng Việt —
+   người dùng đọc đó là "nút ngôn ngữ hỏng", không phải "hai trang".
+   Đây KHÔNG phải luật mới: Sponsor đã chốt 09/08 «trang trước là ngôn ngữ gì thì
+   qua trang khác cũng phải vậy» và /crm + hai cửa đã gom về `esuhai_lang`
+   (crm-app-v2.html:699). Trang này với kho-anh là hai chỗ chưa di trú theo.
+   Khoá cũ `nd_*` chỉ còn được ĐỌC, cho ai đã chọn trước D106; không ghi vào nữa. */
+function nhoCu(chung, cu){ var v = localStorage.getItem(chung); return v == null ? localStorage.getItem(cu) : v; }
+var LANG = nhoCu('esuhai_lang', 'nd_lang') === 'jp' ? 'jp' : 'vn';
 function tt(k){ return (T[LANG] && T[LANG][k]) || T.vn[k] || k; }
 function fmt(k,o){ var s = tt(k); for (var i in o) s = s.split('{'+i+'}').join(o[i]); return s; }
 function setLang(l){
-  LANG = l; localStorage.setItem('nd_lang', l);
+  LANG = l; localStorage.setItem('esuhai_lang', l);
   document.documentElement.lang = l === 'jp' ? 'ja' : 'vi';
   document.querySelectorAll('[data-i]').forEach(function(el){
     var v = tt(el.getAttribute('data-i')); if (v) el.textContent = v; });
@@ -371,7 +414,7 @@ function setLang(l){
 }
 function apDungTheme(t){ if (t) document.documentElement.setAttribute('data-theme', t);
   else document.documentElement.removeAttribute('data-theme');
-  localStorage.setItem('nd_theme', t || ''); $('#themeBtn').innerHTML = t ? '☀' : '☽'; }
+  localStorage.setItem('crm_theme', t || ''); $('#themeBtn').innerHTML = t ? '☀' : '☽'; }
 
 async function jget(u){ var r = await fetch(u); if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
 async function jpost(u,b,m){ var r = await fetch(u,{ method: m||'POST',
@@ -413,9 +456,31 @@ function hienMan(id){
     $('#baoXem').textContent = '';
     dongKhoanh();
   }
-  $('#tabAnh').setAttribute('aria-pressed', String(id === 'manAnh' || id === 'manXem'));
-  $('#tabKhach').setAttribute('aria-pressed', String(id === 'manKhach' || id === 'manMotKhach'));
+  /* Trang xem một ảnh không phải một tab — nó là màn con của tab mà người dùng ĐI
+     TỪ ĐÓ vào. D103 gán cứng nó cho tab Phân loại; từ D106 URL cũng nói tab đang
+     mở, nên gán cứng như thế là chip và thanh địa chỉ nói hai điều khác nhau khi
+     người ta mở một tấm từ tab Theo khách. `TU_DAU` đã ghi sẵn lối vào ấy (nó
+     được đặt TRƯỚC hienMan trong moAnh) — đọc nó, đừng đoán. */
+  var xemTuLuoi = (id === 'manXem') && TU_DAU === 'luoi';
+  $('#tabAnh').setAttribute('aria-pressed', String(id === 'manAnh' || xemTuLuoi));
+  $('#tabKhach').setAttribute('aria-pressed',
+    String(id === 'manKhach' || id === 'manMotKhach' || (id === 'manXem' && !xemTuLuoi)));
 }
+
+/* ══════════ E08-D106 · FR-5 — URL nói đúng tab đang mở ══════════
+   Chỉ TAB vào lịch sử, không phải từng màn con. Mở một tấm ảnh hay một khách là đi
+   sâu TRONG một tab; nếu đẩy cả màn con vào lịch sử thì nút Back của điện thoại
+   thành nút "lùi một cú bấm", và người ta bấm Back để đóng ảnh lại rơi ra khỏi
+   trang. Tab Kho nằm ở tài liệu khác nên nó là <a> — lịch sử của nó do trình duyệt
+   lo, ta không đụng. */
+var URL_TAB = { anh: '/crm/anh-su-kien', khach: '/crm/anh-su-kien/theo-khach' };
+function tabTuUrl(){ return location.pathname.indexOf('/theo-khach') > -1 ? 'khach' : 'anh'; }
+function moTab(tab, day){
+  if (tab === 'khach'){ TU_DAU = 'khoi'; hienMan('manKhach'); veKhoi(); }
+  else { TU_DAU = 'luoi'; hienMan('manAnh'); veLuoi(); }
+  if (day && location.pathname !== URL_TAB[tab]) history.pushState({ tab: tab }, '', URL_TAB[tab]);
+}
+window.addEventListener('popstate', function(){ moTab(tabTuUrl(), false); });
 
 /* ══════════ LƯỚI ẢNH (FR-H1) ══════════ */
 var LOC = 'tat-ca', ANH = [], TONG = 0, ANH_DANG = null;
@@ -497,10 +562,13 @@ async function moAnh(id, tuDau){
   var html = '';
   if (alb.length){
     html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('da_gan')) + '</p>';
+    /* AC-11 · tên + đơn vị nằm trong MỘT cột co được, ✓ là con thứ hai của hàng.
+       Bản trước dùng `<div class="spacer">` đẩy ✓ sang phải — spacer là phần tử
+       thứ ba, và ở 360px chính nó là chỗ hàng gãy. */
     html += alb.map(function(c){
-      return '<div class="goi"><b>' + esc(tenKh(c)) + '</b>'
+      return '<div class="goi da"><span class="ten"><b>' + esc(tenKh(c)) + '</b>'
         + (c.org ? ' <span class="hint">' + esc(c.org) + '</span>' : '')
-        + '<div class="spacer"></div><span class="dem co">✓</span></div>'; }).join('');
+        + '</span><span class="dem co">✓</span></div>'; }).join('');
   }
   if (goi.length){
     html += '<p class="hint" style="margin:11px 0 0">' + esc(tt('may_goi')) + '</p>';
@@ -885,8 +953,8 @@ $('#veLuoi').onclick = function(){
 $('#veKhoi').onclick = function(){ KHACH_DANG = null; hienMan('manKhach'); veKhoi(); };
 /* G1 (Gate 2 D102) giữ nguyên tinh thần: dữ liệu tab Theo khách chỉ nạp khi người
    ta MỞ tab ấy, không nạp lại sau mỗi cú bấm bên lưới ảnh. */
-$('#tabAnh').onclick = function(){ TU_DAU = 'luoi'; hienMan('manAnh'); veLuoi(); };
-$('#tabKhach').onclick = function(){ TU_DAU = 'khoi'; hienMan('manKhach'); veKhoi(); };
+$('#tabAnh').onclick = function(){ moTab('anh', true); };
+$('#tabKhach').onclick = function(){ moTab('khach', true); };
 $('#taiThem').onclick = function(){ veLuoi(true); };
 $('#khoiThem').onclick = function(){ veKhoi(true); };
 $('#trangTruoc').onclick = function(){ moMotKhach(KHACH_DANG, KHACH_OFFSET - TRANG_KHACH); };
@@ -898,10 +966,17 @@ $('#langBtn').onclick = function(){ setLang(LANG === 'jp' ? 'vn' : 'jp'); };
 $('#themeBtn').onclick = function(){
   apDungTheme(document.documentElement.getAttribute('data-theme') === 'light' ? '' : 'light'); };
 
-apDungTheme(localStorage.getItem('nd_theme') === 'light' ? 'light' : '');
+apDungTheme(nhoCu('crm_theme', 'nd_theme') === 'light' ? 'light' : '');
 setLang(LANG);
 jget('/crm/me').then(function(j){ $('#meRole').textContent = (j.role||'') + ' · ' + (j.email||''); }).catch(function(){});
-veLuoi().catch(function(){ $('#anhTom').textContent = tt('loi_nap'); });
+
+/* Tab mở đầu do URL quyết định, không phải một mặc định cứng: `/crm/anh-su-kien`
+   là Phân loại (thứ tự D102 — ảnh trước, tên gắn sau), `…/theo-khach` là khối theo
+   khách. replaceState để mục lịch sử đầu tiên cũng mang `state.tab`, nếu không thì
+   cú Back đầu tiên trả về một mục không có state và popstate không biết vẽ gì. */
+history.replaceState({ tab: tabTuUrl() }, '', location.pathname + location.search);
+if (tabTuUrl() === 'khach'){ TU_DAU = 'khoi'; hienMan('manKhach'); veKhoi(); }
+else veLuoi().catch(function(){ $('#anhTom').textContent = tt('loi_nap'); });
 </script>
 </body>
 </html>

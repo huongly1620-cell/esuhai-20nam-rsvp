@@ -67,13 +67,32 @@ function mount(app) {
   // Rollback lane: the classic shell, regardless of CRM_UI. Same auth gate.
   app.get('/crm/classic', (req, res) => serveShell(req, res, 'crm-app.html'));
 
-  /* E08-D082 · trang KHO ẢNH SỰ KIỆN — trang riêng, không phải nút chìm trong
-     /crm (CR-132). Đi qua đúng `serveShell` nên hưởng nguyên gác cổng `btl` và
-     lối đưa PG về cửa; ảnh phóng sự là dữ liệu của ban tổ chức, PG không mở. */
-  app.get('/crm/kho-anh', (req, res) => serveShell(req, res, 'crm-kho-anh.html'));
-  /* E08-D077 · ngăn nhận diện. Cùng khuôn kho-anh: trang riêng, serveShell,
-     btl-only — không nhét vào crm-app-v2.html. */
-  app.get('/crm/nhan-dien', (req, res) => serveShell(req, res, 'crm-nhan-dien.html'));
+  /* E08-D106 (CR-161) · MỘT lối vào «Ảnh sự kiện», ba tab. Trước D106 là hai nút
+     rời trên /crm — «Kho ảnh sự kiện» (D082) và «Nhận diện ảnh khách» (D077) —
+     nhưng với người dùng đó là MỘT việc: ảnh của sự kiện.
+
+     Vì sao mỗi tab một URL thật chứ không một tài liệu ba khung:
+       * Tab Kho và tab Phân loại là hai trang HTML đã sống, mỗi trang ~2 500 và
+         ~900 dòng với chrome, i18n, theme riêng. Nhét chung vào một tài liệu là
+         viết lại Picker/đồng bộ — đúng thứ vé này cấm.
+       * FR-5 đòi back/forward phản ánh tab đang mở. Điều hướng thật cho việc đó
+         miễn phí và không thể lệch; pushState giả trong iframe thì phải tự giữ
+         đồng bộ, và mỗi chỗ tự giữ là một chỗ sẽ lệch.
+     Phiên đăng nhập là cookie nên đi qua mọi tuyến — đổi tab không đăng nhập lại.
+
+     `/crm/anh-su-kien` (không đuôi) = tab Phân loại, giữ đúng thứ tự D102 «ảnh
+     trước, tên gắn sau». Một tab một URL: không có URL thứ hai cho cùng một tab. */
+  app.get('/crm/anh-su-kien', (req, res) => serveShell(req, res, 'crm-nhan-dien.html'));
+  app.get('/crm/anh-su-kien/theo-khach', (req, res) => serveShell(req, res, 'crm-nhan-dien.html'));
+  app.get('/crm/anh-su-kien/kho', (req, res) => serveShell(req, res, 'crm-kho-anh.html'));
+  // Người gõ tay đường đoán được nhất của tab mặc định — đưa về URL chuẩn, đừng 404.
+  app.get('/crm/anh-su-kien/phan-loai', (req, res) => res.redirect(302, '/crm/anh-su-kien'));
+
+  /* URL cũ đã nằm trong bookmark và trong tin nhắn Signal của ban tổ chức từ
+     D077/D082 — không được chết. 302 chứ không 301: 301 bị trình duyệt nhớ vĩnh
+     viễn, mà nếu vòng sau phải đổi lại lối vào thì không gỡ ra khỏi máy ai được. */
+  app.get('/crm/kho-anh', (req, res) => res.redirect(302, '/crm/anh-su-kien/kho'));
+  app.get('/crm/nhan-dien', (req, res) => res.redirect(302, '/crm/anh-su-kien'));
 
   /* Ảnh mẫu cờ xoay EXIF cho phép dò AC-9. Thư mục `views/` KHÔNG nằm trong
      express.static, nên phải có tuyến riêng — và tuyến này đi cùng gác cổng với

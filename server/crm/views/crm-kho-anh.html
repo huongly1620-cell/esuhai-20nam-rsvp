@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>Kho ảnh sự kiện · ESUHAI 20 năm</title>
+<title>Ảnh sự kiện · ESUHAI 20 năm</title>
 <!-- E08-D083 · polish UI/UX lên ngang bậc /crm. Design token + modal + toast chép khuôn
      từ crm-app-v2.html:9-34 / :605-918 — CHÉP, không import: kiến trúc hiện tại là
      self-contained per view, không có gói dùng chung giữa các trang. -->
@@ -75,6 +75,18 @@
   .icobtn{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);
     color:var(--text);cursor:pointer;font-size:1rem;display:grid;place-items:center;transition:.15s}
   .icobtn:hover{border-color:var(--line2);background:var(--hover)}
+
+  /* E08-D106 (CR-161) · thanh ba tab của trang «Ảnh sự kiện». Chép khuôn chip từ
+     crm-nhan-dien.html — CHÉP, không import: kiến trúc hiện tại là self-contained
+     per view (xem ghi chú D083 ở đầu tệp), chưa có gói CSS dùng chung.
+     Cả ba chip là <a>: từ tab Kho, hai tab kia đều nằm ở tài liệu khác. `flex-wrap`
+     để ở 360px ba chip xuống hàng chứ không đẩy trang tràn ngang (AC-8). */
+  .tab{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}
+  .chip{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:999px;
+    padding:6px 13px;font:inherit;font-size:var(--fs-small);cursor:pointer;text-decoration:none;
+    display:inline-flex;align-items:center;line-height:1.45;white-space:nowrap}
+  .chip:hover{border-color:var(--gold);background:var(--hover)}
+  .chip[aria-current=page]{background:var(--gold-soft);border-color:var(--gold);color:var(--gold-b)}
 
   /* AC-19 · kính mờ. @supports là bắt buộc chứ không phải lịch sự: Firefox tắt
      backdrop-filter theo mặc định ở một số bản, và khi nó không chạy thì nền
@@ -397,7 +409,7 @@
 <div class="wrap">
 
 <header>
-  <h1 data-i="h_title">📸 Kho ảnh sự kiện</h1>
+  <h1 data-i="h_title">📸 Ảnh sự kiện</h1>
   <div class="spacer"></div>
   <!-- AC-11 · định danh phiên. Fail-safe: lỗi/401 ẩn hẳn khối này (khuôn D071). -->
   <div class="me" id="meBox"><b id="meRole">—</b><span id="meMail"></span></div>
@@ -405,6 +417,18 @@
   <button class="icobtn" id="themeBtn" type="button" title="Sáng/Tối" aria-label="Sáng/Tối">&#9789;</button>
   <a class="btn sm" href="/crm" data-i="back">← Về CRM</a>
 </header>
+
+<!-- E08-D106 (CR-161) · ba tab của MỘT việc: nạp ảnh vào kho · gắn tên · soát theo
+     khách. Trang này là tab Kho. Hai chip kia là điều hướng thật sang
+     crm-nhan-dien.html — không nhét ngăn nhận diện vào đây, và không nhét kho sang
+     bên ấy: mỗi bên đã là một trang đầy đủ, gộp tài liệu là viết lại Picker. -->
+<!-- aria-label đặt trong setLang, KHÔNG bằng data-i: setLang ghi `el.innerHTML` cho
+     mọi [data-i], nên gắn data-i lên <nav> là đổ chữ thẳng vào giữa ba chip. -->
+<nav class="tab" id="thanhTab">
+  <a class="chip" href="/crm/anh-su-kien/kho" aria-current="page" data-i="tab_kho">Kho</a>
+  <a class="chip" href="/crm/anh-su-kien" data-i="tab_anh">Phân loại</a>
+  <a class="chip" href="/crm/anh-su-kien/theo-khach" data-i="tab_khach">Theo khách</a>
+</nav>
 
 <!-- Chốt chặn hướng ảnh. Trang KHÔNG cho đồng bộ tới khi phép kiểm đạt.
      Đạt thì ô này ẩn hẳn — xem veHopKiemTra(). -->
@@ -555,10 +579,18 @@ function ghiLog(s){ var el = $('#log'); el.style.display='block'; el.textContent
    console. Đó là lý do mọi khoá phải có ở CẢ HAI bảng.
    Log kỹ thuật (#log) cố ý giữ nguyên tiếng Việt — nó là dấu vết cho người sửa
    lỗi, không phải văn bản giao diện.                                          */
-var LANG = localStorage.getItem('kho_lang') || 'vn';
+/* E08-D106 · ngôn ngữ là của NGƯỜI, không của trang. Ba tab giờ là MỘT trang trước
+   mắt người dùng nhưng vẫn là hai tài liệu HTML: mỗi tài liệu một khoá riêng thì
+   bật 日本語 ở tab này, sang tab Phân loại lại thấy tiếng Việt — người dùng đọc đó
+   là "nút ngôn ngữ hỏng". Đây KHÔNG phải luật mới: Sponsor chốt 09/08 «trang trước
+   là ngôn ngữ gì thì qua trang khác cũng phải vậy», /crm + hai cửa đã gom về
+   `esuhai_lang` (crm-app-v2.html:699) — trang này chưa di trú theo, nay đi cùng.
+   `kho_lang` chỉ còn được ĐỌC, cho ai đã chọn trước D106. */
+var LANG = localStorage.getItem('esuhai_lang') || localStorage.getItem('kho_lang') || 'vn';
 var T = {
   vn:{
-    h_title:'📸 Kho ảnh sự kiện', back:'← Về CRM',
+    h_title:'📸 Ảnh sự kiện', back:'← Về CRM',
+    tab_kho:'Kho', tab_anh:'Phân loại', tab_khach:'Theo khách', tab_nav:'Ảnh sự kiện',
     src_lbl:'Nguồn:', btn_folder:'📁 Chọn thư mục', btn_files:'🖼 Chọn từng ảnh',
     soon:'Sắp có', drop:'…hoặc kéo thả thư mục / ảnh vào đây',
     privacy:'Ảnh <b>đọc thẳng từ đĩa</b> để xem trước — chưa một byte nào lên mạng. Chỉ khi bấm <b>Đồng bộ</b> mới thu nhỏ và đẩy lên kho.',
@@ -637,7 +669,8 @@ var T = {
     drive_tuchoi:'Chưa cấp quyền đọc Google Drive nên không mở được.'
   },
   jp:{
-    h_title:'📸 イベント写真庫', back:'← CRMへ戻る',
+    h_title:'📸 イベント写真', back:'← CRMへ戻る',
+    tab_kho:'保管庫', tab_anh:'仕分け', tab_khach:'ゲスト別', tab_nav:'イベント写真',
     src_lbl:'取込元:', btn_folder:'📁 フォルダを選ぶ', btn_files:'🖼 写真を個別に選ぶ',
     soon:'近日', drop:'…またはフォルダ/画像をここにドラッグ',
     privacy:'プレビューは<b>ディスクから直接</b>読み込みます — この時点で通信は発生しません。<b>同期</b>を押して初めて縮小してアップロードします。',
@@ -719,7 +752,7 @@ var T = {
 function tt(k){ return (T[LANG] && T[LANG][k]) || T.vn[k] || k; }
 function fmt(k, o){ var s = tt(k); for (var i in o) s = s.split('{'+i+'}').join(o[i]); return s; }
 function setLang(l){
-  LANG = l; localStorage.setItem('kho_lang', l);
+  LANG = l; localStorage.setItem('esuhai_lang', l);
   document.body.classList.toggle('jp', l === 'jp');
   document.documentElement.lang = (l === 'jp') ? 'ja' : 'vi';
   document.querySelectorAll('[data-i]').forEach(function(el){
@@ -727,6 +760,7 @@ function setLang(l){
   });
   $('#langBtn').textContent = (l === 'jp') ? 'Tiếng Việt' : '日本語';
   $('#appDlgCancel').textContent = tt('dlg_cancel');
+  $('#thanhTab').setAttribute('aria-label', tt('tab_nav'));
   $('#lbX').setAttribute('aria-label', tt('lb_close'));
   $('#lbPrev').setAttribute('aria-label', tt('lb_prev'));
   $('#lbNext').setAttribute('aria-label', tt('lb_next'));

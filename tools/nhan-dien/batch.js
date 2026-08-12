@@ -577,12 +577,19 @@ async function chayTruc(){
   const may = os.hostname();
   log('── TRỰC ──  máy ' + may + '  ngưỡng ' + NGUONG + (MOT_LUOT ? '  (một lượt)' : ''));
 
+  /* D127 · FR-1 — khai tên vào sổ máy TRƯỚC cả khi mở phiên engine, và trước vòng
+     lặp xin luồng. Máy quét mất vài giây để nạp model 37 MB; trong mấy giây ấy nó
+     ĐÃ là một máy quét đang lên, và người đang nhìn trang phải thấy nó. */
+  await HD.thoMay(db(), may, process.pid).catch(e => log('  [sổ máy] ' + cauNgan(e)));
+
   const phien = await E.moPhien();
   let dangGiu = null;
   /* Ctrl-C giữa chừng phải NHẢ ẢNH, không để lại 25 tấm bị khoá cho tới khi nhịp
-     dọn của web nhận ra sau 3 phút. */
+     dọn của web nhận ra sau 3 phút. Và phải XOÁ TÊN khỏi sổ máy: một máy quét vừa
+     tắt mà bảng còn đếm nó là bảng mời người ta chọn 3 luồng cho 2 máy. */
   const buong = async () => {
     if (dangGiu){ try { await nhaAnh(dangGiu); } catch (_){} }
+    try { await HD.quenMay(db(), may, process.pid); } catch (_){}
     try { await db().end(); } catch (_){}
     process.exit(0);
   };
@@ -601,6 +608,16 @@ async function chayTruc(){
     HD.tho(db(), dangGiu).catch(() => { /* mạng chớp — nhịp sau lại thở */ });
   }, NHIP_MS);
   if (timTho.unref) timTho.unref();
+
+  /* D127 · nhịp thứ HAI, và nó không có điều kiện nào cả. Cái đồng hồ ngay trên
+     chỉ thở khi đang cầm một luồng — đúng cho câu hỏi «luồng này còn sống không»,
+     nhưng câu hỏi của người đứng trước trang lúc 6h sáng là «có máy nào để mà bấm
+     không». Máy quét rỗi việc vẫn phải trả lời được câu ấy, nên nhịp này chạy kể
+     cả khi vòng lặp đang ngủ giữa hai lượt xin luồng. */
+  const timMay = setInterval(() => {
+    HD.thoMay(db(), may, process.pid).catch(() => { /* mạng chớp — nhịp sau lại thở */ });
+  }, NHIP_MS);
+  if (timMay.unref) timMay.unref();
 
   const het = Date.now() + CHO_LUONG_MS;
   for (;;){
@@ -639,6 +656,9 @@ async function chayTruc(){
     dangGiu = null;
     if (MOT_LUOT) break;
   }
+  /* Thoát êm (--mot-luot hết việc) cũng là một máy quét rời khỏi bàn. Cùng lý do
+     với `buong()`: đừng để bảng đếm một cái đã đi. */
+  await HD.quenMay(db(), may, process.pid).catch(() => {});
   await db().end();
 }
 

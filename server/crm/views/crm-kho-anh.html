@@ -508,6 +508,18 @@
     <span class="hint" id="pgInfo"></span>
     <button class="btn sm" id="pgNext" type="button" data-i="pg_next">Sau</button>
   </div>
+  <!-- E08-D127 · FR-9 · TRANG KHO CHỈ ĐƯỜNG.
+       Nạp xong, việc quét được xếp — nhưng máy quét thì ở trang khác, và câu báo
+       duy nhất trước vé này nằm trong khối log: một dòng chữ giữa vài trăm dòng
+       chữ khác, không bấm được. Người vừa nạp 400 tấm muốn biết máy có nhận
+       không, và cách duy nhất là tự nhớ đường sang tab Phân loại.
+       Một dòng riêng, ngoài log, có LINK THẬT: <a href> chứ không phải một nút gọi
+       location — link mở tab mới được bằng chuột giữa, và trình đọc màn hình gọi
+       đúng tên nó là một liên kết. -->
+  <p class="hint" id="ndBao" hidden style="margin:10px 0 0">
+    <span id="ndBaoChu"></span>
+    <a id="ndLink" href="/crm/anh-su-kien" data-i="nd_link">Xem máy quét trên trang Ảnh sự kiện</a>
+  </p>
   <div class="log" id="log" style="display:none"></div>
 </div>
 
@@ -643,10 +655,14 @@ var T = {
     why_run:'Đang chạy — chờ đợt hiện tại xong đã. Đừng đóng tab.',
     t_done:'Đã nạp {x} ảnh ✓', t_err:'{e} ảnh lỗi — xem nhật ký bên dưới',
     /* ── E08-D124 · nạp xong thì tự bảo máy đoán mặt ── */
-    nd_mo:'Đã bảo máy đoán mặt cho {x} tấm vừa nạp — xem tiến độ ở tab Phân loại.',
-    nd_dang:'Máy đang đoán mặt cho một lượt trước; những tấm vừa nạp sẽ được dò ở lượt sau. Xem ở tab Phân loại.',
-    nd_thieu:'Ảnh đã vào kho an toàn, nhưng máy chủ chưa có bộ nhận diện nên chưa đoán mặt được — nhờ kỹ thuật cài giúp.',
-    nd_hong:'Ảnh đã vào kho, nhưng không bảo được máy đoán mặt. Sang tab Phân loại bấm «Đồng bộ nhận diện» giúp em.',
+    nd_mo:'Đã xếp việc quét cho {x} tấm vừa nạp.',
+    nd_dang:'Máy đang quét đợt trước — tấm mới sẽ vào lượt sau.',
+    /* D127 · `nd_thieu` gỡ cùng nhánh 503 đọc nó. Tuyến POST thôi trả 503 từ D126;
+       câu «máy chủ chưa có bộ nhận diện» mô tả một máy chủ prod đúng như thiết kế
+       D077 (engine nằm ở máy vận hành, không ở Railway) nên nó doạ người dùng về
+       một thứ không hỏng. */
+    nd_hong:'Ảnh đã vào kho, nhưng không xếp được việc quét. Sang trang Ảnh sự kiện bấm «Bắt đầu quét» giúp em.',
+    nd_link:'Xem máy quét trên trang Ảnh sự kiện',
     st_new:'đã nạp', st_dup:'đã có', st_bad:'lỗi', st_pass:'bỏ qua', heic:'HEIC — bỏ qua',
     sel_mode:'Chế độ chọn — chạm để tick, không cần giữ nữa.', sel_done:'Xong',
     zoom:'Xem ảnh lớn', lb_close:'Đóng', lb_prev:'Ảnh trước', lb_next:'Ảnh sau', lb_of:'{i}/{n}',
@@ -728,10 +744,10 @@ var T = {
     why_run:'実行中 — 現在のバッチの完了をお待ちください。タブを閉じないでください。',
     t_done:'{x}枚を取り込みました ✓', t_err:'{e}枚が失敗 — 下のログをご確認ください',
     /* ── E08-D124 ── */
-    nd_mo:'取り込んだ{x}枚の顔認識を開始しました — 進捗は「仕分け」タブでご確認ください。',
-    nd_dang:'前回の顔認識がまだ実行中です。今回の写真は次の実行で処理されます。「仕分け」タブでご確認ください。',
-    nd_thieu:'写真は保管庫に取り込まれましたが、サーバーに認識エンジンがないため顔認識を開始できません — 技術担当に設置を依頼してください。',
-    nd_hong:'写真は取り込まれましたが、顔認識を開始できませんでした。「仕分け」タブで「顔認識を同期」を押してください。',
+    nd_mo:'取り込んだ{x}枚のスキャンを登録しました。',
+    nd_dang:'前の実行がまだスキャン中です — 新しい写真は次の回に入ります。',
+    nd_hong:'写真は取り込まれましたが、スキャンを登録できませんでした。「イベント写真」ページで「スキャン開始」を押してください。',
+    nd_link:'「イベント写真」ページでスキャナーを見る',
     st_new:'取込済', st_dup:'既存', st_bad:'失敗', st_pass:'除外', heic:'HEIC — 除外',
     sel_mode:'選択モード — 長押し不要、タップで選べます。', sel_done:'完了',
     zoom:'拡大表示', lb_close:'閉じる', lb_prev:'前の写真', lb_next:'次の写真', lb_of:'{i}/{n}',
@@ -1879,16 +1895,25 @@ function veResume(){
 
    Không chặn gì cả: ảnh đã nằm trong kho rồi. Mọi hỏng ở đây chỉ mất phần TỰ
    ĐỘNG, và câu nhắc luôn chỉ đúng đường đi tiếp bằng tay. */
+/* D127 · FR-9 — một dòng ĐỨNG YÊN ngoài log, kèm link sang trang máy quét.
+   `coLink` false cho nhánh hỏng: lúc việc KHÔNG được xếp thì mời người ta sang
+   xem máy quét là chỉ sai đường — câu đúng lúc ấy nằm ngay trong dòng chữ. */
+function ndBao(chu, coLink){
+  $('#ndBaoChu').textContent = chu ? chu + ' ' : '';
+  $('#ndLink').hidden = !coLink;
+  $('#ndBao').hidden = false;
+}
 async function goiNhanDien(soMoi){
   try {
     var r = await fetch('/crm/face-match/dong-bo', { method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ nguon: 'nap-kho' }) });
-    if (r.status === 202) ghiLog(fmt('nd_mo', { x: soMoi }));
-    else if (r.status === 409) ghiLog(tt('nd_dang'));
-    else if (r.status === 503){ ghiLog(tt('nd_thieu')); toast(tt('nd_thieu'), 'err'); }
-    else ghiLog(tt('nd_hong'));
-  } catch (e){ ghiLog(tt('nd_hong')); }
+    /* Nhánh 503 gỡ hẳn (xem `nd_thieu`): tuyến này thôi trả 503 từ D126, và câu
+       nó vốn hiện thì sai. Mã lạ rơi về `nd_hong` — trung thực và không doạ. */
+    if (r.status === 202){ ghiLog(fmt('nd_mo', { x: soMoi })); ndBao(fmt('nd_mo', { x: soMoi }), true); }
+    else if (r.status === 409){ ghiLog(tt('nd_dang')); ndBao(tt('nd_dang'), true); }
+    else { ghiLog(tt('nd_hong')); ndBao(tt('nd_hong'), false); }
+  } catch (e){ ghiLog(tt('nd_hong')); ndBao(tt('nd_hong'), false); }
 }
 async function dongBo(tiepTuc){
   if (!EXIF_OK){ await appAlert(tt('no_exif')); return; }
@@ -1913,6 +1938,10 @@ async function dongBo(tiepTuc){
 
   DANG_CHAY = true; HUY = false;
   $('#resumeBar').hidden = true;                 // đang chạy thì không mời bấm Tiếp tục
+  /* D127 · dòng chỉ đường của lượt nạp TRƯỚC phải biến mất khi lượt mới bắt đầu.
+     Để nguyên thì «Đã xếp việc quét cho 400 tấm» đứng đó suốt lượt nạp sau, và
+     nó nói về một con số không còn đúng nữa. */
+  $('#ndBao').hidden = true;
   capNhatNutSync();
   /* MỘT mã đợt cho CẢ lần bấm: cắt lô là chuyện bên trong, còn với người xem kho
      thì đây vẫn là một đợt lọc. Sinh mã theo lô sẽ băm một lần nạp thành nhiều

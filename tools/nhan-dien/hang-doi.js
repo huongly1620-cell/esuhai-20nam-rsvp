@@ -158,6 +158,30 @@ async function tho(q, luongId) {
   return r.rowCount > 0;
 }
 
+/* ── E08-D127 · NHỊP CỦA MÁY, KHÔNG PHẢI CỦA LUỒNG ───────────────────────────
+   `tho()` ở trên nói «luồng này còn sống» — nó cần một luồng, tức cần đã có người
+   bấm Bắt đầu. Hai hàm dưới nói «MÁY QUÉT này còn đứng đây», và đó là câu duy
+   nhất trả lời được lúc chưa có việc nào. Không có nó thì trang nói «chưa có máy
+   quét nào» đúng vào lúc ba máy quét đang chờ — chuyện thật sáng 12/08.
+
+   Khoá (may, pid): ba tiến trình --truc trên cùng một máy tính là ba hàng, vì đó
+   là ba máy quét dưới mắt người vận hành đang chọn số luồng. */
+async function thoMay(q, may, pid) {
+  await q.query(
+    `INSERT INTO crm_nhan_dien_may (may, pid, nhip_cuoi) VALUES ($1,$2,now())
+     ON CONFLICT (may, pid) DO UPDATE SET nhip_cuoi = now()`,
+    [may, pid == null ? 0 : pid]);
+}
+
+/* Ctrl-C thì XOÁ hàng của mình ngay, đừng để web đợi hết 3 phút mới nhận ra. Tắt
+   máy quét rồi mà bảng còn khoe «3 máy quét đang chạy» thì người vận hành chọn 3
+   luồng cho một cái không còn ở đó. Chết đột ngột (kill -9, rút điện) vẫn có hạn
+   3 phút của web lo — hàm này chỉ làm cho đường thoát ÊM nói thật ngay lập tức. */
+async function quenMay(q, may, pid) {
+  await q.query('DELETE FROM crm_nhan_dien_may WHERE may = $1 AND pid = $2',
+    [may, pid == null ? 0 : pid]);
+}
+
 async function chotLuong(q, luongId, trangThai, d, cau) {
   const x = d || {};
   await q.query(`
@@ -199,5 +223,6 @@ function nenTuHam(cuaSo) {
 
 module.exports = {
   GIU_MOI_LUOT, CUA_SO_LOI, TOI_THIEU_XET, TI_LE_TU_HAM,
-  xinLuong, xinAnh, nhaAnh, nhaMotAnh, danhDauDaSoi, nhip, tho, chotLuong, nenTuHam,
+  xinLuong, xinAnh, nhaAnh, nhaMotAnh, danhDauDaSoi, nhip, tho, thoMay, quenMay,
+  chotLuong, nenTuHam,
 };

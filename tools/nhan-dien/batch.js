@@ -582,6 +582,13 @@ async function chayTruc(){
      ĐÃ là một máy quét đang lên, và người đang nhìn trang phải thấy nó. */
   await HD.thoMay(db(), may, process.pid).catch(e => log('  [sổ máy] ' + cauNgan(e)));
 
+  /* …và vì tên đã khai TRƯỚC khi engine mở, mọi đường ra sau dòng này đều phải đi
+     qua chỗ xoá tên. Bản vòng 2 chỉ xoá ở hai lối: Ctrl-C và thoát êm. Lối thứ ba
+     — `E.moPhien()` ném vì model hỏng, hoặc bất kỳ lỗi nào giữa chừng — bỏ lại
+     một hàng sống 3 phút, và bảng đếm một MÁY QUÉT MA: người vận hành thấy «Đang
+     có 1 máy quét», chọn 1 luồng, rồi ngồi đợi một tiến trình đã chết từ lúc nào.
+     `finally` là chỗ duy nhất che được cả ba lối cùng lúc. */
+  try {
   const phien = await E.moPhien();
   let dangGiu = null;
   /* Ctrl-C giữa chừng phải NHẢ ẢNH, không để lại 25 tấm bị khoá cho tới khi nhịp
@@ -656,9 +663,11 @@ async function chayTruc(){
     dangGiu = null;
     if (MOT_LUOT) break;
   }
-  /* Thoát êm (--mot-luot hết việc) cũng là một máy quét rời khỏi bàn. Cùng lý do
-     với `buong()`: đừng để bảng đếm một cái đã đi. */
-  await HD.quenMay(db(), may, process.pid).catch(() => {});
+  } finally {
+    /* Thoát êm (--mot-luot hết việc) HAY thoát vì lỗi — cả hai đều là một máy quét
+       rời khỏi bàn. Cùng lý do với `buong()`: đừng để bảng đếm một cái đã đi. */
+    await HD.quenMay(db(), may, process.pid).catch(() => {});
+  }
   await db().end();
 }
 

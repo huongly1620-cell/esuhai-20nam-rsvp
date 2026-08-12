@@ -661,7 +661,19 @@ var T = {
     db_nut:'Bắt đầu quét',
     q_nut_chay:'Đang quét…',
     q_nut_ngu:'Đang tạm dừng',
-    db_giai:'Máy dò mặt trên những tấm chưa dò, và học các khuôn mặt anh chị vừa khoanh. Máy CHỈ gợi ý — ảnh chỉ vào album của khách khi có người bấm duyệt.',
+    /* D127 (vòng rà 3) · cắt còn NỬA SAU. Nửa đầu («máy dò mặt trên những tấm chưa
+       dò…») nay đã có chỗ nói đúng hơn và ngắn hơn: câu FR-2 ngay trên hàng số,
+       kèm con số thật. Giữ cả hai là in cùng một điều hai lần, và ở 375×600 hai
+       lần ấy tốn 5 dòng chữ — đủ để đẩy ô ảnh đầu tiên xuống dưới nếp gấp (đo
+       được: ô đầu ở 624px trên màn 600px). Trang tên là «Ảnh sự kiện» mà mở ra
+       không có ảnh nào thì lời hứa D124 «cứ dùng trang bình thường» đã gãy ngay ở
+       dòng đầu.
+       Nhưng KHÔNG được xoá vế «học mặt vừa khoanh»: đó là lý do người ta bấm nút
+       ngay sau khi khoanh mấy khuôn mặt mẫu, và không câu nào khác trên trang nói
+       điều ấy. Nên viết lại cho gọn, giữ đủ hai ý — chứ không cắt cụt một ý cho
+       vừa chỗ. Vế còn lại là ràng buộc TRỤC (máy gợi ý, người duyệt), không phải
+       câu trang trí. */
+    db_giai:'Máy dò nốt tấm chưa soi và học mặt anh chị vừa khoanh. Máy CHỈ gợi ý — ảnh vào album khi có người bấm duyệt.',
     db_chua:'Chưa chạy lần nào.',
     db_dang:'Đang chạy…',
     db_dang_ct:'Bắt đầu {t} · {b}. Anh chị cứ dùng trang bình thường; tải lại trang vẫn thấy trạng thái này.',
@@ -790,7 +802,7 @@ var T = {
     db_nut:'スキャン開始',
     q_nut_chay:'スキャン中…',
     q_nut_ngu:'一時停止中',
-    db_giai:'未処理の写真から顔を検出し、囲んだばかりの顔を学習します。機械は候補を出すだけです — 担当者が承認するまで、ゲストのアルバムには入りません。',
+    db_giai:'未処理の写真を検出し、囲んだ顔を学習します。機械は候補を出すだけ — 担当者が承認するまでアルバムには入りません。',
     db_chua:'まだ一度も実行されていません。',
     db_dang:'実行中…',
     db_dang_ct:'{t} 開始 · {b}。ページは通常どおりお使いいただけます。再読み込みしてもこの状態は残ります。',
@@ -2046,6 +2058,10 @@ var DB_HEN = null, DB_CUOI = null, DB_TRUOC = '', DB_TAT = false;
 /* D127 · FR-8 — số gợi ý chờ duyệt tại lúc VẼ LƯỚI lần gần nhất. `null` = lưới
    chưa vẽ lần nào, nên chưa có gì để so. Chủ sở hữu con số này là `veLuoi()`. */
 var GY_MOC = null;
+/* D127 (vòng rà 3) — người dùng đã tự chọn số luồng lần nào chưa. Một lá cờ chứ
+   không phải so sánh giá trị: chọn tay đúng bằng con số máy đang gợi ý vẫn là một
+   lựa chọn, và từ đó trở đi trang không được tự đổi sau lưng họ nữa. */
+var Q_LUONG_TAY = false;
 /* Tốc độ TỪNG LUỒNG tính ở đây chứ không ở máy chủ: máy chủ chỉ giữ con số cộng
    dồn, mà thứ người vận hành cần là «luồng này đang chạy nhanh chậm ra sao NGAY
    BÂY GIỜ» để quyết định thêm hay bớt luồng. Hai nhịp đọc liên tiếp là đủ. */
@@ -2318,6 +2334,21 @@ function veDongBo(j){
      nào cũng có máy chạy; con số này là thứ duy nhất nói trước rằng không phải. */
   var soMay = j.so_may_truc || 0;
   $('#qMayCanh').textContent = soMay > 0 ? fmt('q_may_dang', { n: dbSo(soMay) }) : tt('q_may_khong');
+  /* D127 (vòng rà 3) · và ô chọn TỰ ĐỨNG ĐÚNG chỗ ấy khi người dùng chưa đụng vào.
+     Bản vòng 2 để mặc định cứng 3 (từ D126). Hệ quả đo được: máy nào chỉ bật MỘT
+     máy quét thì cú bấm nào cũng đâm vào hộp thoại «chỉ có 1 máy quét, luồng thứ 2
+     sẽ ngồi chờ» — một lời cảnh báo đúng, hiện ra mỗi lần, cho một lựa chọn mà
+     người dùng không hề chọn. Cảnh báo bật mãi là cảnh báo bị bấm qua mà không
+     đọc, và thế là nó hỏng đúng lúc nó cần đúng.
+     Ba hàng rào để việc tự đặt này không cướp quyền của người dùng:
+       · chỉ khi CHƯA có đợt mở (đang chạy thì ô này ẩn, đặt gì cũng vô nghĩa);
+       · chỉ khi người dùng CHƯA tự chọn lần nào trong phiên xem này;
+       · và không đụng vào lúc con trỏ đang đứng trong chính ô ấy. */
+  var oLuong = $('#qSoLuong');
+  if (!mo && !Q_LUONG_TAY && soMay > 0 && document.activeElement !== oLuong){
+    var g = String(Math.min(Math.max(soMay, 1), Number(j.toi_da) || 6));
+    if (oLuong.value !== g) oLuong.value = g;
+  }
   /* Câu nhắc đi CÙNG ô chọn, và biến mất khi ô chọn biến mất: nó nói về cú bấm
      sắp tới, không phải về đợt đang chạy. Trong lúc chạy thì thứ thay chỗ nó là
      tỉ lệ lỗi thật ở dòng toàn kho — số đo, không phải lời khuyên. */
@@ -2466,6 +2497,7 @@ $('#nutDongBo').onclick = async function(){
      chính lượt hỏi này bật/tắt lại cái nút cho đúng. */
   hoiDongBo();
 };
+$('#qSoLuong').addEventListener('change', function(){ Q_LUONG_TAY = true; });
 $('#qTamDungHet').onclick = function(){ doiCo('tam-dung', { tat_ca: true }, this); };
 $('#qTiepHet').onclick = function(){ doiCo('tiep-tuc', { tat_ca: true }, this); };
 $('#qDungHan').onclick = async function(){

@@ -548,6 +548,35 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_nhan_dien_luong_so
 CREATE INDEX IF NOT EXISTS idx_nhan_dien_luong_song
   ON crm_nhan_dien_luong (nhip_cuoi) WHERE trang_thai IN ('chay','tam-dung');
 
+/* ── E08-D127 · MÁY QUÉT THỞ CẢ LÚC CHƯA CÓ VIỆC ─────────────────────────────
+   D126 chỉ có một chỗ để biết máy quét còn sống: nhịp của một hàng LUỒNG. Mà
+   luồng chỉ tồn tại sau khi có người bấm Bắt đầu — nên 6h sáng 12/08, ba máy quét
+   đang đứng chờ trên máy anh Kha, trang vẫn nói "chưa có máy quét nào". Câu ấy
+   sai đúng lúc nó quan trọng nhất: người ta đọc nó TRƯỚC khi bấm, để quyết định
+   có bấm hay không.
+
+   Nên nơi ghi "tôi còn sống" phải TÁCH khỏi nơi ghi "tôi đang làm gì". Bảng này
+   là cái thứ nhất, và nó nghèo hơn cả sổ luồng: một tên máy, một pid, một giờ.
+   Không đếm, không câu lỗi, không tên khách — nó chỉ trả lời đúng một câu hỏi.
+
+   Khoá chính là (may, pid) chứ không phải may một mình: ba tiến trình --truc chạy
+   trên CÙNG một máy tính là cách vận hành thật (Sponsor mở ba cửa sổ terminal),
+   và khoá theo tên máy thì ba tiến trình ấy đè lên nhau thành một hàng — bảng nói
+   "1 máy quét" trong khi có ba. pid mặc định 0 để một máy quét không khai pid vẫn
+   có chỗ đứng, đúng nghĩa "pid tuy chon" của spec.
+   pid KHÔNG hiện lên giao diện: nó ở đây để phân biệt hàng, không để người đọc.
+   (Nhắc lại: khối này là chuỗi mẫu JS — KHONG dau huyen trong chu thich.) */
+CREATE TABLE IF NOT EXISTS crm_nhan_dien_may (
+  may       TEXT NOT NULL,
+  pid       INTEGER NOT NULL DEFAULT 0,
+  nhip_cuoi TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (may, pid)
+);
+/* Web dọn hàng quá hạn mỗi 30 giây và đếm hàng còn thở mỗi 3 giây — cả hai đều
+   hỏi theo nhip_cuoi, nên nó cần chỉ mục dù bảng chỉ có vài hàng. */
+CREATE INDEX IF NOT EXISTS idx_nhan_dien_may_nhip
+  ON crm_nhan_dien_may (nhip_cuoi);
+
 /* ── Dấu ĐÃ SOI trên chính bảng ảnh ────────────────────────────────────────────
    Bốn cột, hai vai khác nhau và cố ý không gộp:
      soi_luc      — soi XONG lúc nào. Đây là hàng đợi mới (NULL = chưa soi).

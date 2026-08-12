@@ -142,7 +142,46 @@ function ghiAudit(loai, email, runId, meta, ip) {
    Vì sao thứ tự ấy: bước 2 dựa vào kết quả bước 1, bước 4 dựa vào bước 3. Đảo
    lại thì mỗi nhịp dọn chỉ tiến được một bước và một đợt chết mất 2 phút mới
    đóng xong sổ. */
+/* ── E08-D127 · SỔ MÁY QUÉT ĐANG TRỰC ────────────────────────────────────────
+   Tách hẳn khỏi sổ luồng, và đó là cả điểm của nó: một máy quét đang ĐỨNG CHỜ
+   chưa có luồng nào để thở vào, nên D126 không có chỗ nào ghi nhận nó tồn tại.
+   Hai hàm dưới đây là toàn bộ phần web đụng vào bảng ấy — web chỉ ĐỌC và DỌN,
+   người GHI là máy quét (tools/nhan-dien/batch.js --truc, upsert mỗi 10 giây).
+
+   Cùng hạn 3 phút với nhịp luồng, cố ý: hai con số hạn khác nhau nghĩa là có lúc
+   bảng nói "có máy trực" mà luồng của chính máy ấy đã bị đánh mất-liên-lạc, và
+   không ai giải thích nổi màn hình đang nói gì. */
+async function donMayChet() {
+  try {
+    await pool.query(
+      `DELETE FROM crm_nhan_dien_may WHERE nhip_cuoi < now() - make_interval(secs => $1)`,
+      [HAN_NHIP_GIAY]);
+  } catch (e) {
+    if (!/does not exist/i.test(e.message)) console.error('[nhan-dien-run] dọn máy lỗi:', e.message);
+  }
+}
+
+/* Danh sách máy CÒN THỞ. Một hàng một tiến trình `--truc` (khoá (may,pid)), nên
+   ba cửa sổ terminal trên cùng một máy tính đếm ra 3 — đúng thứ người vận hành
+   nhìn để chọn số luồng. `danh_may` trả về đúng số phần tử ấy chứ không gộp trùng
+   tên: `so_may_truc === danh_may.length` là bất biến kiểm được từ ngoài.
+   Bảng chưa migrate ⇒ danh sách rỗng, KHÔNG ném: một máy chủ vừa boot phải trả
+   được trạng thái, và "chưa thấy máy nào" là câu trả lời đúng lúc ấy. */
+async function danhMayTruc() {
+  try {
+    const r = await pool.query(
+      `SELECT may FROM crm_nhan_dien_may
+        WHERE nhip_cuoi > now() - make_interval(secs => $1)
+        ORDER BY may, pid`, [HAN_NHIP_GIAY]);
+    return r.rows.map((x) => ({ may: x.may }));
+  } catch (e) {
+    if (!/does not exist/i.test(e.message)) console.error('[nhan-dien-run] đọc máy lỗi:', e.message);
+    return [];
+  }
+}
+
 async function donLuongChet() {
+  await donMayChet();
   try {
     const chet = await pool.query(
       `UPDATE crm_nhan_dien_luong
@@ -396,7 +435,12 @@ function mount(app, requireCrmAuth, requireRole) {
       /* Sổ luồng của đợt GẦN NHẤT, không chỉ của đợt đang mở: F5 sau khi một đợt
          vừa chết phải còn nhìn thấy luồng nào mất liên lạc và vì sao (AC-7). */
       const luong = x ? await soLuong(x.id) : [];
-      const truc = luong.some((l) => l.nhip_cuoi_giay != null && l.nhip_cuoi_giay <= HAN_NHIP_GIAY);
+      /* D127 · FR-1 — «có máy quét nào đang trực không» KHÔNG còn suy từ nhịp của
+         luồng. Suy như thế thì câu trả lời chỉ đúng SAU khi đã có người bấm Bắt
+         đầu: sáng 12/08 ba máy quét đứng chờ mà trang vẫn nói không có máy nào,
+         vì đợt gần nhất đã đóng từ đêm trước và không luồng nào còn thở. Nay hỏi
+         thẳng sổ máy — thứ máy quét ghi cả lúc rỗi việc. */
+      const danhMay = await danhMayTruc();
       return res.json(Object.assign({
         ok: true, san_sang: thieuBoNhanDien().length === 0,
         viec: x ? { run_id: String(x.id), trang_thai: x.trang_thai, nguon: x.nguon,
@@ -406,7 +450,8 @@ function mount(app, requireCrmAuth, requireRole) {
         dot_mo: mo ? String(mo.id) : null,
         so_luong: x ? x.so_luong : null,
         nguong: x && x.nguong != null ? Number(x.nguong) : NGUONG,
-        luong, co_may_truc: truc, toi_da: SO_LUONG_TOI_DA, han_nhip_giay: HAN_NHIP_GIAY,
+        luong, co_may_truc: danhMay.length > 0, so_may_truc: danhMay.length, danh_may: danhMay,
+        toi_da: SO_LUONG_TOI_DA, han_nhip_giay: HAN_NHIP_GIAY,
       }));
     } catch (e) {
       console.error('[nhan-dien-run] đọc trạng thái:', e.message);

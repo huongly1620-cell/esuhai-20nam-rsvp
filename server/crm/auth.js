@@ -249,12 +249,40 @@ async function lookupAllowed(email) {
 // (CR-61), mà mỗi dòng thừa trong staff_users là một người có thể check-in.
 function doorSignup() { return !doorOpen() && String(process.env.CRM_DOOR_SIGNUP || '') === '1'; }
 
+// ─────────── E08-D128 · SIGNUP «ẢNH SỰ KIỆN» ≠ CÔNG TẮC CỬA ───────────
+// Đo LIVE 15/08: nhân viên mở /crm/anh-su-kien, gõ email công ty, bấm gửi mã —
+// im lặng. Không phải SMTP hỏng (SMTP_VERIFY_OK, OTP_DELIVERY=smtp) mà vì
+// `doorSignup()` mang thêm vế `!doorOpen()`: cửa check-in đang mở (M6 của D041
+// cố ý tắt signup lúc ấy), nên email chưa có trong `staff_users` không mint mã
+// nào — 0 dòng `crm_auth_codes` trong 2 giờ.
+//
+// Vá bằng cách flip `CRM_DOOR_OPEN=0` là ĐỔI NGHĨA CỬA để lấy một cái OTP: cửa
+// vẫn cần mở sau lễ. Nên đây là công tắc THỨ HAI, độc lập, cho đúng một mục đích
+// khác: người của công ty vào xem ảnh khách đã duyệt.
+//
+// Hai ràng buộc của D041 giữ nguyên, cộng một ràng buộc mới:
+//   * Tài khoản tự sinh LUÔN là `staff` — không có đường nào tự sinh `btl`.
+//   * Vẫn ghi một dòng `staff_users` để BTL tắt từng người bằng cột `active`.
+//   * MỚI: chỉ nhận email của công ty. Cửa (D041) mở cho «ai có link» vì link
+//     cửa chỉ đưa tới việc điểm danh; ngăn ảnh thì đưa tới ẢNH NGƯỜI THẬT, nên
+//     danh sách miền phải khoá cứng trong mã, không đọc từ env — một biến env
+//     đặt nhầm thành `*` là mở kho ảnh cho cả internet.
+const MIEN_ANH = ['@esuhai.com', '@esuworks.vn'];
+function anhSignup() { return String(process.env.CRM_ANH_SIGNUP || '') === '1'; }
+// `email` đã qua `normEmail` (trim + lowercase) ở tuyến gọi. `endsWith` chứ không
+// tách sau dấu '@' cuối: hai cách cho cùng kết quả trên chuỗi đã lọt qua regex
+// một-@ ở request-code, và `endsWith` không đẻ thêm nhánh nào để sai.
+function mienAnhHopLe(email) { return MIEN_ANH.some((d) => String(email || '').endsWith(d)); }
+
 // Trả về user để phát mã / mint phiên. Có trong danh sách thì dùng nguyên quyền
-// của họ; không có mà cửa đang cho tự đăng ký thì tạo diện `staff`.
+// của họ; không có thì hai nhánh tự đăng ký, mỗi nhánh một công tắc riêng.
 async function allowOrSelfSignup(email) {
   const u = await lookupAllowed(email);
   if (u) return u;
-  if (!doorSignup()) return null;
+  // Hai nhánh song song, KHÔNG lồng nhau: nhánh cửa giữ nguyên nghĩa cũ (chỉ khi
+  // cửa đóng), nhánh ảnh không hỏi `doorOpen()` một lần nào. Gộp thành một điều
+  // kiện là lại buộc hai công tắc vào nhau — đúng thứ vé này gỡ ra.
+  if (!doorSignup() && !(anhSignup() && mienAnhHopLe(email))) return null;
   const r = await pool.query(
     `INSERT INTO staff_users (email, role, active) VALUES ($1,'staff',true)
      ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
@@ -351,4 +379,6 @@ function mount(app) {
 }
 
 module.exports = { mount, requireCrmAuth, requireRole, currentActor, ipOf, maskEmail, SMOKE_EMAIL,
-  requireDoorOrAuth, doorOpen, phoneUnlocked, mountPhoneUnlock, DOOR_ACTOR };
+  requireDoorOrAuth, doorOpen, phoneUnlocked, mountPhoneUnlock, DOOR_ACTOR,
+  // E08-D128 — xuất để test đo được nhánh quyết định mà không phải dựng SMTP.
+  anhSignup, mienAnhHopLe, MIEN_ANH };

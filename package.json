@@ -9,6 +9,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server/index.js",
+    "test": "node --test test/*.test.js",
     "smoke:crm": "node tools/smoke-crm.js"
   },
   "dependencies": {

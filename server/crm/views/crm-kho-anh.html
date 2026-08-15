@@ -403,6 +403,10 @@
     .tile:active,.zoom:active,.btn:active:not(:disabled){transform:none}
     .tile[aria-checked=true] .ck{animation:none}
   }
+  /* E08-D128 · vai `staff` mở được trang này (FR-4) nhưng mọi tuyến dữ liệu của nó
+     vẫn `btl`. `!important` là cố ý: nhiều khối trên trang tự đặt `style.display`
+     khi lượt nạp của chúng xong, sau lúc `chiBanToChuc()` chạy. */
+  .d128-an{display:none !important}
 </style>
 </head>
 <body>
@@ -2325,7 +2329,50 @@ async function napMe(){
     $('#meRole').textContent = j.role || '—';
     $('#meMail').textContent = j.email;
     $('#meBox').style.display = 'flex';
+    if (j.role !== 'btl') chiBanToChuc();
   } catch (e){ $('#meBox').style.display = 'none'; }
+}
+
+/* E08-D128 · trang KHO phục vụ HTML cho `staff` (FR-4) nhưng MỌI tuyến dữ liệu
+   của nó — liệt kê kho, nạp ảnh, xoá, đồng bộ, picker Drive — vẫn là `btl`, và
+   vé này cố ý không nới cái nào. Nên với `staff` trang phải nói thẳng ra điều đó
+   thay vì vẽ một cái kho rỗng kèm mấy nút nạp ảnh trả 403.
+
+   Ẩn theo kiểu «giữ lại đầu trang + thanh tab, ẩn phần còn lại» chứ không liệt kê
+   từng id: mỗi vé sau lại thêm một khối vào trang này, và một danh sách id sẽ mục
+   ruỗng lặng lẽ — khối mới cứ thế hiện ra với người không có quyền dùng nó.
+
+   ẨN, không XOÁ khỏi DOM: lượt nạp của trang vẫn đang chạy (`chayDoEXIF`,
+   `veResume`, `napTrangKho`…) và chúng ghi thẳng vào các nút ấy. Xoá đi là biến
+   một trang bị chặn thành một trang ném lỗi. Dùng class có `!important` vì nhiều
+   khối tự đặt `style.display` khi chúng chạy xong — một cú `style.display='none'`
+   đặt lúc này sẽ bị chính chúng ghi đè vài trăm mili-giây sau. */
+function chiBanToChuc(){
+  var giu = { HEADER: 1, NAV: 1 };
+  var wrap = document.querySelector('.wrap');
+  Array.prototype.slice.call(wrap.children).forEach(function(el){
+    if (!giu[el.tagName]) el.classList.add('d128-an'); });
+
+  var bao = document.createElement('div');
+  bao.className = 'card';
+  bao.id = 'chiXemKho';
+  bao.innerHTML = '<h2 style="margin:0 0 8px;font-size:var(--fs-title)">'
+    + (LANG === 'jp' ? '保管庫は事務局専用です' : 'Kho ảnh dành cho ban tổ chức')
+    + '</h2><p class="hint" style="margin:0 0 12px">'
+    + (LANG === 'jp'
+      ? '写真の取り込み・削除・同期は事務局のみが行えます。確認済みのゲスト写真は「ゲスト別」でご覧いただけます。'
+      : 'Việc nạp ảnh, xoá ảnh và đồng bộ do ban tổ chức làm. Ảnh khách đã được duyệt, '
+        + 'anh/chị xem và tải ở tab «Theo khách».')
+    + '</p><a class="btn gold" href="/crm/anh-su-kien/theo-khach">'
+    + (LANG === 'jp' ? 'ゲスト別へ' : '→ Sang tab Theo khách') + '</a>';
+  wrap.appendChild(bao);
+  /* `/crm` trả 403 với vai staff — đừng để một nút dẫn thẳng vào trang từ chối.
+     Chip «Phân loại» cũng vậy: máy chủ 302 nó sang Theo khách, nên hai chip cạnh
+     nhau sẽ mở ra cùng một trang. */
+  var veCrm = document.querySelector('header a[href="/crm"]');
+  if (veCrm) veCrm.classList.add('d128-an');
+  var chipAnh = document.querySelector('nav.tab a[href="/crm/anh-su-kien"]');
+  if (chipAnh) chipAnh.classList.add('d128-an');
 }
 
 /* ───────────────────────────────────────────────────────────────────────────

@@ -1,9 +1,16 @@
 node_modules/
 .env
 .env.*
+# …trừ file MẪU. Nó không chứa giá trị nào, và nó là chỗ duy nhất ghi lại các công
+# tắc của CRM (E08-D128). Phải có dòng này, không thì `.env.*` nuốt luôn nó.
+!.env.example
 npm-debug.log*
 *.local
 .DS_Store
 
 # Local PII inbox (Ly uploads) — never commit
 data/
+
+# Ảnh chụp màn của phép đo giao diện (E08-D128) — sinh lại được bằng
+# `python3 test/ui/do-ac7.py --anh`, không phải nguồn.
+test/ui/anh/

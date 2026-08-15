@@ -68,10 +68,34 @@ async function quetHan(){
 
 function mount(app, requireCrmAuth, requireRole) {
   const btl = [requireCrmAuth, requireRole('btl')];
+  /* E08-D128 · ĐỌC ≠ GHI.
+     `doc` = phải có phiên OTP thật, nhưng không đòi vai `btl`. Dùng cho ĐÚNG ba
+     tuyến mà tab «Theo khách» cần để chạy — danh sách khách, khối theo khách, và
+     một khách. Không phải «mọi GET»: `/photos`, `/queue`, `/photo/:id/faces` là
+     bộ đồ nghề của người DUYỆT (chúng trả toạ độ mặt, điểm khớp của từng gợi ý
+     chưa ai xác nhận), và mở chúng ra là mở đúng thứ FR-5 giữ lại cho `btl`.
+
+     KHÔNG có `requireDoorOrAuth` ở đây, cùng lý do D107 đã ghi cho tuyến album:
+     làn `CRM_DOOR_OPEN` là một cánh cửa không tên, mà đây là tên và ảnh người
+     thật. Phải là một người đã chứng minh được hộp thư của mình. */
+  const doc = [requireCrmAuth];
+  /* Vai nào thấy trạng thái nào. `staff` chỉ thấy tấm ĐÃ `xac-nhan` — cùng ranh
+     giới mà `tamDaDuyet` (D107) đã gác trên chính các byte ảnh.
+     Lọc ở MÁY CHỦ chứ không ở trình duyệt, và lý do không phải an ninh (byte ảnh
+     đã có gác rồi) mà là ĐẾM: cả hai tuyến dưới phân trang và đếm ở tầng SQL, nên
+     một bộ lọc đặt ở trình duyệt sẽ để lại «Trang 1/3 · 24 tấm» phía trên một lưới
+     vẽ 5 ô. Bộ lọc phải đứng cùng chỗ với phép đếm, nếu không hai con số nói hai
+     điều khác nhau — đúng bài học D115.
+     Trả về một MẢNH SQL hằng, không nối chuỗi từ req: hai giá trị duy nhất, cả hai
+     viết cứng tại đây. */
+  const trangThaiXem = (req) => (req.actor.role === 'btl'
+    ? `('cho','xac-nhan')` : `('xac-nhan')`);
+  const chiAlbum = (req) => req.actor.role !== 'btl';
 
   /* Quét ngay khi khởi động rồi lặp: máy chủ vừa dựng lại sau một kỳ nghỉ thì
      không phải đợi hết một nhịp mới dọn phần đã quá hạn từ lâu. */
-  setTimeout(quetHan, 20 * 1000);
+  const hen0 = setTimeout(quetHan, 20 * 1000);
+  if (hen0.unref) hen0.unref();   // cùng lý do với `hen` bên dưới — và để phép kiểm thoát được
   const hen = setInterval(quetHan, NHIP_QUET);
   if (hen.unref) hen.unref();              // đừng giữ tiến trình sống chỉ vì cái hẹn này
 
@@ -90,7 +114,7 @@ function mount(app, requireCrmAuth, requireRole) {
 
   /* Home của ngăn nhận diện = DANH SÁCH KHÁCH, không phải hàng đợi ảnh (FR-4c).
      Hàng đợi là công cụ; danh sách khách mới là thứ người ta đến đây để làm. */
-  app.get('/crm/face-match/guests', ...btl, async (req, res) => {
+  app.get('/crm/face-match/guests', ...doc, async (req, res) => {
     try {
       const q = String(req.query.q || '').trim();
       const args = [];
@@ -177,13 +201,16 @@ function mount(app, requireCrmAuth, requireRole) {
                          m.score DESC NULLS LAST, m.candidate_id`;
   const K_MOI_KHOI = 12;                    // trần ảnh mỗi khối trên màn danh sách
 
-  function locKhoi(loc){
+  function locKhoi(loc, chi){
     if (loc === 'co-album') return 'AND k.so_album > 0';
     if (loc === 'tat-ca')   return '';
-    return 'AND k.so_cho > 0';              // mặc định: khách đang có gợi ý chờ (FR-5)
+    /* D128 · mặc định của `btl` là «khách đang có gợi ý chờ» (FR-5 của D103) — chỗ
+       có việc để làm. `staff` không duyệt gì, và với họ mục ấy là một danh sách
+       khách mà mỗi khối đều rỗng. Mặc định của họ là «đã có ảnh trong album». */
+    return chi ? 'AND k.so_album > 0' : 'AND k.so_cho > 0';
   }
 
-  app.get('/crm/face-match/khoi', ...btl, async (req, res) => {
+  app.get('/crm/face-match/khoi', ...doc, async (req, res) => {
     try {
       const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
       const offset = Math.max(0, Number(req.query.offset) || 0);
@@ -210,12 +237,18 @@ function mount(app, requireCrmAuth, requireRole) {
                WHERE s.guest_id = g.id AND s.deleted_at IS NULL AND s.vec IS NOT NULL) AS so_mau
           FROM crm_guests g WHERE g.deleted_at IS NULL
         )`;
-      const loc = locKhoi(req.query.loc);
+      const chi = chiAlbum(req);
+      const loc = locKhoi(req.query.loc, chi);
       /* Nhiều gợi ý chờ nhất lên trước (FR-5): người duyệt vào chỗ đông nhất, không
-         phải cuộn theo bảng chữ cái để tìm việc. */
+         phải cuộn theo bảng chữ cái để tìm việc.
+         D128 · `staff` không có «việc» nào để vào, nên với họ thứ tự là album dày
+         trước — xếp theo một con số họ không nhìn thấy thì thứ tự đọc ra ngẫu nhiên. */
+      const sapXep = chi
+        ? 'ORDER BY k.so_album DESC, k.full_name'
+        : 'ORDER BY k.so_cho DESC, k.so_album DESC, k.full_name';
       const r = await pool.query(`${nen}
         SELECT * FROM k WHERE true ${loc} ${tim}
-        ORDER BY k.so_cho DESC, k.so_album DESC, k.full_name
+        ${sapXep}
         LIMIT $1 OFFSET $2`, args);
       const tong = await pool.query(`${nen}
         SELECT count(*)::int n FROM k WHERE true ${loc} ${timDem}`, args.slice(2));
@@ -232,7 +265,7 @@ function mount(app, requireCrmAuth, requireRole) {
               FROM crm_face_candidates c
               JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
               WHERE c.guest_id = ANY($1::bigint[]) AND c.deleted_at IS NULL
-                AND c.trang_thai IN ('cho','xac-nhan')
+                AND c.trang_thai IN ${trangThaiXem(req)}
               ORDER BY c.guest_id, c.event_photo_id, ${SAP_XEP_ANH}
             ) m
           ) t WHERE t.rn <= $2`, [ids, K_MOI_KHOI]);
@@ -248,12 +281,16 @@ function mount(app, requireCrmAuth, requireRole) {
       res.json({ ok: true, tong: tong.rows[0].n, offset, moi_khoi: K_MOI_KHOI,
         items: r.rows.map(x => {
           const anh = anhTheoKhach.get(String(x.id)) || [];
+          /* D128 · `staff` không nhận số gợi ý chờ: nó đếm những tấm họ không được
+             xem và không quyết được. Zero hoá ở ĐÂY, trước khi `con_lai` dùng tới —
+             để đúng một nguồn cho cả con số hiện lên lẫn nhãn «còn N tấm nữa». */
+          const soCho = chi ? 0 : x.so_cho;
           return { guest_id: String(x.id), full_name: x.full_name, name_jp: x.name_jp,
-            org: x.org, org_jp: x.org_jp, so_album: x.so_album, so_cho: x.so_cho,
+            org: x.org, org_jp: x.org_jp, so_album: x.so_album, so_cho: soCho,
             so_mau: x.so_mau, anh,
             /* `con_lai` tính từ tổng thật, không từ độ dài mảng đã cắt — nhãn «còn N
                tấm nữa» phải là N thật, cùng nguyên tắc với nhãn nút xác nhận. */
-            con_lai: Math.max(0, (x.so_album + x.so_cho) - anh.length) };
+            con_lai: Math.max(0, (x.so_album + soCho) - anh.length) };
         }) });
     } catch (e) { console.error('[face-match] khoi:', e.message); res.status(500).json({ ok: false, error: 'loi' }); }
   });
@@ -262,7 +299,7 @@ function mount(app, requireCrmAuth, requireRole) {
      Phân trang ở tầng máy chủ, vì «đang hiện» của ràng buộc precision được định
      nghĩa là ĐÚNG trang này: nếu trình duyệt tự cắt từ một mảng lớn hơn thì
      «chọn tất cả trên trang» lại phủ thứ người dùng chưa nhìn. */
-  app.get('/crm/face-match/khoi/:guestId', ...btl, async (req, res) => {
+  app.get('/crm/face-match/khoi/:guestId', ...doc, async (req, res) => {
     try {
       const limit = Math.min(24, Math.max(1, Number(req.query.limit) || 24));
       const offset = Math.max(0, Number(req.query.offset) || 0);
@@ -279,7 +316,8 @@ function mount(app, requireCrmAuth, requireRole) {
                c.id AS candidate_id, c.event_photo_id, c.trang_thai, c.score
           FROM crm_face_candidates c
           JOIN crm_event_photos e ON e.id = c.event_photo_id AND e.deleted_at IS NULL
-         WHERE c.guest_id = $1 AND c.deleted_at IS NULL AND c.trang_thai IN ('cho','xac-nhan')
+         WHERE c.guest_id = $1 AND c.deleted_at IS NULL
+           AND c.trang_thai IN ${trangThaiXem(req)}
          ORDER BY c.event_photo_id, ${SAP_XEP_ANH}`;
       const r = await pool.query(`
         SELECT * FROM (${MOT_DONG_MOI_TAM}) m

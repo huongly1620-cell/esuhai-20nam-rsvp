@@ -34,7 +34,15 @@ function mount(app) {
   //     xoá được khách và tải được nhật ký PII.
   // E08-D066 — sơ đồ bàn dùng chung session cửa/CRM
   const DOOR_PATHS = ['/checkin-toadam.html', '/checkin-gala.html', '/sodoban-gala.html'];
-  function serveShell(req, res, file) {
+  /* E08-D128 · `choStaff` = trang này phục vụ CẢ `staff`, không riêng `btl`.
+     Một tham số ở đúng một hàm, chứ không phải một `serveShell2` bên cạnh: hai
+     bản sao của cùng cái gác cổng là hai chỗ sẽ lệch nhau vào lúc không ai để ý.
+     Mặc định `false` — mọi lời gọi cũ giữ nguyên nghĩa `btl`-only, và ai thêm
+     trang mới mà quên tham số thì rơi về phía CHẶT, không phải phía hở.
+     Lưu ý: `currentActor` chỉ đọc cookie OTP / bearer smoke — làn cửa
+     (`CRM_DOOR_OPEN` / `door@checkin.local`) KHÔNG đi qua đây, nên nới chỗ này
+     không mở trang ảnh cho một cánh cửa không tên. */
+  function serveShell(req, res, file, choStaff) {
     const a = auth.currentActor(req);
     // PG bấm nhầm link /crm sau khi đã đăng nhập: đưa thẳng về cửa, đừng bắt
     // đăng nhập lại — họ ĐÃ đăng nhập, chỉ là không có quyền vào bảng này.
@@ -46,9 +54,13 @@ function mount(app) {
     // làm mù phép kiểm sau mỗi lần deploy. Nó vẫn là role `staff` nên vẫn bị
     // requireRole('btl') chặn ở xoá khách / import / nhật ký — đó mới là chỗ
     // đáng chặn, và smoke dùng chính điều đó để khẳng định RBAC còn nguyên.
-    if (a.role !== 'btl' && a.email !== auth.SMOKE_EMAIL) return res.status(403).send(doorOnlyPage());
+    if (!choStaff && a.role !== 'btl' && a.email !== auth.SMOKE_EMAIL) return res.status(403).send(doorOnlyPage());
     return res.sendFile(path.join(__dirname, 'views', file));
   }
+  /* E08-D128 · «người này KHÔNG phải ban tổ chức» — dùng để chọn tab mặc định.
+     Làn smoke đứng cùng phía `btl` ở đây: nó vốn mở được mọi trang, và bắt nó
+     nhận một cú 302 sẽ làm mù đúng phép kiểm sau mỗi lần deploy. */
+  function laStaff(a) { return !!a && a.role !== 'btl' && a.email !== auth.SMOKE_EMAIL; }
   function doorOnlyPage() {
     return '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
       + '<title>Trang đón tiếp</title>'
@@ -84,9 +96,28 @@ function mount(app) {
 
      `/crm/anh-su-kien` (không đuôi) = tab Phân loại, giữ đúng thứ tự D102 «ảnh
      trước, tên gắn sau». Một tab một URL: không có URL thứ hai cho cùng một tab. */
-  app.get('/crm/anh-su-kien', (req, res) => serveShell(req, res, 'crm-nhan-dien.html'));
-  app.get('/crm/anh-su-kien/theo-khach', (req, res) => serveShell(req, res, 'crm-nhan-dien.html'));
-  app.get('/crm/anh-su-kien/kho', (req, res) => serveShell(req, res, 'crm-kho-anh.html'));
+  /* E08-D128 · ba tuyến này phục vụ CẢ `staff` (FR-4). `/crm` và `/crm/classic`
+     bên trên KHÔNG đổi — thêm một nhân viên không được là thêm một người xoá
+     được khách hay tải được nhật ký PII.
+
+     `/crm/anh-su-kien` không đuôi = tab Phân loại, mà cả tab ấy sống bằng các
+     tuyến GHI của `btl` (duyệt gợi ý, khoanh mặt, gắn tên). Đưa `staff` vào đó
+     là bày ra một màn hình mà mọi cú bấm đều trả 403. Nên với `staff` tuyến này
+     302 sang Theo khách — thứ họ đến đây để dùng (AC-7). Chuyển ở MÁY CHỦ chứ
+     không chỉ ở trình duyệt: URL trên thanh địa chỉ phải nói đúng tab đang mở,
+     đó là hợp đồng FR-5 của D106, và một cú đổi tab bằng JS sau khi trang đã vẽ
+     xong thì người dùng vẫn kịp nhìn thấy tab sai nhấp nháy.
+     Giữ nguyên query: `?anh=`/`?khach=` là lối vào sâu của D107 và trang bên kia
+     đọc chúng — cắt đi là làm hỏng link người ta vừa nhận qua Zalo. */
+  app.get('/crm/anh-su-kien', (req, res) => {
+    if (laStaff(auth.currentActor(req))) {
+      const q = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+      return res.redirect(302, '/crm/anh-su-kien/theo-khach' + q);
+    }
+    return serveShell(req, res, 'crm-nhan-dien.html', true);
+  });
+  app.get('/crm/anh-su-kien/theo-khach', (req, res) => serveShell(req, res, 'crm-nhan-dien.html', true));
+  app.get('/crm/anh-su-kien/kho', (req, res) => serveShell(req, res, 'crm-kho-anh.html', true));
   // Người gõ tay đường đoán được nhất của tab mặc định — đưa về URL chuẩn, đừng 404.
   app.get('/crm/anh-su-kien/phan-loai', (req, res) => res.redirect(302, '/crm/anh-su-kien'));
 

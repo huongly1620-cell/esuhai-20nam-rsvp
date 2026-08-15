@@ -117,6 +117,11 @@
      khác nhau. `aria-current` chứ không `aria-pressed`: link không có trạng thái
      nhấn, nó có trạng thái "đang ở đây". */
   a.chip{text-decoration:none;display:inline-flex;align-items:center;line-height:1.45}
+  /* E08-D128 · `a.chip` có độ ưu tiên (0,1,1) nên nó THẮNG `.an` (0,1,0): chip Kho
+     là <a>, và `classList.add('an')` trên nó không ẩn được gì cả — hai chip kia là
+     <button> nên vẫn ẩn, và bản đầu của vé này đã đi qua phép đo với đúng một chip
+     còn hiện. Nói lại ngay tại đây thay vì bịa một class ẩn thứ hai. */
+  a.chip.an{display:none}
   .chip[aria-pressed=true],.chip[aria-current=page]{background:rgba(224,189,119,.18);
     border-color:var(--gold);color:var(--gold)}
   /* `.tab` = THANH BA TAB của trang, đúng một chỗ trên trang này. Hàng chip lọc bên
@@ -639,6 +644,15 @@ var T = {
     khach_tom:'{a} ảnh trong album · {c} ảnh chờ duyệt',
     chon_het:'Chọn cả {n} ảnh chờ duyệt trên trang này (mỗi trang tối đa {m} tấm)',
     chon_het_khoi:'Chọn cả {n} tấm chờ duyệt đang hiện trong khối này',
+    /* ── E08-D128 · câu cho vai `staff` (chỉ xem ảnh đã duyệt) ──
+       Không sửa bốn câu trên: `btl` vẫn tick tấm CHỜ DUYỆT, `staff` tick tấm ĐÃ
+       VÀO ALBUM. Cùng một ô tick mang hai nghĩa với hai vai, nên nhãn phải nói
+       đúng nghĩa của người đang đọc — nếu không, `staff` đọc «chờ duyệt» rồi
+       tưởng mình vừa duyệt hộ ai đó. */
+    chon_het_xem:'Chọn cả {n} ảnh trong album trên trang này (mỗi trang tối đa {m} tấm)',
+    chon_het_khoi_xem:'Chọn cả {n} tấm album đang hiện trong khối này',
+    khoi_chu_xem:'Đây là ảnh của khách đã được ban tổ chức xác nhận. Tick chọn rồi bấm nút tải để lấy ảnh gửi cho khách. Ảnh máy đang đoán, chưa ai duyệt thì không hiện ở đây.',
+    khach_tom_xem:'{a} ảnh trong album',
     trang_truoc:'← Trang trước', trang_sau:'Trang sau →',
     trang_may:'Trang {t}/{n} · {s} tấm trên trang này',
     lo_xac_nhan:'Xác nhận {n} tấm đã chọn', lo_tu_choi:'Không phải — {n} tấm',
@@ -784,6 +798,11 @@ var T = {
     khach_tom:'アルバム{a}枚 · 承認待ち{c}枚',
     chon_het:'このページの承認待ち{n}枚をすべて選択（1ページ最大{m}枚）',
     chon_het_khoi:'このブロックに表示中の承認待ち{n}枚をすべて選択',
+    /* ── E08-D128 · `staff`（確認済み写真の閲覧のみ）── */
+    chon_het_xem:'このページのアルバム{n}枚をすべて選択（1ページ最大{m}枚）',
+    chon_het_khoi_xem:'このブロックに表示中のアルバム{n}枚をすべて選択',
+    khoi_chu_xem:'ここに出るのは事務局が確認済みのゲスト写真です。チェックしてダウンロードボタンを押すと、ゲストへ送る写真が取得できます。未確認の自動候補は表示されません。',
+    khach_tom_xem:'アルバム{a}枚',
     trang_truoc:'← 前のページ', trang_sau:'次のページ →',
     trang_may:'{t}/{n}ページ · このページ{s}枚',
     lo_xac_nhan:'選択した{n}枚を確認', lo_tu_choi:'別人です — {n}枚',
@@ -971,6 +990,24 @@ function hienMan(id){
   apDungThu();
 }
 
+/* ══════════ E08-D128 · TRANG NÀY CÓ HAI DIỆN NGƯỜI DÙNG ══════════
+   Từ D128, `staff` (nhân viên công ty tự đăng ký bằng OTP domain @esuhai.com /
+   @esuworks.vn) mở được trang này — nhưng chỉ để XEM ảnh khách ĐÃ được BTL xác
+   nhận. Mọi tuyến GHI (duyệt gợi ý, gắn tên, khoanh mặt, đồng bộ máy quét, kho)
+   vẫn trả 403 cho họ ở máy chủ; `CHI_XEM` KHÔNG phải hàng rào an ninh — nó là
+   phép lịch sự, cùng lý do D126 đã ghi cho bảng đồng bộ: đừng bày trước mắt
+   người ta một cái nút mà bấm vào chỉ nhận lỗi.
+
+   Ranh giới «chỉ ảnh đã duyệt» được GÁC Ở MÁY CHỦ, không ở đây — hai lớp, cả hai
+   đều ở phía bên kia: `tamDaDuyet` (D107) trả 403 cho mọi byte ảnh chưa
+   `xac-nhan`, và từ D128 hai tuyến `khoi` / `khoi/:id` cũng không trả DÒNG `cho`
+   nào cho vai khác `btl`. Nên phía này KHÔNG lọc lại lần nữa: một bộ lọc thứ hai
+   cho cùng một luật là chỗ sẽ lệch, và ở đây nó còn lệch âm thầm — trình duyệt
+   lọc sau khi máy chủ đã đếm và cắt trang, nên nhãn «Trang 1/3 · 24 tấm» sẽ đứng
+   trên một lưới vẽ 5 ô. `CHI_XEM` chỉ quyết định GIAO DIỆN: nút nào vẽ, câu nào
+   đọc, ô tick nằm trên tấm nào. */
+var CHI_XEM = false;
+
 /* ══════════ E08-D106 · FR-5 — URL nói đúng tab đang mở ══════════
    Chỉ TAB vào lịch sử, không phải từng màn con. Mở một tấm ảnh hay một khách là đi
    sâu TRONG một tab; nếu đẩy cả màn con vào lịch sử thì nút Back của điện thoại
@@ -980,6 +1017,11 @@ function hienMan(id){
 var URL_TAB = { anh: '/crm/anh-su-kien', khach: '/crm/anh-su-kien/theo-khach' };
 function tabTuUrl(){ return location.pathname.indexOf('/theo-khach') > -1 ? 'khach' : 'anh'; }
 function moTab(tab, day){
+  /* D128 · với `staff` chỉ tồn tại MỘT tab. Chặn ở đây chứ không chỉ ẩn cái chip:
+     `popstate` cũng đi qua hàm này, nên một cú Back sau khi máy chủ 302 sẽ gọi
+     `moTab('anh')` mà không có cú bấm nào — và tab Phân loại thì mọi lượt nạp
+     đều 403. */
+  if (CHI_XEM) tab = 'khach';
   if (tab === 'khach'){ TU_DAU = 'khoi'; hienMan('manKhach'); veKhoi(); }
   else { TU_DAU = 'luoi'; hienMan('manAnh'); veLuoi(); }
   if (day && location.pathname !== URL_TAB[tab]) history.pushState({ tab: tab }, '', URL_TAB[tab]);
@@ -1462,13 +1504,23 @@ function veTam(x){
     + (pt ? '<span class="pt' + (x.score >= 0.55 ? ' chac' : '') + '">'
         + esc(pt) + '</span>' : '')
     + veNhan(la)
-    + (la ? '' : '<label class="tick"><input type="checkbox"></label>')
+    /* Ô tick là bộ chọn của HAI việc: duyệt lô (btl) và tải về (D110). Với `btl`
+       nó ở trên tấm `cho` — thứ họ cần quyết. Với `staff` thì ngược hẳn: họ không
+       quyết gì, việc của họ là lấy ảnh ĐÃ duyệt gửi cho khách (chốt Sponsor 11/08
+       mà D107 mở tuyến preview để phục vụ), nên ô tick phải ở trên tấm `alb`.
+       Không có ô tick nào thì thanh tải luôn đứng ở 0 và cả trang thành một tấm
+       bưu thiếp không dùng được. */
+    + ((CHI_XEM ? la : !la) ? '<label class="tick"><input type="checkbox"></label>' : '')
     + '</div>';
 }
 
 /* Thanh nút duyệt. Nhãn LUÔN in số thật đang tick — không có nút nào nói "tất cả",
    vì "tất cả" là con số người dùng chưa đếm bằng mắt. */
 function veThanh(n){
+  /* D128 · AC-7 — ba nút này là ĐƯỜNG GHI (`POST /quyet-nhieu`, `btl` ở máy chủ).
+     Với `staff` chúng không được vẽ ra. Trả chuỗi rỗng chứ không `disabled`: một
+     nút xám vẫn là một lời hứa, và ở đây không có gì để hứa. */
+  if (CHI_XEM) return '';
   return '<button class="btn sm ok" data-lo="xac-nhan"' + (n ? '' : ' disabled') + '>'
     +   esc(fmt('lo_xac_nhan', { n: n })) + '</button>'
     + '<button class="btn sm bad" data-lo="tu-choi"' + (n ? '' : ' disabled') + '>'
@@ -1504,7 +1556,7 @@ function capNhatThanh(the){
     oHet.disabled = tong === 0;
     var nhan = the.querySelector('.nhanChonKhoi');
     if (nhan){
-      nhan.textContent = fmt('chon_het_khoi', { n: tong });
+      nhan.textContent = fmt(CHI_XEM ? 'chon_het_khoi_xem' : 'chon_het_khoi', { n: tong });
       oHet.closest('.chonHet').classList.toggle('an', tong === 0);
     }
   }
@@ -1522,7 +1574,7 @@ async function veKhoi(noiTiep){
   KHOI_TONG = j.tong || 0;
   $('#khoiTom').textContent = KHOI.length
     ? fmt('khoi_tom', { n: KHOI_TONG, c: KHOI.length }) : tt('khoi_rong');
-  $('#khoiChu').textContent = tt('khoi_chu');
+  $('#khoiChu').textContent = tt(CHI_XEM ? 'khoi_chu_xem' : 'khoi_chu');
   $('#dsKhoi').innerHTML = KHOI.map(function(k){
     var dv = LANG === 'jp' && k.org_jp ? k.org_jp : (k.org || '');
     var anh = (k.anh || []).map(veTam).join('');
@@ -1536,12 +1588,18 @@ async function veKhoi(noiTiep){
       + '<div class="khoi-so">'
       +   '<span class="cap"><span class="dem' + (k.so_album ? ' co' : '') + '" data-so="album">' + k.so_album
       +     '</span><span class="hint">' + esc(tt('n_album')) + '</span></span>'
-      +   '<span class="cap"><span class="dem' + (k.so_cho ? ' cho' : '') + '" data-so="cho">' + k.so_cho
-      +     '</span><span class="hint">' + esc(tt('n_cho')) + '</span></span>'
+      /* D128 · «chờ duyệt» là con số của NGƯỜI DUYỆT. Với `staff` nó đếm những tấm
+         họ không nhìn thấy và không quyết được — một con số không có việc gì để
+         làm với người đọc nó. */
+      +   (CHI_XEM ? ''
+        : '<span class="cap"><span class="dem' + (k.so_cho ? ' cho' : '') + '" data-so="cho">' + k.so_cho
+        +   '</span><span class="hint">' + esc(tt('n_cho')) + '</span></span>')
       + '</div>'
       /* Khách không có mẫu thì máy KHÔNG đoán được — nói thẳng, vì đó là lý do khối
-         của họ rỗng, không phải vì chưa ai duyệt (giữ bài học AC-6 của D077). */
-      + (k.so_mau ? '' : '<p class="canh" style="margin:0 0 8px">' + esc(tt('khong_mau')) + '</p>')
+         của họ rỗng, không phải vì chưa ai duyệt (giữ bài học AC-6 của D077).
+         D128 · câu ấy giải thích một cơ chế `staff` không đụng tới; với họ khối rỗng
+         chỉ có một nghĩa: BTL chưa duyệt tấm nào cho khách này. */
+      + (k.so_mau || CHI_XEM ? '' : '<p class="canh" style="margin:0 0 8px">' + esc(tt('khong_mau')) + '</p>')
       /* E08-D109 FR-4 · ô chọn hết nằm TRONG card, ngay trên lưới của card — không
          phải một ô chung trên đầu list. Một ô chung sẽ phủ mọi khách đã tải, tức
          duyệt hộ những tấm người dùng chưa cuộn tới: đúng cái cửa hậu D103 sinh ra
@@ -1587,8 +1645,10 @@ async function moMotKhach(gid, offset){
   } catch (_) { $('#tomMotKhach').textContent = tt('loi_nap'); return; }
   KHACH_DL = j;
   $('#tenMotKhach').textContent = tenKh(j.khach || {});
-  $('#tomMotKhach').textContent = fmt('khach_tom', { a: j.so_album, c: j.so_cho });
-  $('#chuMotKhach').textContent = tt('khoi_chu');
+  $('#tomMotKhach').textContent = CHI_XEM
+    ? fmt('khach_tom_xem', { a: j.so_album })
+    : fmt('khach_tom', { a: j.so_album, c: j.so_cho });
+  $('#chuMotKhach').textContent = tt(CHI_XEM ? 'khoi_chu_xem' : 'khoi_chu');
   $('#anhMotKhach').innerHTML = (j.items || []).map(veTam).join('')
     || '<p class="hint">' + esc(tt('khoi_khong_anh')) + '</p>';
 
@@ -1599,10 +1659,16 @@ async function moMotKhach(gid, offset){
   $('#trangSau').disabled = KHACH_OFFSET + TRANG_KHACH >= (j.tong || 0);
   /* Nhãn nói RÕ trần: "trên trang này (tối đa 24)". Người dùng phải đọc được giới
      hạn của cú bấm ngay trên cú bấm, không phải suy ra từ hành vi. */
-  var soCho = (j.items || []).filter(function(x){ return x.trang_thai === 'cho'; }).length;
-  $('#nhanChonHet').textContent = fmt('chon_het', { n: soCho, m: TRANG_KHACH });
+  /* D128 · trần của ô «chọn hết» là số tấm CÓ Ô TICK trên trang, và ô tick đổi chỗ
+     theo vai (xem `veTam`): `btl` tick tấm chờ duyệt, `staff` tick tấm đã vào
+     album. Đếm bằng đúng cái điều kiện `veTam` vừa dùng, đừng đếm 'cho' cứng — nếu
+     không, `staff` đọc «Chọn cả 0 ảnh» phía trên một trang đầy ảnh tick được. */
+  var tick = (j.items || []).filter(function(x){
+    return CHI_XEM ? x.trang_thai === 'xac-nhan' : x.trang_thai === 'cho'; }).length;
+  $('#nhanChonHet').textContent = fmt(CHI_XEM ? 'chon_het_xem' : 'chon_het',
+    { n: tick, m: TRANG_KHACH });
   $('#chonHetTrang').checked = false;
-  $('#chonHetTrang').disabled = soCho === 0;
+  $('#chonHetTrang').disabled = tick === 0;
   capNhatThanh($('#manMotKhach'));
   /* Đóng dấu «DOM đang hiện là đúng khách này, đúng trang này». Lượt «về» từ màn
      xem đọc hai dấu này để biết được phép hiện lại DOM cũ hay phải nạp mới —
@@ -1850,6 +1916,17 @@ document.addEventListener('click', async function(e){
 
   var oTam = e.target.closest && e.target.closest('.anh-o[data-anh]');
   if (oTam){
+    /* D128 · màn xem một tấm là BÀN LÀM VIỆC của người duyệt: nó nạp
+       `/photo/:id/faces` (btl), vẽ khung mặt, và mọi nút trên đó đều ghi. Với
+       `staff` cú bấm ấy mở ra một màn trắng kèm 403. Chuyển cú bấm thành cú tick
+       — thứ duy nhất họ làm được với một tấm ở đây — thay vì nuốt nó im lặng:
+       một tấm bấm vào mà không có gì xảy ra đọc ra «trang hỏng». */
+    if (CHI_XEM){
+      var oTick = oTam.querySelector('.tick input');
+      if (oTick){ oTick.checked = !oTick.checked;
+        oTick.dispatchEvent(new Event('change', { bubbles: true })); }
+      return;
+    }
     /* FR-6 · mở đúng trang xem ảnh của D102, không dựng lối thứ hai. Nhớ mình đến
        từ khối hay từ màn một khách để nút quay lại trả về đúng chỗ vừa rời (AC-6). */
     /* E08-D109 · nhớ luôn KHỐI chứa tấm này. `scrollY` là phép khôi phục chính,
@@ -2028,13 +2105,63 @@ $('#themeBtn').onclick = function(){
 
 apDungTheme(nhoCu('crm_theme', 'nd_theme') === 'light' ? 'light' : '');
 setLang(LANG);
-jget('/crm/me').then(function(j){
-  $('#meRole').textContent = (j.role||'') + ' · ' + (j.email||'');
+
+/* ══════════ E08-D128 · VAI QUYẾT ĐỊNH TRANG NÀY MỞ RA CÁI GÌ ══════════
+   D126 hỏi `/crm/me` rồi ẩn bảng đồng bộ SAU khi trang đã nạp xong — đủ cho một
+   cái bảng. Từ D128 vai còn quyết định TAB nào mở và lượt nạp đầu tiên gọi tuyến
+   nào, nên nó phải biết TRƯỚC lượt nạp ấy: gọi trước rồi sửa sau nghĩa là bắn ít
+   nhất một yêu cầu chắc chắn 403 và để người dùng nhìn thấy tab sai nhấp nháy. */
+function apDungVai(j){
+  $('#meRole').textContent = ((j && j.role) || '') + ' · ' + ((j && j.email) || '');
+  /* Hỏi không được thì rơi về phía CHỈ XEM. Phía kia là bày ra một bàn điều khiển
+     mà mọi cú bấm đều 403 — hỏng theo kiểu khó hiểu hơn hẳn. */
+  CHI_XEM = !j || j.role !== 'btl';
+  if (!CHI_XEM) return;
   /* D126 · AC-1 — bảng điều khiển máy quét chỉ dành cho `btl`. Mọi tuyến của nó
      đã gác vai ở máy chủ (403), nên đây KHÔNG phải hàng rào an ninh; nó là phép
      lịch sự: đừng bày trước mắt người ta một cái nút mà bấm vào chỉ nhận lỗi. */
-  if (j.role !== 'btl'){ $('#theDongBo').classList.add('an'); DB_TAT = true; }
-}).catch(function(){});
+  $('#theDongBo').classList.add('an'); DB_TAT = true;
+  /* Hai chip kia dẫn tới hai trang chỉ `btl` dùng được: tab Phân loại sống bằng
+     các tuyến GHI, còn Kho thì mọi tuyến đều `btl`. Chip Theo khách ở lại một
+     mình — nó vẫn nói người dùng đang đứng ở đâu. */
+  $('#tabAnh').classList.add('an');
+  $('#tabKho').classList.add('an');
+  /* `/crm` trả 403 (trang «tài khoản này dùng cho trang cửa») với vai staff. */
+  $('#veCrm').classList.add('an');
+  /* Bộ lọc mặc định của khối cũng đổi chủ ngữ: «khách đang có ảnh chờ duyệt» là
+     hàng đợi việc của người duyệt. Máy chủ đã đổi mặc định tương ứng (locKhoi),
+     hai bên phải nói cùng một điều — nếu không, chip sáng một đằng, danh sách một
+     nẻo. */
+  var chipCho = document.querySelector('.chip.lock[data-lock="co-goi-y"]');
+  if (chipCho) chipCho.classList.add('an');
+  LOC_KHOI = 'co-album';
+  document.querySelectorAll('.chip.lock').forEach(function(c){
+    c.setAttribute('aria-pressed', String(c.getAttribute('data-lock') === LOC_KHOI)); });
+}
+
+/* Lượt vẽ đầu tiên. Tách khỏi `apDungVai` để đúng một chỗ quyết định «trang mở ra
+   màn nào», và để nó chạy sau khi vai đã biết dù nhánh nào xảy ra. */
+function khoiDong(){
+  hoiDongBo();
+  /* Tab mở đầu do URL quyết định (D106). `?anh=` mở thẳng tấm (D107) — sau khi
+     lưới đã nạp, vì nút «Về lưới ảnh» cần chỗ quay về. */
+  history.replaceState({ tab: tabTuUrl() }, '', location.pathname + location.search);
+  /* D128 · `staff` chỉ có Theo khách. Kể cả khi URL mang `?anh=` (link sâu D107 do
+     một người BTL gửi qua Zalo): màn xem một tấm nạp tuyến `btl`, nên mở nó ra là
+     mở một màn trắng. Đưa họ về thứ dùng được, không im lặng đứng ở màn hỏng. */
+  if (CHI_XEM){ TU_DAU = 'khoi'; hienMan('manKhach'); veKhoi(); return; }
+  if (tabTuUrl() === 'khach' && !qAnh){ TU_DAU = 'khoi'; hienMan('manKhach'); veKhoi(); }
+  else veLuoi()
+    .catch(function(){ $('#anhTom').textContent = tt('loi_nap'); })
+    .then(function(){ if (qAnh) return moAnh(qAnh, 'luoi'); })
+    .catch(function(){ hienMan('manAnh'); $('#anhTom').textContent = tt('loi_nap'); });
+}
+/* `.catch` ở GIỮA, không ở cuối: `khoiDong` phải chạy kể cả khi `apDungVai` ném —
+   một trang không vẽ gì cả là hỏng nặng hơn một trang vẽ sai vài cái nút. */
+jget('/crm/me')
+  .then(apDungVai, function(){ apDungVai(null); })
+  .catch(function(e){ console.error('[crm-nhan-dien] không đọc được vai:', e && e.message); })
+  .then(khoiDong);
 
 /* ══════════════════════════════════════════════════════════════════════════════
    E08-D124 · ĐỒNG BỘ NHẬN DIỆN — bấm một nút, máy đoán
@@ -2513,16 +2640,9 @@ $('#qDungHan').onclick = async function(){
   } catch (e){ $('#dbChu').textContent = tt('q_hong'); }
   hoiDongBo();
 };
-hoiDongBo();
-
-/* Tab mở đầu do URL quyết định (D106). `?anh=` mở thẳng tấm (D107) — sau khi
-   lưới đã nạp, vì nút «Về lưới ảnh» cần chỗ quay về. */
-history.replaceState({ tab: tabTuUrl() }, '', location.pathname + location.search);
-if (tabTuUrl() === 'khach' && !qAnh){ TU_DAU = 'khoi'; hienMan('manKhach'); veKhoi(); }
-else veLuoi()
-  .catch(function(){ $('#anhTom').textContent = tt('loi_nap'); })
-  .then(function(){ if (qAnh) return moAnh(qAnh, 'luoi'); })
-  .catch(function(){ hienMan('manAnh'); $('#anhTom').textContent = tt('loi_nap'); });
+/* D128 · lượt nạp đầu nay nằm trong `khoiDong()`, chạy SAU khi `/crm/me` trả vai.
+   Đừng gọi `hoiDongBo()` ở đây nữa: với `staff` nó là một yêu cầu chắc chắn 403,
+   và nó bắn đi trước khi `DB_TAT` kịp được bật. */
 </script>
 </body>
 </html>

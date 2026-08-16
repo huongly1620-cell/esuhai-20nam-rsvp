@@ -93,13 +93,27 @@
   :root[data-theme=light] .btn.bad{color:var(--bad)}
   .spacer{flex:1}
   .hint{color:var(--muted);font-size:var(--fs-small);line-height:1.55}
+  /* E08-D135 · the card no longer upgrades itself to frosted glass. The
+     `@supports` block that used to sit here — swapping `--card` for `--panel`
+     and adding `blur(14px) saturate(1.15)` — is gone, and the opaque background
+     above is now the only path rather than the fallback.
+     The screen this pays off on is «one guest» (:775-798), where every photo of
+     that guest renders inside a single card: the card is as tall as the page, so
+     the blur covered the whole scrolling area and was recomputed on every frame.
+     Measured at DPR 2 — the condition that matters, since at DPR 1 the cost is
+     not measurable at all — it cost 73 of 242 frames, p95 50ms. Without it: 240
+     of 241 frames, p95 9.8ms, no frame over 50ms. Re-measure with
+     `test/ui/do-cuon.py --truoc <ref> --sau cay crm-nhan-dien.html`.
+     Worth saying plainly for whoever reads this next: on the «classify» screen
+     (:704-717) the grid sits OUTSIDE any card, so removing this blur buys almost
+     nothing there. What still costs on that screen is the label layer stuck onto
+     each photo (`.hieu/.nhan/.pt`, `.tick`) — measured, and deliberately kept,
+     because those sit on the PHOTO rather than on the page background and taking
+     their blur away would change how readable they are.
+     `.khoi` below is now redundant: it says exactly what `.card` already says.
+     It stays because it carries the argument this change is built on, and
+     because deleting it would be one more diff nobody asked for. */
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:13px;box-shadow:var(--shadow)}
-  /* Kính mờ theo khuôn AC-19 của kho-anh: @supports là bắt buộc — không có
-     backdrop-filter thì phải rơi về nền ĐẶC, chữ nổi trên nền trong suốt là
-     không đọc được. */
-  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    .card{background:var(--panel);-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
-  }
   /* List khối theo khách vẽ 20+ thẻ một lượt — 20 lớp kính mờ full-width là cái
      giá GPU thật trên điện thoại. Riêng `.khoi` dùng nền đặc, mắt thường không
      phân biệt được vì bên dưới nó là chính nền trang. */

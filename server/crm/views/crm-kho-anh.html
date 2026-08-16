@@ -115,10 +115,26 @@
      backdrop-filter theo mặc định ở một số bản, và khi nó không chạy thì nền
      trong suốt làm chữ nằm đè lên ảnh phía sau — không đọc được. Fallback là
      nền ĐẶC, không phải nền mờ hỏng. */
+  /* E08-D135 · the card no longer upgrades itself to frosted glass, and the
+     fallback above is now the only path rather than a spare one.
+     There used to be an `@supports` block right here that swapped `--card` for
+     `--panel` and added `blur(14px) saturate(1.15)`. Measured on a real browser
+     at DPR 2 — the condition that matters, because blurring at DPR 2 processes
+     four times the pixels and at DPR 1 the cost is not measurable at all — that
+     one block ate roughly two thirds of every scroll on this screen: 89 of 243
+     frames, p95 49.7ms, three frames over 50ms. Without it: 239 of 241 frames,
+     p95 9.9ms, no frame over 50ms. Re-measure with `test/ui/do-cuon.py --truoc
+     <ref> --sau cay crm-kho-anh.html`. Removing the block is the whole of D135;
+     nothing else about the card changes.
+     Why this card and not `.tab`: the entire photo store renders inside this
+     card, so the blur covered the whole scrolling area and had to be recomputed
+     on every frame. `.tab` is sticky, does not move relative to the viewport,
+     and keeping its frosted look costs nothing measurable.
+     This is not a new direction. `crm-nhan-dien.html:103-106` made exactly this
+     argument for `.khoi` and has shipped without blur ever since: what sits
+     behind these cards is the page's own smooth gradient, and blurring a smooth
+     gradient hands back almost the same pixels. */
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-top:14px;box-shadow:var(--shadow)}
-  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    .card{background:var(--panel);-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
-  }
   .hint{color:var(--muted);font-size:var(--fs-small)}
   /* .good/.bad/.warn — TÊN LỚP CỐ ĐỊNH: doNangLucEXIF() (vùng cấm chạm) gán thẳng
      box.className = 'good'|'bad'. Đổi tên lớp ở đây là làm hỏng hàng rào EXIF. */
@@ -210,9 +226,10 @@
     background:var(--panel2);border:1px solid var(--line);border-radius:16px;
     padding:7px;box-shadow:var(--shadow)}
   .dot-row:empty{display:none}
-  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    .dot-row{-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
-  }
+  /* E08-D135 · no frosted glass here either — same reason as `.card` above. The
+     removed `@supports` block only added blur; it never touched `background`, so
+     this row still paints `--panel2` and not one byte of its look changed apart
+     from the blur itself. */
   .dot-chip{border:1px solid var(--line);background:var(--panel2);color:var(--text);
     border-radius:999px;padding:6px 12px;font-size:var(--fs-small);cursor:pointer;transition:.15s}
   .dot-chip:hover{border-color:var(--line2)}

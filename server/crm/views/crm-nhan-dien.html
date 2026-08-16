@@ -439,6 +439,14 @@
     border:1px solid var(--line);overflow:hidden;margin:10px 0 6px}
   .qtien i{display:block;height:100%;width:0;
     background:linear-gradient(90deg,var(--gold),var(--ok));transition:width .5s ease}
+  /* D133 · FR-2 — đợt KHÔNG chạy (tạm dừng / chờ máy quét) thì thanh không được
+     mang màu «đang chạy»: vàng đất tĩnh, số % giữ nguyên. */
+  .qtien i.dung{background:var(--gold-d)}
+  /* D133 · FR-1 — chip trạng thái đợt: một chỗ, một lần. `.an` nhắc lại vì .qtt
+     có display riêng sẽ thắng quy tắc .an chung (bài học D126 ở .qchon/.qluong). */
+  .qtt{display:inline-flex;align-items:center;gap:8px;font-size:.85rem;font-weight:600;
+    padding:6px 13px;border:1px solid var(--line);border-radius:999px;background:var(--panel2)}
+  .qtt.an{display:none}
   .qso{display:flex;gap:13px;flex-wrap:wrap;font-size:var(--fs-small);color:var(--muted)}
   .qso b{color:var(--text);font-variant-numeric:tabular-nums;font-weight:700}
   .qluong{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
@@ -639,6 +647,11 @@
 
     <div id="qDu">
       <div class="top" style="margin:0">
+        <!-- D133 · FR-1 — khi đợt MỞ, nút «Bắt đầu quét» ẩn hẳn và chip này là
+             TRẠNG THÁI DUY NHẤT ở đầu khối đầy đủ: một nút xanh disabled không
+             phải nhãn trạng thái. Đèn tái dùng họ .qden; chữ luôn đi kèm nên màu
+             không bao giờ đứng một mình (FR-2/FR-6). -->
+        <span class="qtt an" id="qTrangThai"><span class="qden" id="qttDen"></span><b id="qttChu"></b></span>
         <button class="btn ok" id="nutDongBo" data-i="db_nut">Bắt đầu quét</button>
         <label class="qchon" id="qChonO">
           <span data-i="q_so_luong">Chạy cùng lúc</span>
@@ -875,8 +888,12 @@ var T = {
        «quét nốt chỗ ảnh còn lại». Bỏ 🤖: cái mặt robot đứng trước một nút hành
        động đọc như trang trí, và ở 390px nó ăn chỗ của chữ. */
     db_nut:'Bắt đầu quét',
-    q_nut_chay:'Đang quét…',
-    q_nut_ngu:'Đang tạm dừng',
+    /* D133 · `q_nut_chay`/`q_nut_ngu` gỡ hẳn: chúng là nhãn của cái nút-disabled-
+       làm-status mà FR-1 cấm. Trạng thái đợt nay có bộ khoá riêng, dùng chung cho
+       chip đầu khối VÀ dòng thu gọn — hai hình của một trạng thái không thể lệch. */
+    tt_quet:'Đang quét',
+    tt_ngu:'Đang tạm dừng',
+    tt_cho_may:'Chờ máy quét',
     /* D127 (vòng rà 3) · cắt còn NỬA SAU. Nửa đầu («máy dò mặt trên những tấm chưa
        dò…») nay đã có chỗ nói đúng hơn và ngắn hơn: câu FR-2 ngay trên hàng số,
        kèm con số thật. Giữ cả hai là in cùng một điều hai lần, và ở 375×600 hai
@@ -907,7 +924,10 @@ var T = {
     /* ── E08-D126 · bảng điều khiển máy quét ── */
     q_so_luong:'Chạy cùng lúc',
     q_kho:'Kho',
-    q_da_soi:'Đã soi',
+    /* D133 · FR-5 — «Đã soi» toàn kho và «Đã soi» của một luồng là hai MẪU SỐ
+       khác nhau đội chung một cái tên. Gọi đúng tên từng con số. */
+    q_da_soi:'Đã soi toàn kho',
+    q_luong_soi:'Luồng đã soi',
     q_con_lai:'Còn lại',
     q_toc_do:'Tốc độ',
     q_toc_do_dv:'{n} tấm/phút',
@@ -934,7 +954,10 @@ var T = {
        một lần ngay dưới mắt người đang đọc dòng bên cạnh. Ẩn hẳn; chỉ khi luồng
        im lâu bất thường mới nói, và nói bằng tiếng người. */
     q_nhip:'cách đây {n} giây',
-    q_khong_truc:'Chưa thấy máy quét nào đang chạy. Việc vẫn xếp được — khi máy quét bật, nó nhận. Nhờ người kỹ thuật bật máy quét trên máy tính rồi bấm lại.',
+    /* D133 · FR-3 — trang vốn TỰ poll: câu cũ dặn «rồi bấm lại» trong khi nút
+       bắt đầu đang ẩn/khoá — hướng dẫn trỏ vào một nút không bấm được. */
+    q_khong_truc:'Chưa thấy máy quét đang trực. Nhờ kỹ thuật bật máy quét; trang sẽ tự nhận, không cần bấm lại.',
+    q_can_may:'Cần bật máy quét trước',
     q_hoi_khong_truc:'Chưa thấy máy quét nào đang chạy.\n\nViệc vẫn xếp được và khi máy quét bật lên nó sẽ nhận, nhưng sẽ chưa có gì chạy cho tới lúc đó.\n\nVẫn xếp việc cho {n} luồng?',
     q_hoi_it_may:'Chỉ có {m} máy quét đang chạy. Luồng thứ {k} sẽ ngồi chờ đến khi có máy nữa.\n\nVẫn mở {n} luồng?',
     q_may_dang:'Đang có {n} máy quét',
@@ -1024,8 +1047,9 @@ var T = {
     tai_xong:'{n}枚を保存しました。ダウンロードフォルダをご確認ください。',
     /* ── E08-D124 ── */
     db_nut:'スキャン開始',
-    q_nut_chay:'スキャン中…',
-    q_nut_ngu:'一時停止中',
+    tt_quet:'スキャン中',
+    tt_ngu:'一時停止中',
+    tt_cho_may:'スキャナー待ち',
     db_giai:'未処理の写真を検出し、囲んだ顔を学習します。機械は候補を出すだけ — 担当者が承認するまでアルバムには入りません。',
     db_chua:'まだ一度も実行されていません。',
     db_dang:'実行中…',
@@ -1040,7 +1064,8 @@ var T = {
     /* ── E08-D126 ── */
     q_so_luong:'同時に実行',
     q_kho:'全体',
-    q_da_soi:'処理済み',
+    q_da_soi:'保管庫全体で処理済み',
+    q_luong_soi:'このレーンの処理済み',
     q_con_lai:'残り',
     q_toc_do:'速度',
     q_toc_do_dv:'{n}枚/分',
@@ -1063,7 +1088,8 @@ var T = {
     q_loi_tam:'エラー{n}枚',
     q_ti_le_loi:'エラー率',
     q_nhip:'{n}秒前',
-    q_khong_truc:'稼働中のスキャナーが見当たりません。作業の登録はできます — スキャナーが起動すれば引き継がれます。技術担当にパソコンでスキャナーを起動してもらってから、もう一度押してください。',
+    q_khong_truc:'稼働中のスキャナーが見当たりません。技術担当にスキャナーの起動をご依頼ください。ページが自動で検知します — 再度押す必要はありません。',
+    q_can_may:'先にスキャナーを起動してください',
     q_hoi_khong_truc:'稼働中のスキャナーが見当たりません。\n\n作業は登録され、スキャナーが起動すれば引き継がれますが、それまでは何も実行されません。\n\n並列{n}で作業を登録しますか？',
     q_hoi_it_may:'稼働中のスキャナーは{m}台だけです。{k}本目は、スキャナーが増えるまで待機します。\n\n並列{n}で開始しますか？',
     q_may_dang:'スキャナー{n}台が稼働中',
@@ -2506,7 +2532,7 @@ function dbSo(n){ return (n == null ? 0 : n).toLocaleString(LANG === 'jp' ? 'ja-
 /* Một dòng một luồng. Trả về phần tử, không nối chuỗi HTML: `anh_hien_tai` là
    tên tệp do người dùng đặt khi nạp ảnh, và nhét nó vào innerHTML là mở một cửa
    cho một tên tệp chứa thẻ. textContent thì không có cửa nào. */
-function veMotLuong(l){
+function veMotLuong(l, coMay){
   var d = document.createElement('div'); d.className = 'qluong';
   var den = document.createElement('span'); den.className = 'qden ' + l.trang_thai;
   d.appendChild(den);
@@ -2535,8 +2561,9 @@ function veMotLuong(l){
   /* Có NHÃN, không phải con số trần. Trên một dòng đã có «104» và «203 tấm/phút»
      cạnh nhau, một con số không tên buộc người đọc phải đoán nó là cái gì — và
      đoán sai thì họ tăng giảm luồng theo một con số khác thứ họ tưởng. */
+  /* D133 · FR-5 — nhãn của LUỒNG, không mượn nhãn toàn kho: hai mẫu số khác nhau. */
   var soi = document.createElement('span'); soi.className = 'qmuc';
-  soi.appendChild(document.createTextNode(tt('q_da_soi') + ' '));
+  soi.appendChild(document.createTextNode(tt('q_luong_soi') + ' '));
   var bs = document.createElement('b'); bs.textContent = dbSo(l.da_soi);
   soi.appendChild(bs);
   d.appendChild(soi);
@@ -2590,7 +2617,8 @@ function veMotLuong(l){
   if (l.trang_thai === 'cho' || l.trang_thai === 'chay'){
     d.appendChild(nutLuong('q_tam_dung', 'tam-dung', l.id));
   } else if (l.trang_thai === 'tam-dung'){
-    d.appendChild(nutLuong('q_tiep', 'tiep-tuc', l.id));
+    /* FR-4 · tiếp tục cần máy quét thật; tạm dừng thì không — nó chỉ ghi cờ hàng đợi. */
+    d.appendChild(nutLuong('q_tiep', 'tiep-tuc', l.id, !coMay));
   }
 
   /* Câu lỗi xuống DÒNG RIÊNG: nó là câu tiếng người («tự tạm dừng vì 24/100 tấm
@@ -2603,12 +2631,27 @@ function veMotLuong(l){
   }
   return d;
 }
-function nutLuong(nhan, viec, id){
+/* D133 · FR-4 — `khoa` = vô hiệu KÈM lý do đọc được (title): nút «Tiếp tục» lúc
+   0 máy trực là một lời hứa giả, nhưng biến mất hẳn thì người ta không biết vì
+   sao thiếu. Khoá + lý do; nhịp poll sau có máy là tự mở lại, không cần F5. */
+function nutLuong(nhan, viec, id, khoa){
   var b = document.createElement('button');
   b.className = 'btn sm' + (viec === 'tiep-tuc' ? ' ok' : '');
   b.textContent = tt(nhan);
+  if (khoa){ b.disabled = true; b.title = tt('q_can_may'); }
   b.onclick = function(){ doiCo(viec, { luong_id: Number(id) }, b); };
   return b;
+}
+
+/* D133 · MỘT bộ khoá trạng thái đợt cho cả chip đầu khối, dòng thu gọn và màu
+   thanh tiến độ — ba chỗ đọc chung một nguồn thì không thể tự mâu thuẫn (FR-1/2).
+   «Chờ máy quét» đứng TRÊN trạng thái viec: đợt mở mà 0 máy trực thì chưa có gì
+   đang quét cả, dù server còn ghi viec là 'chay'. Trả null = không có đợt mở. */
+function trangThaiDot(j){
+  if (!j || !j.dot_mo) return null;
+  if (!((j.so_may_truc || 0) > 0)) return { den: '', chu: tt('tt_cho_may') };
+  var ngu = j.viec && j.viec.trang_thai === 'tam-dung';
+  return ngu ? { den: 'tam-dung', chu: tt('tt_ngu') } : { den: 'chay', chu: tt('tt_quet') };
 }
 
 async function doiCo(viec, than, nut){
@@ -2637,8 +2680,13 @@ function veBangQuet(j){
   khoi.classList.remove('an');
   $('#qDs').classList.toggle('an', !luong.length);
 
+  var coMay = (j.so_may_truc || 0) > 0;
   var pt = j.kho ? Math.round(j.da_soi / j.kho * 100) : 0;
   $('#qThanh').style.width = pt + '%';
+  /* D133 · FR-2 — thanh chỉ mang màu «đang chạy» khi đợt THẬT SỰ đang quét.
+     Tạm dừng / chờ máy quét: vàng đất tĩnh (class .dung); số % không đổi. */
+  var tinhDot = trangThaiDot(j);
+  $('#qThanh').className = (tinhDot && tinhDot.den !== 'chay') ? 'dung' : '';
 
   var so = $('#qSo'); so.textContent = '';
   var muc = [
@@ -2691,7 +2739,7 @@ function veBangQuet(j){
   cau.classList.toggle('an', mo);
 
   var ds = $('#qDs'); ds.textContent = '';
-  luong.forEach(function(l){ ds.appendChild(veMotLuong(l)); });
+  luong.forEach(function(l){ ds.appendChild(veMotLuong(l, coMay)); });
 
   /* Nút chung theo đúng luật của nút riêng: chỉ hiện khi có cái để làm. */
   var coChay = luong.some(function(l){ return l.trang_thai === 'cho' || l.trang_thai === 'chay'; });
@@ -2699,6 +2747,11 @@ function veBangQuet(j){
   $('#qNut').classList.toggle('an', !mo);
   $('#qTamDungHet').classList.toggle('an', !coChay);
   $('#qTiepHet').classList.toggle('an', !coNgu);
+  /* D133 · FR-4 — «Tiếp tục tất cả» cùng luật với nút từng luồng: 0 máy trực thì
+     khoá kèm lý do; nhịp poll có máy là tự mở, không F5. «Dừng hẳn đợt» KHÔNG
+     khoá — đóng hàng đợi là việc quản trị, không cần máy quét. */
+  $('#qTiepHet').disabled = !coMay;
+  $('#qTiepHet').title = coMay ? '' : tt('q_can_may');
   $('#qDungHan').classList.toggle('an', !mo);
 }
 
@@ -2710,7 +2763,8 @@ function veDongBo(j){
   var dangChay = !!(v && v.trang_thai === 'chay');
   if (!v){ chu = tt('db_chua') + ' ' + tt('db_giai'); }
   else if (dangChay || v.trang_thai === 'tam-dung'){
-    tt2 = tt(v.trang_thai === 'tam-dung' ? 'q_tt_tam_dung' : 'db_dang');
+    /* D133 · FR-1 — đợt mở thì TRẠNG THÁI nằm ở chip #qTrangThai, một lần duy
+       nhất; #dbTom để trống, #dbChu chỉ còn là câu GIẢI THÍCH (giờ, ai mở). */
     chu = fmt('db_dang_ct', { t: dbGio(v.bat_dau), b: v.boi || '' });
   } else if (v.trang_thai === 'xong'){
     tt2 = tt('db_xong');
@@ -2743,15 +2797,21 @@ function veDongBo(j){
 
   $('#dbTom').textContent = tt2;
   $('#dbChu').textContent = chu;
-  /* D127 · FR-3 — nhãn nút nói VIỆC ĐANG LÀM, và ba trạng thái ấy chỉ hàm này
-     biết. `data-i` vẫn ở trên nút và vẫn mang nhãn nghỉ («Bắt đầu quét»): nó là
-     thứ setLang() đặt lúc đổi ngôn ngữ, và setLang() gọi lại chính hàm này ngay
-     sau đó — nên thứ tự luôn là mặc định trước, trạng thái sau. */
+  /* D133 · FR-1 — nút bắt đầu CHỈ là nút khi có thể bắt đầu: đợt mở thì ẩn hẳn,
+     không đứng đó dưới dạng disabled làm nhãn trạng thái (display:none cũng rút
+     nó khỏi focus order — AC-9). Thế chỗ nó là chip trạng thái: đèn + chữ, đọc
+     chung bộ khoá trangThaiDot với dòng thu gọn nên hai hình không thể lệch. */
   var nut = $('#nutDongBo');
-  nut.textContent = mo
-    ? tt(v && v.trang_thai === 'tam-dung' ? 'q_nut_ngu' : 'q_nut_chay')
-    : tt('db_nut');
-  nut.disabled = mo;
+  var tinh = trangThaiDot(j);
+  nut.classList.toggle('an', !!tinh);
+  if (!tinh){ nut.textContent = tt('db_nut'); nut.disabled = false; }
+  var chip = $('#qTrangThai');
+  chip.classList.toggle('an', !tinh);
+  if (tinh){
+    $('#qttDen').className = 'qden' + (tinh.den ? ' ' + tinh.den : '');
+    $('#qttChu').textContent = tinh.chu;
+    $('#dbTom').textContent = '';            // chốt chặn: đợt mở thì chip là trạng thái DUY NHẤT
+  }
   $('#qChonO').classList.toggle('an', mo);   // đang chạy thì không đổi số luồng
   /* FR-6 · con số máy quét NGAY CẠNH ô chọn. Người ta chọn 4 luồng vì tưởng luồng
      nào cũng có máy chạy; con số này là thứ duy nhất nói trước rằng không phải. */
@@ -2863,10 +2923,12 @@ function veThuDong(j){
     $('#qThuCon').textContent = '';
     return;
   }
-  var mo = !!j.dot_mo, v = j.viec;
-  var ngu = mo && v && v.trang_thai === 'tam-dung';
-  $('#qThuDen').className = 'qden' + (mo ? (ngu ? ' tam-dung' : ' chay') : '');
-  $('#qThuTt').textContent = mo ? tt(ngu ? 'q_nut_ngu' : 'q_nut_chay') : tt('q_thu_nghi');
+  /* D133 · FR-1/AC-8 — dòng thu đọc CHUNG bộ khoá trangThaiDot với chip khối
+     đầy đủ: hai hình của một trạng thái, không thể nói hai điều khác nhau.
+     Đợt mở + 0 máy = «Chờ máy quét», đèn xám — không phải «Đang quét» đèn xanh. */
+  var tinh = trangThaiDot(j);
+  $('#qThuDen').className = 'qden' + (tinh && tinh.den ? ' ' + tinh.den : '');
+  $('#qThuTt').textContent = tinh ? tinh.chu : tt('q_thu_nghi');
   $('#qThuPt').textContent = (j.kho ? Math.round(j.da_soi / j.kho * 100) : 0) + '%';
   $('#qThuCon').textContent = fmt('q_thu_con', { n: dbSo(j.con_lai) });
 }

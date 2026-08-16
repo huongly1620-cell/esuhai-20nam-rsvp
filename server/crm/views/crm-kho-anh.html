@@ -43,6 +43,20 @@
   body.jp h1,body.jp h2,body.jp h3{font-family:"Noto Serif JP","Playfair Display",serif}
   .num{font-variant-numeric:tabular-nums;letter-spacing:.01em}
   ::selection{background:var(--gold-soft)}
+  /* Polish 98% · vignette phòng tối — dưới nội dung (z:-1), mép màn tối dần như
+     đèn rọi giữa phòng trưng bày; đồng bộ với crm-nhan-dien. */
+  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:radial-gradient(120% 85% at 50% 28%,transparent 58%,rgba(2,7,14,.5) 100%)}
+  :root[data-theme=light] body::before{
+    background:radial-gradient(120% 85% at 50% 28%,transparent 62%,rgba(120,92,40,.09) 100%)}
+  /* Thanh cuộn thanh mảnh cùng tông (Windows/Linux). .lb-strip vẫn giấu thanh
+     cuộn của nó bằng quy tắc riêng đặc hiệu hơn. */
+  html{scrollbar-color:var(--line2) transparent}
+  ::-webkit-scrollbar{width:11px;height:11px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:999px;
+    border:3px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-thumb:hover{background:var(--gold-d);border:3px solid transparent;background-clip:padding-box}
   a{color:var(--blue-b)}
   .wrap{max-width:1080px;margin:0 auto;padding:0 14px 40px}
 
@@ -1569,6 +1583,9 @@ function nguonKho(){
       chuThich: x.orig_name + '  ·  ' + fmt('dot_la', { d: nhanDot(x.batch_id) }),
       o: function(){ return oKho(x.id); },
       thumb: function(){ return x.thumb_url; },
+      /* `preload` CHỈ có ở nguồn kho: URL chuỗi từ MinIO, nạp sẵn được. Nguồn đĩa
+         cố ý KHÔNG có — cấm-thêm-request của D083 vẫn nguyên cho đường ấy. */
+      preload: x.preview_url,
       url: function(){ return Promise.resolve(x.preview_url); }
     };
   });
@@ -1589,6 +1606,12 @@ function veLightbox(i, oNguon){
     img.src = u;
     lb.hidden = false; lb.classList.add('show');
     $('#lbX').focus();
+    /* Polish 98% · nạp sẵn HAI tấm kề — bấm mũi tên là ảnh đã nằm trong cache,
+       lật như lật album giấy. Chỉ mục nào mang `preload` (nguồn kho) mới nạp. */
+    [LB_IDX - 1, LB_IDX + 1].forEach(function(k){
+      var ke = ds[(k + ds.length) % ds.length];
+      if (ke && ke.preload && ke.id !== it.id){ var im = new Image(); im.src = ke.preload; }
+    });
   }).catch(function(){ /* ảnh hỏng: không mở, không làm gì thêm */ });
 }
 function moLightboxTu(ds, id, oNguon){

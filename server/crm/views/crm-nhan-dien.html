@@ -50,6 +50,19 @@
      documentElement.lang, nên font tiếng Nhật đi theo chính thuộc tính ấy. */
   html[lang=ja] body{font-family:"Noto Sans JP","Be Vietnam Pro",sans-serif;letter-spacing:.005em}
   ::selection{background:var(--gold-soft)}
+  /* Polish 98% · vignette phòng tối — nằm DƯỚI nội dung (z:-1, trên canvas nền),
+     mép màn tối dần như đèn rọi giữa phòng trưng bày. Không che chữ nào. */
+  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:radial-gradient(120% 85% at 50% 28%,transparent 58%,rgba(2,7,14,.5) 100%)}
+  :root[data-theme=light] body::before{
+    background:radial-gradient(120% 85% at 50% 28%,transparent 62%,rgba(120,92,40,.09) 100%)}
+  /* Thanh cuộn thanh mảnh cùng tông (macOS tự ẩn; đây là cho Windows/Linux). */
+  html{scrollbar-color:var(--line2) transparent}
+  ::-webkit-scrollbar{width:11px;height:11px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:999px;
+    border:3px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-thumb:hover{background:var(--gold-d);border:3px solid transparent;background-clip:padding-box}
   /* AC-13 (khuôn kho-anh) · mỗi lần Tab dừng chân phải THẤY được; :focus-visible
      để chuột bấm không bị viền bám. */
   :focus-visible{outline:2px solid var(--gold-b);outline-offset:2px;border-radius:8px}
@@ -332,6 +345,9 @@
      trên một khuôn mặt bị khung nuốt, người dùng khoanh mãi không ra khung nào,
      tức tính năng ảnh mẫu của D077 chết vì vé này. */
   .khung[data-face]{pointer-events:auto;cursor:pointer}
+  /* Polish 98% · khung mặt PHÁT SÁNG nhẹ khi rê — «bấm được» phải nhìn thấy trước
+     khi bấm (FR-1 D112). Không đè .pick: mặt đang chọn đã có hào quang riêng. */
+  .khung[data-face]:not(.pick):hover{box-shadow:0 0 0 3px rgba(224,189,119,.3)}
   .anhto.khoanh .khung[data-face]{pointer-events:none;cursor:inherit}
   /* Mặt đang chọn: viền VÀNG ĐẶC 3px. Phải thắng cả `.chon` (xanh, đã gắn tên)
      lẫn `.tron` (nét đứt, máy không có gợi ý) — hai lớp ấy cùng độ đặc hiệu với
@@ -2349,6 +2365,28 @@ $('#tabAnh').onclick = function(){ moTab('anh', true); };
 $('#tabKhach').onclick = function(){ moTab('khach', true); };
 $('#taiThem').onclick = function(){ veLuoi(true); };
 $('#khoiThem').onclick = function(){ veKhoi(true); };
+/* ── Polish 98% · cuộn gần đáy thì TỰ nạp thêm — khuôn kho-chan D090 của kho-anh:
+   nút VẪN giữ (người dùng bàn phím không sinh giao cắt, và nhãn «Đã hết» của nó
+   là mốc nói danh sách dừng vì hết thật). Màn đang ẩn thì nút không giao cắt nên
+   không bắn; `DA_NAP` chặn lượt bắn sớm hơn lượt nạp đầu; cờ chặn gọi chồng. */
+var DANG_TU_NAP = false;
+function ganTuNap(nutId, hamNap){
+  if (!window.IntersectionObserver) return;
+  var nut = document.getElementById(nutId);
+  if (!nut) return;
+  new IntersectionObserver(async function(es){
+    for (var i = 0; i < es.length; i++){
+      if (!es[i].isIntersecting) continue;
+      if (nut.disabled || DANG_TU_NAP || !DA_NAP) return;
+      DANG_TU_NAP = true;
+      try { await hamNap(); } catch(_){ /* lỗi mạng: nút còn đó, bấm tay được */ }
+      DANG_TU_NAP = false;
+      return;
+    }
+  }, { rootMargin: '400px 0px' }).observe(nut);
+}
+ganTuNap('taiThem', function(){ return veLuoi(true); });
+ganTuNap('khoiThem', function(){ return veKhoi(true); });
 $('#trangTruoc').onclick = function(){ moMotKhach(KHACH_DANG, KHACH_OFFSET - TRANG_KHACH); };
 $('#trangSau').onclick  = function(){ moMotKhach(KHACH_DANG, KHACH_OFFSET + TRANG_KHACH); };
 var henKhoi = null;

@@ -313,21 +313,22 @@
     color:var(--gold);font:inherit;font-size:var(--fs-small);cursor:pointer;padding:8px;
     aspect-ratio:4/3;transition:background .15s,border-color .15s}
   .mo-them:hover{background:var(--gold-soft);border-color:var(--gold)}
-  /* Polish 97% · thanh duyệt/tải của MỖI khối trôi theo đáy màn hình khi khối dài:
-     tick tấm thứ mười xong không phải cuộn ngược đi tìm nút Xác nhận. Sticky trong
-     đúng thẻ của nó nên không bao giờ là nút của khách khác (khác hẳn một thanh
-     cố định toàn trang). capNhatThanh chỉ thay RUỘT thanh — kiểu dáng ở đây sống
-     qua mọi lượt vẽ lại.
-     CHỈ dính từ 700px trở lên: đo ở 390px thanh wrap thành khối 4 hàng nút, và một
-     khối cao như thế trôi theo đáy là che đúng những tấm ảnh người ta đang duyệt. */
-  .thanhChon{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:11px;
-    background:var(--panel2);border:1px solid var(--line2);border-radius:12px;
-    padding:9px 11px;box-shadow:var(--shadow)}
+  /* Thanh duyệt/tải của MỖI khối — góp ý 16/08: KHÔNG đóng hộp quanh các nút.
+     Các nút đã là những viên tự đứng; thêm khung + nền + bóng quanh chúng là
+     hộp-trong-hộp, thô. Thể nghỉ chỉ còn MỘT VẠCH CHỈ mảnh ngăn với lưới.
+     Khi TRÔI theo đáy màn (khối dài, ≥700px — dưới cỡ ấy thanh wrap 4 hàng,
+     trôi là che ảnh) mới khoác một dải kính mờ KHÔNG VIỀN kiểu toolbar, để chữ
+     không rơi thẳng lên ảnh bên dưới. Sticky trong đúng thẻ của nó nên không
+     bao giờ là nút của khách khác; capNhatThanh chỉ thay RUỘT thanh. */
+  .thanhChon{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;
+    border-top:1px solid var(--line);padding:10px 2px 2px}
   @media (min-width:700px){
-    .thanhChon{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:5}
-  }
-  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    .thanhChon{-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
+    .thanhChon{position:sticky;bottom:0;z-index:5;
+      padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));
+      background:color-mix(in srgb,var(--bg1) 55%,transparent)}
+    @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+      .thanhChon{-webkit-backdrop-filter:blur(12px) saturate(1.1);backdrop-filter:blur(12px) saturate(1.1)}
+    }
   }
   .chonHet{display:flex;gap:8px;align-items:center;font-size:var(--fs-small);
     color:var(--muted);cursor:pointer}

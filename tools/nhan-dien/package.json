@@ -10,7 +10,10 @@
     "batch": "node batch.js",
     "truc": "node batch.js --truc",
     "kiem-hang-doi": "node kiem-hang-doi.js",
-    "don-han": "node don-han.js"
+    "kiem-vector-vinh-vien": "node kiem-vector-vinh-vien.js",
+    "kiem-khoi-phuc-vector": "node kiem-khoi-phuc-vector.js",
+    "khoi-phuc-vector": "node khoi-phuc-vector.js",
+    "khop-lai": "node batch.js --chi-khop-lai"
   },
   "dependencies": {
     "onnxruntime-node": "1.27.0",

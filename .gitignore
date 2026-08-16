@@ -14,3 +14,9 @@ data/
 # Ảnh chụp màn của phép đo giao diện (E08-D128) — sinh lại được bằng
 # `python3 test/ui/do-ac7.py --anh`, không phải nguồn.
 test/ui/anh/
+
+# Nhật ký hoàn tác của tool khôi phục vector (E08-D134). Chỉ chứa {bảng, id} —
+# không vector, không khoá kho, không PII — nhưng nó là hiện vật của MỘT lượt chạy
+# trên MỘT cơ sở dữ liệu, không phải nguồn. Commit nó là mời người sau chạy
+# `--hoan-tac` với danh sách id của một CSDL khác.
+khoi-phuc-*.jsonl

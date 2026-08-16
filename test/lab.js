@@ -35,6 +35,14 @@ function taoDb() {
     /* Dữ liệu cho phép đo GIAO DIỆN. Rỗng thì mọi tuyến trả list rỗng (đủ cho
        phép đo HTTP); đổ dữ liệu vào thì màn «Theo khách» vẽ ra thật. */
     fixture: { khach: [], anh: [] },
+    /* E08-D134 · số liệu cho tuyến đo kho vector. Đặt sẵn giá trị chứ không để
+       rỗng: tuyến ấy đọc thẳng thuộc tính của hàng trả về, nên một hàng thiếu cột
+       sẽ thành 500 và phép kiểm RBAC bên trên sẽ đỏ vì một lý do không liên quan. */
+    khoVector: {
+      mau: { song: 3, co_vec: 2, thieu_vec: 1, khoi_phuc_duoc: 1, khong_khoi_phuc_duoc: 0 },
+      mat: { song: 9, co_vec: 5, thieu_vec: 4, khoi_phuc_duoc: 3, thieu_moc: 1, thieu_anh: 0 },
+      soAudit: [],          // dòng audit face_vec_backfill / face_khop_lai gần nhất
+    },
   };
 
   st.query = async (text, params = []) => {
@@ -85,6 +93,22 @@ function taoDb() {
     if (/INSERT INTO crm_audit_events/.test(s)) {
       st.audit.push({ actor: params[0], event: params[1] });
       return { rows: [], rowCount: 1 };
+    }
+
+    /* ── E08-D134 · tuyến đo kho vector ──
+       Khớp theo bảng đứng sau FROM chứ không theo tên cột: hai câu đếm có bộ cột
+       gần giống nhau, và một regex bám vào `count(*) FILTER` sẽ trả nhầm hình dạng
+       cho câu kia. Đặt TRƯỚC các nhánh face-match khác vì `crm_face_samples` cũng
+       xuất hiện trong câu con của tuyến `khoi`. */
+    if (/FROM crm_face_samples s\s*\n\s*LEFT JOIN crm_event_photos e/.test(s)) {
+      return { rows: [st.khoVector.mau], rowCount: 1 };
+    }
+    if (/FROM crm_event_faces f\s*\n\s*LEFT JOIN crm_event_photos e/.test(s)) {
+      return { rows: [st.khoVector.mat], rowCount: 1 };
+    }
+    if (/SELECT created_at, meta FROM crm_audit_events/.test(s)) {
+      const d = st.khoVector.soAudit.filter((x) => x.event_type === params[0]);
+      return { rows: d.length ? [d[d.length - 1]] : [], rowCount: d.length ? 1 : 0 };
     }
 
     // ── face-match: dữ liệu cho màn «Theo khách» (rỗng nếu không đổ fixture) ──

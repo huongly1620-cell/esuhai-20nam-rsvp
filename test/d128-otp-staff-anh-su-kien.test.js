@@ -239,6 +239,10 @@ test('AC-6c · các GET của tab Phân loại KHÔNG được nới', async () 
   const ck = await dangNhap(lab, 'nhanvien@esuhai.com');
   for (const d of ['/crm/face-match/photos', '/crm/face-match/queue',
     '/crm/face-match/photo/1/faces', '/crm/face-match/dong-bo',
+    /* E08-D134 · tuyến đo kho vector là đồ nghề vận hành nhận diện, cùng ranh
+       giới với /photos và /queue — thêm vào đây để một lần nới quyền tương lai
+       không lặng lẽ bỏ sót nó. */
+    '/crm/face-match/kho-vector',
     '/crm/event-photos', '/crm/event-photos/stats']) {
     const r = await lab.goi(d, { cookie: ck });
     assert.strictEqual(r.status, 403, d + ' là đồ nghề của người duyệt — vẫn btl');

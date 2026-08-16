@@ -14,6 +14,8 @@
      node batch.js --nguong 0.55        # ngưỡng gợi ý
      node batch.js --truc               # ĐỨNG TRỰC: nhận luồng từ trang web (D126)
      node batch.js --truc --mot-luot    # trực đúng một đợt rồi thoát (máy chủ dùng)
+     node batch.js --chi-khop-lai            # D134: thử tái khớp toàn kho, không ghi
+     node batch.js --chi-khop-lai --commit   # D134: tái khớp thật (không cần MinIO/model)
 
    Chạy nhiều luồng trên một máy — mỗi luồng một tiến trình, không cần tính offset:
      for i in 1 2 3; do node batch.js --truc & done
@@ -55,6 +57,20 @@ const TOP     = so('--top', 5);
    lần thứ hai sẽ không làm gì cả, và người dùng không có cách nào bảo hệ thống
    "tìm lại đi". ON CONFLICT DO NOTHING khiến chạy bao nhiêu lần cũng vô hại. */
 const KHOP_LAI = co('--khop-lai');
+/* E08-D134 · TÁI KHỚP MỘT MÌNH, không kéo theo gì khác.
+   Đường tái khớp duy nhất trước vé này là `--commit --khop-lai`, mà lượt ấy còn
+   chạy napMau() (INSERT mẫu mới từ ảnh chân dung) và quét cả hàng đợi ảnh. Hai hệ
+   quả, cả hai đều xấu:
+     · KHÔNG ĐO ĐƯỢC. AC-9 đòi chứng minh tái khớp không nhân đôi và không hạ cấp
+       quyết định BTL — mà nếu cùng lượt ấy còn đẻ mẫu mới thì không tách được cái
+       gì gây ra cái gì.
+     · KHÔNG DÙNG ĐƯỢC TRÊN PROD. Người vận hành muốn "tìm lại ảnh cho khách vừa
+       có avatar mới" phải chạy cả một lượt batch — hàng giờ CPU cho một việc chỉ
+       đọc vector và nhân hai mảng số.
+   Chế độ này KHÔNG cần MinIO và KHÔNG cần model: nó chỉ so vector đã lưu. Nhờ vậy
+   chạy được từ bất kỳ máy nào có đường tới CSDL. Mẫu chưa có vector không thuộc
+   phạm vi ở đây — chúng cần engine, tức cần một lượt batch bình thường. */
+const CHI_KHOP_LAI = co('--chi-khop-lai');
 
 /* Cửa ảnh MẪU — chặt hơn cửa dò ảnh sự kiện. Đo thật trên crm_photos: có ảnh
    lẵng hoa nằm dưới một guest_id và YuNet vẫn trả về "một mặt" ở ngưỡng 0,5.
@@ -69,8 +85,12 @@ const MAU_TRO_AT = 0.5;
    đúng tên của nó. */
 let _pool = null, _mc = null;
 const BUCKET = process.env.MINIO_BUCKET;
-function kiemMoiTruong(){
-  const thieu = ['MINIO_ENDPOINT','MINIO_ACCESS_KEY','MINIO_SECRET_KEY','MINIO_BUCKET']
+/* D134 · `canKho` = lượt chạy này có phải tải ảnh không. Tái khớp (--chi-khop-lai)
+   chỉ đọc vector đã lưu và nhân hai mảng số — không MinIO, không ONNX. Bắt nó khai
+   bốn biến MinIO là bắt người vận hành dựng một thứ họ không dùng, rồi bỏ cuộc. */
+function kiemMoiTruong(canKho){
+  const thieu = (canKho === false ? []
+    : ['MINIO_ENDPOINT','MINIO_ACCESS_KEY','MINIO_SECRET_KEY','MINIO_BUCKET'])
     .filter(k => !process.env[k]);
   if (!process.env.DATABASE_PUBLIC_URL && !process.env.DATABASE_URL) thieu.push('DATABASE_URL');
   if (thieu.length) throw new Error('thiếu biến môi trường: ' + thieu.join(', ')
@@ -218,9 +238,23 @@ async function napMau(phien, log){
   return trongBoNho;
 }
 
+/* E08-D134 · MẪU CỦA KHÁCH ĐÃ GỠ KHÔNG ĐƯỢC DÙNG ĐỂ ĐOÁN.
+   Bản trước chỉ lọc crm_face_samples.deleted_at, không hỏi gì về khách. Xoá khách
+   ở CRM là xoá MỀM (crm_guests.deleted_at), nên mẫu của họ vẫn sống và vẫn sinh
+   gợi ý — hàng đợi duyệt mọc lại tên một người đã được gỡ khỏi sổ.
+
+   Chuyện này hầu như không lộ ra ở D077 vì tái khớp toàn kho là một cờ hiếm dùng.
+   D134 biến tái khớp thành thao tác thường (đó là cả điểm của vé), nên khe hở ấy
+   sẽ đi từ hiếm sang thường xuyên. Gate 1 chốt vá ngay trong vé này.
+
+   Lọc ở đây — chỗ ĐỌC mẫu để so — chứ không ở chỗ tạo mẫu: mọi đường đoán mặt đều
+   đi qua hàm này (lượt chạy tay, máy quét trực, tái khớp), nên một lần lọc là phủ
+   cả ba. Chặn ở chỗ tạo thì mẫu cũ đã nằm sẵn trong bảng vẫn lọt. */
 async function docMau(){
-  const r = (await db().query(`SELECT id, guest_id, vec FROM crm_face_samples
-    WHERE deleted_at IS NULL AND vec IS NOT NULL`)).rows;
+  const r = (await db().query(`SELECT s.id, s.guest_id, s.vec
+    FROM crm_face_samples s
+    JOIN crm_guests g ON g.id = s.guest_id AND g.deleted_at IS NULL
+    WHERE s.deleted_at IS NULL AND s.vec IS NOT NULL`)).rows;
   return r.map(x => ({ id: x.id, guest: String(x.guest_id), v: tuBytes(x.vec) }));
 }
 
@@ -278,9 +312,15 @@ async function tinhMauKhoanhTay(phien, log){
    Không có bước này thì lời hứa của FR-10 không thành: batch bỏ qua ảnh đã xử lý
    (đúng, để chạy lại không tốn công), nên một mẫu vừa thêm sẽ chẳng bao giờ gặp
    những khuôn mặt đã dò từ lượt trước — BTL khoanh xong, chạy lại, và không có
-   gì mới xuất hiện. Đây chính là chỗ vector lưu 7 ngày trả công: khớp lại không
-   phải tải và dò lại ảnh nào. */
-async function khopMauMoiVoiMatCu(mauMoi, log){
+   gì mới xuất hiện.
+
+   E08-D134 · ĐÂY LÀ LÝ DO GIỮ VECTOR VĨNH VIỄN. Bản D077 viết ở chỗ này rằng
+   "vector lưu 7 ngày trả công" — nhưng nó chỉ trả công trong 7 ngày ấy. Qua hạn
+   thì câu SELECT dưới đây trả về ít dần rồi rỗng, và một mẫu mới sẽ chỉ gặp được
+   những khuôn mặt vừa dò trong tuần. Sponsor 16/08/2026 chốt giữ vĩnh viễn để
+   câu này luôn nhìn thấy TOÀN BỘ kho, không phải một cửa sổ trượt bảy ngày. */
+async function khopMauMoiVoiMatCu(mauMoi, log, ghi){
+  if (ghi === undefined) ghi = GHI;
   if (!mauMoi.length) return 0;
   const mat = (await db().query(`SELECT id, event_photo_id, vec FROM crm_event_faces
     WHERE deleted_at IS NULL AND vec IS NOT NULL`)).rows;
@@ -296,15 +336,64 @@ async function khopMauMoiVoiMatCu(mauMoi, log){
       if (!cu || d > cu.d) theo.set(s.guest, { d, sample: s.id });
     }
     for (const [gid, o] of theo){
+      /* D134 · KHÔNG HỒI SINH DÒNG ĐÃ XOÁ.
+         ON CONFLICT DO NOTHING một mình là chưa đủ, và lý do nằm ở chữ MỘT PHẦN:
+         uq_face_candidates_mat_khach chỉ phủ WHERE deleted_at IS NULL, nên một
+         dòng đã xoá MỀM nằm NGOÀI chỉ mục và không gây xung đột nào — câu INSERT
+         đi lọt và đẻ lại đúng dòng mà D115 vừa gộp bỏ, hoặc đúng dòng mà cascade
+         gỡ ảnh vừa dọn. Người duyệt thấy một gợi ý họ đã xử lý quay lại.
+         Bản D077 sống chung được với chuyện này vì --khop-lai là cờ hiếm dùng;
+         D134 biến tái khớp toàn kho thành thao tác thường, nên phơi nhiễm tăng
+         theo cả kho lẫn tần suất.
+
+         Vế NOT EXISTS chặn đúng chuyện đó và không hơn: chỉ nhìn cặp
+         (face_id, guest_id) đã từng bị xoá. Không mở rộng sang "khách này từng bị
+         từ chối trên tấm này" — một khuôn mặt KHÁC của cùng người trong cùng
+         khung hình là một phỏng đoán khác, và chặn nó là tự quyết thay BTL.
+
+         Ba tính chất giữ nguyên, cả ba đều là điều kiện của FR-5:
+           · chỉ INSERT, không câu UPDATE nào ⇒ xac-nhan / tu-choi / bo-qua không
+             thể bị hạ cấp bởi một lượt chạy lại;
+           · ON CONFLICT DO NOTHING lo dòng SỐNG trùng ⇒ chạy lại không nhân đôi;
+           · trang_thai viết cứng 'cho' ⇒ máy không tự xác nhận (CR-127). */
+      if (!ghi){
+        /* D134 · lượt THỬ đếm ĐÚNG con số lượt ghi sẽ tạo ra, không ước lượng.
+           Hai cái chặn ở nhánh ghi — vế NOT EXISTS (dòng đã xoá) và ON CONFLICT
+           (dòng sống trùng) — gộp lại đúng bằng một câu hỏi: cặp (mặt, khách) này
+           đã có dòng nào chưa, sống hay đã xoá. Hai chỉ mục một phần còn lại
+           không đụng tới vì dòng sinh ra ở đây luôn mang face_id và luôn 'cho'.
+           Đếm bằng ước lượng thì con số của lượt thử không dùng để quyết định
+           được, mà đó là toàn bộ lý do lượt thử tồn tại. */
+        const co = await db().query(`SELECT 1 FROM crm_face_candidates
+           WHERE face_id = $1 AND guest_id = $2 LIMIT 1`, [f.id, gid]);
+        if (!co.rowCount) them++;
+        continue;
+      }
       const r = await db().query(`INSERT INTO crm_face_candidates
         (event_photo_id, face_id, guest_id, sample_id, score, nguon, trang_thai, run_id)
-        VALUES ($1,$2,$3,$4,$5,'may','cho',$6) ON CONFLICT DO NOTHING RETURNING id`,
+        SELECT $1,$2,$3,$4,$5,'may','cho',$6
+         WHERE NOT EXISTS (SELECT 1 FROM crm_face_candidates x
+                            WHERE x.face_id = $2 AND x.guest_id = $3
+                              AND x.deleted_at IS NOT NULL)
+        ON CONFLICT DO NOTHING RETURNING id`,
         [f.event_photo_id, f.id, gid, o.sample, o.d, 'run-khop-lai']);
       if (r.rowCount) them++;
     }
   }
   log('  khớp lại mặt cũ với ' + mauMoi.length + ' mẫu mới: thêm ' + them + ' gợi ý');
   return them;
+}
+
+/* E08-D134 · SỔ AUDIT CHO MỘT LƯỢT TÁI KHỚP (FR-6).
+   Chỉ SỐ ĐẾM. Không vector, không object key, không tên tệp, không id khách —
+   cùng luật với mọi thứ khác chạm vào bảng này. Ghi từ công cụ chứ không từ app
+   vì chính công cụ mới biết mình vừa làm gì; actor là he-thong, đúng khuôn mà
+   khối gộp của D115 trong crm-db.js đã dùng cho một lượt ghi không có người bấm. */
+async function ghiSoTaiKhop(d){
+  await db().query(
+    `INSERT INTO crm_audit_events (actor_email, event_type, target_type, target_id, meta)
+     VALUES ('he-thong','face_khop_lai','he-thong','0',$1::jsonb)`,
+    [JSON.stringify(Object.assign({ ve: 'E08-D134' }, d))]);
 }
 
 /* ═════════════════════════════════════════════════════════════════════════════
@@ -671,8 +760,42 @@ async function chayTruc(){
   await db().end();
 }
 
+/* E08-D134 · một lượt TÁI KHỚP TOÀN KHO và không gì khác (FR-5).
+   Mặc định THỬ; chỉ ghi khi có --commit, cùng khuôn với mọi lệnh khác ở thư mục
+   này. Không mở đợt trong crm_nhan_dien_runs, không đụng hàng đợi ảnh, không
+   chạm soi_luc — nó chỉ đọc hai bảng vector rồi có thể thêm dòng gợi ý 'cho'. */
+async function chayChiKhopLai(){
+  kiemMoiTruong(false);
+  const log = s => console.log(s);
+  const t0 = new Date();
+  log((GHI ? '── TÁI KHỚP · GHI THẬT ──' : '── TÁI KHỚP · THỬ (không ghi gì) ──')
+    + '  ngưỡng ' + NGUONG);
+  const mau = await docMau();
+  const soKhach = new Set(mau.map(m => m.guest)).size;
+  log('  mẫu dùng để so: ' + mau.length + ' vector · ' + soKhach + ' khách');
+  if (!mau.length){
+    log('  không có mẫu nào dùng được — không có gì để khớp.');
+    await db().end();
+    return;
+  }
+  const soMat = (await db().query(`SELECT count(*)::int n FROM crm_event_faces
+    WHERE deleted_at IS NULL AND vec IS NOT NULL`)).rows[0].n;
+  log('  mặt sự kiện sống có vector: ' + soMat);
+  const them = await khopMauMoiVoiMatCu(mau, log, GHI);
+  if (GHI){
+    await ghiSoTaiKhop({ so_mau: mau.length, so_khach: soKhach, so_mat_xet: soMat,
+      goi_y_cho_moi: them, nguong: NGUONG,
+      bat_dau: t0.toISOString(), xong_luc: new Date().toISOString() });
+    log('  đã ghi sổ audit face_khop_lai.');
+  } else {
+    log('  (THỬ — không ghi dòng nào. Thêm --commit để ghi thật.)');
+  }
+  await db().end();
+}
+
 (async () => {
   if (TRUC) return chayTruc();
+  if (CHI_KHOP_LAI) return chayChiKhopLai();
   batBuoc();
   kiemMoiTruong();
   const runId = 'run-' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)
@@ -681,19 +804,14 @@ async function chayTruc(){
   log((GHI ? '── GHI THẬT ──' : '── THỬ (không ghi gì) ──') + '  đợt ' + runId
     + '  ngưỡng ' + NGUONG + '  top ' + TOP);
 
-  /* Dọn hạn TRƯỚC mỗi lượt ghi. Đặt ở đây vì đây là chỗ chắc chắn được chạy —
-     một lệnh dọn riêng mà không ai nhớ gọi thì cũng chỉ là lời hứa lần hai. */
-  if (GHI){
-    const r = await db().query(`UPDATE crm_event_faces SET vec = NULL, vec_xoa_luc = now()
-      WHERE vec IS NOT NULL AND het_han_luc <= now()`);
-    /* N1 · KHÔNG dọn vector của mẫu ở đây. Bản trước vừa xoá vector mẫu cat-tay
-       quá 7 ngày, vừa để tinhMauKhoanhTay() tính lại chính chúng ngay sau đó
-       (điều kiện của nó là `vec IS NULL`) — cùng một lượt chạy. Hàng ra khỏi đó
-       vừa giữ sinh trắc vừa mang vec_xoa_luc. Mẫu nay chỉ mất vector khi ảnh
-       nguồn bị gỡ, khi mẫu bị gỡ, hoặc khi xoá cứng — gắn với vòng đời dữ liệu,
-       không gắn với đồng hồ. Xem chú thích ở crm-db.js. */
-    if (r.rowCount) log('  dọn hạn: xoá vector của ' + r.rowCount + ' mặt sự kiện');
-  }
+  /* E08-D134 · BƯỚC DỌN HẠN TRƯỚC MỖI LƯỢT GHI ĐÃ BỎ.
+     Chỗ này từng chạy một câu UPDATE đặt vec = NULL cho mọi mặt quá het_han_luc,
+     và lập luận đặt nó ở đây rất chắc: đây là chỗ CHẮC CHẮN được chạy, khác một
+     lệnh dọn riêng mà không ai nhớ gọi. Lập luận ấy vẫn đúng — nhưng nó là lập
+     luận về CHỖ ĐẶT một việc, còn vé này bỏ chính cái việc đó.
+     Sponsor 16/08/2026: giữ vector vĩnh viễn chừng nào bản ghi nguồn còn sống.
+     Mọi đường xoá có chủ ý vẫn nguyên (gỡ ảnh, gỡ đợt, gỡ mẫu, xoá cứng, xoá
+     khách) — cái bị bỏ là đồng hồ. Xem khối D134 ở server/crm-db.js. */
 
   const phien = await E.moPhien();
   let mauVuaTinh = [];

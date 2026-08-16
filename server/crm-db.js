@@ -273,27 +273,44 @@ CREATE TABLE IF NOT EXISTS crm_event_faces (
   do_net          REAL,
   diem_do         REAL NOT NULL,
   moc             JSONB,
-  /* Vector KHÔNG bắt buộc, và có hạn riêng — ngắn hơn hạn của chính bản ghi mặt.
-     Hai thứ này khác hẳn nhau về mức nhạy cảm: hộp/kích thước/độ nét là hình học,
-     còn vector là mẫu sinh trắc. Vector chỉ dùng để SINH gợi ý; lúc BTL ngồi duyệt
-     thì thứ họ nhìn là ảnh và gợi ý đã ghi sẵn. Đo được: dò+căn+nhúng 42ms/ảnh,
-     tức chạy lại cả kho 1.285 tấm mất ~1 phút — giữ vector 30 ngày là đổi dữ liệu
-     sinh trắc lấy một phút CPU. Sponsor chốt 7 ngày (10/08). */
+  /* E08-D134 · vector mặt sự kiện KHÔNG hết hạn theo đồng hồ nữa.
+     Bản D077 giữ 7 ngày với lập luận: vector chỉ để SINH gợi ý, mà dò+căn+nhúng
+     chỉ 42ms/ảnh nên tính lại cả kho mất ~1 phút — đổi sinh trắc lấy một phút CPU
+     là món hời. Lập luận ấy hỏng ở đúng chỗ nó không nhìn tới: khi CRM có avatar
+     hoặc mẫu MỚI, đội vận hành phải tái tìm ảnh của khách trên TOÀN BỘ kho đã lưu.
+     Muốn thế thì phải có vector của những khuôn mặt đã dò; tính lại cả kho nghĩa
+     là tải lại từng tấm và dò lại từng khung — không phải một phút, và không phải
+     việc làm được mỗi lần BTL khoanh thêm một mẫu.
+     Sponsor 16/08/2026: giữ cả hai loại vector, giữ vĩnh viễn.
+     VĨNH VIỄN Ở ĐÂY KHÔNG PHẢI BẤT KHẢ XOÁ: vector sống chừng nào bản ghi nguồn
+     còn sống. Gỡ ảnh, gỡ mẫu, xoá khách, yêu cầu xoá hợp lệ vẫn cascade y như cũ
+     (xem event-photos.js và face-match.js) — cái bị bỏ là ĐỒNG HỒ, không phải
+     đường xoá. */
   vec             BYTEA,
   vec_xoa_luc     TIMESTAMPTZ,          -- ghi LÚC xoá: chứng minh được, không chỉ là vắng mặt
   run_id          TEXT NOT NULL,
   /* N1 · cùng ràng buộc như bảng mẫu: giữ vector và mang dấu đã xoá là hai điều
      không thể cùng đúng. */
   CONSTRAINT ck_event_faces_vec_xoa CHECK (vec IS NULL OR vec_xoa_luc IS NULL),
-  het_han_luc     TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '7 days'),
+  /* D134 · CỘT NGHỈ HƯU, cố ý không xoá. Ba lý do, lý do thứ ba mới là lý do thật:
+       1 · không ai đọc nó nữa (mọi đường TTL đã gỡ ở vé này);
+       2 · bỏ cột là một lượt ghi không lùi được, mà spec cấm mọi thao tác xoá dữ
+           liệu không có quyết định Sponsor riêng;
+       3 · ROLLBACK. Rollback mã ở dự án này là redeploy commit cũ, và commit cũ
+           mang nguyên câu quét hạn. Nếu bỏ cột, bản cũ ném "column does not exist"
+           — mà face-match.js nuốt đúng lỗi đó còn batch.js thì thoát mã 1, tức cả
+           đường nhận diện đứng. Giữ cột + để TRỐNG thì bản cũ chạy bình thường và
+           xoá 0 hàng, vì NULL <= now() không bao giờ đúng.
+     Vì thế cột nullable, KHÔNG default, KHÔNG index, và mọi hàng cũ được đặt về
+     NULL trong migrateCrm(). CẤM dùng lại làm điều kiện xoá vector. */
+  het_han_luc     TIMESTAMPTZ,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
   deleted_at      TIMESTAMPTZ
 );
 CREATE INDEX IF NOT EXISTS idx_event_faces_anh
   ON crm_event_faces (event_photo_id) WHERE deleted_at IS NULL;
-/* Quét dọn chỉ nhìn những dòng CÒN vector — dọn xong thì không phải duyệt lại. */
-CREATE INDEX IF NOT EXISTS idx_event_faces_can_don
-  ON crm_event_faces (het_han_luc) WHERE vec IS NOT NULL;
+/* D134 · idx_event_faces_can_don (chỉ mục của lượt quét hạn) đã bỏ — xem khối
+   nâng cấp cuối tệp cho CSDL đã có sẵn chỉ mục ấy. */
 
 CREATE TABLE IF NOT EXISTS crm_face_candidates (
   id              BIGSERIAL PRIMARY KEY,
@@ -642,6 +659,32 @@ BEGIN
       CHECK (vec IS NULL OR vec_xoa_luc IS NULL) NOT VALID;
   END IF;
 END $nangcap$;
+
+/* ── E08-D134 · THÁO HẠN 7 NGÀY CHO CSDL ĐÃ CÓ BẢNG ──────────────────────────
+   Cùng bài học với khối ngay trên: CREATE TABLE IF NOT EXISTS KHÔNG sửa được
+   bảng đã tồn tại. Sửa định nghĩa cột ở khối D077 phía trên chỉ đúng cho một
+   CSDL mới tinh; prod đã mang bảng từ 10/08 nên nếu chỉ sửa ở trên thì trên prod
+   default 7 ngày vẫn nguyên và mọi hàng mới vẫn mang án tử. Phải có cả hai.
+
+   THỨ TỰ Ở ĐÂY LÀ MỘT PHẦN CỦA VÉ:
+     · DROP INDEX trước — lượt UPDATE thao hạn trong migrateCrm() khỏi phải bảo
+       trì một chỉ mục sắp bị bỏ;
+     · DROP NOT NULL trước lượt UPDATE ấy — đảo lại là UPDATE nổ ngay dòng đầu.
+   Không dùng DROP INDEX CONCURRENTLY: cả CREATE_SQL đi trong MỘT simple query
+   nên nằm chung một transaction ngầm, mà CONCURRENTLY không chạy trong giao dịch.
+   Đổi lại là một nhịp khoá ACCESS EXCLUSIVE rất ngắn (chỉ đụng catalog, không
+   viết lại bảng) — deploy lúc không có đợt nhận diện nào đang mở.
+
+   Cả bốn câu CHẠY LẠI ĐƯỢC: DROP DEFAULT trên cột không default là no-op,
+   DROP NOT NULL trên cột đã nullable cũng vậy, IF EXISTS lo chỉ mục, COMMENT
+   ghi đè chính nó.
+   (Nhắc lại cảnh báo đầu tệp: khối này là chuỗi mẫu JS — KHÔNG dấu huyền trong
+   chú thích, kể cả để trích tên cột.) */
+DROP INDEX IF EXISTS idx_event_faces_can_don;
+ALTER TABLE crm_event_faces ALTER COLUMN het_han_luc DROP DEFAULT;
+ALTER TABLE crm_event_faces ALTER COLUMN het_han_luc DROP NOT NULL;
+COMMENT ON COLUMN crm_event_faces.het_han_luc IS
+  'E08-D134 RETIRED: khong default, khong index, moi hang NULL. CAM dung lam dieu kien xoa vector. Sponsor 16/08/2026 chot giu vinh vien.';
 `;
 
 async function migrateCrm() {
@@ -697,6 +740,37 @@ async function migrateCrm() {
      WHERE p.id = m.pid AND p.soi_luc IS NULL`);
   if (gieo.rowCount) {
     console.log('[crm-db] D126: gieo dấu đã soi cho ' + gieo.rowCount + ' tấm đã có mặt trong sổ');
+  }
+
+  /* ── E08-D134 · THÁO MỐC HẾT HẠN KHỎI MỌI HÀNG CŨ ───────────────────────────
+     Đây là câu quan trọng nhất của vé, và nó không phải chuyện dọn dẹp.
+
+     Khối lược đồ ở trên đã tháo default và NOT NULL, nên hàng MỚI sinh ra mang
+     het_han_luc NULL và không bao giờ quá hạn. Nhưng hàng CŨ vẫn giữ mốc quá khứ
+     của chúng, và mọi câu quét hạn đều có dạng:
+         WHERE vec IS NOT NULL AND het_han_luc <= now()
+     Rollback mã ở dự án này là REDEPLOY COMMIT CŨ, mà commit cũ mang nguyên ba
+     đường quét ấy (nhịp giờ của face-match, pre-clean của batch, tool dọn tay).
+     Nếu chỉ tháo default thì một lần rollback là một lần xoá sạch đúng những
+     vector vé này vừa đi khôi phục — tức spec bị vi phạm bởi chính đường lùi của
+     nó. Đặt tất cả về NULL biến điều kiện trên thành NULL <= now(), tức NULL, tức
+     KHÔNG hàng nào khớp, kể cả khi mã TTL quay lại. Lời hứa "rollback không tái
+     kích hoạt TTL" nhờ vậy là một tính chất của DỮ LIỆU, không phải một điều
+     người deploy phải nhớ.
+
+     Mất gì: mốc "đáng lẽ hết hạn lúc nào". Suy lại được bằng created_at + 7 ngày,
+     và không mã nào đọc nó — grep het_han_luc toàn nhánh sau vé này chỉ còn ra
+     crm_album_links, một bảng khác hẳn.
+
+     CHẠY LẠI ĐƯỢC: vế het_han_luc IS NOT NULL khiến lượt hai đụng 0 dòng.
+     Đặt NGOÀI CREATE_SQL có chủ ý: RAISE NOTICE bên trong khối lược đồ không đi
+     ra log máy chủ (xem mốc audit của D115 ở đầu hàm), còn ở đây rowCount cầm
+     được thẳng — và con số này phải đối chiếu với câu preflight trước khi deploy. */
+  const thaoHan = await pool.query(
+    'UPDATE crm_event_faces SET het_han_luc = NULL WHERE het_han_luc IS NOT NULL');
+  if (thaoHan.rowCount) {
+    console.log('[crm-db] D134: tháo mốc hết hạn khỏi ' + thaoHan.rowCount
+      + ' mặt sự kiện — vector giữ vĩnh viễn, TTL không tái kích hoạt được kể cả khi rollback');
   }
 
   // ─────────── E08-D047 · di trú crm_check_ins sang khoá (guest_id, session) ───────────

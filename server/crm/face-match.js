@@ -45,26 +45,27 @@ const demCho = (khach) => `(SELECT count(DISTINCT c.event_photo_id)::int
                          WHERE a.guest_id = c.guest_id AND a.event_photo_id = c.event_photo_id
                            AND a.deleted_at IS NULL AND a.trang_thai = 'xac-nhan'))`;
 
-/* N2 · CHỦ NGỮ của hạn 7 ngày.
-   Một lệnh dọn nằm trong tools/ chỉ chạy khi có người gõ nó, và "có người nhớ gõ"
-   không phải là một cơ chế — nó là một hy vọng. Cron thì phải dựng hạ tầng và vẫn
-   có thể bị tắt lặng lẽ. Chủ ngữ chắc chắn nhất ở đây là chính tiến trình đang
-   phục vụ: còn prod chạy thì còn quét.
-   Đây là một câu UPDATE, không ONNX, không xử lý ảnh — FR-1 cấm nhét engine nặng
-   vào app, không cấm app tự dọn dữ liệu của mình.
-   Vẫn giữ tools/nhan-dien/don-han.js cho lần chạy tay và cho việc kiểm chứng. */
-const NHIP_QUET = 60 * 60 * 1000;          // mỗi giờ
-async function quetHan(){
-  try {
-    const r = await pool.query(
-      'UPDATE crm_event_faces SET vec = NULL, vec_xoa_luc = now() '
-      + 'WHERE vec IS NOT NULL AND het_han_luc <= now()');
-    if (r.rowCount) console.log('[face-match] quét hạn: xoá vector của ' + r.rowCount + ' mặt sự kiện');
-  } catch (e){
-    /* Bảng chưa tồn tại (chưa migrate) là bình thường — không làm ồn mỗi giờ. */
-    if (!/does not exist/i.test(e.message)) console.error('[face-match] quét hạn lỗi:', e.message);
-  }
-}
+/* ══ E08-D134 · KHÔNG CÒN CHỦ NGỮ NÀO CHO HẠN 7 NGÀY ═══════════════════════════
+   Chỗ này từng là hàm `quetHan()` cùng một nhịp giờ, và lập luận N2 của D077 cho
+   nó vẫn đúng trong khuôn của D077: nếu đã quyết xoá vector theo đồng hồ thì chủ
+   ngữ chắc chắn nhất là chính tiến trình đang phục vụ, không phải một người nhớ gõ
+   lệnh.
+
+   Vé này bỏ chính CÁI QUYẾT ĐỊNH ấy, nên cơ chế thi hành nó không còn nghĩa.
+   Sponsor 16/08/2026: giữ cả vector mẫu lẫn vector mặt sự kiện, giữ vĩnh viễn —
+   vì khi CRM có avatar hoặc mẫu mới, đội vận hành phải tái tìm được ảnh của khách
+   trên toàn bộ kho đã lưu, và việc đó cần vector của những khuôn mặt đã dò.
+
+   ĐÃ GỠ Ở VÉ NÀY, cả bốn đường, không đường nào còn lại nửa vời:
+     · hàm quetHan() và hằng NHIP_QUET (chính chỗ này);
+     · lượt quét 20 giây sau khi khởi động, và nhịp mỗi giờ (trong mount());
+     · bước pre-clean trước mỗi lượt ghi của tools/nhan-dien/batch.js;
+     · tệp tools/nhan-dien/don-han.js (xoá hẳn — để lại dạng vô hiệu chỉ là giữ
+       câu SQL nguy hiểm trong repo chờ ai đó bỏ dấu chú thích).
+
+   ĐIỀU KHÔNG ĐỔI: mọi đường xoá CÓ CHỦ Ý vẫn nguyên. Gỡ mềm ảnh, gỡ cả đợt, xoá
+   cứng ảnh, gỡ mẫu, xoá khách — xem event-photos.js và tuyến gỡ mẫu cuối tệp này.
+   Cái bị bỏ là ĐỒNG HỒ, không phải đường xoá. */
 
 function mount(app, requireCrmAuth, requireRole) {
   const btl = [requireCrmAuth, requireRole('btl')];
@@ -92,24 +93,113 @@ function mount(app, requireCrmAuth, requireRole) {
     ? `('cho','xac-nhan')` : `('xac-nhan')`);
   const chiAlbum = (req) => req.actor.role !== 'btl';
 
-  /* Quét ngay khi khởi động rồi lặp: máy chủ vừa dựng lại sau một kỳ nghỉ thì
-     không phải đợi hết một nhịp mới dọn phần đã quá hạn từ lâu. */
-  const hen0 = setTimeout(quetHan, 20 * 1000);
-  if (hen0.unref) hen0.unref();   // cùng lý do với `hen` bên dưới — và để phép kiểm thoát được
-  const hen = setInterval(quetHan, NHIP_QUET);
-  if (hen.unref) hen.unref();              // đừng giữ tiến trình sống chỉ vì cái hẹn này
+  /* D134 · KHÔNG còn setTimeout lúc khởi động và KHÔNG còn setInterval mỗi giờ.
+     Chỗ này cố ý để trống kèm chú thích chứ không im lặng: hai cái hẹn ấy là thứ
+     duy nhất từng làm vector biến mất mà không ai bấm gì, nên người đọc sau phải
+     thấy chúng đã đi đâu, không phải tự hỏi đã có bao giờ tồn tại chưa. */
 
-  /* Cho phép gọi tay để kiểm chứng — cùng đường mã với nhịp tự động, nên đo cái
-     này là đo đúng thứ đang chạy hàng giờ. */
-  app.post('/crm/face-match/quet-han', ...btl, async (req, res) => {
+  /* ══ D134 · TUYẾN NGHỈ HƯU, GIỮ NGUYÊN CHỖ ĐỨNG ═══════════════════════════
+     Route này ở lại thay vì bị xoá, và đó là một quyết định chứ không phải ngại
+     dọn. Ba lý do, theo thứ tự sức nặng:
+
+       1 · Nó là một hàng đang sống trong ma trận RBAC. test/d128-otp-staff-anh-
+           su-kien.test.js khẳng định tuyến này trả 403 với vai staff. Bỏ tuyến thì
+           hàng ấy phải bị xoá và 403 thành 404 — tức vé này làm GIẢM bề mặt RBAC
+           đang được đo, đúng lúc AC-11 đòi giữ nguyên phép kiểm no-auth/staff/btl.
+
+       2 · Có một con người được chỉ đích danh sẽ gọi nó. Runbook cũ giao nhiệm vụ
+           POST tuyến này sau mỗi lần deploy và thứ Hai hàng tuần. Một cú 404 ở đó
+           đọc như "deploy hỏng"; một câu trả lời retired nói đúng sự thật vào đúng
+           khoảnh khắc người ta hành động theo thói quen cũ. Runbook đã viết lại,
+           nhưng người ta không đọc lại runbook.
+
+       3 · Không có client nào khác. Ngoài route, phép kiểm và runbook thì không
+           chỗ nào gọi — giữ nó không nợ ai gì.
+
+     KHÔNG MỘT CÂU SQL NÀO trong thân hàm. Đó là điều kiện của FR-1 ("không ghi
+     DB") và nó ĐO ĐƯỢC: phòng thí nghiệm ở test/lab.js gom mọi câu đã gửi, nên
+     phép kiểm khẳng định được số câu SQL không tăng sau lượt gọi — mạnh hơn hẳn
+     việc chỉ nhìn phản hồi.
+
+     Giữ nguyên hai khoá cũ qua_han_truoc / con_lai = 0: một script cũ đọc
+     con_lai === 0 vẫn kết luận "không còn gì quá hạn", và nay câu ấy đúng THEO
+     CẤU TẠO chứ không nhờ một lượt quét vừa chạy.
+     Trả 200 chứ không 410: 410 làm cú curl của người vận hành trông như sự cố hạ
+     tầng, mà việc cần nói là "đã nghỉ, không phải làm gì", không phải báo lỗi.
+     Vẫn ...btl: nới quyền cho một tuyến đã vô hiệu là nới không lý do. */
+  app.post('/crm/face-match/quet-han', ...btl, (req, res) => {
+    res.json({ ok: true, retired: true, ve: 'E08-D134',
+      qua_han_truoc: 0, con_lai: 0, da_xoa: 0,
+      ghi_chu: 'Hạn 7 ngày đã bỏ (Sponsor 16/08/2026). Tuyến này không còn ghi gì. '
+        + 'Vector giữ vĩnh viễn chừng nào bản ghi nguồn còn sống.' });
+  });
+
+  /* ══ D134 · PHÉP ĐO KHO VECTOR (FR-6) ═════════════════════════════════════
+     Chỉ TRẢ SỐ. Không vector, không object key, không tên tệp, không id khách —
+     vector là dữ liệu sinh trắc dù được giữ vĩnh viễn, và một tuyến đo mà lỡ trả
+     ra một mẩu của nó thì chính nó là lỗ rò.
+
+     Vì sao cần: sau vé này "kho có đủ vector chưa" trở thành câu hỏi vận hành
+     thường trực — trước khi backfill, sau khi backfill, trước khi tái khớp. Không
+     có tuyến này thì câu trả lời chỉ lấy được bằng cách gõ SQL thẳng vào prod, mà
+     đó là thứ nên hiếm chứ không nên thành thói quen.
+
+     ...btl chứ không ...doc: đây là đồ nghề của người vận hành nhận diện, cùng
+     ranh giới với /photos và /queue (D128).
+
+     Hai khối cuối đọc từ sổ audit thay vì một bảng mới. Bảng mới cho một con số
+     là một bảng phải trả lời câu hỏi PDPL, phải migrate, phải dọn — mà sổ audit
+     đã ghi đúng những lượt ấy rồi. */
+  app.get('/crm/face-match/kho-vector', ...btl, async (req, res) => {
     try {
-      const truoc = (await pool.query('SELECT count(*)::int n FROM crm_event_faces '
-        + 'WHERE vec IS NOT NULL AND het_han_luc <= now()')).rows[0].n;
-      await quetHan();
-      const sau = (await pool.query('SELECT count(*)::int n FROM crm_event_faces '
-        + 'WHERE vec IS NOT NULL AND het_han_luc <= now()')).rows[0].n;
-      res.json({ ok: true, qua_han_truoc: truoc, con_lai: sau, nhip_gio: NHIP_QUET / 3600000 });
-    } catch (e){ res.status(500).json({ ok: false, error: 'loi' }); }
+      const mau = (await pool.query(`
+        SELECT count(*)::int AS song,
+               count(*) FILTER (WHERE s.vec IS NOT NULL)::int AS co_vec,
+               count(*) FILTER (WHERE s.vec IS NULL)::int     AS thieu_vec,
+               /* Khôi phục được = thiếu vector VÀ nguồn còn sống. Với mẫu cắt tay
+                  là tấm sự kiện chưa gỡ; với mẫu từ ảnh chân dung là hàng
+                  crm_photos còn tồn tại — khoá ngoại ở đó là ON DELETE SET NULL
+                  nên xoá cứng ảnh chân dung để lại mẫu MỒ CÔI, và mẫu mồ côi thì
+                  không có gì để dựng lại vector từ đó. */
+               count(*) FILTER (WHERE s.vec IS NULL
+                                  AND ((s.nguon = 'cat-tay'    AND e.id IS NOT NULL)
+                                    OR (s.nguon = 'crm-photos' AND p.id IS NOT NULL)))::int AS khoi_phuc_duoc,
+               count(*) FILTER (WHERE s.vec IS NULL
+                                  AND NOT ((s.nguon = 'cat-tay'    AND e.id IS NOT NULL)
+                                        OR (s.nguon = 'crm-photos' AND p.id IS NOT NULL)))::int AS khong_khoi_phuc_duoc
+          FROM crm_face_samples s
+          LEFT JOIN crm_event_photos e ON e.id = s.event_photo_id AND e.deleted_at IS NULL
+          LEFT JOIN crm_photos       p ON p.id = s.photo_id
+         WHERE s.deleted_at IS NULL`)).rows[0];
+      const mat = (await pool.query(`
+        SELECT count(*)::int AS song,
+               count(*) FILTER (WHERE f.vec IS NOT NULL)::int AS co_vec,
+               count(*) FILTER (WHERE f.vec IS NULL)::int     AS thieu_vec,
+               count(*) FILTER (WHERE f.vec IS NULL AND f.moc IS NOT NULL AND e.id IS NOT NULL)::int AS khoi_phuc_duoc,
+               count(*) FILTER (WHERE f.vec IS NULL AND f.moc IS NULL)::int  AS thieu_moc,
+               count(*) FILTER (WHERE f.vec IS NULL AND e.id IS NULL)::int   AS thieu_anh
+          FROM crm_event_faces f
+          LEFT JOIN crm_event_photos e ON e.id = f.event_photo_id AND e.deleted_at IS NULL
+         WHERE f.deleted_at IS NULL`)).rows[0];
+      /* Lượt backfill và lượt tái khớp gần nhất — cả hai do công cụ ngoài app ghi
+         vào sổ audit dưới dạng SỐ ĐẾM. Chưa chạy lần nào thì trả null, không trả
+         số 0 giả: "chưa từng chạy" và "chạy xong không khôi phục được gì" là hai
+         câu khác nhau, và người vận hành cần phân biệt. */
+      const soDo = async (loai) => (await pool.query(
+        `SELECT created_at, meta FROM crm_audit_events
+          WHERE event_type = $1 ORDER BY id DESC LIMIT 1`, [loai])).rows[0] || null;
+      const bf = await soDo('face_vec_backfill');
+      const kl = await soDo('face_khop_lai');
+      res.json({ ok: true, mau, mat,
+        backfill_gan_nhat: bf ? { luc: bf.created_at,
+          khoi_phuc: (bf.meta.mat_khoi_phuc || 0) + (bf.meta.mau_khoi_phuc || 0),
+          loi: (bf.meta.mat_loi || 0) + (bf.meta.mau_loi || 0),
+          bo_qua: (bf.meta.mat_thieu_moc || 0) + (bf.meta.mat_thieu_anh || 0)
+                + (bf.meta.mau_mo_coi || 0) } : null,
+        khop_lai_gan_nhat: kl ? { luc: kl.created_at,
+          goi_y_cho_moi: kl.meta.goi_y_cho_moi || 0 } : null });
+    } catch (e){ console.error('[face-match] kho-vector:', e.message);
+      res.status(500).json({ ok: false, error: 'loi' }); }
   });
 
   /* Home của ngăn nhận diện = DANH SÁCH KHÁCH, không phải hàng đợi ảnh (FR-4c).
@@ -680,12 +770,32 @@ function mount(app, requireCrmAuth, requireRole) {
 
   /* AC-10 · gỡ mẫu khoanh tay. Các khớp sinh ra từ nó KHÔNG im lặng biến mất —
      chúng quay về 'cho' để người xem lại. Ảnh đã nằm trong album đã đánh dấu gửi
-     thì không rút lại được, nên trả về số đó để giao diện cảnh báo. */
+     thì không rút lại được, nên trả về số đó để giao diện cảnh báo.
+
+     E08-D134 · GỠ MẪU NAY XOÁ LUÔN VECTOR CỦA MẪU ẤY.
+     Trước vé này câu dưới chỉ đặt deleted_at, nên một mẫu đã gỡ vẫn ôm nguyên
+     vector sinh trắc trong Postgres — chỉ là không ai đọc tới vì mọi câu đọc đều
+     lọc deleted_at IS NULL. "Không ai đọc" không phải là "đã xoá".
+
+     Chuyện ấy sống được suốt D077 vì lúc đó bảng còn có một cái đồng hồ phía sau.
+     Vé này bỏ đồng hồ đi, nên nếu để nguyên thì "giữ vĩnh viễn" sẽ được đọc thành
+     lời biện hộ cho đúng lớp dữ liệu lẽ ra phải biến mất — và spec cấm thẳng điều
+     đó: không được mở rộng giữ vĩnh viễn thành giữ vector của hàng đã gỡ.
+
+     Cùng khuôn với cascade gỡ ảnh ở event-photos.js: xoá vec, ghi LÚC xoá, để sự
+     vắng mặt CHỨNG MINH được chứ không chỉ quan sát thấy trống. vec_xoa_luc và
+     vec đặt cùng một câu nên ràng buộc ck_face_samples_vec_xoa luôn đúng ở mọi
+     thời điểm quan sát được.
+     Hệ quả kèm theo, có chủ ý: tinhMauKhoanhTay() của batch lọc
+     vec IS NULL AND vec_xoa_luc IS NULL, nên mẫu đã gỡ KHÔNG bị lượt batch kế
+     tiếp tính lại vector — đúng bài học N1 mà D077 đã ghi. Tool khôi phục vector
+     của D134 cũng bỏ qua hàng deleted_at vì cùng lý do. */
   app.delete('/crm/face-match/sample/:id', ...btl, async (req, res) => {
     const c = await pool.connect();
     try {
       await c.query('BEGIN');
-      const s = await c.query(`UPDATE crm_face_samples SET deleted_at = now()
+      const s = await c.query(`UPDATE crm_face_samples
+        SET deleted_at = now(), vec = NULL, vec_xoa_luc = now()
         WHERE id = $1 AND deleted_at IS NULL RETURNING guest_id`, [req.params.id]);
       if (!s.rowCount) { await c.query('ROLLBACK'); return res.status(404).json({ ok: false, error: 'không thấy' }); }
       const veCho = await c.query(`UPDATE crm_face_candidates

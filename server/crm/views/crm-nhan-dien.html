@@ -191,8 +191,20 @@
      TAB còn hai hàng kia đổi BỘ LỌC trong tab. Đúng bài N1 của Gate 2 D103 — một
      tên mang hai nghĩa thì phép quét DOM (AC-2b) không phân biệt được «tab» với
      «bộ lọc», và người sửa sau cũng vậy. */
-  .tab{display:flex;gap:8px;margin-bottom:13px;flex-wrap:wrap}
+  /* Polish 97% · thanh tab thành PHIẾN KÍNH DÍNH ĐỈNH: cuộn sâu trong lưới/khối
+     vẫn đổi được chế độ làm việc mà không phải bò ngược lên đầu trang. Phiến ôm
+     sát chip (width:max-content) — không phải một dải mờ chắn ngang cả trang. */
+  .tab{display:flex;gap:8px;margin-bottom:13px;flex-wrap:wrap;
+    position:sticky;top:10px;z-index:30;width:max-content;max-width:100%;
+    background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+    padding:6px;box-shadow:var(--shadow)}
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .tab{-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
+  }
   .hang-loc{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  /* Mốc cuộn chừa chỗ cho phiến tab — scrollIntoView không giấu phần tử dưới kính. */
+  .khoi,.anh-o,.o,.goi{scroll-margin-top:64px}
+  .anh-o{scroll-margin-bottom:80px}
   /* ── E08-D103 · khối theo khách ──────────────────────────────────────────
      Hai trạng thái phải phân biệt được BẰNG MẮT và BẰNG CHỮ (FR-2). Chỉ đổi màu
      là chưa đủ: người mù màu đọc viền vàng thành viền xanh, mà nhầm chiều này
@@ -288,8 +300,22 @@
     color:var(--gold);font:inherit;font-size:var(--fs-small);cursor:pointer;padding:8px;
     aspect-ratio:4/3;transition:background .15s,border-color .15s}
   .mo-them:hover{background:var(--gold-soft);border-color:var(--gold)}
+  /* Polish 97% · thanh duyệt/tải của MỖI khối trôi theo đáy màn hình khi khối dài:
+     tick tấm thứ mười xong không phải cuộn ngược đi tìm nút Xác nhận. Sticky trong
+     đúng thẻ của nó nên không bao giờ là nút của khách khác (khác hẳn một thanh
+     cố định toàn trang). capNhatThanh chỉ thay RUỘT thanh — kiểu dáng ở đây sống
+     qua mọi lượt vẽ lại.
+     CHỈ dính từ 700px trở lên: đo ở 390px thanh wrap thành khối 4 hàng nút, và một
+     khối cao như thế trôi theo đáy là che đúng những tấm ảnh người ta đang duyệt. */
   .thanhChon{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:11px;
-    padding-top:10px;border-top:1px solid var(--line)}
+    background:var(--panel2);border:1px solid var(--line2);border-radius:12px;
+    padding:9px 11px;box-shadow:var(--shadow)}
+  @media (min-width:700px){
+    .thanhChon{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:5}
+  }
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .thanhChon{-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
+  }
   .chonHet{display:flex;gap:8px;align-items:center;font-size:var(--fs-small);
     color:var(--muted);cursor:pointer}
   .chonHet input{width:16px;height:16px;accent-color:var(--gold)}
@@ -495,6 +521,23 @@
      bên trong (FR-8) không đụng class nên không nháy lại. Giảm động đã tắt ở dưới. */
   @keyframes manHien{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
   #manAnh:not(.an),#manXem:not(.an),#manKhach:not(.an),#manMotKhach:not(.an){animation:manHien .28s var(--ease)}
+  /* ── Polish 97% · khung chờ (skeleton) cho lượt nạp ĐẦU mỗi màn ──
+     Chỉ hiện khi vùng còn TRỐNG (xem điều kiện ở veLuoi/veKhoi/moMotKhach) — lượt
+     vẽ lại tự động FR-8 và đổi bộ lọc không nháy. KHÔNG mang class .khoi/.anh-o/.o
+     thật ngoài .o-cho: các phép đếm DOM và đường «hiện lại DOM cũ» (veManKhoi)
+     phân biệt nội dung thật với khung chờ bằng đúng những class ấy. */
+  .o-cho{aspect-ratio:4/3;position:relative;overflow:hidden;border:1px solid var(--line);
+    border-radius:12px;background:linear-gradient(150deg,var(--panel),var(--panel2))}
+  .o-cho::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(100deg,transparent 25%,var(--hover) 50%,transparent 75%);
+    background-size:220% 100%;animation:oShim 1.3s linear infinite}
+  @keyframes oShim{0%{background-position:130% 0}100%{background-position:-130% 0}}
+  .khoi-cho{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .khoi-cho .d1{height:14px;width:38%;border-radius:7px;background:var(--hover);margin:2px 0 10px}
+  .khoi-cho .d2{height:10px;width:24%;border-radius:6px;background:var(--panel2);margin-bottom:12px}
+  /* Tick nảy nhẹ khi tấm VỪA được chọn — phản hồi tức thì (khuôn pop của kho-anh). */
+  @keyframes tickPop{0%{transform:scale(.7)}60%{transform:scale(1.14)}100%{transform:scale(1)}}
+  .anh-o.daChon .tick{animation:tickPop .18s var(--ease)}
   /* ── TÔN TRỌNG prefers-reduced-motion (khuôn AC-21 của kho-anh) ──
      Không phải trang trí: chuyển động lớn gây chóng mặt thật với người rối loạn
      tiền đình. Tắt toàn bộ transition/animation, và các cú zoom-hover về đứng yên. */
@@ -505,6 +548,8 @@
     button.o:hover,.btn:active:not(:disabled){transform:none}
     button.o:hover img,.anh-o:hover img{transform:none}
     .qden.chay{animation:none}
+    .o-cho::after{animation:none;background:var(--hover)}
+    .anh-o.daChon .tick{animation:none}
   }
 </style>
 </head>
@@ -1249,8 +1294,19 @@ var DA_NAP = false;
    trình duyệt giữ nguyên chỗ cuộn mà không cần ai nhớ nó.
    Lượt vẽ do NGƯỜI gây ra (đổi tab, đổi bộ lọc) vẫn về 60 như cũ: ở đó người dùng
    đang bắt đầu một lượt xem mới, không phải đang giữ chỗ. */
+/* ── Polish 97% · khung chờ cho lượt nạp ĐẦU ──
+   Chỉ tiêm khi vùng còn TRỐNG: lượt vẽ lại tự động (FR-8, giuTrang) và đổi bộ lọc
+   giữ nguyên nội dung cũ tới khi dữ liệu mới về — không nháy. Lỗi nạp thì các
+   catch dọn khung ngay: khung chờ đứng mãi trông hệt như trang treo. */
+function oChoHTML(n){ return new Array(n + 1).join('<div class="o o-cho"></div>'); }
+function khoiChoHTML(){
+  var t = '<div class="card khoi-cho"><div class="d1"></div><div class="d2"></div>'
+        + '<div class="luoi">' + oChoHTML(4) + '</div></div>';
+  return t + t;
+}
 async function veLuoi(noiTiep, giuTrang){
   var offset = noiTiep ? ANH.length : 0;
+  if (!noiTiep && !$('#luoiAnh').children.length) $('#luoiAnh').innerHTML = oChoHTML(12);
   var soCan = (!noiTiep && giuTrang) ? Math.max(60, ANH.length) : 60;
   var j = await jget('/crm/face-match/photos?filter=' + encodeURIComponent(LOC)
     + '&limit=' + soCan + '&offset=' + offset);
@@ -1755,12 +1811,16 @@ function capNhatThanh(the){
 
 async function veKhoi(noiTiep){
   var offset = noiTiep ? KHOI.length : 0;
+  if (!noiTiep && !$('#dsKhoi').querySelector('.khoi')) $('#dsKhoi').innerHTML = khoiChoHTML();
   var q = ($('#timKhach').value || '').trim();
   var j;
   try {
     j = await jget('/crm/face-match/khoi?loc=' + encodeURIComponent(LOC_KHOI)
       + '&limit=20&offset=' + offset + (q ? '&q=' + encodeURIComponent(q) : ''));
-  } catch (_) { $('#khoiTom').textContent = tt('loi_nap'); return; }
+  } catch (_) {
+    if ($('#dsKhoi').querySelector('.khoi-cho')) $('#dsKhoi').innerHTML = '';
+    $('#khoiTom').textContent = tt('loi_nap'); return;
+  }
   KHOI = noiTiep ? KHOI.concat(j.items || []) : (j.items || []);
   KHOI_TONG = j.tong || 0;
   $('#khoiTom').textContent = KHOI.length
@@ -1830,10 +1890,14 @@ async function moMotKhach(gid, offset){
   $('#manMotKhach').removeAttribute('data-gid');
   $('#manMotKhach').removeAttribute('data-offset');
   hienMan('manMotKhach');
+  if (!$('#anhMotKhach').querySelector('.anh-o')) $('#anhMotKhach').innerHTML = oChoHTML(8);
   var j;
   try {
     j = await jget('/crm/face-match/khoi/' + gid + '?limit=' + TRANG_KHACH + '&offset=' + KHACH_OFFSET);
-  } catch (_) { $('#tomMotKhach').textContent = tt('loi_nap'); return; }
+  } catch (_) {
+    $('#anhMotKhach').innerHTML = '';
+    $('#tomMotKhach').textContent = tt('loi_nap'); return;
+  }
   KHACH_DL = j;
   $('#tenMotKhach').textContent = tenKh(j.khach || {});
   $('#tomMotKhach').textContent = CHI_XEM
@@ -2345,7 +2409,7 @@ function khoiDong(){
   if (CHI_XEM){ TU_DAU = 'khoi'; hienMan('manKhach'); veKhoi(); return; }
   if (tabTuUrl() === 'khach' && !qAnh){ TU_DAU = 'khoi'; hienMan('manKhach'); veKhoi(); }
   else veLuoi()
-    .catch(function(){ $('#anhTom').textContent = tt('loi_nap'); })
+    .catch(function(){ $('#luoiAnh').innerHTML = ''; $('#anhTom').textContent = tt('loi_nap'); })
     .then(function(){ if (qAnh) return moAnh(qAnh, 'luoi'); })
     .catch(function(){ hienMan('manAnh'); $('#anhTom').textContent = tt('loi_nap'); });
 }

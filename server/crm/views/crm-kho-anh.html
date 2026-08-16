@@ -81,7 +81,15 @@
      per view (xem ghi chú D083 ở đầu tệp), chưa có gói CSS dùng chung.
      Cả ba chip là <a>: từ tab Kho, hai tab kia đều nằm ở tài liệu khác. `flex-wrap`
      để ở 360px ba chip xuống hàng chứ không đẩy trang tràn ngang (AC-8). */
-  .tab{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}
+  /* Polish 97% · phiến tab DÍNH ĐỈNH (đồng bộ với crm-nhan-dien): cuộn giữa kho
+     nghìn tấm vẫn đổi tab được. Phiến ôm sát chip, không chắn ngang cả trang. */
+  .tab{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0;
+    position:sticky;top:10px;z-index:35;width:max-content;max-width:100%;
+    background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+    padding:6px;box-shadow:var(--shadow)}
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .tab{-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
+  }
   .chip{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:999px;
     padding:7px 14px;font:inherit;font-size:var(--fs-small);cursor:pointer;text-decoration:none;
     display:inline-flex;align-items:center;line-height:1.45;white-space:nowrap;
@@ -180,8 +188,17 @@
   .grid-kho .tile .nm{opacity:0;transition:opacity .16s}
   .grid-kho .tile:hover .nm,.grid-kho .tile:focus-visible .nm{opacity:1}
   @media (prefers-reduced-motion:reduce){ .grid-kho .tile .nm{transition:none} }
-  /* Hàng chip lọc đợt */
-  .dot-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+  /* Hàng chip lọc đợt — DÍNH ĐỈNH dưới phiến tab: kho dài nghìn tấm, đổi đợt là
+     thao tác điều hướng chính khi ngắm kho. :empty phải ẩn hẳn — veDot() trả
+     chuỗi rỗng khi chỉ có một đợt, còn phiến rỗng thì thành một viên kính mồ côi. */
+  .dot-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px;
+    position:sticky;top:64px;z-index:34;width:max-content;max-width:100%;
+    background:var(--panel2);border:1px solid var(--line);border-radius:16px;
+    padding:7px;box-shadow:var(--shadow)}
+  .dot-row:empty{display:none}
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .dot-row{-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
+  }
   .dot-chip{border:1px solid var(--line);background:var(--panel2);color:var(--text);
     border-radius:999px;padding:6px 12px;font-size:var(--fs-small);cursor:pointer;transition:.15s}
   .dot-chip:hover{border-color:var(--line2)}

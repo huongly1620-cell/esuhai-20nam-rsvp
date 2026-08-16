@@ -94,12 +94,14 @@ Khi xong session kỹ thuật: cập nhật reports/STATUS.md.
 
 ---
 
-## 7. Deploy — push `main` là LIVE (từ 16/08/2026)
+## 7. Deploy — `main` là nguồn LIVE (từ 16/08/2026)
 
-Service Railway **esuhai-web** đã nối thẳng GitHub `main` (serviceConnect, 16/08/2026):
-**push lên `main` là Railway tự build + deploy** — LIVE luôn bằng đúng commit trên `main`,
-hết cảnh `railway up` đẩy working tree lệch repo. `railway up` CLI vẫn dùng được khi cần
-đẩy thử bằng tay, nhưng đường chính thức là push `main`.
+Service Railway **esuhai-web** đã nối nguồn vào GitHub `main` (serviceConnect,
+16/08/2026) — deploy từ nguồn này luôn mang ĐÚNG commit trên `main`, hết cảnh
+`railway up` đẩy working tree lệch repo. Vế **tự deploy khi push** cần thêm
+Railway GitHub App được cấp quyền repo (anh Kha đang chốt); kiểm tra nhanh:
+push xong mở Railway → esuhai-web → Deployments, thấy commit vừa push là auto
+đã chạy. Chưa thấy thì deploy tay bằng `railway up`.
 ⇒ Hệ quả cho mọi vai: **cái gì chưa đáng LIVE thì đừng để lọt vào `main`.**
 
 ---

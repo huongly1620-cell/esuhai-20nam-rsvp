@@ -3,12 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
 <title>Ảnh sự kiện · ESUHAI 20 năm</title>
+<!-- Polish 16/08 · trang này trước giờ KHÔNG nạp font nào: font-family khai "Be Vietnam
+     Pro" nhưng máy không có thì rơi về font hệ — hai tab của cùng một trang chữ khác
+     hẳn nhau. Bộ font chép đúng từ crm-kho-anh.html:11-12 (CHÉP, không import — kiến
+     trúc self-contained per view, xem ghi chú D083 bên ấy). -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg1:#050b14;--bg2:#071019;--panel:rgba(255,255,255,.05);--panel2:rgba(7,16,27,.66);
-    --text:#f4eede;--muted:#aca592;--line:rgba(224,189,119,.16);--line2:rgba(224,189,119,.32);
-    --gold:#e0bd77;--ok:#43e08d;--bad:#e05a5a;--fs-small:.72rem;--fs-micro:.66rem;
+    /* ── Polish 16/08 · DARK — bảng màu khớp 1:1 tên biến với crm-kho-anh.html:16-25
+       (gốc crm-app-v2.html): hai tài liệu là HAI TAB của một trang, lệch màu là
+       người dùng đọc ra "hai trang". Biến cũ của trang (--ok --bad --fs-nhan…)
+       giữ nguyên tên vì hàng chục quy tắc bên dưới đang gọi chúng. ── */
+    --gold:#e0bd77;--gold-b:#f6e6bd;--gold-d:#b8963f;--gold-soft:rgba(224,189,119,.14);
+    --green:#1fb073;--green-b:#5fe4a6;--blue:#4a97e6;--blue-b:#96c8ff;
+    --red:#ec5140;--red-b:#ff8676;--amber:#f2b74e;--ok:#45e08e;--bad:#e05a5a;
+    --bg1:#0a1826;--bg2:#0b2130;--bg3:#081019;--glow:rgba(31,176,115,.14);--glow2:rgba(224,189,119,.06);
+    --panel:rgba(255,255,255,.05);--panel2:rgba(7,16,27,.66);--card:rgba(255,255,255,.032);--hover:rgba(255,255,255,.07);
+    --text:#f4eede;--muted:#aca592;--muted2:#837c66;--line:rgba(224,189,119,.16);--line2:rgba(224,189,119,.32);--inp:rgba(4,11,22,.55);
+    --shadow:0 10px 32px rgba(0,0,0,.36);--r:16px;
+    --fs-small:.72rem;--fs-micro:.66rem;
+    --ease:cubic-bezier(.16,1,.3,1);
     /* E08-D122 · cỡ riêng cho ba nhãn ĐÈ LÊN ẢNH (`.hieu` `.nhan` `.pt`). Không hạ
        thẳng `--fs-micro`: biến ấy còn nuôi `.dem` và `.canh` — hai thứ nằm trên MẶT
        GIẤY của trang, nơi chữ nhỏ hơn nữa là chữ khó đọc chứ không phải chữ khiêm
@@ -16,18 +33,37 @@
     --fs-nhan:.6rem;
   }
   :root[data-theme=light]{
-    --bg1:#f7f3e8;--bg2:#efe8d6;--panel:rgba(255,255,255,.75);--panel2:rgba(255,255,255,.92);
-    --text:#2a2418;--muted:#6d6552;--line:rgba(120,92,36,.18);--line2:rgba(120,92,36,.34);--gold:#a97f2e;
+    /* ── LIGHT (ivory) — khớp 1:1 với crm-kho-anh.html:29-35 ── */
+    --gold:#a97f2e;--gold-b:#8a6414;--gold-d:#c6a458;--gold-soft:rgba(169,127,46,.1);
+    --green:#0e955f;--green-b:#0b7a4d;--blue:#2f74c4;--blue-b:#2560a8;
+    --red:#d23a2a;--red-b:#b02a1c;--amber:#c8892a;--ok:#12a15f;--bad:#c2331f;
+    --bg1:#faf6ec;--bg2:#f5efe1;--bg3:#efe7d5;--glow:rgba(20,140,100,.08);--glow2:rgba(169,127,46,.07);
+    --panel:rgba(255,255,255,.75);--panel2:rgba(255,255,255,.92);--card:rgba(255,255,255,.9);--hover:#fff;
+    --text:#2a2418;--muted:#6d6552;--muted2:#9a9078;--line:rgba(120,92,36,.18);--line2:rgba(120,92,36,.34);--inp:#fff;
+    --shadow:0 8px 26px rgba(120,92,40,.13);
   }
-  *{box-sizing:border-box}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{margin:0;font-family:"Be Vietnam Pro",-apple-system,"Segoe UI",system-ui,Arial,sans-serif;
-    color:var(--text);background:linear-gradient(166deg,var(--bg1),var(--bg2));min-height:100vh}
+    color:var(--text);line-height:1.45;min-height:100vh;
+    background:radial-gradient(1200px 600px at 82% -12%,var(--glow),transparent 60%),radial-gradient(760px 380px at 6% 2%,var(--glow2),transparent 58%),linear-gradient(166deg,var(--bg1),var(--bg2) 50%,var(--bg3))}
+  /* Trang này không toggle class `jp` lên body như kho-anh — setLang chỉ đặt
+     documentElement.lang, nên font tiếng Nhật đi theo chính thuộc tính ấy. */
+  html[lang=ja] body{font-family:"Noto Sans JP","Be Vietnam Pro",sans-serif;letter-spacing:.005em}
+  ::selection{background:var(--gold-soft)}
+  /* AC-13 (khuôn kho-anh) · mỗi lần Tab dừng chân phải THẤY được; :focus-visible
+     để chuột bấm không bị viền bám. */
+  :focus-visible{outline:2px solid var(--gold-b);outline-offset:2px;border-radius:8px}
   .wrap{max-width:1100px;margin:0 auto;padding:14px 14px 60px}
   .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-  h1{font-size:1.05rem;margin:0;font-weight:700}
+  /* Đầu trang có vạch ngăn riêng — các `.top` khác là hàng công cụ trong thẻ, không đụng. */
+  #dauTrang{padding:2px 0 12px;border-bottom:1px solid var(--line)}
+  h1{font-size:1.08rem;margin:0;font-weight:600;font-family:"Playfair Display",Georgia,Cambria,serif;letter-spacing:.01em}
+  html[lang=ja] h1{font-family:"Noto Serif JP","Playfair Display",serif}
   .btn{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:10px;
-    padding:8px 13px;font:inherit;font-size:.82rem;cursor:pointer}
-  .btn:hover:not(:disabled){border-color:var(--gold)}
+    padding:8px 13px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer;
+    transition:border-color .15s,background .15s,transform .12s}
+  .btn:hover:not(:disabled){border-color:var(--gold);background:var(--hover)}
+  .btn:active:not(:disabled){transform:scale(.97)}
   .btn:disabled{opacity:.45;cursor:default}
   .btn.sm{padding:5px 10px;font-size:var(--fs-small)}
   /* Nút chỉ có HÌNH. `min-width`/`min-height` 30px là ngưỡng chạm, không phải cỡ
@@ -38,30 +74,54 @@
     display:inline-flex;align-items:center;justify-content:center}
   .btn.ic-nut .ic{display:block;width:14px;height:14px}
   .btn.ok{border-color:rgba(67,224,141,.5);color:var(--ok)}
+  .btn.ok:hover:not(:disabled){border-color:var(--ok);background:rgba(67,224,141,.1)}
   .btn.bad{border-color:rgba(224,90,90,.5);color:#ffb3b3}
+  .btn.bad:hover:not(:disabled){border-color:var(--bad);background:rgba(224,90,90,.1)}
+  :root[data-theme=light] .btn.bad{color:var(--bad)}
   .spacer{flex:1}
-  .hint{color:var(--muted);font-size:var(--fs-small)}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:13px}
-  input[type=search],input[type=text]{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
-    color:var(--text);padding:9px 12px;font:inherit;font-size:.85rem;width:100%}
+  .hint{color:var(--muted);font-size:var(--fs-small);line-height:1.55}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:13px;box-shadow:var(--shadow)}
+  /* Kính mờ theo khuôn AC-19 của kho-anh: @supports là bắt buộc — không có
+     backdrop-filter thì phải rơi về nền ĐẶC, chữ nổi trên nền trong suốt là
+     không đọc được. */
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .card{background:var(--panel);-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
+  }
+  /* List khối theo khách vẽ 20+ thẻ một lượt — 20 lớp kính mờ full-width là cái
+     giá GPU thật trên điện thoại. Riêng `.khoi` dùng nền đặc, mắt thường không
+     phân biệt được vì bên dưới nó là chính nền trang. */
+  .khoi{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none}
+  input[type=search],input[type=text]{background:var(--inp);border:1px solid var(--line);border-radius:11px;
+    color:var(--text);padding:10px 13px;font:inherit;font-size:.85rem;width:100%;
+    transition:border-color .15s,box-shadow .15s}
+  input[type=search]:focus,input[type=text]:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft)}
+  input[type=search]::placeholder,input[type=text]::placeholder{color:var(--muted2)}
   table{width:100%;border-collapse:collapse}
   th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:.85rem}
   th{color:var(--muted);font-size:var(--fs-small);font-weight:600}
   tr.kh{cursor:pointer}
   tr.kh:hover{background:var(--panel2)}
   .dem{display:inline-block;min-width:26px;text-align:center;border-radius:999px;padding:2px 8px;
-    font-size:var(--fs-micro);border:1px solid var(--line2)}
+    font-size:var(--fs-micro);border:1px solid var(--line2);font-variant-numeric:tabular-nums}
   .dem.co{background:rgba(67,224,141,.14);border-color:rgba(67,224,141,.4);color:var(--ok)}
   .dem.cho{background:rgba(224,189,119,.14);border-color:var(--line2);color:var(--gold)}
   .canh{color:var(--bad);font-size:var(--fs-micro)}
   /* E08-D102 · lưới ảnh là màn chính. minmax nhỏ hơn bản D077 (150→120) vì ở 360px
      một cột 150 cộng khe cộng padding vẫn vừa, nhưng hai cột thì tràn — mà lưới một
      cột thì không còn là lưới. 120 cho đúng hai cột ở 360px. */
-  .luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:9px}
-  .o{position:relative;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--panel2)}
-  .o img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:4/3}
+  .luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+  /* Ô lưới là VẬT TRƯNG BÀY: nền gradient nhẹ giữ chỗ trong lúc ảnh lazy chưa về
+     (không shimmer JS — lưới này bị vẽ lại tự động theo nhịp máy quét D127/FR-8,
+     hiệu ứng xuất-hiện sẽ nháy lại mỗi lượt vẽ; nền tĩnh thì không nháy được). */
+  .o{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    background:linear-gradient(150deg,var(--panel),var(--panel2));
+    transition:transform .3s var(--ease),box-shadow .3s var(--ease),border-color .15s}
+  .o img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:4/3;
+    transition:transform .45s var(--ease)}
   button.o{padding:0;cursor:pointer;font:inherit;color:inherit;text-align:left}
-  button.o:hover{border-color:var(--gold)}
+  button.o:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,.35)}
+  button.o:hover img{transform:scale(1.045)}
+  :root[data-theme=light] button.o:hover{box-shadow:0 10px 24px rgba(120,92,40,.18)}
   /* Hai dấu trên ô lưới. Chữ nghĩa của chúng nằm ở dòng chú giải phía trên lưới,
      không nhét vào `title`: chuỗi trong title không đổi theo ngôn ngữ nếu quên
      dịch, và AC-7 quét đúng chỗ đó.
@@ -110,7 +170,8 @@
   .hieu.cho{right:6px;color:rgba(232,199,137,.9);border-color:rgba(224,189,119,.34)}
   .hieu.alb{left:6px;color:rgba(111,232,168,.9);border-color:rgba(67,224,141,.34)}
   .chip{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:999px;
-    padding:6px 13px;font:inherit;font-size:var(--fs-small);cursor:pointer}
+    padding:7px 14px;font:inherit;font-size:var(--fs-small);cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+  .chip:hover{border-color:var(--gold);background:var(--hover)}
   /* E08-D106 · chip tab Kho là <a>, không phải <button>: nó rời tài liệu này. Mặc
      định của trình duyệt cho <a> khác <button> ở ba chỗ (gạch chân, màu link,
      line-height) nên phải nói lại cả ba, không thì ba chip cùng hàng cao thấp
@@ -122,8 +183,8 @@
      <button> nên vẫn ẩn, và bản đầu của vé này đã đi qua phép đo với đúng một chip
      còn hiện. Nói lại ngay tại đây thay vì bịa một class ẩn thứ hai. */
   a.chip.an{display:none}
-  .chip[aria-pressed=true],.chip[aria-current=page]{background:rgba(224,189,119,.18);
-    border-color:var(--gold);color:var(--gold)}
+  .chip[aria-pressed=true],.chip[aria-current=page]{background:var(--gold-soft);
+    border-color:var(--gold);color:var(--gold-b);font-weight:600}
   /* `.tab` = THANH BA TAB của trang, đúng một chỗ trên trang này. Hàng chip lọc bên
      trong mỗi tab mang tên riêng `.hang-loc` (E08-D106). Bản D102 cho cả hai đeo
      chung tên `.tab`: đọc thì thấy ba hàng chip giống nhau, mà chỉ một hàng đổi
@@ -140,16 +201,25 @@
   /* E08-D122 · 700 → 600. Tên khách KHÔNG nằm trên ảnh nên nó không phải nhường
      đường như ba nhãn kia, nhưng nó là thứ đậm nhất trong khối và mắt bám vào nó
      trước tấm hình. 600 vẫn là chữ đậm nhất khối — chỉ thôi đua với ảnh. */
-  .khoi h3{margin:0;font-size:.95rem;font-weight:600;word-break:break-word}
+  /* Tên khách mang mặt chữ trưng bày (serif) — vẫn 600, không đua với ảnh (D122). */
+  .khoi h3{margin:0;font-size:.98rem;font-weight:600;word-break:break-word;
+    font-family:"Playfair Display",Georgia,Cambria,serif;letter-spacing:.01em}
+  html[lang=ja] .khoi h3{font-family:"Noto Serif JP",serif}
   /* Con số và nhãn của nó là MỘT khối không tách. Bản đầu để chúng là bốn phần tử
      rời trong một hàng flex-wrap: ở 360px hàng gãy giữa chừng, "6" ở lại dòng trên
      còn "trong album" rơi xuống cạnh "9" — hai con số đổi nhãn cho nhau trước mắt
      người đọc. Không tràn ngang nên phép đo scrollWidth vẫn xanh; chỉ nhìn mới thấy. */
   .khoi-so{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 9px}
   .cap{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-  .anh-o{position:relative;border-radius:11px;overflow:hidden;background:var(--panel2);
-    border:2px solid transparent}
-  .anh-o img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:4/3}
+  .anh-o{position:relative;border-radius:12px;overflow:hidden;
+    background:linear-gradient(150deg,var(--panel),var(--panel2));
+    border:2px solid transparent;transition:box-shadow .3s var(--ease)}
+  .anh-o img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:4/3;
+    transition:transform .45s var(--ease)}
+  /* Zoom NHẸ khi rê — bề mặt ngắm ảnh; viền màu trạng thái (FR-2) không đổi. */
+  .anh-o:hover{box-shadow:0 8px 22px rgba(0,0,0,.3)}
+  :root[data-theme=light] .anh-o:hover{box-shadow:0 8px 20px rgba(120,92,40,.16)}
+  .anh-o:hover img{transform:scale(1.04)}
   .anh-o.alb{border-color:var(--ok)}
   .anh-o.cho{border-color:var(--gold)}
   /* E08-D118 · thanh đáy: nền mờ họ chung (khai báo cùng `.hieu`/`.pt` ở trên),
@@ -189,11 +259,14 @@
   .anh-o.alb .nhan{color:rgba(111,232,168,.92);border-color:rgba(67,224,141,.34)}
   /* Ô tick phải to và dễ chạm: đây là cử chỉ bắt buộc trước mọi lượt duyệt, làm
      nó bé là dồn người dùng đi tìm nút tắt — mà nút tắt là thứ vé này cấm. */
-  .tick{position:absolute;top:5px;left:5px;width:26px;height:26px;border-radius:7px;
+  .tick{position:absolute;top:5px;left:5px;width:26px;height:26px;border-radius:8px;
     background:rgba(7,16,27,.72);border:1px solid var(--line2);display:flex;
-    align-items:center;justify-content:center;cursor:pointer}
+    align-items:center;justify-content:center;cursor:pointer;
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:border-color .15s}
+  .tick:hover{border-color:var(--gold)}
   .tick input{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;margin:0}
   .anh-o.daChon{box-shadow:0 0 0 3px rgba(224,189,119,.5)}
+  .anh-o.daChon:hover{box-shadow:0 0 0 3px rgba(224,189,119,.5),0 8px 22px rgba(0,0,0,.3)}
   /* E08-D105 → D118 · góc phải trên tấm chờ duyệt. D105 để BA CHỮ ở đây và đặt
      tên class là `.giong`; D118 đổi nội dung thành SỐ PHẦN TRĂM nên đổi luôn tên
      thành `.pt`. Đổi tên chứ không giữ `.giong` cho một ô chỉ còn con số: đúng bài
@@ -211,10 +284,10 @@
      bằng màu, mà thang ấy chính là thứ người chấm không nên bị neo vào. */
   .pt.chac{color:rgba(232,199,137,.9);border-color:rgba(224,189,119,.36)}
   .mo-them{display:flex;align-items:center;justify-content:center;text-align:center;
-    border:1px dashed var(--line2);border-radius:11px;background:transparent;
+    border:1px dashed var(--line2);border-radius:12px;background:transparent;
     color:var(--gold);font:inherit;font-size:var(--fs-small);cursor:pointer;padding:8px;
-    aspect-ratio:4/3}
-  .mo-them:hover{background:var(--panel2)}
+    aspect-ratio:4/3;transition:background .15s,border-color .15s}
+  .mo-them:hover{background:var(--gold-soft);border-color:var(--gold)}
   .thanhChon{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:11px;
     padding-top:10px;border-top:1px solid var(--line)}
   .chonHet{display:flex;gap:8px;align-items:center;font-size:var(--fs-small);
@@ -254,8 +327,9 @@
     color:#231a06;border-radius:999px;font-size:10px;line-height:1;font-weight:700;
     padding:3px 5px;pointer-events:auto}
   .anhto{position:relative;display:inline-block;max-width:100%}
-  .anhto img{max-width:100%;display:block;border-radius:11px}
-  .goi{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .anhto img{max-width:100%;display:block;border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.35)}
+  :root[data-theme=light] .anhto img{box-shadow:0 12px 32px rgba(120,92,40,.18)}
+  .goi{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
   .goi b{word-break:break-word}
   /* E08-D106 · AC-11 (G6, QC D103 v2 ghi sổ) — hàng «Đã gắn tên trong ảnh này».
      Dấu ✓ thuộc về CÁI TÊN, không phải về hàng. Bản trước để tên, đơn vị và ✓ là
@@ -275,10 +349,13 @@
   .diem{font-size:var(--fs-small);color:var(--gold);font-variant-numeric:tabular-nums}
   .diem.vua{color:var(--muted)}
   .ta{position:relative}
-  .ta-ds{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--panel2);
-    border:1px solid var(--line2);border-radius:10px;max-height:220px;overflow:auto}
-  .ta-ds div{padding:8px 11px;cursor:pointer;font-size:.85rem}
-  .ta-ds div:hover{background:var(--panel)}
+  .ta-ds{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;background:var(--panel2);
+    border:1px solid var(--line2);border-radius:11px;max-height:220px;overflow:auto;box-shadow:var(--shadow)}
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .ta-ds{-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
+  }
+  .ta-ds div{padding:9px 12px;cursor:pointer;font-size:.85rem}
+  .ta-ds div:hover{background:var(--gold-soft)}
   .an{display:none}
   /* ── E08-D110 · bộ chọn bậc khi tải ──────────────────────────────────────
      Bảng chọn nằm TRONG luồng, không `position:absolute`. Ở 360px một lớp phủ tuyệt
@@ -329,7 +406,10 @@
      (đang chạy / tạm dừng / mất liên lạc), vì một cái chấm màu không đọc được
      bằng máy đọc màn hình và không phân biệt được với mắt loạn màu. */
   .qden{width:9px;height:9px;border-radius:999px;background:var(--muted);flex:0 0 auto}
-  .qden.chay{background:var(--ok);box-shadow:0 0 0 3px rgba(67,224,141,.16)}
+  /* Đèn "đang chạy" thở theo nhịp — dấu hiệu sống mà không cần con số nào nhảy.
+     Chữ cạnh đèn vẫn là kênh chính; @media giảm động bên dưới tắt nhịp thở này. */
+  .qden.chay{background:var(--ok);box-shadow:0 0 0 3px rgba(67,224,141,.16);animation:qtho 2.2s ease-in-out infinite}
+  @keyframes qtho{0%,100%{box-shadow:0 0 0 3px rgba(67,224,141,.16)}50%{box-shadow:0 0 0 6px rgba(67,224,141,.07)}}
   .qden.tam-dung{background:var(--gold)}
   .qden.loi,.qden.mat-lien-lac{background:var(--bad)}
   .qden.xong{background:var(--ok);opacity:.5}
@@ -376,11 +456,61 @@
      là câu người ta đọc TRƯỚC khi bấm, không phải chú thích liếc qua. */
   .qbao{color:var(--gold);font-size:var(--fs-small);margin:0}
   .qbao.an{display:none}
+  /* Tên khách trên thanh màn một khách — cùng mặt chữ trưng bày với tên trong khối. */
+  #tenMotKhach{font-family:"Playfair Display",Georgia,Cambria,serif;font-weight:600;font-size:1rem;letter-spacing:.01em}
+  html[lang=ja] #tenMotKhach{font-family:"Noto Serif JP",serif}
+  /* Thanh cuộn của danh sách gợi ý tên — mảnh, cùng tông. */
+  .ta-ds::-webkit-scrollbar{width:8px}
+  .ta-ds::-webkit-scrollbar-thumb{background:var(--line2);border-radius:999px}
+  /* ── Modal thay confirm() (khuôn appDlg của crm-kho-anh.html:328-341) ── */
+  .appdlg{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;
+    padding:18px;background:rgba(3,8,16,.72);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+  .appdlg.show{display:flex}
+  .appdlg-in{width:100%;max-width:400px;background:linear-gradient(180deg,var(--bg2),var(--bg3));
+    border:1px solid var(--line2);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+  .appdlg-msg{font-size:.88rem;line-height:1.55;color:var(--text);white-space:pre-wrap;margin:0 0 14px;text-align:left}
+  .appdlg-acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+  .appdlg-acts .btn{min-width:96px}
+  /* Hai kiểu nút đặc của modal. Nhắc lại cả nhánh :hover vì .btn:hover ở trên có
+     :not(:disabled) — đặc hiệu hơn một lớp, không nhắc là hover xoá mất gradient. */
+  .btn.gold,.btn.gold:hover:not(:disabled){background:linear-gradient(180deg,var(--gold-b),var(--gold-d));
+    color:#2a1e05;border-color:transparent;font-weight:700}
+  .btn.gold:hover:not(:disabled){filter:brightness(1.06)}
+  .btn.danger-fill,.btn.danger-fill:hover:not(:disabled){background:linear-gradient(180deg,#ff8676,var(--red));
+    color:#fff;border-color:transparent;font-weight:700}
+  .btn.danger-fill:hover:not(:disabled){filter:brightness(1.06)}
+  /* Nút mở việc quét là CTA CHÍNH của bảng — đổ xanh cùng họ với «Đồng bộ» bên
+     tab Kho. Chọn bằng id nên thắng mọi quy tắc lớp, kể cả hover ở trên. */
+  #nutDongBo{background:linear-gradient(180deg,var(--green-b),var(--green));
+    color:#04241a;border-color:transparent;font-weight:700}
+  #nutDongBo:hover:not(:disabled){background:linear-gradient(180deg,var(--green-b),var(--green));filter:brightness(1.05)}
+  /* Định danh phiên thành pill như kho-anh; lỗi/401 thì apDungVai để trống ⇒ ẩn hẳn (khuôn D071). */
+  #meRole{border:1px solid var(--line);border-radius:999px;padding:4px 11px;background:var(--panel2);
+    font-size:var(--fs-micro);color:var(--muted)}
+  #meRole:empty{display:none}
+  /* Nút ngôn ngữ mang giọng vàng như kho-anh — cùng một nút, hai tab phải cùng mặt. */
+  #langBtn{background:transparent;color:var(--gold-b);border-color:var(--line2);font-weight:700;letter-spacing:.02em}
+  #langBtn:hover:not(:disabled){background:var(--gold-soft);border-color:var(--gold)}
+  /* Đổi màn con nở nhẹ lên thay vì bật công tắc. Chỉ bốn màn gốc — vẽ lại nội dung
+     bên trong (FR-8) không đụng class nên không nháy lại. Giảm động đã tắt ở dưới. */
+  @keyframes manHien{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  #manAnh:not(.an),#manXem:not(.an),#manKhach:not(.an),#manMotKhach:not(.an){animation:manHien .28s var(--ease)}
+  /* ── TÔN TRỌNG prefers-reduced-motion (khuôn AC-21 của kho-anh) ──
+     Không phải trang trí: chuyển động lớn gây chóng mặt thật với người rối loạn
+     tiền đình. Tắt toàn bộ transition/animation, và các cú zoom-hover về đứng yên. */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{
+      animation-duration:.001ms !important;animation-iteration-count:1 !important;
+      transition-duration:.001ms !important;scroll-behavior:auto !important}
+    button.o:hover,.btn:active:not(:disabled){transform:none}
+    button.o:hover img,.anh-o:hover img{transform:none}
+    .qden.chay{animation:none}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="top">
+  <div class="top" id="dauTrang">
     <button class="btn sm" id="veCrm">← <span data-i="ve_crm">Về CRM</span></button>
     <h1 data-i="tieu_de">📸 Ảnh sự kiện</h1>
     <span class="hint" id="meRole"></span>
@@ -589,6 +719,16 @@
   </div>
 </div>
 
+<div class="appdlg" id="appDlg" role="dialog" aria-modal="true" aria-labelledby="appDlgMsg" hidden>
+  <div class="appdlg-in">
+    <p class="appdlg-msg" id="appDlgMsg"></p>
+    <div class="appdlg-acts">
+      <button type="button" class="btn" id="appDlgCancel">Huỷ</button>
+      <button type="button" class="btn gold" id="appDlgOk">Đồng ý</button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 var $ = function(s){ return document.querySelector(s); };
@@ -737,6 +877,9 @@ var T = {
     q_hoi_it_may:'Chỉ có {m} máy quét đang chạy. Luồng thứ {k} sẽ ngồi chờ đến khi có máy nữa.\n\nVẫn mở {n} luồng?',
     q_may_dang:'Đang có {n} máy quét',
     q_may_khong:'Chưa có máy quét nào',
+    /* ── Polish 16/08 · modal thay confirm() — nút mang tên HÀNH ĐỘNG, không «OK» ── */
+    dlg_cancel:'Huỷ', dlg_ok:'Đồng ý',
+    q_ok_xep:'Vẫn xếp việc', q_ok_dung:'Dừng hẳn đợt',
     q_hoi_dung:'Dừng hẳn đợt này? Những tấm đang soi dở sẽ quay lại hàng đợi — không mất gì, nhưng đợt sẽ đóng.',
     q_nhac_luong:'Mỗi đường chạy thêm là một đường mạng. Thấy tỉ lệ lỗi đỏ thì bớt lại.',
     /* FR-2 · câu tiếng người trên hàng toàn kho. Nó phải nói được cả VIỆC CÒN LẠI
@@ -863,6 +1006,8 @@ var T = {
     q_hoi_it_may:'稼働中のスキャナーは{m}台だけです。{k}本目は、スキャナーが増えるまで待機します。\n\n並列{n}で開始しますか？',
     q_may_dang:'スキャナー{n}台が稼働中',
     q_may_khong:'稼働中のスキャナーなし',
+    dlg_cancel:'キャンセル', dlg_ok:'OK',
+    q_ok_xep:'それでも登録する', q_ok_dung:'この実行を停止',
     q_hoi_dung:'この実行を停止しますか？処理中の写真は待ち行列に戻ります — 失われるものはありませんが、実行は終了します。',
     q_nhac_luong:'1本増やすごとに通信も1本増えます。エラー率が赤くなったら減らしてください。',
     q_cau_kho:'未処理の写真が{n}枚あります。「スキャン開始」を押すと続きを処理します。',
@@ -930,6 +1075,52 @@ async function jget(u){ var r = await fetch(u); if (!r.ok) throw new Error('HTTP
 async function jpost(u,b,m){ var r = await fetch(u,{ method: m||'POST',
   headers:{'content-type':'application/json'}, body: b?JSON.stringify(b):undefined });
   if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+
+/* ── Modal thay confirm() — chép khuôn appDlg của crm-kho-anh.html:828-868 (gốc
+      crm-app-v2). CHÉP, không import: self-contained per view. Hộp thoại gốc
+      trình duyệt chặn luồng vẽ, không style được, và trên iOS in tên miền lên
+      trước câu hỏi — ba chỗ hỏi của bảng máy quét nay đi qua đây. ── */
+var _dlgResolve = null, _dlgPrevFocus = null;
+function _dlgClose(val){
+  var dlg = $('#appDlg'); if (!dlg) return;
+  dlg.classList.remove('show'); dlg.hidden = true;
+  document.removeEventListener('keydown', _dlgKey, true);
+  if (_dlgPrevFocus && _dlgPrevFocus.focus) try { _dlgPrevFocus.focus(); } catch(_){}
+  var r = _dlgResolve; _dlgResolve = null; _dlgPrevFocus = null;
+  if (r) r(val);
+}
+function _dlgKey(e){
+  if (!_dlgResolve) return;
+  if (e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); _dlgClose(null); return; }
+  if (e.key !== 'Tab') return;
+  var dlg = $('#appDlg'); if (!dlg || !dlg.classList.contains('show')) return;
+  var foc = dlg.querySelectorAll('button:not([disabled])');
+  if (!foc.length) return;
+  var first = foc[0], last = foc[foc.length - 1];
+  if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+}
+function _dlgOpen(msg, opts){
+  opts = opts || {};
+  return new Promise(function(resolve){
+    if (_dlgResolve) _dlgClose(null);
+    _dlgResolve = resolve; _dlgPrevFocus = document.activeElement;
+    var dlg = $('#appDlg'), btnOk = $('#appDlgOk'), btnCancel = $('#appDlgCancel');
+    $('#appDlgMsg').textContent = String(msg == null ? '' : msg);
+    btnCancel.textContent = opts.cancelLabel || tt('dlg_cancel');
+    btnOk.textContent = opts.okLabel || tt('dlg_ok');
+    btnOk.className = 'btn' + (opts.danger ? ' danger-fill' : ' gold');
+    dlg.hidden = false; dlg.classList.add('show');
+    document.addEventListener('keydown', _dlgKey, true);
+    /* Câu hỏi nguy hiểm thì con trỏ đứng ở Huỷ — bấm Enter theo quán tính không
+       được là bấm nhầm lệnh dừng. */
+    requestAnimationFrame(function(){ (opts.danger ? btnCancel : btnOk).focus(); });
+  });
+}
+function appConfirm(msg, opts){ return _dlgOpen(msg, opts).then(function(v){ return v === true; }); }
+$('#appDlgCancel').addEventListener('click', function(){ _dlgClose(null); });
+$('#appDlgOk').addEventListener('click', function(){ _dlgClose(true); });
+$('#appDlg').addEventListener('click', function(e){ if (e.target === this) _dlgClose(null); });
 
 /* N1 (Gate 2 vòng 1) · ĐÓNG chế độ khoanh — trạng thái DOM lẫn trạng thái JS.
    Vì sao phải gom vào một hàm và gọi ở HAI chỗ: khung đang vẽ nằm bên trong
@@ -2112,7 +2303,9 @@ setLang(LANG);
    nào, nên nó phải biết TRƯỚC lượt nạp ấy: gọi trước rồi sửa sau nghĩa là bắn ít
    nhất một yêu cầu chắc chắn 403 và để người dùng nhìn thấy tab sai nhấp nháy. */
 function apDungVai(j){
-  $('#meRole').textContent = ((j && j.role) || '') + ' · ' + ((j && j.email) || '');
+  /* Hỏi không được thì ĐỂ TRỐNG — pill #meRole:empty ẩn hẳn (khuôn D071), không
+     hiện một viên « · » rỗng. */
+  $('#meRole').textContent = j ? (((j.role) || '') + ' · ' + ((j.email) || '')) : '';
   /* Hỏi không được thì rơi về phía CHỈ XEM. Phía kia là bày ra một bàn điều khiển
      mà mọi cú bấm đều 403 — hỏng theo kiểu khó hiểu hơn hẳn. */
   CHI_XEM = !j || j.role !== 'btl';
@@ -2598,9 +2791,9 @@ $('#nutDongBo').onclick = async function(){
      tình huống. Huỷ ở nấc nào cũng là KHÔNG tạo đợt — cú bấm chưa xảy ra. */
   var soMay = DB_CUOI ? (DB_CUOI.so_may_truc || 0) : 0;
   if (DB_CUOI && soMay === 0){
-    if (!confirm(fmt('q_hoi_khong_truc', { n: n }))) return;
+    if (!await appConfirm(fmt('q_hoi_khong_truc', { n: n }), { okLabel: tt('q_ok_xep') })) return;
   } else if (DB_CUOI && n > soMay){
-    if (!confirm(fmt('q_hoi_it_may', { m: dbSo(soMay), k: dbSo(soMay + 1), n: n }))) return;
+    if (!await appConfirm(fmt('q_hoi_it_may', { m: dbSo(soMay), k: dbSo(soMay + 1), n: n }), { okLabel: tt('q_ok_xep') })) return;
   }
   $('#nutDongBo').disabled = true;
   $('#dbTom').textContent = '';
@@ -2629,7 +2822,7 @@ $('#qTamDungHet').onclick = function(){ doiCo('tam-dung', { tat_ca: true }, this
 $('#qTiepHet').onclick = function(){ doiCo('tiep-tuc', { tat_ca: true }, this); };
 $('#qDungHan').onclick = async function(){
   if (!DB_CUOI || !DB_CUOI.dot_mo) return;
-  if (!confirm(tt('q_hoi_dung'))) return;
+  if (!await appConfirm(tt('q_hoi_dung'), { okLabel: tt('q_ok_dung'), danger: true })) return;
   this.disabled = true;
   try {
     var r = await fetch('/crm/face-match/dong-bo/dung', { method: 'POST',

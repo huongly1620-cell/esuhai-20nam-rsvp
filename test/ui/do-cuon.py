@@ -19,6 +19,12 @@ cho phép `git diff` chạm đúng ba tệp và AC-8 giữ `npm test` ở 31/31,
     # AC-6 — tương phản chữ/nền, đọc trên PIXEL ĐÃ TÔ
     python3 test/ui/do-cuon.py --tuong-phan --truoc d5f7fb9 --sau cay
 
+    # ── E08-D136 đợt A, dùng lại đúng bộ này ──
+    # AC-A4 — cuộn Kho KHÔNG LÙI so với tip D135 (ngưỡng khác AC-1, xem do_cuon)
+    python3 test/ui/do-cuon.py --khong-lui --truoc c3b15ca --sau cay crm-kho-anh.html
+    # AC-A2 — ba tab cùng một da: 12 ảnh + bảng style đã tính, so ba tab với nhau
+    python3 test/ui/do-cuon.py --dong-bo
+
 `<ref>` là ref git bất kỳ (`d5f7fb9`, `HEAD`, `origin/main`) hoặc `cay` = tệp trên
 đĩa của cây làm việc. `cay` là mặc định của `--sau`, và là thứ bảy phép đột biến
 dùng: chúng sửa cây làm việc rồi `git checkout` trả lại.
@@ -54,6 +60,11 @@ import sys
 GOC = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(GOC, "..", ".."))
 VIEWS = os.path.join("server", "crm", "views")
+# E08-D136 · tệp CSS dùng chung của ba tab Ảnh sự kiện. Trang nạp nó bằng <link>,
+# nên fixture của bộ đo cũng phải nạp nó — không thì mọi `var(--…)` trong khối
+# <style> của trang trở thành vô nghĩa và cả phép đo lẫn phép tương phản đều đang
+# chấm một trang không tồn tại.
+TINH_GALLERY = os.path.join("server", "crm", "static", "gallery")
 ANH_RA_MAC_DINH = os.path.join(GOC, "anh")
 
 MAN = ("crm-kho-anh.html", "crm-nhan-dien.html")
@@ -78,9 +89,15 @@ NHIP_60 = 1000 / 60
 # THIẾU ⇒ cũng đỏ (chặn ai đó xoá nhầm kính mờ của `.tab`/`.top`, tức chặn vi phạm
 # FR-2). Whitelist chỉ chặn một chiều thì FR-2 không có phép nào canh.
 WHITELIST = {
-    # ── crm-kho-anh.html · 12 chỗ ────────────────────────────────────────────
-    ("crm-kho-anh.html", ".tab"):
-        "một thanh tab dính đỉnh — đứng yên khi cuộn, chi phí không theo nội dung",
+    # ── gallery-tokens.css · 1 chỗ (E08-D136) ────────────────────────────────
+    # Thanh tab của cả ba tab Ảnh sự kiện dời về tệp token dùng chung, nên chỗ
+    # khai kính mờ của nó cũng dời theo: hai mục `(view, .tab)` cũ biến mất khỏi
+    # bảng này và một mục thay cả hai. Luật FR-2 không đổi — vẫn là một phần tử
+    # SỐ ÍT, dính đỉnh, kích thước không theo nội dung.
+    ("gallery-tokens.css", ".tab"):
+        "một thanh tab dính đỉnh, khai một lần cho cả ba tab — đứng yên khi cuộn, "
+        "chi phí không theo nội dung",
+    # ── crm-kho-anh.html · 11 chỗ ────────────────────────────────────────────
     ("crm-kho-anh.html", ".tile .st"):
         "dấu trạng thái trên mỗi ô kho — lớp B: bỏ không mua thêm khung (64→60), "
         "lại nằm trên ẢNH nên bỏ mờ là đổi tương phản thật",
@@ -105,14 +122,12 @@ WHITELIST = {
         "#actBar position:fixed — giữ nguyên, không phải chỗ D135 chạm",
     ("crm-kho-anh.html", "#actBar"):
         "dải hành động dính đáy ở khổ ≤480px — đứng yên khi cuộn",
-    # ── crm-nhan-dien.html · 8 chỗ ───────────────────────────────────────────
+    # ── crm-nhan-dien.html · 7 chỗ ───────────────────────────────────────────
     ("crm-nhan-dien.html", ".khoi"):
         "override `none` CÓ SẴN — tiền lệ của chính vé này, đã sống trên LIVE",
     ("crm-nhan-dien.html", ".hieu,.nhan,.pt"):
         "ba nhãn dán trên mỗi ô ẢNH — lớp B: bỏ không mua thêm khung (58→54), "
         "và nền của chúng là ảnh chứ không phải nền trang",
-    ("crm-nhan-dien.html", ".tab"):
-        "một thanh tab dính đỉnh",
     ("crm-nhan-dien.html", ".tick"):
         "ô tick trên mỗi ô ảnh — lớp B, cùng lý do",
     ("crm-nhan-dien.html", ".thanhChon"):
@@ -149,13 +164,13 @@ WHITELIST = {
 # ══════════════════════════════════════════════════════════════════════════════
 # Đọc nguồn: git ref hoặc cây làm việc
 # ══════════════════════════════════════════════════════════════════════════════
-def nguon(ref, ten):
-    """HTML của một view, lấy từ `git show <ref>:…` hoặc từ đĩa khi ref là `cay`."""
-    duong = os.path.join(VIEWS, ten)
+def nguon_tep(ref, duong):
+    """Nội dung một tệp trong repo, lấy từ `git show <ref>:…` hoặc từ đĩa khi ref
+    là `cay`. `duong` là đường tương đối từ gốc repo, dùng dấu / cho git."""
     if ref == "cay":
         with open(os.path.join(REPO, duong), encoding="utf-8") as f:
             return f.read()
-    ra = subprocess.run(["git", "show", f"{ref}:{duong}"], cwd=REPO,
+    ra = subprocess.run(["git", "show", f"{ref}:{duong.replace(os.sep, '/')}"], cwd=REPO,
                         capture_output=True, text=True)
     if ra.returncode != 0:
         print(json.dumps({"ok": False, "loi": f"không đọc được {ref}:{duong}",
@@ -164,11 +179,34 @@ def nguon(ref, ten):
     return ra.stdout
 
 
-def rut_style(html):
-    """Nối mọi khối <style> của tệp. Chỉ CSS — fixture không chạy một dòng JS nào
-    của trang: vé này chấm CSS, và JS thật cần API thật."""
-    return "\n".join(m.group(1) for m in
-                     re.finditer(r"<style[^>]*>(.*?)</style>", html, re.S | re.I))
+def nguon(ref, ten):
+    """HTML của một view."""
+    return nguon_tep(ref, os.path.join(VIEWS, ten))
+
+
+RE_LINK_GALLERY = re.compile(r'<link\b[^>]*\bhref="/crm/static/gallery/([A-Za-z0-9._-]+)"[^>]*>',
+                             re.I)
+
+
+def rut_style(html, ref="cay"):
+    """CSS của một view, ĐÚNG thứ tự trình duyệt thấy: mọi tệp `<link>` tới bộ
+    token dùng chung TRƯỚC, rồi mới tới các khối <style> của chính trang.
+
+    Thứ tự là điều kiện hiệu lực chứ không phải chi tiết: cả hai shell cố ý đặt
+    link trước <style> để quy tắc riêng của màn thắng quy tắc chung ở cùng độ đặc
+    hiệu. Nối ngược lại là đo một trang mà người dùng không bao giờ thấy.
+
+    Đọc tệp dùng chung từ CÙNG ref với HTML — cột TRƯỚC phải là toàn bộ CSS của
+    bản TRƯỚC. Ref cũ chưa có link nào thì vòng lặp này không chạy lần nào, nên
+    không cần biết tệp ấy đã tồn tại ở đó hay chưa.
+
+    Chỉ CSS — fixture không chạy một dòng JS nào của trang: vé này chấm CSS, và JS
+    thật cần API thật."""
+    phan = [nguon_tep(ref, os.path.join(TINH_GALLERY, m.group(1)))
+            for m in RE_LINK_GALLERY.finditer(html)]
+    phan += [m.group(1) for m in
+             re.finditer(r"<style[^>]*>(.*?)</style>", html, re.S | re.I)]
+    return "\n".join(phan)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -278,6 +316,12 @@ def quet_backdrop(ten, html):
 def canh_gac():
     wl = {(t, chuan_hoa(s)): ly for (t, s), ly in WHITELIST.items()}
     tep = sorted(f for f in os.listdir(os.path.join(REPO, VIEWS)) if f.endswith(".html"))
+    # E08-D136 · quét CẢ tệp CSS dùng chung. Không thêm nó vào tầm quét thì cái vé
+    # vừa dời `.tab` ra khỏi hai view cũng vừa mở một chỗ mà phép canh gác không
+    # nhìn — và một hàng rào có điểm mù thì lần lách tới đi đúng qua đó.
+    thu_tinh = os.path.join(REPO, TINH_GALLERY)
+    tep_css = (sorted(f for f in os.listdir(thu_tinh) if f.endswith(".css"))
+               if os.path.isdir(thu_tinh) else [])
     khai, chi_tiet = set(), []
     for t in tep:
         with open(os.path.join(REPO, VIEWS, t), encoding="utf-8") as f:
@@ -285,6 +329,15 @@ def canh_gac():
         for d in quet_backdrop(t, html):
             khai.add((t, d["khoa"]))
             chi_tiet.append(d)
+    for t in tep_css:
+        with open(os.path.join(thu_tinh, t), encoding="utf-8") as f:
+            css = f.read()
+        # Bọc trong một <style> giả để dùng lại đúng bộ quét của các view. Không có
+        # ký tự xuống dòng nào trước ruột, nên số dòng in ra vẫn là số dòng THẬT.
+        for d in quet_backdrop(t, "<style>" + css + "</style>"):
+            khai.add((t, d["khoa"]))
+            chi_tiet.append(d)
+    tep = tep + tep_css
 
     thua = sorted(khai - set(wl))
     thieu = sorted(set(wl) - khai)
@@ -420,7 +473,7 @@ def _than_kho_anh(so_the, man_con="kho"):
           '<button class="btn sm" type="button">Đã hiểu</button></div>'
           '<div class="grid">' + tick + '</div></div>'
         + '<div class="card"><div class="toolbar" style="margin:0">'
-          '<strong>Đã có trong kho</strong>'
+          '<strong class="gal-name">Đã có trong kho</strong>'
           '<button class="btn sm" type="button">Tải lại</button><div class="spacer"></div>'
           f'<span class="hint">{so_the * 12} tấm · 5 đợt</span></div>'
           '<div><div class="dot-row">' + dot + '</div>'
@@ -478,7 +531,7 @@ def _than_nhan_dien(so_the, man_con="mot-khach"):
             + '<div id="manMotKhach">'
               '<div class="card top" style="margin-bottom:13px">'
               '<button class="btn sm">← <span>Khối theo khách</span></button>'
-              '<strong id="tenMotKhach">Ông Lê Văn Ngỡi</strong><div class="spacer"></div>'
+              '<strong class="gal-name" id="tenMotKhach">Ông Lê Văn Ngỡi</strong><div class="spacer"></div>'
               f'<span class="hint">{so_the * 12} tấm · trang 1/3</span></div>'
               '<div class="card"><p class="hint" style="margin:0 0 9px">Toàn bộ ảnh của khách '
               'này, cả tấm đã vào album lẫn tấm máy đang đoán.</p>'
@@ -493,10 +546,28 @@ def _than_nhan_dien(so_the, man_con="mot-khach"):
               '</div></div></div></div>')
 
 
-def fixture(man, css, so_the=SO_THE, theme="toi", man_con=None):
+# E08-D136 · dải ĐỐI CHIẾU cho AC-A2. Cùng một đoạn HTML gieo lên cả ba tab, nên
+# mọi khác biệt đo được ở đây là khác biệt của CSS chứ không của markup. Cố ý KHÔNG
+# gieo nó trong lượt đo cuộn: thêm phần tử vào fixture đo khung là đổi chính cái
+# trang mà AC-A4 đang so với tip D135.
+def _dai_dong_bo():
+    return ('<div class="card" id="galDongBo">'
+            '<strong class="gal-name">Ông Lê Văn Ngỡi</strong>'
+            '<div class="gal-skel" style="aspect-ratio:4/3;margin-top:10px"></div>'
+            '<p class="gal-empty" style="margin-top:10px">'
+            '<span class="gal-empty-ic" aria-hidden="true">🖼️</span>'
+            '<span>Không có ảnh nào trong mục này.</span></p></div>')
+
+
+def fixture(man, css, so_the=SO_THE, theme="toi", man_con=None, dong_bo=False):
     man_con = man_con or MAN_CON[man][0]
     than = (_than_kho_anh(so_the, man_con) if man == "crm-kho-anh.html"
             else _than_nhan_dien(so_the, man_con))
+    if dong_bo:
+        # Chèn vào TRONG `.wrap` (trước thẻ đóng cuối cùng) để dải nằm đúng cột
+        # nội dung của trang, không phải một khối mồ côi ngoài lề.
+        cat = than.rfind("</div>")
+        than = than[:cat] + _dai_dong_bo() + than[cat:]
     dt = ' data-theme="light"' if theme == "sang" else ""
     # Không nạp webfont: mạng bị chặn trong lab, và một lượt chờ font hỏng là một
     # nguồn nhiễu khác nhau giữa hai cột. Cả TRƯỚC lẫn SAU cùng dùng font hệ thống.
@@ -716,7 +787,7 @@ def do_cuon(args):
         # là đo qua cái mà vé này đang nghi ngờ.
         nhip_may = page.evaluate(JS_NHIP)
         for man in dsm:
-            css = {phia: rut_style(nguon(ref, man))
+            css = {phia: rut_style(nguon(ref, man), ref)
                    for phia, ref in (("truoc", args.truoc), ("sau", args.sau))}
             for thu_tu, mc in enumerate(MAN_CON[man]):
                 luot = {"truoc": [], "sau": []}
@@ -763,15 +834,36 @@ def do_cuon(args):
                     }
                     print(json.dumps(gom[phia], ensure_ascii=False))
                 tr, sa = gom["truoc"], gom["sau"]
-                kiem = {
-                    "dpr ≥ 2": sa["dpr"] >= 2,
-                    "khung ≥ 95% khung kỳ vọng":
-                        sa["khung"] >= 0.95 * sa["khung_ky_vong"],
-                    "p95 sau ≤ 50% p95 trước":
-                        sa["p95"] <= 0.5 * tr["p95"],
-                    "0 khung > 50ms": sa["rot50"] == 0,
-                }
-                ac = "AC-1" if man == "crm-kho-anh.html" else "AC-2"
+                if args.khong_lui:
+                    # E08-D136 · AC-A4 hỏi một câu KHÁC câu của D135. D135 phải
+                    # chứng minh một cú CẢI THIỆN («p95 còn một nửa»), vì nó gỡ
+                    # một lớp kính mờ. Vé A không đụng gì vào chi phí vẽ — nó dời
+                    # token — nên đòi p95 giảm một nửa lần nữa là đòi một điều
+                    # không có nghĩa, và một ngưỡng vô nghĩa thì sớm muộn bị tắt.
+                    # Câu đúng là KHÔNG LÙI: vẫn đủ khung tuyệt đối, vẫn không
+                    # khựng, và không mất quá 5% số khung so với tip D135 đo trên
+                    # CÙNG một lượt chạy.
+                    kiem = {
+                        "dpr ≥ 2": sa["dpr"] >= 2,
+                        "khung ≥ 95% khung kỳ vọng":
+                            sa["khung"] >= 0.95 * sa["khung_ky_vong"],
+                        "0 khung > 50ms": sa["rot50"] == 0,
+                        "khung sau ≥ 95% khung trước":
+                            sa["khung"] >= 0.95 * tr["khung"],
+                    }
+                else:
+                    kiem = {
+                        "dpr ≥ 2": sa["dpr"] >= 2,
+                        "khung ≥ 95% khung kỳ vọng":
+                            sa["khung"] >= 0.95 * sa["khung_ky_vong"],
+                        "p95 sau ≤ 50% p95 trước":
+                            sa["p95"] <= 0.5 * tr["p95"],
+                        "0 khung > 50ms": sa["rot50"] == 0,
+                    }
+                if args.khong_lui:
+                    ac = "AC-A4" if man == "crm-kho-anh.html" else "AC-A4-nd"
+                else:
+                    ac = "AC-1" if man == "crm-kho-anh.html" else "AC-2"
                 xau = [k for k, v in kiem.items() if not v]
                 # Chỉ màn con ĐẦU gác cổng. Các màn con sau vẫn chạy đủ, vẫn in đủ
                 # số, và vẫn vào hiện vật — nhưng chúng trả lời một câu hỏi khác
@@ -857,7 +949,7 @@ def do_anh(args):
     with sync_playwright() as p:
         br = p.chromium.launch(args=_co(args.dpr, chup=True))
         for man in MAN:
-            html = {phia: {th: fixture(man, rut_style(nguon(ref, man)), args.the, th)
+            html = {phia: {th: fixture(man, rut_style(nguon(ref, man), ref), args.the, th)
                            for th in CHU_DE}
                     for phia, ref in (("truoc", args.truoc), ("sau", args.sau))}
             for th in CHU_DE:
@@ -1090,7 +1182,7 @@ def do_tuong_phan(args):
                                          device_scale_factor=args.dpr,
                                          reduced_motion="reduce")
                     page = ctx.new_page()
-                    page.set_content(fixture(man, rut_style(nguon(ref, man)), args.the, th),
+                    page.set_content(fixture(man, rut_style(nguon(ref, man), ref), args.the, th),
                                      wait_until="load")
                     page.evaluate(JS_MO_PICK)
                     page.evaluate("() => document.fonts.ready")
@@ -1121,11 +1213,27 @@ def do_tuong_phan(args):
                     mau = _rgb(b["mau_chu"])
                     tk = ten_token.get(tuple(int(round(x)) for x in mau[:3]), "")
                     bat_buoc = tk in ("--text", "--muted")
+                    # E08-D136 · hai cột NGUYÊN NHÂN, không phải hai ngưỡng mới.
+                    # Một cặp có thể tệ đi vì (1) màu chữ hoặc màu nền đổi, hoặc
+                    # (2) thẻ xê dịch trên nền GRADIENT của trang nên pixel nền
+                    # đọc được lệch một bậc 1/255 — vé A đổi cỡ chữ gốc nên nó
+                    # đẩy mọi thứ lên vài pixel, và đó là chuyện (2). Hai chuyện
+                    # ấy đọc ra cùng một con số đỏ mà là hai kết luận khác hẳn
+                    # nhau, nên bộ đo phải nói ra chúng. Ngưỡng KHÔNG đổi: cột
+                    # `dat` vẫn chấm đúng như trước, đây chỉ là chứng cứ đi kèm.
+                    nen_a, nen_b = a["nen_do_duoc"], b["nen_do_duoc"]
                     d = {"man": TEN_NGAN[man], "theme": th, "the": b["the"],
                          "the_id": b["the_id"], "lop_chu": b["lop_chu"], "chu": b["chu"],
                          "mau_chu": b["mau_chu"], "token": tk or "(không phải token chữ)",
-                         "nen_do_duoc_truoc": a["nen_do_duoc"],
-                         "nen_do_duoc_sau": b["nen_do_duoc"],
+                         "nen_do_duoc_truoc": nen_a,
+                         "nen_do_duoc_sau": nen_b,
+                         "nen_lech": [nen_b[i] - nen_a[i] for i in range(3)],
+                         "mau_chu_doi": a["mau_chu"] != b["mau_chu"],
+                         # Cùng màu chữ SAU, đọc trên nền TRƯỚC: nếu con số này
+                         # bằng `ti_so_truoc` thì hệ màu không lùi chút nào và cả
+                         # chênh lệch là do thẻ đứng chỗ khác trên gradient.
+                         "ti_so_sau_tren_nen_truoc":
+                             _ti_so(mau, tuple(float(v) for v in nen_a) + (1.0,)),
                          "ti_so_truoc": a["ti_so"], "ti_so_sau": b["ti_so"],
                          "buoc_45": bat_buoc,
                          "no_co_san": tk == "--muted2",
@@ -1158,6 +1266,115 @@ def do_tuong_phan(args):
     return 0 if not hong else 1
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# AC-A2 (E08-D136) — ba tab CÙNG MỘT DA
+# ══════════════════════════════════════════════════════════════════════════════
+# Ba màn con của ba tab. `theo-khach` dùng màn `mot-khach` vì đó là chỗ tên khách
+# và lưới ảnh của một người đứng cạnh nhau — thứ AC-A2 gọi là «typography tên khách».
+DONG_BO_MAN = (("kho",        "crm-kho-anh.html",   "kho"),
+               ("phan-loai",  "crm-nhan-dien.html", "phan-loai"),
+               ("theo-khach", "crm-nhan-dien.html", "mot-khach"))
+
+# Cái gì PHẢI bằng nhau trên cả ba tab, và cái gì cố ý không.
+# KHÔNG có trong bảng: `margin` và `z-index` của `.tab` — tab Kho có hàng chip đợt
+# dính đỉnh thứ hai phải chui qua dưới nó, và trên hai tab kia thì không có hàng ấy.
+# Một bảng đối chiếu liệt kê cả những chỗ được phép khác nhau là một bảng sẽ bị tắt.
+DONG_BO_KHOA = {
+    "tab": {"sel": ".tab", "k": ["position", "top", "background-color", "border-radius",
+                                 "padding-top", "padding-left", "border-top-width",
+                                 "border-top-color", "box-shadow", "backdrop-filter"]},
+    "chip-dang-o": {"sel": ".tab .chip[aria-current=page],.tab .chip[aria-pressed=true]",
+                    "k": ["background-color", "color", "border-top-color", "font-size",
+                          "font-weight", "padding-top", "padding-left", "border-radius"]},
+    "chip-thuong": {"sel": ".tab .chip:not([aria-current=page]):not([aria-pressed=true])",
+                    "k": ["background-color", "color", "border-top-color", "font-size",
+                          "padding-top", "padding-left", "border-radius", "line-height"]},
+    "ten-khach": {"sel": "#galDongBo .gal-name", "k": ["font-family", "font-size", "font-weight",
+                                            "letter-spacing"]},
+    "khung-rong": {"sel": "#galDongBo .gal-empty", "k": ["font-size", "color", "padding-top",
+                                              "border-top-style", "border-top-color",
+                                              "border-radius", "text-align", "line-height"]},
+    "khung-cho": {"sel": "#galDongBo .gal-skel", "k": ["border-radius", "border-top-color",
+                                            "background-image", "animation-name",
+                                            "animation-duration"]},
+    "than-trang": {"sel": "body", "k": ["font-family", "font-size", "line-height",
+                                        "color", "background-image"]},
+}
+
+JS_DONG_BO = """(khoa) => {
+  const ra = {};
+  Object.keys(khoa).forEach(ten => {
+    const el = document.querySelector(khoa[ten].sel);
+    if (!el){ ra[ten] = null; return; }
+    const cs = getComputedStyle(el), d = {};
+    khoa[ten].k.forEach(k => { d[k] = cs.getPropertyValue(k).trim(); });
+    ra[ten] = d;
+  });
+  return ra;
+}"""
+
+
+def do_dong_bo(args):
+    """AC-A2 · ba tab cùng một da, đo bằng STYLE ĐÃ TÍNH chứ không bằng mắt.
+
+    Ảnh chụp là hiện vật để người đọc vé nhìn; con số dưới đây mới là thứ đánh
+    đỏ. Chỉ đo cây làm việc (`--sau`, mặc định `cay`): câu hỏi của AC-A2 là «ba
+    tab có giống nhau không», không phải «có khác bản cũ không».
+    """
+    sync_playwright = _playwright()
+    thu = args.anh_ra or ANH_RA_MAC_DINH
+    os.makedirs(thu, exist_ok=True)
+    css = {man: rut_style(nguon(args.sau, man), args.sau)
+           for man in {m[1] for m in DONG_BO_MAN}}
+    hong, do = [], {}
+    with sync_playwright() as p:
+        br = p.chromium.launch(args=_co(args.dpr, chup=True))
+        for th in CHU_DE:
+            for w, h in BE_NGANG:
+                ctx = br.new_context(viewport={"width": w, "height": h},
+                                     device_scale_factor=args.dpr,
+                                     reduced_motion="reduce")
+                page = ctx.new_page()
+                for ten, man, mc in DONG_BO_MAN:
+                    page.set_content(fixture(man, css[man], args.the, th, man_con=mc,
+                                             dong_bo=True), wait_until="load")
+                    page.evaluate(JS_MO_PICK)
+                    page.evaluate("() => document.fonts.ready")
+                    page.wait_for_timeout(200)
+                    _chot_dpr(page.evaluate("() => window.devicePixelRatio"),
+                              f"{ten}/{th}/{w}")
+                    page.screenshot(path=os.path.join(thu, f"d136-{ten}-{th}-{w}.png"),
+                                    full_page=True)
+                    do[(th, w, ten)] = page.evaluate(JS_DONG_BO, DONG_BO_KHOA)
+                ctx.close()
+        br.close()
+
+    bang = []
+    for th in CHU_DE:
+        for w, _ in BE_NGANG:
+            for nhom, o in DONG_BO_KHOA.items():
+                for k in o["k"]:
+                    gia = {}
+                    for ten, _man, _mc in DONG_BO_MAN:
+                        d = do[(th, w, ten)].get(nhom)
+                        gia[ten] = None if d is None else d.get(k)
+                    bang.append({"theme": th, "be_ngang": w, "nhom": nhom, "khoa": k,
+                                 "gia_tri": gia, "bang_nhau": len(set(gia.values())) == 1})
+                    if gia[DONG_BO_MAN[0][0]] is None:
+                        hong.append(f"AC-A2 · {th}/{w} · nhóm «{nhom}» không có trên "
+                                    f"tab {DONG_BO_MAN[0][0]} — fixture thiếu, phép so vô nghĩa")
+                    elif len(set(gia.values())) != 1:
+                        hong.append(f"AC-A2 · {th}/{w} · {nhom}.{k} lệch giữa ba tab: {gia}")
+    with open(os.path.join(thu, "d136-dong-bo.json"), "w", encoding="utf-8") as f:
+        json.dump(bang, f, ensure_ascii=False, indent=1)
+    print(json.dumps({
+        "ac": "AC-A2", "ok": not hong, "hong": hong, "thu_muc": thu,
+        "so_png": len(DONG_BO_MAN) * len(CHU_DE) * len(BE_NGANG),
+        "so_phep": len(bang), "sau": args.sau,
+        "lech": [d for d in bang if not d["bang_nhau"]]}, ensure_ascii=False, indent=2))
+    return 0 if not hong else 1
+
+
 def main():
     ap = argparse.ArgumentParser(add_help=True)
     ap.add_argument("man", nargs="?", choices=list(MAN))
@@ -1166,6 +1383,12 @@ def main():
     ap.add_argument("--canh-gac", action="store_true")
     ap.add_argument("--anh", action="store_true")
     ap.add_argument("--tuong-phan", action="store_true")
+    # ── E08-D136 ──
+    ap.add_argument("--dong-bo", action="store_true",
+                    help="AC-A2 · ba tab cùng một da (style đã tính + 12 ảnh)")
+    ap.add_argument("--khong-lui", action="store_true",
+                    help="AC-A4 · chấm bằng ngưỡng KHÔNG LÙI thay vì ngưỡng cải "
+                         "thiện p95 của D135")
     ap.add_argument("--anh-ra")
     ap.add_argument("--the", type=int, default=SO_THE)
     ap.add_argument("--dpr", type=int, default=2,
@@ -1173,6 +1396,8 @@ def main():
     args = ap.parse_args()
     if args.canh_gac:
         return canh_gac()
+    if args.dong_bo:
+        return do_dong_bo(args)
     if not args.truoc:
         ap.error("cần --truoc <ref> (và --sau, mặc định `cay`)")
     if args.anh:

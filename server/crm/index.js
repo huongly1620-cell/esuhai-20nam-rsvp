@@ -140,6 +140,41 @@ function mount(app) {
     return res.sendFile(path.join(__dirname, 'views', 'exif6.fixture.js'));
   });
 
+  /* E08-D136 (CR-178) · shared gallery assets for the three «Event photos» tabs.
+     Same repository, same deploy, same session gate — this is a monolith and the
+     ticket says it stays one.
+
+     Why a route at all: `views/` is deliberately outside the shared
+     `express.static`, and `static/gallery/` sits next to it for the same reason.
+     Event photos and the faces in them are operational personal data; the CSS
+     itself is not sensitive, but a public path under `/crm/` is a habit, and the
+     next file dropped in this folder would inherit it. Same argument as the EXIF
+     fixture route above, which is the pattern this copies.
+
+     The gate is «any signed-in CRM actor», NOT `btl`: all three pages that link
+     this file are served with `choStaff = true`, so gating the stylesheet on
+     `btl` would hand `staff` an unstyled page on the one tab they are meant to
+     use. It grants nothing further — the page it paints is one they can already
+     open, and every data route behind it keeps the role check it had.
+
+     Serving from a fixed map rather than joining the parameter onto a path: the
+     only reachable names are the ones listed, so no request can walk out of the
+     folder. 401 rather than a redirect because the caller is a stylesheet, and a
+     login page delivered as `text/css` is a silent failure. */
+  const GALLERY_ASSETS = { 'gallery-tokens.css': 'text/css; charset=utf-8' };
+  app.get('/crm/static/gallery/:file', (req, res) => {
+    const type = Object.prototype.hasOwnProperty.call(GALLERY_ASSETS, req.params.file)
+      && GALLERY_ASSETS[req.params.file];
+    if (!type) return res.status(404).end();
+    if (!auth.currentActor(req)) return res.status(401).end();
+    res.type(type);
+    // `private` — it is behind a session, so no shared cache may keep a copy.
+    // Revalidate every load: the shells are versionless HTML and a stale token
+    // file is a page in two colour schemes at once.
+    res.set('Cache-Control', 'private, no-cache');
+    return res.sendFile(path.join(__dirname, 'static', 'gallery', req.params.file));
+  });
+
   /* E08-D091 · Google Drive Picker config. Trả Client ID / API key / project
      number để frontend bật nút Google Drive. Thiếu ≥1 biến → 204 (nút giữ
      disabled, AC-2). Không trả client secret — flow thuần browser (GIS token). */

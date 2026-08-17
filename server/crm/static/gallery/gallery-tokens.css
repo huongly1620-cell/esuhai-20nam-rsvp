@@ -1,0 +1,204 @@
+/* E08-D136 wave A (CR-178) · the design system the three «Event photos» tabs share.
+ *
+ * Until now `crm-kho-anh.html` and `crm-nhan-dien.html` each carried their own
+ * copy of the same `:root` block, hand-copied one from the other and annotated
+ * «CHÉP, không import» because there was no shared bundle to import from. Two
+ * copies of one palette is two places that drift, and they already had: the two
+ * files disagreed on `--fs-micro` (.62 vs .66) and each held tokens the other
+ * lacked (`--ok-glow`, `--bad`, half the type scale), so the same class read a
+ * different size depending on which tab you were standing on.
+ *
+ * This file is that missing import. It is served by a route in
+ * `server/crm/index.js` behind the SAME session gate as the pages themselves —
+ * event photos are operational data, so nothing here is public.
+ *
+ * WHAT BELONGS HERE: values and chrome that must be identical on all three tabs
+ * — palette, type scale, radius, focus ring, the sticky tab bar, empty state,
+ * skeleton, display-face typography.
+ * WHAT DOES NOT: anything layout-specific to one screen. The masonry of the
+ * store, the classify grid, the lightbox, the scanner panel all stay in their
+ * own file. This is a shared floor, not a shared ceiling.
+ *
+ * CASCADE: each shell links this file BEFORE its own `<style>`, so a local rule
+ * of equal specificity still wins. Overriding a shared value locally is allowed
+ * and deliberate — silently redefining the whole block again is what this file
+ * exists to stop.
+ *
+ * FRAMES: do not add `backdrop-filter` to anything here that repeats with the
+ * content. `test/ui/do-cuon.py --canh-gac` scans this file the same way it scans
+ * the views, and the only entry it whitelists is `.tab` — one sticky bar per
+ * page, fixed size, measured as free (E08-D135).
+ */
+
+:root{
+  /* ── DARK (default) ── the palette both shells already shipped, verbatim.
+     Values are unchanged from `crm-kho-anh.html:16-25` / `crm-nhan-dien.html:20-33`;
+     this file only stops them being written twice. */
+  --gold:#e0bd77;--gold-b:#f6e6bd;--gold-d:#b8963f;--gold-soft:rgba(224,189,119,.14);
+  --green:#1fb073;--green-b:#5fe4a6;--blue:#4a97e6;--blue-b:#96c8ff;
+  --red:#ec5140;--red-b:#ff8676;--amber:#f2b74e;--ok:#45e08e;
+  /* `--bad` shipped only on the classify shell, `--ok-glow` only on the store.
+     Both are here now so a rule written on either tab means the same thing. */
+  --bad:#e05a5a;--ok-glow:rgba(69,224,142,.28);
+  --bg1:#0a1826;--bg2:#0b2130;--bg3:#081019;--glow:rgba(31,176,115,.14);--glow2:rgba(224,189,119,.06);
+  --panel:rgba(255,255,255,.05);--panel2:rgba(7,16,27,.66);--card:rgba(255,255,255,.032);--hover:rgba(255,255,255,.07);
+  --text:#f4eede;--muted:#aca592;--muted2:#837c66;--line:rgba(224,189,119,.16);--line2:rgba(224,189,119,.32);--inp:rgba(4,11,22,.55);
+  --shadow:0 10px 32px rgba(0,0,0,.36);--r:16px;
+
+  /* ── Type scale ──
+     The store had six steps, the classify screen three, and `--fs-micro` was the
+     one name the two files disagreed on: .62rem there, .66rem here. Unified at
+     .66rem — the LARGER value, on purpose. The smaller one only ever fed text on
+     the page surface (`.sub`, `.stat` captions, the filename strip), and D122
+     already wrote the argument out on the other side: `--fs-micro` also feeds
+     `.dem` and `.canh`, which sit on the page's paper, «where any smaller is not
+     modest text, it is unreadable text». Moodboard P7 puts a11y ahead of polish,
+     so the tab that was 6% too small comes up rather than the other going down.
+     `--fs-nhan` is the one step that is deliberately smaller than micro: it is
+     for labels sitting ON a photo, which must yield to the photo (D122). */
+  --fs-nhan:.6rem;--fs-micro:.66rem;--fs-small:.72rem;--fs-label:.78rem;
+  --fs-body:.88rem;--fs-name:.98rem;--fs-title:1.05rem;--fs-display:1.55rem;
+
+  --ease:cubic-bezier(.16,1,.3,1);
+
+  /* Font stacks as tokens rather than as a rule per heading. The two shells
+     switch to Japanese by different means — the store toggles `body.jp`, the
+     classify screen sets `html[lang=ja]` — and repeating both selectors at every
+     heading is exactly the hand-copying this file removes. Override the token
+     once (below) and every heading follows. */
+  --font-ui:"Be Vietnam Pro",-apple-system,"Segoe UI",system-ui,Arial,sans-serif;
+  --font-display:"Playfair Display",Georgia,Cambria,serif;
+}
+
+:root[data-theme=light]{
+  /* ── LIGHT (ivory) ── */
+  --gold:#a97f2e;--gold-b:#8a6414;--gold-d:#c6a458;--gold-soft:rgba(169,127,46,.1);
+  --green:#0e955f;--green-b:#0b7a4d;--blue:#2f74c4;--blue-b:#2560a8;
+  --red:#d23a2a;--red-b:#b02a1c;--amber:#c8892a;--ok:#12a15f;
+  --bad:#c2331f;--ok-glow:rgba(18,161,95,.2);
+  --bg1:#faf6ec;--bg2:#f5efe1;--bg3:#efe7d5;--glow:rgba(20,140,100,.08);--glow2:rgba(169,127,46,.07);
+  --panel:rgba(255,255,255,.75);--panel2:rgba(255,255,255,.92);--card:rgba(255,255,255,.9);--hover:#fff;
+  --text:#2a2418;--muted:#6d6552;--muted2:#9a9078;--line:rgba(120,92,36,.18);--line2:rgba(120,92,36,.34);--inp:#fff;
+  --shadow:0 8px 26px rgba(120,92,40,.13);
+}
+
+/* Japanese: swap the stacks, not the rules. `html[lang=ja]` covers the classify
+   shell, `body.jp` the store; both land on the same two tokens. */
+html[lang=ja],body.jp{
+  --font-ui:"Noto Sans JP","Be Vietnam Pro",sans-serif;
+  --font-display:"Noto Serif JP","Playfair Display",serif;
+}
+html[lang=ja] body,body.jp{letter-spacing:.005em}
+
+/* ══ Base ══════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:var(--font-ui);font-size:var(--fs-body);
+  color:var(--text);line-height:1.45;min-height:100vh;
+  background:radial-gradient(1200px 600px at 82% -12%,var(--glow),transparent 60%),
+             radial-gradient(760px 380px at 6% 2%,var(--glow2),transparent 58%),
+             linear-gradient(166deg,var(--bg1),var(--bg2) 50%,var(--bg3))}
+h1,h2,h3{font-family:var(--font-display);font-weight:600;margin:0}
+a{color:var(--blue-b)}
+::selection{background:var(--gold-soft)}
+
+/* Dark-room vignette — under the content (z:-1), the edges falling away like a
+   spotlight in a gallery room. Both shells shipped this identically. */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(120% 85% at 50% 28%,transparent 58%,rgba(2,7,14,.5) 100%)}
+:root[data-theme=light] body::before{
+  background:radial-gradient(120% 85% at 50% 28%,transparent 62%,rgba(120,92,40,.09) 100%)}
+
+/* Every place a Tab key can stop has to be visible. `:focus-visible`, not
+   `:focus`, so a mouse click does not leave the ring behind. */
+:focus-visible{outline:2px solid var(--gold-b);outline-offset:2px;border-radius:8px}
+
+/* Slim scrollbar in the same key (macOS hides its own; this is Windows/Linux). */
+html{scrollbar-color:var(--line2) transparent}
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:999px;
+  border:3px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:var(--gold-d);border:3px solid transparent;background-clip:padding-box}
+
+/* ══ Tab bar — the one piece of chrome that is on all three tabs ═══════════ */
+/* Sticky, hugging its chips (`width:max-content`) rather than a band across the
+   page. It is the only frosted surface left in this system and the only entry
+   `--canh-gac` whitelists for this file: one per page, fixed size, and it does
+   not move relative to the viewport while you scroll, so the blur is recomputed
+   over a constant area (E08-D135).
+   `margin` and `z-index` stay local: the store has a second sticky row (the
+   batch chips) that has to pass underneath. */
+.tab{display:flex;gap:8px;flex-wrap:wrap;
+  position:sticky;top:10px;z-index:30;width:max-content;max-width:100%;
+  background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+  padding:6px;box-shadow:var(--shadow)}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .tab{-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
+}
+/* One chip. The store's three chips are all `<a>`; the classify shell mixes one
+   `<a>` (leaves the document) with two `<button>` (switch sub-screen inside it),
+   so the base has to normalise a browser's defaults for `<a>` — underline, link
+   colour, line-height — or the three sit at different heights in one row. */
+.chip{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:999px;
+  padding:7px 14px;font:inherit;font-size:var(--fs-small);cursor:pointer;text-decoration:none;
+  display:inline-flex;align-items:center;line-height:1.45;white-space:nowrap;
+  transition:border-color .15s,background .15s,color .15s}
+.chip:hover{border-color:var(--gold);background:var(--hover)}
+/* `aria-pressed` for the sub-screen buttons, `aria-current` for the link: a link
+   has no pressed state, it has a «you are here» state. Same look for both. */
+.chip[aria-pressed=true],.chip[aria-current=page]{background:var(--gold-soft);
+  border-color:var(--gold);color:var(--gold-b);font-weight:600}
+
+/* ══ Empty state ══════════════════════════════════════════════════════════ */
+/* Before this, every «nothing here» on all three tabs was a bare `<p class=hint>`
+   left-aligned under a heading — indistinguishable at a glance from a caption,
+   and on the store it sat inside the grid where it read as a first cell that had
+   failed to load. One shape instead: centred, dashed outline so the area reads as
+   an empty container, a mark, and the sentence.
+   `--muted` on the card, not `--muted2`: this text answers «why is there nothing
+   here», which is the one moment the sentence has to be readable (contrast is
+   measured by `do-cuon.py --tuong-phan`). */
+.gal-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
+  padding:26px 16px;border:1px dashed var(--line);border-radius:var(--r);
+  color:var(--muted);font-size:var(--fs-small);line-height:1.55;text-align:center;margin:0}
+.gal-empty .gal-empty-ic{font-size:24px;line-height:1;opacity:.72}
+/* Inside a photo grid it is the whole row, not one cell. */
+.luoi>.gal-empty,.grid-kho>.gal-empty,.grid>.gal-empty{grid-column:1/-1}
+
+/* ══ Skeleton ═════════════════════════════════════════════════════════════ */
+/* One shimmer for the whole system. The store animated `shim` at 1.25s with
+   stops at 20/45/70 and the classify screen `oShim` at 1.3s with 25/50/75 —
+   near enough that nobody noticed, far enough that the two tabs never breathed
+   together. Both now reference this keyframe.
+   Skeletons are for the FIRST paint of an empty area only. A redraw that already
+   has content keeps it: flashing placeholders over data that is still on screen
+   reads as the page losing what it had (moodboard P6). */
+@keyframes gal-shim{0%{background-position:130% 0}100%{background-position:-130% 0}}
+.gal-skel{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:12px;
+  background:linear-gradient(150deg,var(--panel),var(--panel2))}
+.gal-skel::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 25%,var(--hover) 50%,transparent 75%);
+  background-size:220% 100%;animation:gal-shim 1.3s linear infinite}
+
+/* ══ Display face ═════════════════════════════════════════════════════════ */
+/* A guest's name in a block, the name on the single-guest bar, the heading over
+   the store: the same three-way object — «what am I looking at» — and until now
+   three separate declarations of the same serif at .98rem, .98rem and 1rem. That
+   third value is why `--fs-name` is a step of its own rather than reusing
+   `--fs-title`: a block heading is not a page heading, and rounding it up to the
+   `<h1>` size would flatten the hierarchy instead of aligning it. Weight stays
+   600, not 700: the name is already the heaviest thing in its block and does not
+   need to compete with the photograph (D122). */
+.gal-name{font-family:var(--font-display);font-weight:600;font-size:var(--fs-name);
+  letter-spacing:.01em;word-break:break-word}
+
+/* ══ Reduced motion ═══════════════════════════════════════════════════════ */
+/* Not decoration: large movement makes people with vestibular disorders
+   genuinely ill, and this flag is the user having already said so at the OS
+   level. Each shell keeps its own fuller block for its own animations; this one
+   covers the shared primitives so a screen that adopts them does not have to
+   remember to also silence them. */
+@media (prefers-reduced-motion:reduce){
+  .gal-skel::after{animation:none;background:var(--hover)}
+  .chip{transition:none}
+}

@@ -7,62 +7,27 @@
 <title>Ảnh sự kiện · ESUHAI 20 năm</title>
 <!-- E08-D083 · polish UI/UX lên ngang bậc /crm. Design token + modal + toast chép khuôn
      từ crm-app-v2.html:9-34 / :605-918 — CHÉP, không import: kiến trúc hiện tại là
-     self-contained per view, không có gói dùng chung giữa các trang. -->
+     self-contained per view, không có gói dùng chung giữa các trang.
+     E08-D136 · that note is now out of date, which is the point of this ticket:
+     there IS a shared bundle, linked below, and the palette / type scale / tab bar
+     / empty state / skeleton live there instead of being copied by hand into two
+     files. It is served by a route in `server/crm/index.js` behind the same
+     session gate as this page. It is linked BEFORE the block below on purpose:
+     anything this screen genuinely needs different still wins from here. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@500;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/crm/static/gallery/gallery-tokens.css">
 <style>
-  :root{
-    /* ── DARK (mặc định) ── khớp 1:1 tên biến với crm-app-v2.html:12-24 */
-    --gold:#e0bd77;--gold-b:#f6e6bd;--gold-d:#b8963f;--gold-soft:rgba(224,189,119,.14);
-    --green:#1fb073;--green-b:#5fe4a6;--blue:#4a97e6;--blue-b:#96c8ff;
-    --red:#ec5140;--red-b:#ff8676;--amber:#f2b74e;--ok:#45e08e;
-    --bg1:#0a1826;--bg2:#0b2130;--bg3:#081019;--glow:rgba(31,176,115,.14);--glow2:rgba(224,189,119,.06);
-    --panel:rgba(255,255,255,.05);--panel2:rgba(7,16,27,.66);--card:rgba(255,255,255,.032);--hover:rgba(255,255,255,.07);
-    --text:#f4eede;--muted:#aca592;--muted2:#837c66;--line:rgba(224,189,119,.16);--line2:rgba(224,189,119,.32);--inp:rgba(4,11,22,.55);
-    --shadow:0 10px 32px rgba(0,0,0,.36);--r:16px;--ok-glow:rgba(69,224,142,.28);
-    --fs-micro:.62rem;--fs-small:.72rem;--fs-body:.88rem;--fs-label:.78rem;
-    --fs-title:1.05rem;--fs-display:1.55rem;
-    --ease:cubic-bezier(.16,1,.3,1);
-  }
-  :root[data-theme=light]{
-    /* ── LIGHT (ivory) ── khớp 1:1 với crm-app-v2.html:25-34 */
-    --gold:#a97f2e;--gold-b:#8a6414;--gold-d:#c6a458;--gold-soft:rgba(169,127,46,.1);
-    --green:#0e955f;--green-b:#0b7a4d;--blue:#2f74c4;--blue-b:#2560a8;
-    --red:#d23a2a;--red-b:#b02a1c;--amber:#c8892a;--ok:#12a15f;
-    --bg1:#faf6ec;--bg2:#f5efe1;--bg3:#efe7d5;--glow:rgba(20,140,100,.08);--glow2:rgba(169,127,46,.07);
-    --panel:rgba(255,255,255,.75);--panel2:rgba(255,255,255,.92);--card:rgba(255,255,255,.9);--hover:#fff;
-    --text:#2a2418;--muted:#6d6552;--muted2:#9a9078;--line:rgba(120,92,36,.18);--line2:rgba(120,92,36,.34);--inp:#fff;
-    --shadow:0 8px 26px rgba(120,92,40,.13);--ok-glow:rgba(18,161,95,.2);
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{margin:0;font-family:"Be Vietnam Pro",-apple-system,"Segoe UI",system-ui,Arial,sans-serif;
-    color:var(--text);line-height:1.45;font-size:var(--fs-body);min-height:100vh;
-    background:radial-gradient(1200px 600px at 82% -12%,var(--glow),transparent 60%),radial-gradient(760px 380px at 6% 2%,var(--glow2),transparent 58%),linear-gradient(166deg,var(--bg1),var(--bg2) 50%,var(--bg3))}
-  body.jp{font-family:"Noto Sans JP","Be Vietnam Pro",sans-serif;letter-spacing:.005em}
-  h1,h2,h3{font-family:"Playfair Display",Georgia,Cambria,serif;font-weight:600;margin:0}
-  body.jp h1,body.jp h2,body.jp h3{font-family:"Noto Serif JP","Playfair Display",serif}
+  /* E08-D136 · the `:root` / `:root[data-theme=light]` blocks that stood here,
+     the base reset, the page background and vignette, the scrollbar, the focus
+     ring and the heading face all moved to `/crm/static/gallery/gallery-tokens.css`.
+     Not one value changed in the move except `--fs-micro`, which was .62rem here
+     and .66rem on the classify shell — the same token name meaning two sizes was
+     precisely the drift this ticket exists to end, and the shared file explains
+     why .66 won. `.lb-strip` still hides its own scrollbar with its own more
+     specific rule below. */
   .num{font-variant-numeric:tabular-nums;letter-spacing:.01em}
-  ::selection{background:var(--gold-soft)}
-  /* Polish 98% · vignette phòng tối — dưới nội dung (z:-1), mép màn tối dần như
-     đèn rọi giữa phòng trưng bày; đồng bộ với crm-nhan-dien. */
-  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-    background:radial-gradient(120% 85% at 50% 28%,transparent 58%,rgba(2,7,14,.5) 100%)}
-  :root[data-theme=light] body::before{
-    background:radial-gradient(120% 85% at 50% 28%,transparent 62%,rgba(120,92,40,.09) 100%)}
-  /* Thanh cuộn thanh mảnh cùng tông (Windows/Linux). .lb-strip vẫn giấu thanh
-     cuộn của nó bằng quy tắc riêng đặc hiệu hơn. */
-  html{scrollbar-color:var(--line2) transparent}
-  ::-webkit-scrollbar{width:11px;height:11px}
-  ::-webkit-scrollbar-track{background:transparent}
-  ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:999px;
-    border:3px solid transparent;background-clip:padding-box}
-  ::-webkit-scrollbar-thumb:hover{background:var(--gold-d);border:3px solid transparent;background-clip:padding-box}
-  a{color:var(--blue-b)}
   .wrap{max-width:1080px;margin:0 auto;padding:0 14px 40px}
-
-  /* AC-13 · focus-visible toàn trang: mỗi lần Tab dừng chân phải THẤY được.
-     Dùng :focus-visible (không phải :focus) để chuột bấm không bị viền bám. */
-  :focus-visible{outline:2px solid var(--gold-b);outline-offset:2px;border-radius:8px}
 
   header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 0 12px;border-bottom:1px solid var(--line)}
   header h1{font-size:var(--fs-title);letter-spacing:.01em}
@@ -90,26 +55,14 @@
     color:var(--text);cursor:pointer;font-size:1rem;display:grid;place-items:center;transition:.15s}
   .icobtn:hover{border-color:var(--line2);background:var(--hover)}
 
-  /* E08-D106 (CR-161) · thanh ba tab của trang «Ảnh sự kiện». Chép khuôn chip từ
-     crm-nhan-dien.html — CHÉP, không import: kiến trúc hiện tại là self-contained
-     per view (xem ghi chú D083 ở đầu tệp), chưa có gói CSS dùng chung.
-     Cả ba chip là <a>: từ tab Kho, hai tab kia đều nằm ở tài liệu khác. `flex-wrap`
-     để ở 360px ba chip xuống hàng chứ không đẩy trang tràn ngang (AC-8). */
-  /* Polish 97% · phiến tab DÍNH ĐỈNH (đồng bộ với crm-nhan-dien): cuộn giữa kho
-     nghìn tấm vẫn đổi tab được. Phiến ôm sát chip, không chắn ngang cả trang. */
-  .tab{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0;
-    position:sticky;top:10px;z-index:35;width:max-content;max-width:100%;
-    background:var(--panel2);border:1px solid var(--line);border-radius:999px;
-    padding:6px;box-shadow:var(--shadow)}
-  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    .tab{-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
-  }
-  .chip{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:999px;
-    padding:7px 14px;font:inherit;font-size:var(--fs-small);cursor:pointer;text-decoration:none;
-    display:inline-flex;align-items:center;line-height:1.45;white-space:nowrap;
-    transition:border-color .15s,background .15s,color .15s}
-  .chip:hover{border-color:var(--gold);background:var(--hover)}
-  .chip[aria-current=page]{background:var(--gold-soft);border-color:var(--gold);color:var(--gold-b);font-weight:600}
+  /* E08-D106 (CR-161) · thanh ba tab của trang «Ảnh sự kiện».
+     E08-D136 · shape, chips and frosted surface now come from the shared bundle —
+     the D106 note said the chips were copied from `crm-nhan-dien.html` «CHÉP,
+     không import», and this is the import. Two things stay here because they are
+     true of THIS screen only: the top margin (no back-button row above the bar),
+     and a z-index above the batch-chip row below, which is the second sticky
+     strip on the store and has to pass underneath. */
+  .tab{margin:12px 0 0;z-index:35}
 
   /* AC-19 · kính mờ. @supports là bắt buộc chứ không phải lịch sự: Firefox tắt
      backdrop-filter theo mặc định ở một số bản, và khi nó không chạy thì nền
@@ -161,11 +114,9 @@
   .stat div b{display:block;font-size:1.35rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--gold-b)}
   .stat div span{color:var(--muted2);font-size:var(--fs-micro)}
   .toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:12px}
-  /* Tiêu đề khối kho («Đã có trong kho») mang mặt chữ trưng bày — duy nhất một
-     .toolbar có <strong> là con trực tiếp. */
-  .toolbar>strong{font-family:"Playfair Display",Georgia,Cambria,serif;font-weight:600;
-    font-size:.98rem;letter-spacing:.01em}
-  body.jp .toolbar>strong{font-family:"Noto Serif JP",serif}
+  /* The store heading («Đã có trong kho») is set in the display face.
+     E08-D136 · it wears `.gal-name` now, the same class as a guest's name on the
+     other two tabs — the three headings were three declarations of one serif. */
   .why{margin-top:8px;font-size:var(--fs-small);color:var(--amber);min-height:1.2em}
   .barwrap{display:flex;align-items:center;gap:10px;margin-top:10px}
   .bar{flex:1 1 auto;height:8px;background:var(--inp);border:1px solid var(--line);border-radius:999px;overflow:hidden}
@@ -296,10 +247,20 @@
   .tile.anh-hong img{opacity:0}
   .tile.anh-hong::after{content:"⚠";position:absolute;inset:0;display:grid;place-items:center;
     font-size:20px;color:var(--red-b)}
+  /* E08-D136 · one shimmer for the whole system: the gradient and the keyframe
+     come from the shared bundle (`gal-shim`), where the classify shell's own
+     placeholder also now points. The two used to run at 1.25s/1.3s with slightly
+     different stops — close enough that nobody read it as a bug, far enough that
+     the two tabs never breathed together. */
   .tile.loading::before{content:"";position:absolute;inset:0;
-    background:linear-gradient(100deg,transparent 20%,var(--hover) 45%,transparent 70%);
-    background-size:220% 100%;animation:shim 1.25s linear infinite}
-  @keyframes shim{0%{background-position:120% 0}100%{background-position:-120% 0}}
+    background:linear-gradient(100deg,transparent 25%,var(--hover) 50%,transparent 75%);
+    background-size:220% 100%;animation:gal-shim 1.3s linear infinite}
+  /* Placeholder cells for the FIRST paint of the store grid (see `khoChoHTML`).
+     Deliberately not `.tile`: `xepKho()`, the lightbox delegate and the «which
+     photos are on screen» query all select `.tile`, and a placeholder that
+     answers to that name is a photo that does not exist. Same row span as a 4/3
+     tile so the grid does not jump when the real ones replace them. */
+  .grid-kho .kho-cho{grid-row-end:span 40;height:calc(100% - var(--khe))}
   /* Tick nảy nhẹ khi vừa được chọn — phản hồi tức thì cho thao tác chính của trang. */
   @keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
   /* Spec AC-20 chỉ đích danh `.tile.sel` — nên trạng thái chọn mang CẢ hai dấu:
@@ -607,7 +568,7 @@
 
 <div class="card">
   <div class="toolbar" style="margin:0">
-    <strong data-i="kho_h">Đã có trong kho</strong>
+    <strong class="gal-name" data-i="kho_h">Đã có trong kho</strong>
     <button class="btn sm" id="btnReload" type="button" data-i="reload">Tải lại</button>
     <div class="spacer"></div>
     <span class="hint" id="khoStat">…</span>
@@ -2242,6 +2203,26 @@ function khungKho(){
               + '<p class="hint" id="khoNote" style="margin-top:10px"></p>'
               + '<div class="kho-chan" id="khoChan"></div>';
 }
+/* E08-D136 · placeholder cells while the FIRST page of the store is on the wire.
+   An empty grid and a slow grid looked identical here, and a tab that shows
+   nothing reads as broken — the classify shell has had this since Polish 97%
+   (`oChoHTML`), the store had nothing. Only the first paint: appending page two
+   keeps what is already on screen (moodboard P6). */
+function khoChoHTML(n){
+  return new Array(n + 1).join('<div class="gal-skel kho-cho" aria-hidden="true"></div>');
+}
+function donKhoCho(){
+  var g = $('#khoGrid'); if (!g) return;
+  var ds = g.querySelectorAll('.kho-cho');
+  for (var i = 0; i < ds.length; i++) ds[i].parentNode.removeChild(ds[i]);
+}
+/* «Nothing here» in the shape the other two tabs use (`.gal-empty`). Until D136
+   this was a `<p class="hint">` left-aligned INSIDE the grid, where it read as a
+   first photo that had failed to load rather than as a message. */
+function khoRongHTML(chu){
+  return '<p class="gal-empty"><span class="gal-empty-ic" aria-hidden="true">🖼️</span>'
+       + '<span>' + esc(chu) + '</span></p>';
+}
 function oKhoHTML(x){
   /* Tỉ lệ đặt sẵn từ width/height để chỗ được giữ TRƯỚC khi ảnh về — masonry mà
      không giữ chỗ thì mỗi ảnh tải xong lại đẩy cả cột nhảy một nhịp. */
@@ -2353,6 +2334,7 @@ async function napTrangKho(dauLai){
   KHO_DANG = true;
   khungKho();
   if (dauLai){ KHO = []; KHO_HET = false; $('#khoGrid').innerHTML = ''; }
+  if (!KHO.length && !$('#khoGrid').children.length) $('#khoGrid').innerHTML = khoChoHTML(12);
   veChan();
   try {
     var qs = '?limit=' + KHO_TRANG + '&offset=' + KHO.length
@@ -2368,12 +2350,19 @@ async function napTrangKho(dauLai){
     /* "Hết" đo bằng CHÍNH số ảnh trang này trả về, không bằng so với stats: khi
        lọc theo đợt thì tổng của riêng đợt đó không có ở bất cứ đâu. */
     KHO_HET = them.length < KHO_TRANG;
-    if (!KHO.length) $('#khoGrid').innerHTML = '<p class="hint">' + tt(KHO_DOT ? 'kho_dot_empty' : 'kho_empty') + '</p>';
+    /* Clear the placeholders BEFORE appending: `insertAdjacentHTML('beforeend')`
+       puts the photos after them, it does not take their place. */
+    donKhoCho();
+    if (!KHO.length) $('#khoGrid').innerHTML = khoRongHTML(tt(KHO_DOT ? 'kho_dot_empty' : 'kho_empty'));
     else if (them.length) $('#khoGrid').insertAdjacentHTML('beforeend', them.map(oKhoHTML).join(''));
     xepKho(); theoDoiKho();
     veDot();
   } catch (e){
     KHO_HET = true;
+    /* Placeholders left standing look exactly like a hung page — clear them on
+       the failure path too, the same lesson as the `catch` in veLuoi/veKhoi on
+       the classify tab. */
+    donKhoCho();
     var c = $('#khoChan');
     /* D090 · KHÔNG in e.message ra màn. Bản đầu ném Error('list') rồi đưa thẳng
        thông điệp vào giao diện, nên trên prod nó hiện "Không đọc được kho: list"

@@ -8,70 +8,37 @@
 <!-- Polish 16/08 · trang này trước giờ KHÔNG nạp font nào: font-family khai "Be Vietnam
      Pro" nhưng máy không có thì rơi về font hệ — hai tab của cùng một trang chữ khác
      hẳn nhau. Bộ font chép đúng từ crm-kho-anh.html:11-12 (CHÉP, không import — kiến
-     trúc self-contained per view, xem ghi chú D083 bên ấy). -->
+     trúc self-contained per view, xem ghi chú D083 bên ấy).
+     E08-D136 · «CHÉP, không import» stops being true here: palette, type scale,
+     tab bar, empty state and skeleton now live in one shared file, linked just
+     below through an Express route behind the same session gate as this page.
+     It is linked BEFORE the `<style>` block on purpose — anything this screen
+     genuinely needs different still wins from there. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/crm/static/gallery/gallery-tokens.css">
 <style>
-  :root{
-    /* ── Polish 16/08 · DARK — bảng màu khớp 1:1 tên biến với crm-kho-anh.html:16-25
-       (gốc crm-app-v2.html): hai tài liệu là HAI TAB của một trang, lệch màu là
-       người dùng đọc ra "hai trang". Biến cũ của trang (--ok --bad --fs-nhan…)
-       giữ nguyên tên vì hàng chục quy tắc bên dưới đang gọi chúng. ── */
-    --gold:#e0bd77;--gold-b:#f6e6bd;--gold-d:#b8963f;--gold-soft:rgba(224,189,119,.14);
-    --green:#1fb073;--green-b:#5fe4a6;--blue:#4a97e6;--blue-b:#96c8ff;
-    --red:#ec5140;--red-b:#ff8676;--amber:#f2b74e;--ok:#45e08e;--bad:#e05a5a;
-    --bg1:#0a1826;--bg2:#0b2130;--bg3:#081019;--glow:rgba(31,176,115,.14);--glow2:rgba(224,189,119,.06);
-    --panel:rgba(255,255,255,.05);--panel2:rgba(7,16,27,.66);--card:rgba(255,255,255,.032);--hover:rgba(255,255,255,.07);
-    --text:#f4eede;--muted:#aca592;--muted2:#837c66;--line:rgba(224,189,119,.16);--line2:rgba(224,189,119,.32);--inp:rgba(4,11,22,.55);
-    --shadow:0 10px 32px rgba(0,0,0,.36);--r:16px;
-    --fs-small:.72rem;--fs-micro:.66rem;
-    --ease:cubic-bezier(.16,1,.3,1);
-    /* E08-D122 · cỡ riêng cho ba nhãn ĐÈ LÊN ẢNH (`.hieu` `.nhan` `.pt`). Không hạ
-       thẳng `--fs-micro`: biến ấy còn nuôi `.dem` và `.canh` — hai thứ nằm trên MẶT
-       GIẤY của trang, nơi chữ nhỏ hơn nữa là chữ khó đọc chứ không phải chữ khiêm
-       tốn. Chỉ chữ nằm trên ảnh mới phải nhường ảnh. */
-    --fs-nhan:.6rem;
-  }
-  :root[data-theme=light]{
-    /* ── LIGHT (ivory) — khớp 1:1 với crm-kho-anh.html:29-35 ── */
-    --gold:#a97f2e;--gold-b:#8a6414;--gold-d:#c6a458;--gold-soft:rgba(169,127,46,.1);
-    --green:#0e955f;--green-b:#0b7a4d;--blue:#2f74c4;--blue-b:#2560a8;
-    --red:#d23a2a;--red-b:#b02a1c;--amber:#c8892a;--ok:#12a15f;--bad:#c2331f;
-    --bg1:#faf6ec;--bg2:#f5efe1;--bg3:#efe7d5;--glow:rgba(20,140,100,.08);--glow2:rgba(169,127,46,.07);
-    --panel:rgba(255,255,255,.75);--panel2:rgba(255,255,255,.92);--card:rgba(255,255,255,.9);--hover:#fff;
-    --text:#2a2418;--muted:#6d6552;--muted2:#9a9078;--line:rgba(120,92,36,.18);--line2:rgba(120,92,36,.34);--inp:#fff;
-    --shadow:0 8px 26px rgba(120,92,40,.13);
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{margin:0;font-family:"Be Vietnam Pro",-apple-system,"Segoe UI",system-ui,Arial,sans-serif;
-    color:var(--text);line-height:1.45;min-height:100vh;
-    background:radial-gradient(1200px 600px at 82% -12%,var(--glow),transparent 60%),radial-gradient(760px 380px at 6% 2%,var(--glow2),transparent 58%),linear-gradient(166deg,var(--bg1),var(--bg2) 50%,var(--bg3))}
-  /* Trang này không toggle class `jp` lên body như kho-anh — setLang chỉ đặt
-     documentElement.lang, nên font tiếng Nhật đi theo chính thuộc tính ấy. */
-  html[lang=ja] body{font-family:"Noto Sans JP","Be Vietnam Pro",sans-serif;letter-spacing:.005em}
-  ::selection{background:var(--gold-soft)}
-  /* Polish 98% · vignette phòng tối — nằm DƯỚI nội dung (z:-1, trên canvas nền),
-     mép màn tối dần như đèn rọi giữa phòng trưng bày. Không che chữ nào. */
-  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-    background:radial-gradient(120% 85% at 50% 28%,transparent 58%,rgba(2,7,14,.5) 100%)}
-  :root[data-theme=light] body::before{
-    background:radial-gradient(120% 85% at 50% 28%,transparent 62%,rgba(120,92,40,.09) 100%)}
-  /* Thanh cuộn thanh mảnh cùng tông (macOS tự ẩn; đây là cho Windows/Linux). */
-  html{scrollbar-color:var(--line2) transparent}
-  ::-webkit-scrollbar{width:11px;height:11px}
-  ::-webkit-scrollbar-track{background:transparent}
-  ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:999px;
-    border:3px solid transparent;background-clip:padding-box}
-  ::-webkit-scrollbar-thumb:hover{background:var(--gold-d);border:3px solid transparent;background-clip:padding-box}
-  /* AC-13 (khuôn kho-anh) · mỗi lần Tab dừng chân phải THẤY được; :focus-visible
-     để chuột bấm không bị viền bám. */
-  :focus-visible{outline:2px solid var(--gold-b);outline-offset:2px;border-radius:8px}
+  /* E08-D136 · the two `:root` blocks that stood here — the same palette, copied
+     by hand from crm-kho-anh.html — now live in
+     `/crm/static/gallery/gallery-tokens.css`, together with the reset, the page
+     background and vignette, the scrollbar, the focus ring and the heading face.
+     Nothing changed value in the move except the two things said plainly here:
+       · `--fs-micro` — .66rem on this page, .62rem on the store. One token name
+         meaning two sizes is exactly what this ticket exists to end; the shared
+         file settles on .66rem (D122's argument still wins — see the note there).
+       · `body{font-size}` — this page never set a base size, so it fell back to
+         the browser's 16px while the store ran `--fs-body` (.88rem): two tabs of
+         one page read at two text densities. Both are `--fs-body` now. Every rule
+         below already declares its own size, so what actually changes is the text
+         nobody had ever spoken for. */
   .wrap{max-width:1100px;margin:0 auto;padding:14px 14px 60px}
   .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
   /* Đầu trang có vạch ngăn riêng — các `.top` khác là hàng công cụ trong thẻ, không đụng. */
   #dauTrang{padding:2px 0 12px;border-bottom:1px solid var(--line)}
-  h1{font-size:1.08rem;margin:0;font-weight:600;font-family:"Playfair Display",Georgia,Cambria,serif;letter-spacing:.01em}
-  html[lang=ja] h1{font-family:"Noto Serif JP","Playfair Display",serif}
+  /* Face and Japanese stack follow the shared tokens; only the size is this
+     page's, and it lands on `--fs-title` like the store's <h1> (it was 1.08rem,
+     picked by hand). */
+  h1{font-size:var(--fs-title)}
   .btn{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:10px;
     padding:8px 13px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer;
     transition:border-color .15s,background .15s,transform .12s}
@@ -196,22 +163,16 @@
     padding:2px 6px;border:1px solid rgba(224,189,119,.22)}
   .hieu.cho{right:6px;color:rgba(232,199,137,.9);border-color:rgba(224,189,119,.34)}
   .hieu.alb{left:6px;color:rgba(111,232,168,.9);border-color:rgba(67,224,141,.34)}
-  .chip{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:999px;
-    padding:7px 14px;font:inherit;font-size:var(--fs-small);cursor:pointer;transition:border-color .15s,background .15s,color .15s}
-  .chip:hover{border-color:var(--gold);background:var(--hover)}
-  /* E08-D106 · chip tab Kho là <a>, không phải <button>: nó rời tài liệu này. Mặc
-     định của trình duyệt cho <a> khác <button> ở ba chỗ (gạch chân, màu link,
-     line-height) nên phải nói lại cả ba, không thì ba chip cùng hàng cao thấp
-     khác nhau. `aria-current` chứ không `aria-pressed`: link không có trạng thái
-     nhấn, nó có trạng thái "đang ở đây". */
-  a.chip{text-decoration:none;display:inline-flex;align-items:center;line-height:1.45}
+  /* E08-D136 · `.chip`, `a.chip` and the `aria-pressed`/`aria-current` pair are
+     declared once in the shared token file — the very thing the D106 note above
+     describes (the store chip is an `<a>`, so underline / link colour /
+     line-height have to be restated or the three chips in one row sit at
+     different heights). Only the rule that belongs to THIS page stays: */
   /* E08-D128 · `a.chip` có độ ưu tiên (0,1,1) nên nó THẮNG `.an` (0,1,0): chip Kho
      là <a>, và `classList.add('an')` trên nó không ẩn được gì cả — hai chip kia là
      <button> nên vẫn ẩn, và bản đầu của vé này đã đi qua phép đo với đúng một chip
      còn hiện. Nói lại ngay tại đây thay vì bịa một class ẩn thứ hai. */
   a.chip.an{display:none}
-  .chip[aria-pressed=true],.chip[aria-current=page]{background:var(--gold-soft);
-    border-color:var(--gold);color:var(--gold-b);font-weight:600}
   /* `.tab` = THANH BA TAB của trang, đúng một chỗ trên trang này. Hàng chip lọc bên
      trong mỗi tab mang tên riêng `.hang-loc` (E08-D106). Bản D102 cho cả hai đeo
      chung tên `.tab`: đọc thì thấy ba hàng chip giống nhau, mà chỉ một hàng đổi
@@ -219,15 +180,11 @@
      tên mang hai nghĩa thì phép quét DOM (AC-2b) không phân biệt được «tab» với
      «bộ lọc», và người sửa sau cũng vậy. */
   /* Polish 97% · thanh tab thành PHIẾN KÍNH DÍNH ĐỈNH: cuộn sâu trong lưới/khối
-     vẫn đổi được chế độ làm việc mà không phải bò ngược lên đầu trang. Phiến ôm
-     sát chip (width:max-content) — không phải một dải mờ chắn ngang cả trang. */
-  .tab{display:flex;gap:8px;margin-bottom:13px;flex-wrap:wrap;
-    position:sticky;top:10px;z-index:30;width:max-content;max-width:100%;
-    background:var(--panel2);border:1px solid var(--line);border-radius:999px;
-    padding:6px;box-shadow:var(--shadow)}
-  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    .tab{-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
-  }
+     vẫn đổi được chế độ làm việc mà không phải bò ngược lên đầu trang.
+     E08-D136 · the shape of that slab is in the shared token file now — the two
+     tabs used to declare the same thing twice. Only the bottom margin belongs to
+     this page: what sits under the bar here is the scanner card, not a grid. */
+  .tab{margin-bottom:13px}
   .hang-loc{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
   /* Mốc cuộn chừa chỗ cho phiến tab — scrollIntoView không giấu phần tử dưới kính. */
   .khoi,.anh-o,.o,.goi{scroll-margin-top:64px}
@@ -240,10 +197,10 @@
   /* E08-D122 · 700 → 600. Tên khách KHÔNG nằm trên ảnh nên nó không phải nhường
      đường như ba nhãn kia, nhưng nó là thứ đậm nhất trong khối và mắt bám vào nó
      trước tấm hình. 600 vẫn là chữ đậm nhất khối — chỉ thôi đua với ảnh. */
-  /* Tên khách mang mặt chữ trưng bày (serif) — vẫn 600, không đua với ảnh (D122). */
-  .khoi h3{margin:0;font-size:.98rem;font-weight:600;word-break:break-word;
-    font-family:"Playfair Display",Georgia,Cambria,serif;letter-spacing:.01em}
-  html[lang=ja] .khoi h3{font-family:"Noto Serif JP",serif}
+  /* Tên khách mang mặt chữ trưng bày (serif) — vẫn 600, không đua với ảnh (D122).
+     E08-D136 · declared as `.gal-name` in the shared file and put straight on the
+     <h3> when a block is drawn; the three headings of the three tabs used to be
+     three declarations of one serif. */
   /* Con số và nhãn của nó là MỘT khối không tách. Bản đầu để chúng là bốn phần tử
      rời trong một hàng flex-wrap: ở 360px hàng gãy giữa chừng, "6" ở lại dòng trên
      còn "trong album" rơi xuống cạnh "9" — hai con số đổi nhãn cho nhau trước mắt
@@ -521,9 +478,10 @@
      là câu người ta đọc TRƯỚC khi bấm, không phải chú thích liếc qua. */
   .qbao{color:var(--gold);font-size:var(--fs-small);margin:0}
   .qbao.an{display:none}
-  /* Tên khách trên thanh màn một khách — cùng mặt chữ trưng bày với tên trong khối. */
-  #tenMotKhach{font-family:"Playfair Display",Georgia,Cambria,serif;font-weight:600;font-size:1rem;letter-spacing:.01em}
-  html[lang=ja] #tenMotKhach{font-family:"Noto Serif JP",serif}
+  /* Tên khách trên thanh màn một khách — cùng mặt chữ trưng bày với tên trong khối.
+     E08-D136 · wears `.gal-name` in the HTML; the size lands on `--fs-name` like
+     the name in a block (it was 1rem, .02rem off the block — nobody could see it,
+     and that is exactly the shape of a hand-copied design system). */
   /* Thanh cuộn của danh sách gợi ý tên — mảnh, cùng tông. */
   .ta-ds::-webkit-scrollbar{width:8px}
   .ta-ds::-webkit-scrollbar-thumb{background:var(--line2);border-radius:999px}
@@ -567,10 +525,12 @@
      phân biệt nội dung thật với khung chờ bằng đúng những class ấy. */
   .o-cho{aspect-ratio:4/3;position:relative;overflow:hidden;border:1px solid var(--line);
     border-radius:12px;background:linear-gradient(150deg,var(--panel),var(--panel2))}
+  /* E08-D136 · one shared shimmer (`gal-shim`) — the store ran 1.25s and this
+     page 1.3s: near enough that nobody read it as a bug, far enough that the two
+     tabs never breathed together. */
   .o-cho::after{content:"";position:absolute;inset:0;
     background:linear-gradient(100deg,transparent 25%,var(--hover) 50%,transparent 75%);
-    background-size:220% 100%;animation:oShim 1.3s linear infinite}
-  @keyframes oShim{0%{background-position:130% 0}100%{background-position:-130% 0}}
+    background-size:220% 100%;animation:gal-shim 1.3s linear infinite}
   .khoi-cho{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none}
   .khoi-cho .d1{height:14px;width:38%;border-radius:7px;background:var(--hover);margin:2px 0 10px}
   .khoi-cho .d2{height:10px;width:24%;border-radius:6px;background:var(--panel2);margin-bottom:12px}
@@ -789,7 +749,7 @@
   <div id="manMotKhach" class="an">
     <div class="card top" style="margin-bottom:13px">
       <button class="btn sm" id="veKhoi">← <span data-i="ve_khoi">Khối theo khách</span></button>
-      <strong id="tenMotKhach"></strong>
+      <strong class="gal-name" id="tenMotKhach"></strong>
       <div class="spacer"></div>
       <span class="hint" id="tomMotKhach"></span>
     </div>
@@ -1356,6 +1316,16 @@ var DA_NAP = false;
    giữ nguyên nội dung cũ tới khi dữ liệu mới về — không nháy. Lỗi nạp thì các
    catch dọn khung ngay: khung chờ đứng mãi trông hệt như trang treo. */
 function oChoHTML(n){ return new Array(n + 1).join('<div class="o o-cho"></div>'); }
+/* E08-D136 · ONE «nothing here» shape for all three tabs (`.gal-empty`, declared
+   in the shared token file). Until this ticket every empty spot was a
+   `<p class="hint">` left-aligned among caption lines wearing that same class —
+   a reader could not tell a message from a caption, and inside a GRID it read as
+   a photo that had failed to load. The mark carries no meaning, the sentence
+   does: `aria-hidden` on the mark. */
+function galRongHTML(chu, hinh){
+  return '<p class="gal-empty"><span class="gal-empty-ic" aria-hidden="true">' + (hinh || '🖼️')
+       + '</span><span>' + esc(chu) + '</span></p>';
+}
 function khoiChoHTML(){
   var t = '<div class="card khoi-cho"><div class="d1"></div><div class="d2"></div>'
         + '<div class="luoi">' + oChoHTML(4) + '</div></div>';
@@ -1376,7 +1346,7 @@ async function veLuoi(noiTiep, giuTrang){
       + (a.so_cho ? '<span class="hieu cho">' + a.so_cho + '</span>' : '')
       + (a.so_album ? '<span class="hieu alb">✓</span>' : '')
       + '</button>';
-  }).join('');
+  }).join('') || galRongHTML(tt('anh_rong'));
   var het = ANH.length >= TONG;
   $('#taiThem').disabled = het;
   $('#taiThem').textContent = het ? tt('het_anh') : tt('tai_them');
@@ -1890,7 +1860,7 @@ async function veKhoi(noiTiep){
       + esc(fmt('con_lai', { n: k.con_lai })) + '</button>';
     return '<div class="card khoi" data-gid="' + k.guest_id + '">'
       + '<div class="top" style="margin-bottom:7px">'
-      +   '<h3>' + esc(tenKh(k)) + '</h3>'
+      +   '<h3 class="gal-name">' + esc(tenKh(k)) + '</h3>'
       +   (dv ? '<span class="hint">' + esc(dv) + '</span>' : '')
       + '</div>'
       + '<div class="khoi-so">'
@@ -1916,9 +1886,9 @@ async function veKhoi(noiTiep){
       + '<label class="chonHet"><input type="checkbox" class="chonHetKhoi">'
       +   '<span class="nhanChonKhoi"></span></label>'
       + (anh ? '<div class="luoi" style="margin-top:9px">' + anh + '</div>'
-             : '<p class="hint">' + esc(tt('khoi_khong_anh')) + '</p>')
+             : galRongHTML(tt('khoi_khong_anh')))
       + '<div class="thanhChon"></div></div>';
-  }).join('');
+  }).join('') || galRongHTML(tt('khoi_rong'), '👥');
   document.querySelectorAll('.khoi').forEach(capNhatThanh);
   var het = KHOI.length >= KHOI_TONG;
   $('#khoiThem').disabled = het;
@@ -1962,7 +1932,7 @@ async function moMotKhach(gid, offset){
     : fmt('khach_tom', { a: j.so_album, c: j.so_cho });
   $('#chuMotKhach').textContent = tt(CHI_XEM ? 'khoi_chu_xem' : 'khoi_chu');
   $('#anhMotKhach').innerHTML = (j.items || []).map(veTam).join('')
-    || '<p class="hint">' + esc(tt('khoi_khong_anh')) + '</p>';
+    || galRongHTML(tt('khoi_khong_anh'));
 
   var soTrang = Math.max(1, Math.ceil((j.tong || 0) / TRANG_KHACH));
   var trang = Math.floor(KHACH_OFFSET / TRANG_KHACH) + 1;

@@ -24,6 +24,8 @@ cho phép `git diff` chạm đúng ba tệp và AC-8 giữ `npm test` ở 31/31,
     python3 test/ui/do-cuon.py --khong-lui --truoc c3b15ca --sau cay crm-kho-anh.html
     # AC-A2 — ba tab cùng một da: 12 ảnh + bảng style đã tính, so ba tab với nhau
     python3 test/ui/do-cuon.py --dong-bo
+    # CHỐT HIỆU LỰC — CSS fixture có KHỚP CSS trang thật không (bốn chế độ trên tự chạy)
+    python3 test/ui/do-cuon.py --tu-kiem [--truoc <ref>] [--sau <ref>]
 
 `<ref>` là ref git bất kỳ (`d5f7fb9`, `HEAD`, `origin/main`) hoặc `cay` = tệp trên
 đĩa của cây làm việc. `cay` là mặc định của `--sau`, và là thứ bảy phép đột biến
@@ -44,8 +46,17 @@ bản CHƯA sửa gì. Script ép `--force-device-scale-factor` và tự khai `d
 Không prod, không Postgres, không MinIO, không ảnh người thật: fixture là chữ + ô
 màu sinh bằng mã, gieo bằng ĐÚNG class của trang (khuôn `test/ui/do-ac7.py`).
 
+FIXTURE PHẢI KHỚP TRANG THẬT — chốt hiệu lực thứ hai, thêm ở E08-D136 vòng 2. CSS
+của fixture đi qua `rut_style`, mà `rut_style` đọc HTML bằng regex; một chuỗi
+`<style>` nằm trong CHÚ THÍCH đủ để nó bắt nhầm và trình phân giải CSS nuốt im luật
+thật đầu tiên của trang. Gate 2 đã bắt được đúng ca ấy (`.wrap` biến mất, AC-A3 đỏ
+bốn cặp vì một trang không tồn tại). Nên trước mỗi phép đo, script dựng TÀI LIỆU
+THẬT trong trình duyệt rồi so bộ luật hai chiều với bộ luật của fixture; lệch một
+luật ⇒ THOÁT MÃ 4. Chạy riêng chốt ấy bằng `--tu-kiem`.
+
 Mã thoát: 0 đạt · 1 không đạt · 2 DPR < 2 (phép đo mù, từ chối chạy) · 3 thiếu
-điều kiện chạy (playwright / Pillow / tệp không đọc được).
+điều kiện chạy (playwright / Pillow / tệp không đọc được) · 4 fixture không khớp
+trang thật (phép đo đang chấm một trang không tồn tại, từ chối chạy).
 """
 import argparse
 import base64
@@ -187,6 +198,29 @@ def nguon(ref, ten):
 RE_LINK_GALLERY = re.compile(r'<link\b[^>]*\bhref="/crm/static/gallery/([A-Za-z0-9._-]+)"[^>]*>',
                              re.I)
 
+# E08-D136 vòng 2 · Gate 2 bắt được: một chuỗi `<style>` NẰM TRONG CHÚ THÍCH HTML
+# làm regex dưới kia bắt từ trong chú thích, và CSS trả về mở đầu bằng rác HTML
+# (`--> <link …> <style>`). Trình phân giải CSS phục hồi lỗi bằng cách NUỐT luật
+# thật đầu tiên của trang — im lặng, không một cảnh báo nào. Ca thật:
+# `crm-nhan-dien.html:15` viết «linked BEFORE the `<style>` block on purpose» ⇒
+# luật `.wrap` biến mất khỏi fixture ⇒ trang đo mất lề và `max-width`, lưới 2 cột
+# thành 3, và AC-A3 đỏ bốn cặp vì một trang không tồn tại.
+#
+# Chú thích là văn xuôi, không phải mã: một vé nói VỀ css thì sớm muộn viết chữ
+# `<style>` ra. Nên chỗ phải sửa là cái thước, không phải câu văn — sửa câu văn chỉ
+# dời cái bẫy sang vé sau.
+#
+# `<script>` cũng bị bóc cùng lý do: `document.write('<style>…')` là cùng một cái
+# bẫy mặc áo khác. Bóc trước khi quét thì mọi thứ regex nhìn thấy là thẻ THẬT.
+RE_CHU_THICH = re.compile(r"<!--.*?-->", re.S)
+RE_SCRIPT = re.compile(r"<script\b[^>]*>.*?</script>", re.S | re.I)
+
+
+def chi_the_that(html):
+    """Bỏ chú thích HTML và thân `<script>` — hai chỗ duy nhất trong tệp mà chữ
+    `<style>`/`<link>` là VĂN BẢN chứ không phải thẻ."""
+    return RE_SCRIPT.sub("", RE_CHU_THICH.sub("", html))
+
 
 def rut_style(html, ref="cay"):
     """CSS của một view, ĐÚNG thứ tự trình duyệt thấy: mọi tệp `<link>` tới bộ
@@ -202,10 +236,11 @@ def rut_style(html, ref="cay"):
 
     Chỉ CSS — fixture không chạy một dòng JS nào của trang: vé này chấm CSS, và JS
     thật cần API thật."""
+    the = chi_the_that(html)
     phan = [nguon_tep(ref, os.path.join(TINH_GALLERY, m.group(1)))
-            for m in RE_LINK_GALLERY.finditer(html)]
+            for m in RE_LINK_GALLERY.finditer(the)]
     phan += [m.group(1) for m in
-             re.finditer(r"<style[^>]*>(.*?)</style>", html, re.S | re.I)]
+             re.finditer(r"<style[^>]*>(.*?)</style>", the, re.S | re.I)]
     return "\n".join(phan)
 
 
@@ -772,6 +807,123 @@ def _trung_vi(ds, khoa):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# CHỐT HIỆU LỰC · fixture phải mang ĐÚNG bộ luật của trang thật
+# ══════════════════════════════════════════════════════════════════════════════
+# Vá `chi_the_that` bịt đúng cái bẫy Gate 2 tìm ra. Chốt này canh cả LỚP bẫy ấy:
+# bất cứ lý do gì làm CSS của fixture khác CSS trình duyệt dựng từ tài liệu thật —
+# chú thích, `<script>`, thẻ lồng, `<link>` mới, một khối `<style>` bị bỏ sót — đều
+# phải làm phép đo TỪ CHỐI CHẠY, chứ không được trả một con số.
+#
+# Cùng hạng với chốt DPR: phép đo mù mà báo xanh thì nguy hơn không đo. Khác chốt
+# DPR ở một chỗ: chốt DPR canh môi trường, chốt này canh chính cái fixture — nên nó
+# so HAI CHIỀU (thiếu luật LẪN thừa luật), giống `--canh-gac` so whitelist hai chiều.
+JS_LIET_KE_LUAT = """() => {
+  const ra = [];
+  const di = (rules, ngoai) => {
+    for (const r of rules) {
+      const tien = ngoai ? ngoai + ' » ' : '';
+      if (r.selectorText) { ra.push(tien + r.selectorText); continue; }
+      if (r.name) { ra.push(tien + '@keyframes ' + r.name); continue; }
+      if (r.conditionText) { di(r.cssRules, tien + '@' + r.conditionText); continue; }
+      if (r.media && r.media.mediaText) { di(r.cssRules, tien + '@media ' + r.media.mediaText); continue; }
+      if (r.cssRules) { di(r.cssRules, tien + '@?'); continue; }
+      ra.push(tien + '(' + (r.cssText || '').slice(0, 48) + ')');
+    }
+  };
+  // Sheet KHÁC GỐC không bao giờ đọc được ruột, và fixture cố ý không nạp webfont
+  // (mạng bị chặn trong lab). Bỏ qua chúng, nhưng KHAI RA — một chốt lặng lẽ bỏ
+  // bớt mẫu số là một chốt nói dối.
+  const bo_qua = [];
+  for (const s of document.styleSheets) {
+    try { di(s.cssRules, ''); }
+    catch (e) {
+      const cung_goc = s.href && new URL(s.href, location.href).origin === location.origin;
+      if (cung_goc) ra.push('(!) sheet CÙNG GỐC mà không đọc được: ' + s.href);
+      else bo_qua.push(s.href || 'inline');
+    }
+  }
+  return {luat: ra, bo_qua};
+}"""
+
+
+def _luat_cua_trang_that(ctx, ref, ten):
+    """Bộ luật mà trình duyệt dựng từ TÀI LIỆU THẬT: đúng HTML ấy, `<link>` token
+    phục vụ từ CÙNG ref. Webfont bị chặn ở cả hai phía — fixture cố ý không nạp
+    font, nên nạp ở đây là tự tạo ra một chênh lệch không có thật."""
+    html = nguon(ref, ten)
+    tep = {m.group(1): nguon_tep(ref, os.path.join(TINH_GALLERY, m.group(1)))
+           for m in RE_LINK_GALLERY.finditer(chi_the_that(html))}
+    page = ctx.new_page()
+
+    def tra(route):
+        d = route.request.url.split("?")[0]
+        if d.endswith("/do-cuon-fixture"):
+            return route.fulfill(status=200, content_type="text/html; charset=utf-8", body=html)
+        for k, v in tep.items():
+            if d.endswith("/crm/static/gallery/" + k):
+                return route.fulfill(status=200, content_type="text/css; charset=utf-8", body=v)
+        return route.abort()
+
+    page.route("**/*", tra)
+    page.goto("http://do-cuon.lab/do-cuon-fixture", wait_until="load")
+    ra = page.evaluate(JS_LIET_KE_LUAT)
+    page.close()
+    return ra
+
+
+def _luat_cua_fixture(ctx, ref, ten):
+    page = ctx.new_page()
+    page.set_content("<!doctype html><style>" + rut_style(nguon(ref, ten), ref) + "</style>",
+                     wait_until="load")
+    ra = page.evaluate(JS_LIET_KE_LUAT)
+    page.close()
+    return ra
+
+
+def _chot_fixture(br, refs, dsm):
+    """Chạy TRƯỚC mọi phép đo. Lệch một luật ⇒ THOÁT MÃ 4, không trả số nào."""
+    ctx = br.new_context(viewport={"width": 430, "height": 932})
+    hong, bang = [], []
+    for ref in sorted(set(refs)):
+        for ten in dsm:
+            t, f = _luat_cua_trang_that(ctx, ref, ten), _luat_cua_fixture(ctx, ref, ten)
+            that, fix = t["luat"], f["luat"]
+            thieu = [s for s in that if s not in fix]
+            thua = [s for s in fix if s not in that]
+            bang.append({"ref": ref, "man": ten, "luat_trang_that": len(that),
+                         "luat_fixture": len(fix), "THIẾU": thieu, "THỪA": thua,
+                         "sheet_khac_goc_bo_qua": t["bo_qua"]})
+            for s in thieu:
+                hong.append(f"{ref}:{ten} · fixture THIẾU luật «{s}» mà trang thật có")
+            for s in thua:
+                hong.append(f"{ref}:{ten} · fixture THỪA luật «{s}» mà trang thật không có")
+    ctx.close()
+    if hong:
+        print(json.dumps({
+            "ok": False, "chot": "fixture-khop-trang-that", "ma_thoat": 4,
+            "loi": "CSS của fixture KHÁC CSS trình duyệt dựng từ tài liệu thật — mọi con "
+                   "số đo trên nó là số của một trang không tồn tại. Từ chối trả kết quả.",
+            "hong": hong, "bang": bang}, ensure_ascii=False, indent=2))
+        sys.exit(4)
+    return bang
+
+
+def tu_kiem(args):
+    """`--tu-kiem` · chạy riêng chính cái chốt trên, để một đột biến gieo bẫy vào
+    chú thích HTML có chỗ mà đỏ."""
+    sync_playwright = _playwright()
+    refs = [r for r in (args.truoc, args.sau) if r] or ["cay"]
+    dsm = [args.man] if args.man else list(MAN)
+    with sync_playwright() as p:
+        br = p.chromium.launch(args=_co(args.dpr))
+        bang = _chot_fixture(br, refs, dsm)
+        br.close()
+    print(json.dumps({"ok": True, "chot": "fixture-khop-trang-that",
+                      "refs": sorted(set(refs)), "bang": bang}, ensure_ascii=False, indent=2))
+    return 0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # AC-1 · AC-2 · AC-3 — đo cuộn
 # ══════════════════════════════════════════════════════════════════════════════
 def do_cuon(args):
@@ -780,6 +932,7 @@ def do_cuon(args):
     ra, hong = {}, []
     with sync_playwright() as p:
         br = p.chromium.launch(args=_co(args.dpr))
+        _chot_fixture(br, (args.truoc, args.sau), dsm)
         ctx = br.new_context(viewport={"width": 430, "height": 932},
                              device_scale_factor=args.dpr)
         page = ctx.new_page()
@@ -948,6 +1101,7 @@ def do_anh(args):
     hinh_hoc, ket, hong = {}, [], []
     with sync_playwright() as p:
         br = p.chromium.launch(args=_co(args.dpr, chup=True))
+        _chot_fixture(br, (args.truoc, args.sau), MAN)
         for man in MAN:
             html = {phia: {th: fixture(man, rut_style(nguon(ref, man), ref), args.the, th)
                            for th in CHU_DE}
@@ -1174,6 +1328,7 @@ def do_tuong_phan(args):
 
     with sync_playwright() as p:
         br = p.chromium.launch(args=_co(args.dpr, chup=True))
+        _chot_fixture(br, (args.truoc, args.sau), MAN)
         for th in CHU_DE:
             ban = {}
             for man in MAN:
@@ -1329,6 +1484,7 @@ def do_dong_bo(args):
     hong, do = [], {}
     with sync_playwright() as p:
         br = p.chromium.launch(args=_co(args.dpr, chup=True))
+        _chot_fixture(br, (args.sau,), sorted({m[1] for m in DONG_BO_MAN}))
         for th in CHU_DE:
             for w, h in BE_NGANG:
                 ctx = br.new_context(viewport={"width": w, "height": h},
@@ -1389,6 +1545,9 @@ def main():
     ap.add_argument("--khong-lui", action="store_true",
                     help="AC-A4 · chấm bằng ngưỡng KHÔNG LÙI thay vì ngưỡng cải "
                          "thiện p95 của D135")
+    ap.add_argument("--tu-kiem", action="store_true",
+                    help="chốt hiệu lực · CSS fixture phải KHỚP CSS trang thật "
+                         "(lệch ⇒ thoát mã 4). Bốn chế độ đo tự chạy chốt này trước.")
     ap.add_argument("--anh-ra")
     ap.add_argument("--the", type=int, default=SO_THE)
     ap.add_argument("--dpr", type=int, default=2,
@@ -1396,6 +1555,8 @@ def main():
     args = ap.parse_args()
     if args.canh_gac:
         return canh_gac()
+    if args.tu_kiem:
+        return tu_kiem(args)
     if args.dong_bo:
         return do_dong_bo(args)
     if not args.truoc:
